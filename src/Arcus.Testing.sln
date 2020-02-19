@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29409.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging", "Arcus.Template\Arcus.Testing.Logging.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging", "Arcus.Testing.Logging\Arcus.Testing.Logging.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Integration", "Arcus.Template.Tests.Integration\Arcus.Testing.Tests.Integration.csproj", "{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Integration", "Arcus.Testing.Tests.Integration\Arcus.Testing.Tests.Integration.csproj", "{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Unit", "Arcus.Template.Tests.Unit\Arcus.Testing.Tests.Unit.csproj", "{3D66B14F-2CC7-44E6-A53F-1E45F9A6BCF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Unit", "Arcus.Testing.Tests.Unit\Arcus.Testing.Tests.Unit.csproj", "{3D66B14F-2CC7-44E6-A53F-1E45F9A6BCF6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}"
 EndProject
