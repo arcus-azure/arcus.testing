@@ -9,7 +9,7 @@ using Xunit;
 namespace Arcus.Testing.Tests.Unit
 {
     [Trait(name: "Category", value: "Unit")]
-    public class SpyLoggerTests
+    public class InMemoryLoggerTests
     {
         public static IEnumerable<object[]> Loggers =>
             new[]
