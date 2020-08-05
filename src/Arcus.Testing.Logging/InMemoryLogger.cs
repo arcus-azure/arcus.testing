@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -9,9 +8,9 @@ using Microsoft.Extensions.Logging;
 namespace Arcus.Testing.Logging
 {
     /// <summary>
-    /// Spy (stub) <see cref="ILogger"/> implementation to track the logged messages.
+    /// Spy (stub) <see cref="ILogger"/> implementation to track the logged messages in-memory.
     /// </summary>
-    public class SpyLogger : ILogger
+    public class InMemoryLogger : ILogger
     {
         private readonly ConcurrentBag<LogEntry> _entries = new ConcurrentBag<LogEntry>();
 

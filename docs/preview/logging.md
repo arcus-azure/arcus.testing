@@ -32,13 +32,13 @@ public class TestClass
 }
 ```
 
-## Spy (stub) Test Logging
+## In-memory Test Logging
 
-The `Arcus.Testing.Logging` library provides a `SpyLogger` and `SpyLogger<T>` which are [Microsoft Logging]() `ILogger` and `ILogger<T>` implementations respectively.
+The `Arcus.Testing.Logging` library provides a `InMemoryLogger` and `InMemoryLogger<T>` which are [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) `ILogger` and `ILogger<T>` implementations respectively.
 These types help in tracking logged messages and their metadata information like the level on which the message was logged or the related exception.
 
 ```csharp
-ILogger logger = new SpyLogger();
+ILogger logger = new InMemoryLogger();
 
 logger.LogInformation("This is a informational message");
 
@@ -58,7 +58,7 @@ string message = entry.Message;
 Or, alternatively you can use the generic variant:
 
 ```csharp
-ILogger<MyType> logger = new SpyLogger<MyType>();
+ILogger<MyType> logger = new InMemoryLogger<MyType>();
 
 logger.LogInformation("This is a informational message");
 

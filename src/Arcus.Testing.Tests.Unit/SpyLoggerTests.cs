@@ -14,13 +14,13 @@ namespace Arcus.Testing.Tests.Unit
         public static IEnumerable<object[]> Loggers =>
             new[]
             {
-                new object[] { new SpyLogger() },
-                new object[] { new SpyLogger<object>() }
+                new object[] { new InMemoryLogger() },
+                new object[] { new InMemoryLogger<object>() }
             };
 
         [Theory]
         [MemberData(nameof(Loggers))]
-        public void LogInformation_WithArguments_GetsCollected(SpyLogger logger)
+        public void LogInformation_WithArguments_GetsCollected(InMemoryLogger logger)
         {
             // Arrange
             const string template = "This is a test message with args: {Args}";
@@ -41,7 +41,7 @@ namespace Arcus.Testing.Tests.Unit
 
         [Theory]
         [MemberData(nameof(Loggers))]
-        public void LogWarning_WithException_GetsCollected(SpyLogger logger)
+        public void LogWarning_WithException_GetsCollected(InMemoryLogger logger)
         {
             // Arrange
             const string message = "This is a warning!";
@@ -61,7 +61,7 @@ namespace Arcus.Testing.Tests.Unit
 
         [Theory]
         [MemberData(nameof(Loggers))]
-        public void LogSeveralMessages_WithRandomValues_GetsCollected(SpyLogger logger)
+        public void LogSeveralMessages_WithRandomValues_GetsCollected(InMemoryLogger logger)
         {
             // Arrange
             var generator = new Faker();
