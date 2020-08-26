@@ -32,6 +32,31 @@ public class TestClass
 }
 ```
 
+### xUnit Test Logging in .NET Core
+
+During integration testing of hosts, one could find the need to add the log messages to the xUnit output for defect localization.
+The `Arcus.Testing.Logging` library provides an extension to add this in a more dev-friendly way.
+
+```csharp
+public class TestClass
+{
+    private readonly ILogger _outputWriter;
+
+    public TestClass(ITestOutputHelper outputWriter)
+    {
+        _outputWriter = outputWriter;
+    }
+
+    [Fact]
+    public void TestMethod()
+    {
+        IHost host = new HostBuilder()
+            .ConfigureLogging(loggingBuilder => loggingBuilder.AddXunitTestLogging(_outputWriter))
+            .Build();
+    }
+}
+```
+
 ## In-memory Test Logging
 
 The `Arcus.Testing.Logging` library provides a `InMemoryLogger` and `InMemoryLogger<T>` which are [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) `ILogger` and `ILogger<T>` implementations respectively.
