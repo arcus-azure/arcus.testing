@@ -6,7 +6,7 @@ using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace Arcus.Testing.Tests.Unit
+namespace Arcus.Testing.Tests.Unit.Logging
 {
     [Trait(name: "Category", value: "Unit")]
     public class InMemoryLoggerTests
