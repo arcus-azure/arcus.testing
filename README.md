@@ -7,11 +7,15 @@ Reusable testing components for Arcus repo's.
 ![Arcus](https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png)
 
 # Installation
-Soon you will be able to install it via NuGet:
+Easy to install it via NuGet:
+
+- **Logging**
 
 ```shell
 PM > Install-Package Arcus.Testing.Logging
 ```
+
+For a more thorough overview, we recommend reading our [documentation](#documentation).
 
 # Features
 
