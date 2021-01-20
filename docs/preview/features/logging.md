@@ -21,6 +21,10 @@ inside the [xUnit](https://xunit.net/) test framework.
 Log messages written to the `ILogger` instance will be written to the xUnit test output.
 
 ```csharp
+using Arcus.Testing.Logging;
+using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
+
 public class TestClass
 {
     private readonly ILogger _testLogger;
@@ -38,6 +42,11 @@ During integration testing of hosts, one could find the need to add the log mess
 The `Arcus.Testing.Logging` library provides an extension to add this in a more dev-friendly way.
 
 ```csharp
+using Arcus.Testing.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
+using Xunit.Abstractions;
+
 public class TestClass
 {
     private readonly ILogger _outputWriter;
@@ -63,6 +72,9 @@ The `Arcus.Testing.Logging` library provides a `InMemoryLogger` and `InMemoryLog
 These types help in tracking logged messages and their metadata information like the level on which the message was logged or the related exception.
 
 ```csharp
+using Arcus.Testing.Logging;
+using Microsoft.Extensions.Logging;
+
 ILogger logger = new InMemoryLogger();
 
 logger.LogInformation("This is a informational message");
@@ -83,6 +95,9 @@ string message = entry.Message;
 Or, alternatively you can use the generic variant:
 
 ```csharp
+using Arcus.Testing.Logging;
+using Microsoft.Extensions.Logging;
+
 ILogger<MyType> logger = new InMemoryLogger<MyType>();
 
 logger.LogInformation("This is a informational message");
