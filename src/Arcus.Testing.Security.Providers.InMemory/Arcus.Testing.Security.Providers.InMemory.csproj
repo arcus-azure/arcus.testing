@@ -1,26 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides logging capabilities during Arcus testing</Description>
+    <Description>Provides security capabilities during Arcus testing</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.testing/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <PackageTags>Azure;Testing</PackageTags>
-    <PackageId>Arcus.Testing.Logging</PackageId>
+    <PackageTags>Azure;Testing;Security</PackageTags>
+    <PackageId>Arcus.Testing.Security</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.Security.Core" Version="1.5.0" />
     <PackageReference Include="Guard.Net" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />
-    <PackageReference Include="xunit.abstractions" Version="2.0.1" />
   </ItemGroup>
 
 </Project>

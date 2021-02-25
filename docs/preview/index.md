@@ -20,6 +20,7 @@ For more granular packages we recommend reading the documentation.
 
 # Features
 
+- [In-memory test secret provider the Arcus secret store](features/inmemory-secret-provider)
 - [xUnit Logging and Logging Testing](features/logging)
 
 # License
