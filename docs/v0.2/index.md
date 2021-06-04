@@ -1,12 +1,9 @@
 ---
 title: "Home"
 layout: default
-permalink: /
-redirect_from:
- - /index.html
 ---
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Testing.Logging/)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?packageVersion=0.2.0)](https://www.nuget.org/packages/Arcus.Testing.Logging/0.2.0)
 
 # Installation
 
@@ -21,7 +18,7 @@ PM > Install-Package Arcus.Testing.Logging
 PM > Install-Package Arcus.Testing.Security.Providers.InMemory
 ```
 
-For more granular packages we recommend reading the documentation.
+For more granular packages we recommend reading the [documentation]().
 
 # Features
 
