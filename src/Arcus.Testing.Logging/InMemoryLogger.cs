@@ -12,17 +12,17 @@ namespace Arcus.Testing.Logging
     /// </summary>
     public class InMemoryLogger : ILogger
     {
-        private readonly ConcurrentBag<LogEntry> _entries = new ConcurrentBag<LogEntry>();
+        private readonly ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
 
         /// <summary>
         /// Gets the current logged messages.
         /// </summary>
-        public IEnumerable<string> Messages => _entries.Select(e => e.Message).Reverse();
+        public IEnumerable<string> Messages => _entries.Select(e => e.Message);
 
         /// <summary>
         /// Gets the current logged entries.
         /// </summary>
-        public IEnumerable<LogEntry> Entries => _entries.AsEnumerable().Reverse();
+        public IEnumerable<LogEntry> Entries => _entries.AsEnumerable();
 
         /// <summary>Writes a log entry.</summary>
         /// <param name="logLevel">Entry will be written on this level.</param>
@@ -38,7 +38,7 @@ namespace Arcus.Testing.Logging
             string message = formatter(state, exception);
 
             var entry = new LogEntry(eventId, logLevel, message, exception);
-            _entries.Add(entry);
+            _entries.Enqueue(entry);
         }
 
         /// <summary>
