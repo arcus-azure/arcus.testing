@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using GuardNet;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -29,6 +30,7 @@ namespace Arcus.Testing.Logging
         /// <param name="logEvent">The log event to write.</param>
         public void Emit(LogEvent logEvent)
         {
+            Guard.NotNull(logEvent, nameof(logEvent), "Requires a Serilog log event to be collected in-memory");
             _logEmits.Enqueue(logEvent);
         }
     }

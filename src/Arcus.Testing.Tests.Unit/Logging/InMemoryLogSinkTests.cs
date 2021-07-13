@@ -73,5 +73,15 @@ namespace Arcus.Testing.Tests.Unit.Logging
                 message => Assert.Equal(errorMessage, message), 
                 message => Assert.Equal(traceMessage, message));
         }
+
+        [Fact]
+        public void Emit_WithoutLogEvent_Fails()
+        {
+            // Arrange
+            var sink = new InMemoryLogSink();
+            
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => sink.Emit(logEvent: null));
+        }
     }
 }
