@@ -5,6 +5,11 @@ layout: default
 
 # Logging
 
+This page describes functionality related to logging in tests.
+* [xUnit test logging](#xunit-test-logging)
+* [In-memory test logging](#in-memory-test-logging)
+* [Serilog in-memory log sink](#serilog-in-memory-log-sink)
+
 ## Installation
 
 The following functionality is available when installing this package:
@@ -77,7 +82,7 @@ using Microsoft.Extensions.Logging;
 
 ILogger logger = new InMemoryLogger();
 
-logger.LogInformation("This is a informational message");
+logger.LogInformation("This is an informational message");
 
 // Either get the message directly, or
 IEnumerable<string> messages = logger.Messages;
@@ -100,7 +105,29 @@ using Microsoft.Extensions.Logging;
 
 ILogger<MyType> logger = new InMemoryLogger<MyType>();
 
-logger.LogInformation("This is a informational message");
+logger.LogInformation("This is an informational message");
 
 IEnumerable<string> messages = logger.Messages;
+```
+
+## Srilog in-memory log sink
+
+The `Arcus.Testing.Logging` library provides a `InMemoryLogSink` which is a [Serilog log sink](https://github.com/serilog/serilog/wiki/Configuration-Basics#sinks) 
+that collectes written log emits in-memory so the test infrastructure can assert on the actual rendered messages and possible properties available on the log emit.
+
+```csharp
+using Arcus.Testing.Logging;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+
+var logSink = new InMemoryLogSink();
+var logger = new LoggerConfiguration()
+    .WriteTo.Sink(logSink)
+    .CreateLogger();
+
+logger.Information("This is an informational message");
+
+IEnumerable<LogEvent> emits = logSink.CurrentLogEmits;
+IEnumeratble<string> messages = logSink.CurrentLogMessages;
 ```
