@@ -110,7 +110,7 @@ logger.LogInformation("This is an informational message");
 IEnumerable<string> messages = logger.Messages;
 ```
 
-## Srilog in-memory log sink
+## Serilog in-memory log sink
 
 The `Arcus.Testing.Logging` library provides a `InMemoryLogSink` which is a [Serilog log sink](https://github.com/serilog/serilog/wiki/Configuration-Basics#sinks) 
 that collectes written log emits in-memory so the test infrastructure can assert on the actual rendered messages and possible properties available on the log emit.
