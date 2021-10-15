@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Testing;Security</PackageTags>
-    <PackageId>Arcus.Testing.Security</PackageId>
+    <PackageId>Arcus.Testing.Security.Providers.InMemory</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
