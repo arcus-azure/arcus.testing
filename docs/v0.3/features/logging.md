@@ -15,7 +15,7 @@ This page describes functionality related to logging in tests.
 The following functionality is available when installing this package:
 
 ```shell
-PM> Install-Package -Name Arcus.Testing.Logging
+PM> Install-Package -Name Arcus.Testing.Logging -Version 0.3.0
 ```
 
 ## xUnit Test Logging
