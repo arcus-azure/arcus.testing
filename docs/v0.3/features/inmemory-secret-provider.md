@@ -10,7 +10,7 @@ layout: default
 The following functionality is available when installing this package:
 
 ```shell
-PM> Install-Package -Name Arcus.Testing.Security -Version 0.2.0
+PM> Install-Package -Name Arcus.Testing.Security.Providers.InMemory -Version 0.3.0
 ```
 
 ## In-memory secret provider

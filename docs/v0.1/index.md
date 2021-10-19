@@ -6,14 +6,14 @@ redirect_from:
  - /index.html
 ---
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Testing.Logging/)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?packageVersion=0.1.0)](https://www.nuget.org/packages/Arcus.Testing.Logging/0.1.0)
 
 # Installation
 
 The Arcus.Testing.Logging can be installed via NuGet:
 
 ```shell
-PM > Install-Package Arcus.Testing.Logging
+PM > Install-Package Arcus.Testing.Logging -Version 0.1.0
 ```
 
 For more granular packages we recommend reading the documentation.

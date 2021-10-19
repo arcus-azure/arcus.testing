@@ -1,12 +1,9 @@
 ---
 title: "Home"
 layout: default
-permalink: /
-redirect_from:
- - /index.html
 ---
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Testing.Logging/)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?packageVersion=0.3.0)](https://www.nuget.org/packages/Arcus.Testing.Logging/0.3.0)
 
 # Installation
 
@@ -14,11 +11,11 @@ Easy to install via NuGet:
 
 * **Logging during tests**
 ```shell
-PM > Install-Package Arcus.Testing.Logging
+PM > Install-Package Arcus.Testing.Logging -Version 0.3.0
 ```
 * **In-memory secret store**
 ```shell
-PM > Install-Package Arcus.Testing.Security.Providers.InMemory
+PM > Install-Package Arcus.Testing.Security.Providers.InMemory -Version 0.3.0
 ```
 
 For more granular packages we recommend reading the documentation.
@@ -30,8 +27,8 @@ For more granular packages we recommend reading the documentation.
 
 # Older versions
 
-- [v0.2](v0.2)
-- [v0.1](v0.1)
+- [v0.2](../v0.2)
+- [v0.1](../v0.1)
 
 # License
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.
