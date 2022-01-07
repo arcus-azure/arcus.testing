@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Description>Provides logging capabilities during Arcus testing</Description>
