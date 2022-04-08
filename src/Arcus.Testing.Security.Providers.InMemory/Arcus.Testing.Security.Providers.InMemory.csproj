@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>net6.0;netcoreapp3.1;netstandard2.1</TargetFrameworks>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Description>Provides security capabilities during Arcus testing</Description>
@@ -19,10 +19,16 @@
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Arcus.Security.Core" Version="[1.7.0,2.0.0)" />
+    <PackageReference Include="Guard.Net" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
     <PackageReference Include="Arcus.Security.Core" Version="[1.5.0,2.0.0)" />
     <PackageReference Include="Guard.Net" Version="1.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.8" />
   </ItemGroup>
 
 </Project>
