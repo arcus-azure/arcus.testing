@@ -19,6 +19,10 @@
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="Arcus.Security.Core" Version="[1.7.0,2.0.0)" />
     <PackageReference Include="Guard.Net" Version="2.0.0" />
