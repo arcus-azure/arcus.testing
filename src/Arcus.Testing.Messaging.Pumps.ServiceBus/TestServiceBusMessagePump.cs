@@ -54,14 +54,16 @@ namespace Arcus.Testing.Messaging.Pumps.ServiceBus
         {
             _logger.LogInformation("Started test Azure Service Bus message pump");
 
+            var receiver = new TestServiceBusReceiver();
             ServiceBusReceivedMessage[] messages = await _messageProducer.ProduceMessagesAsync();
+
             foreach (ServiceBusReceivedMessage message in messages)
             {
                 try
                 {
                     AzureServiceBusMessageContext context = message.GetMessageContext(jobId: Guid.NewGuid().ToString());
                     MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-                    await _messageRouter.RouteMessageAsync(message, context, correlationInfo, cancellationToken);
+                    await _messageRouter.RouteMessageAsync(receiver, message, context, correlationInfo, cancellationToken);
                 }
                 catch (Exception exception)
                 {

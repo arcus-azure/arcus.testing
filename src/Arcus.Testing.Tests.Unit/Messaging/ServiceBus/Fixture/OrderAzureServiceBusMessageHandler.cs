@@ -1,16 +1,14 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
 {
-    public class OrderAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
+    public class OrderAzureServiceBusMessageHandler : AzureServiceBusMessageHandler<Order>
     {
         private readonly Order[] _expected;
         private int _expectedCount;
@@ -20,13 +18,13 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderAzureServiceBusMessageHandler" /> class.
         /// </summary>
-        public OrderAzureServiceBusMessageHandler(params Order[] expected)
+        public OrderAzureServiceBusMessageHandler(params Order[] expected) : base(NullLogger.Instance)
         {
             _expected = expected;
             _expectedCount = 0;
         }
 
-        public Task ProcessMessageAsync(
+        public override async Task ProcessMessageAsync(
             Order message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -40,8 +38,7 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
                        && message.Product?.ProductName == expected.Product.ProductName;
             });
             IsProcessed = ++_expectedCount == _expected.Length;
-            
-            return Task.CompletedTask;
+            await CompleteMessageAsync();
         }
     }
 }
