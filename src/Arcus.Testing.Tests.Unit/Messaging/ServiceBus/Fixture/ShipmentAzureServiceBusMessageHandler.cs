@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -10,24 +7,31 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
 {
-    public class OrderAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
+    public class ShipmentAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Shipment>
     {
-        private readonly Order[] _expected;
+        private readonly Shipment[] _expected;
         private int _expectedCount;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ShipmentAzureServiceBusMessageHandler" /> class.
+        /// </summary>
+        public ShipmentAzureServiceBusMessageHandler()
+        {
+            
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ShipmentAzureServiceBusMessageHandler" /> class.
+        /// </summary>
+        public ShipmentAzureServiceBusMessageHandler(params Shipment[] expected)
+        {
+            _expected = expected;
+        }
 
         public bool IsProcessed { get; private set; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="OrderAzureServiceBusMessageHandler" /> class.
-        /// </summary>
-        public OrderAzureServiceBusMessageHandler(params Order[] expected)
-        {
-            _expected = expected;
-            _expectedCount = 0;
-        }
-
         public Task ProcessMessageAsync(
-            Order message,
+            Shipment message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
@@ -35,12 +39,11 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
             Assert.Single(_expected, expected =>
             {
                 return message != null
-                       && message.OrderId == expected.OrderId
-                       && message.Scheduled == expected.Scheduled
-                       && message.Product?.ProductName == expected.Product.ProductName;
+                       && message.Arrived == expected.Arrived
+                       && message.Container?.SerialNumber == expected.Container.SerialNumber;
             });
             IsProcessed = ++_expectedCount == _expected.Length;
-            
+
             return Task.CompletedTask;
         }
     }
