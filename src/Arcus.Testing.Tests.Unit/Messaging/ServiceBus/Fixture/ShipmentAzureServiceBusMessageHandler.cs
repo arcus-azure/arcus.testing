@@ -17,7 +17,6 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture
         /// </summary>
         public ShipmentAzureServiceBusMessageHandler()
         {
-            
         }
 
         /// <summary>
