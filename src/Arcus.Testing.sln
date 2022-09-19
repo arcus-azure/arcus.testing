@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29409.12
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging", "Arcus.Testing.Logging\Arcus.Testing.Logging.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
 EndProject
@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Unit", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Security.Providers.InMemory", "Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj", "{13FFF971-9F7E-4350-B193-85F6485F41B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Security.Providers.InMemory", "Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj", "{13FFF971-9F7E-4350-B193-85F6485F41B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Messaging.Pumps.ServiceBus", "Arcus.Testing.Messaging.Pumps.ServiceBus\Arcus.Testing.Messaging.Pumps.ServiceBus.csproj", "{3F7076F3-A88B-43B2-84C9-70A9E632012A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,6 +37,10 @@ Global
 		{13FFF971-9F7E-4350-B193-85F6485F41B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13FFF971-9F7E-4350-B193-85F6485F41B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13FFF971-9F7E-4350-B193-85F6485F41B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F7076F3-A88B-43B2-84C9-70A9E632012A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F7076F3-A88B-43B2-84C9-70A9E632012A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F7076F3-A88B-43B2-84C9-70A9E632012A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F7076F3-A88B-43B2-84C9-70A9E632012A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
