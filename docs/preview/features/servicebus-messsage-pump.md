@@ -13,7 +13,7 @@ PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.ServiceBus
 ```
 
 ## Test Azure Service Bus message pump
-As an addition on the [Arcus Azure Service Bus message pump](), we have provided a test version of the message pump to verify your custom Azure Service Bus message handler implementations.
+As an addition on the [Arcus Azure Service Bus message pump](https://messaging.arcus-azure.net/Features/message-handling/service-bus), we have provided a test version of the message pump to verify your custom Azure Service Bus message handler implementations.
 These hander implementations can be tested separately, and could be tested by interacting with the message router directly, but simulating messages like it would be from Azure Service Bus itself is a bit ticker.
 This test message pump functionality allows you to verify certain cases without the need of an actual Azure resource.
 
@@ -112,7 +112,7 @@ You can use one of the `.WithServiceBusMessageHandler<,>(...)` extensions to pas
 
 ## Message producer configuration
 The test message pump can be configured extensively to meet your needs. You can even pass in your own implementation of a test message producer to have full control over how the Azure Service Bus messages should look like.
-When a custom message body is passed, an `ServiceBusReceivedMessage` will be created with the [correlation properties]() already filled out. This allows for you to also test any the correlation specific functionality in your message handlers.
+When a custom message body is passed, an `ServiceBusReceivedMessage` will be created with the [correlation properties](https://messaging.arcus-azure.net/Features/message-handling/service-bus#message-correlation) already filled out. This allows for you to also test any the correlation specific functionality in your message handlers.
 
 ```csharp
 services.AddTestServiceBusMessagePump(producer =>
@@ -176,4 +176,4 @@ services.AddTestServiceBusMessagePump(..., options =>
 });
 ```
 
-For more information on the message router options, see the [Arcus messaging feature documentation]().
+For more information on the message router options, see the [Arcus messaging feature documentation](https://messaging.arcus-azure.net/Features/message-handling/service-bus#pump-configuration).
