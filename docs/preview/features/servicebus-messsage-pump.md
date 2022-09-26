@@ -45,7 +45,7 @@ public class ShipmentAzureServiceBusMessageHandler : IAzureServiceBusMessageHand
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces order...
+        // Proces shipment...
     }
 }
 ```
