@@ -157,7 +157,7 @@ public class MyTestMessageProducer : IAzureEventHubsMessageProducer
 }
 ```
 
-Such implementation can be pased along during the registration:
+Such implementation can be passed along during the registration:
 ```csharp
 var producer = new MyTestMessageProducer();
 services.AddTestEventHubsMessagePump(producer);
