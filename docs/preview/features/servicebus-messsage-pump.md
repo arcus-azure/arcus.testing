@@ -6,7 +6,7 @@ layout: default
 # Testing Azure Service Bus message handling
 
 ## Installation
-The following functionality is available when installing this package:
+Install this package to easily test your Service Bus message handlers:
 
 ```shell
 PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.ServiceBus

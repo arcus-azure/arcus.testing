@@ -6,7 +6,7 @@ layout: default
 # Testing Azure EventHubs message handling
 
 ## Installation
-The following functionality is available when installing this package:
+Install this package to easily test your EventHubs message handlers:
 
 ```shell
 PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.EventHubs
