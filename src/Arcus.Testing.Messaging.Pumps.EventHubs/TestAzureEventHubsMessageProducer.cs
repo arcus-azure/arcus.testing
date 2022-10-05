@@ -60,7 +60,7 @@ namespace Arcus.Testing.Messaging.Pumps.EventHubs
         {
             Guard.NotNull(messages, nameof(messages), "Requires a series of message bodies to produce Azure Service Bus messages to the message pump");
 
-            EventData CreateServiceBusMessage(TMessageBody message)
+            EventData CreateEventData(TMessageBody message)
             {
                 EventData eventData =
                     EventDataBuilder.CreateForBody(message)
@@ -73,7 +73,7 @@ namespace Arcus.Testing.Messaging.Pumps.EventHubs
                 return eventData;
             }
 
-            _createMessagesCollection.Add(() => messages.Select(CreateServiceBusMessage).ToArray());
+            _createMessagesCollection.Add(() => messages.Select(CreateEventData).ToArray());
             return this;
         }
 
