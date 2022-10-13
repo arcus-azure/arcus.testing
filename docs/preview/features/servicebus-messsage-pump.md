@@ -6,7 +6,7 @@ layout: default
 # Testing Azure Service Bus message handling
 
 ## Installation
-The following functionality is available when installing this package:
+Install this package to easily test your Service Bus message handlers:
 
 ```shell
 PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.ServiceBus
@@ -45,7 +45,7 @@ public class ShipmentAzureServiceBusMessageHandler : IAzureServiceBusMessageHand
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces order...
+        // Proces shipment...
     }
 }
 ```
@@ -161,7 +161,7 @@ public class MyTestMessageProducer : IAzureServiceBusMessageProducer
 }
 ```
 
-Such implementation can be pased along during the registration:
+Such implementation can be passed along during the registration:
 ```csharp
 var producer = new MyTestMessageProducer();
 services.AddTestServiceBusMessagePump(producer);
