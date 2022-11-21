@@ -3,8 +3,6 @@ title: "Home"
 layout: default
 ---
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Testing.Logging/)
-
 # Installation
 
 Easy to install via NuGet:
@@ -23,8 +21,6 @@ For more granular packages we recommend reading the documentation.
 # Features
 
 - [In-memory test secret provider the Arcus secret store](features/inmemory-secret-provider)
-- [In-memory test Azure Service Bus message pump](features/servicebus-messsage-pump.md)
-- [In-memory test Azure EventHubs message pump](features/eventhubs-messsage-pump.md)
 - [xUnit Logging and Logging Testing](features/logging)
 
 # License
