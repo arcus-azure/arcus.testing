@@ -19,7 +19,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
             var config = new LoggerConfiguration();
             
             // Act
-            config.WriteTo.AddXunitTestLogging(this);
+            config.WriteTo.XunitTestLogging(this);
 
             // Assert
             ILogger logger = config.CreateLogger();
@@ -36,7 +36,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => config.WriteTo.AddXunitTestLogging(outputWriter: null));
+                () => config.WriteTo.XunitTestLogging(outputWriter: null));
         }
 
         public void WriteLine(string message)
