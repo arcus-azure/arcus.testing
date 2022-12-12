@@ -9,6 +9,7 @@ This page describes functionality related to logging in tests.
 * [xUnit test logging](#xunit-test-logging)
 * [In-memory test logging](#in-memory-test-logging)
 * [Serilog in-memory log sink](#serilog-in-memory-log-sink)
+* [Serilog xUnit log sink](#serilog-xunit-log-sink)
 
 ## Installation
 
@@ -118,6 +119,7 @@ that collectes written log emits in-memory so the test infrastructure can assert
 ```csharp
 using Arcus.Testing.Logging;
 using Serilog;
+using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -130,4 +132,23 @@ logger.Information("This is an informational message");
 
 IEnumerable<LogEvent> emits = logSink.CurrentLogEmits;
 IEnumeratble<string> messages = logSink.CurrentLogMessages;
+```
+
+## Serilog xUnit log sink
+
+The `Arcus.Testing.Logging` library provides a `XunitTestLogSink` which is a [Serilog log sink](https://github.com/serilog/serilog/wiki/Configuration-Basics#sinks) that delegates written log emits to the xUnit test output.
+This can help in testing logging infrastructure as the xUnit test output will contain the information that is being tested.
+
+```csharp
+using Serilog;
+using Serilog.Configuration;
+
+// Injected in your test class.
+ITestOutputHelper outputWriter = ...
+
+var logger = new LoggerConfiguration()
+    .WriteTo.XunitTestLogging(outputWriter)
+    .CreateLogger();
+
+logger.Information("This informational message will be delegated to the xUnit test output");
 ```
