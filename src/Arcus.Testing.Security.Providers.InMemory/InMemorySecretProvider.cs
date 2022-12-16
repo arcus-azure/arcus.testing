@@ -9,7 +9,7 @@ namespace Arcus.Testing.Security.Providers.InMemory
     /// <summary>
     /// Represents an <see cref="ISecretProvider"/> implementation that stores the secret values in-memory.
     /// </summary>
-    public class InMemorySecretProvider : ISecretProvider
+    public class InMemorySecretProvider : ISyncSecretProvider
     {
         private readonly IDictionary<string, string> _secrets = new Dictionary<string, string>();
 
@@ -56,17 +56,12 @@ namespace Arcus.Testing.Security.Providers.InMemory
         /// <exception cref="T:System.ArgumentException">The <paramref name="secretName" /> must not be empty</exception>
         /// <exception cref="T:System.ArgumentNullException">The <paramref name="secretName" /> must not be null</exception>
         /// <exception cref="T:Arcus.Security.Core.SecretNotFoundException">The secret was not found, using the given name</exception>
-        public async Task<Secret> GetSecretAsync(string secretName)
+        public Task<Secret> GetSecretAsync(string secretName)
         {
             Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the test secret value");
 
-            string secretValue = await GetRawSecretAsync(secretName);
-            if (secretValue is null)
-            {
-                return null;
-            }
-
-            return new Secret(secretValue);
+            Secret secret = GetSecret(secretName);
+            return Task.FromResult(secret);
         }
 
         /// <summary>
@@ -81,12 +76,47 @@ namespace Arcus.Testing.Security.Providers.InMemory
         {
             Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the test secret value");
 
-            if (_secrets.TryGetValue(secretName, out string secretValue))
+            string secretValue = GetRawSecret(secretName);
+            return Task.FromResult(secretValue);
+        }
+
+        /// <summary>
+        /// Retrieves the secret value, based on the given name.
+        /// </summary>
+        /// <param name="secretName">The name of the secret key</param>
+        /// <returns>Returns a <see cref="T:Arcus.Security.Core.Secret" /> that contains the secret key</returns>
+        /// <exception cref="T:System.ArgumentException">Thrown when the <paramref name="secretName" /> is blank.</exception>
+        /// <exception cref="T:Arcus.Security.Core.SecretNotFoundException">Thrown when the secret was not found, using the given name.</exception>
+        public Secret GetSecret(string secretName)
+        {
+            Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the test secret value");
+
+            string secretValue = GetRawSecret(secretName);
+            if (secretValue is null)
             {
-                return Task.FromResult(secretValue);
+                return null;
             }
 
-            return Task.FromResult<string>(null);
+            return new Secret(secretValue);
+        }
+
+        /// <summary>
+        /// Retrieves the secret value, based on the given name.
+        /// </summary>
+        /// <param name="secretName">The name of the secret key</param>
+        /// <returns>Returns the secret key.</returns>
+        /// <exception cref="T:System.ArgumentException">Thrown when the <paramref name="secretName" /> is blank.</exception>
+        /// <exception cref="T:Arcus.Security.Core.SecretNotFoundException">Thrown when the secret was not found, using the given name.</exception>
+        public string GetRawSecret(string secretName)
+        {
+            Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the test secret value");
+
+            if (_secrets.TryGetValue(secretName, out string secretValue))
+            {
+                return secretValue;
+            }
+
+            return null;
         }
     }
 }
