@@ -1,4 +1,4 @@
----
+﻿---
 title: Security
 layout: default
 ---
@@ -17,6 +17,8 @@ PM> Install-Package -Name Arcus.Testing.Security.Providers.InMemory
 
 As an addition to the [Arcus Security](https://github.com/arcus-azure/arcus.security) package, we have added an in-memory `ISecretProvider` implementation. 
 This secret provider is created so you can test you secret store configuration with non-secret values in a easy manner, without implementing your own `ISecretProvider`.
+
+⚡ Supports [synchronous secret retrieval](https://security.arcus-azure.net/Features/secrets/general).
 
 After installing the package, the `.AddInMemory` extension should be available to you:
 

@@ -31,7 +31,7 @@ namespace Arcus.Testing.Tests.Unit.Security
         }
 
         [Fact]
-        public async Task ConfigureSecretStore_WithInMemorySecret_GetRawSecretSucceeds()
+        public async Task ConfigureSecretStore_WithInMemorySecret_GetRawSecretAsyncSucceeds()
         {
             // Arrange
             var builder = new HostBuilder();
@@ -51,7 +51,27 @@ namespace Arcus.Testing.Tests.Unit.Security
         }
 
         [Fact]
-        public async Task ConfigureSecretStore_WithInMemorySecret_GetSecretSucceeds()
+        public void ConfigureSecretStore_WithInMemorySecret_GetRawSecretSucceeds()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            string secretName = "MySecret";
+            string expected = $"secret-{Guid.NewGuid()}";
+
+            // Act
+            builder.ConfigureSecretStore((config, stores) => stores.AddInMemory(secretName, expected));
+
+            // Assert
+            using (IHost host = builder.Build())
+            {
+                var provider = host.Services.GetRequiredService<ISecretProvider>();
+                string actual = provider.GetRawSecret(secretName);
+                Assert.Equal(expected, actual);
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureSecretStore_WithInMemorySecret_GetSecretAsyncSucceeds()
         {
             // Arrange
             var builder = new HostBuilder();
@@ -71,7 +91,27 @@ namespace Arcus.Testing.Tests.Unit.Security
         }
 
         [Fact]
-        public async Task ConfigureSecretStore_WithInMemorySecrets_GetRawSecretSucceeds()
+        public void ConfigureSecretStore_WithInMemorySecret_GetSecretSucceeds()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            string secretName = "MySecret";
+            string expected = $"secret-{Guid.NewGuid()}";
+
+            // Act
+            builder.ConfigureSecretStore((config, stores) => stores.AddInMemory(secretName, expected));
+
+            // Assert
+            using (IHost host = builder.Build())
+            {
+                var provider = host.Services.GetRequiredService<ISecretProvider>();
+                Secret actual = provider.GetSecret(secretName);
+                Assert.Equal(expected, actual.Value);
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureSecretStore_WithInMemorySecrets_GetRawSecretAsyncSucceeds()
         {
             // Arrange
             var builder = new HostBuilder();
@@ -98,7 +138,33 @@ namespace Arcus.Testing.Tests.Unit.Security
         }
 
         [Fact]
-        public async Task ConfigureSecretStore_WithInMemorySecrets_GetSecretSucceeds()
+        public void ConfigureSecretStore_WithInMemorySecrets_GetRawSecretSucceeds()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            var secrets = new Dictionary<string, string>
+            {
+                ["MySecret-1"] = $"secret-{Guid.NewGuid()}",
+                ["MySecret-2"] = $"secret-{Guid.NewGuid()}",
+                ["MySecret-3"] = $"secret-{Guid.NewGuid()}"
+            };
+
+            // Act
+            builder.ConfigureSecretStore((config, stores) => stores.AddInMemory(secrets));
+
+            // Assert
+            using (IHost host = builder.Build())
+            {
+                var provider = host.Services.GetRequiredService<ISecretProvider>();
+                string[] results = secrets.Select(secret => provider.GetRawSecret(secret.Key)).ToArray();
+                
+                Assert.Equal(secrets.Count, results.Length);
+                Assert.All(secrets.Values, secretValue => Assert.Contains(secretValue, results));
+            }
+        }
+
+        [Fact]
+        public async Task ConfigureSecretStore_WithInMemorySecrets_GetSecretAsyncSucceeds()
         {
             // Arrange
             var builder = new HostBuilder();
@@ -118,6 +184,33 @@ namespace Arcus.Testing.Tests.Unit.Security
                 var provider = host.Services.GetRequiredService<ISecretProvider>();
                 IEnumerable<Task<Secret>> getSecrets = secrets.Select(async secret => await provider.GetSecretAsync(secret.Key));
                 Secret[] results = await Task.WhenAll(getSecrets);
+                string[] secretValues = results.Select(result => result.Value).ToArray();
+                
+                Assert.Equal(secrets.Count, results.Length);
+                Assert.All(secrets.Values, secretValue => Assert.Contains(secretValue, secretValues));
+            }
+        }
+
+        [Fact]
+        public void ConfigureSecretStore_WithInMemorySecrets_GetSecretSucceeds()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            var secrets = new Dictionary<string, string>
+            {
+                ["MySecret-1"] = $"secret-{Guid.NewGuid()}",
+                ["MySecret-2"] = $"secret-{Guid.NewGuid()}",
+                ["MySecret-3"] = $"secret-{Guid.NewGuid()}"
+            };
+
+            // Act
+            builder.ConfigureSecretStore((config, stores) => stores.AddInMemory(secrets));
+
+            // Assert
+            using (IHost host = builder.Build())
+            {
+                var provider = host.Services.GetRequiredService<ISecretProvider>();
+                Secret[] results = secrets.Select(secret => provider.GetSecret(secret.Key)).ToArray();
                 string[] secretValues = results.Select(result => result.Value).ToArray();
                 
                 Assert.Equal(secrets.Count, results.Length);
