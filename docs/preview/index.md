@@ -3,8 +3,6 @@ title: "Home"
 layout: default
 ---
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Testing.Logging?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Testing.Logging/)
-
 # Installation
 
 Easy to install via NuGet:
