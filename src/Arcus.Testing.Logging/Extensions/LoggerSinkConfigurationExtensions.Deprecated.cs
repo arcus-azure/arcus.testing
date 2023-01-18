@@ -1,10 +1,10 @@
 ﻿using System;
-using Arcus.Testing.Logging;
 using GuardNet;
+using Serilog;
+using Serilog.Configuration;
 using Xunit.Abstractions;
 
-// ReSharper disable once CheckNamespace
-namespace Serilog.Configuration
+namespace Arcus.Testing.Logging.Extensions
 {
     /// <summary>
     /// Extensions on the <see cref="LoggerSinkConfiguration"/> to more easily add Serilog sinks related to logging.
@@ -17,6 +17,7 @@ namespace Serilog.Configuration
         /// <param name="config">The Serilog sink configuration where the xUnit test logging will be added.</param>
         /// <param name="outputWriter">The xUnit test output writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or <paramref name="outputWriter"/> is <c>null</c>.</exception>
+        [Obsolete("Use the 'XunitTestLogging' extension in the 'Serilog.Configuration' namespace instead, remove the 'Arcus.Testing.Logging.Extensions' from your using statements")]
         public static LoggerConfiguration XunitTestLogging(
             this LoggerSinkConfiguration config, 
             ITestOutputHelper outputWriter)
