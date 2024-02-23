@@ -41,10 +41,16 @@ stages:
           - template: 'nuget/determine-pr-version.yml@templates'
             parameters:
               manualTriggerVersion: ${{ parameters['Package.Version.ManualTrigger'] }}
+          - task: UseDotNet@2
+            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.VersionBC)'
           - template: 'build/build-solution.yml@templates'
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               versionSuffix: '$(packageVersion)'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
           - task: CopyFiles@2
             displayName: 'Copy build artifacts'
             inputs:
@@ -71,10 +77,16 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.VersionBC)'
           - template: test/run-unit-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Unit'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
   - stage: IntegrationTests
     displayName: Integration Tests
@@ -91,11 +103,18 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.VersionBC)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Integration'
               category: 'Integration'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+
 
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'
