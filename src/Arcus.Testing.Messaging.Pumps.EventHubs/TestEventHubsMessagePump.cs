@@ -46,6 +46,11 @@ namespace Arcus.Testing.Messaging.Pumps.EventHubs
         }
 
         /// <summary>
+        /// Gets the unique ID to identify this message pump.
+        /// </summary>
+        public string JobId { get; } = Guid.NewGuid().ToString();
+
+        /// <summary>
         /// Triggered when the application host is ready to start the service.
         /// </summary>
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
@@ -58,7 +63,7 @@ namespace Arcus.Testing.Messaging.Pumps.EventHubs
             {
                 try
                 {
-                    var messageContext = AzureEventHubsMessageContext.CreateFrom(data, "arcus.testing.servicebus.windows.net", "$Default", "arcus.testing");
+                    var messageContext = AzureEventHubsMessageContext.CreateFrom(data, "arcus.testing.servicebus.windows.net", "$Default", "arcus.testing", JobId);
                     MessageCorrelationInfo correlationInfo = data.GetCorrelationInfo();
 
                     await _messageRouter.RouteMessageAsync(data, messageContext, correlationInfo, cancellationToken);
