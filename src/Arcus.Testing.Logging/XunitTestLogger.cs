@@ -60,4 +60,19 @@ namespace Arcus.Testing.Logging
             return null;
         }
     }
+
+    /// <summary>
+    /// <see cref="ILogger"/> representation of a xUnit <see cref="ITestOutputHelper"/> logger.
+    /// </summary>
+    /// <typeparam name="TCategoryName">The type who's name is used for the logger category name.</typeparam>
+    public class XunitTestLogger<TCategoryName> : XunitTestLogger, ILogger<TCategoryName>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="XunitTestLogger"/> class.
+        /// </summary>
+        /// <param name="testOutput">The xUnit test output logger.</param>
+        public XunitTestLogger(ITestOutputHelper testOutput) : base(testOutput)
+        {
+        }
+    }
 }
