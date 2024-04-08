@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Arcus.Testing</RootNamespace>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Description>Provides logging capabilities during Arcus testing</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Testing;Assert</PackageTags>
+    <PackageId>Arcus.Testing.Assert</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="XMLUnit.Core" Version="2.9.2" />
+  </ItemGroup>
+
+</Project>
