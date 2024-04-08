@@ -411,7 +411,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [Fact]
         public void Load_WithInvalidJson_FailsWithDescription()
         {
-            var exception = Assert.Throws<JsonException>(() => AssertJson.Load(Bogus.Random.String()));
+            var exception = Assert.Throws<System.Text.Json.JsonException>(
+                () => AssertJson.Load(Bogus.Random.Utf16String()));
+            
             Assert.Contains(nameof(AssertJson), exception.Message);
             Assert.Contains("JSON contents", exception.Message);
         }

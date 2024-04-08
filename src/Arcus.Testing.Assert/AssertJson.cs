@@ -247,7 +247,7 @@ namespace Arcus.Testing
 
             if (!identical)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherValue, expectedValue.GetPath());
+                return new JsonDifference(JsonDifferenceKind.ActualOtherValue, expected, actualValue);
             }
 
             return null;
@@ -332,7 +332,7 @@ namespace Arcus.Testing
                 JsonDifferenceKind.ActualIsNull => "actual JSON is null",
                 JsonDifferenceKind.ExpectedIsNull => "expected JSON is null",
                 JsonDifferenceKind.ActualOtherType => $"has {_actual} instead of {_expected} at {_path}",
-                JsonDifferenceKind.ActualOtherValue => $"actual JSON has a different value at {_path}",
+                JsonDifferenceKind.ActualOtherValue => $"actual JSON has a different value at {_path}, expected {_expected} while actual {_actual}",
                 JsonDifferenceKind.DifferentLength => $"has {_actual} elements instead of {_expected} at {_path}",
                 JsonDifferenceKind.ActualMissesProperty => $"actual JSON misses property at {_path}",
                 JsonDifferenceKind.ExpectedMissesProperty => $"expected JSON misses property at {_path}",

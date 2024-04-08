@@ -33,7 +33,7 @@
     <None Update="Assert_\Resources\xslt-transform.xml-xml.sample.output.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Assert_\Resources\xslt-transform .xml-xml.sample.transformer.xslt">
+    <None Update="Assert_\Resources\xslt-transform.xml-xml.sample.transformer.xslt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Assert_\Resources\xslt-transform.xml-xml.sample.input.xml">

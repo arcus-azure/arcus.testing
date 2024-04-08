@@ -140,7 +140,7 @@ namespace Arcus.Testing
             catch (XsltException exception)
             {
                 throw new XsltException(
-                    ReportBuilder.ForMethod($"{nameof(AssertXslt)}.{nameof(Load)}", $"cannot correctly load the XSlT contents due to a deserialization failure: {exception.Message}")
+                    ReportBuilder.ForMethod($"{nameof(AssertXslt)}.{nameof(Load)}", $"cannot correctly load the XSLT contents due to a deserialization failure: {exception.Message}")
                                  .AppendInput(xsltTransformer)
                                  .ToString(), exception);
             }
