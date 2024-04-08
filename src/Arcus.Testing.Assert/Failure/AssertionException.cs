@@ -3,6 +3,9 @@
 // ReSharper disable once CheckNamespace - place the exceptions in the root namespace for less clutter when exception is written to test output.
 namespace Arcus.Testing
 {
+    /// <summary>
+    /// Represents the root exception for any test assertions failure in the library.
+    /// </summary>
     [Serializable]
     public class AssertionException : Exception
     {

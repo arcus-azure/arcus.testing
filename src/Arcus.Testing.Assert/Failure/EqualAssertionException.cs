@@ -7,6 +7,7 @@ namespace Arcus.Testing
     /// <para>Represents the exception implementation that gets thrown when an actual result does not matches an expectation.</para>
     /// <para>See also: <see cref="AssertXml"/>, <see cref="AssertJson"/>.</para>
     /// </summary>
+    [Serializable]
     public class EqualAssertionException : AssertionException
     {
         /// <summary>
