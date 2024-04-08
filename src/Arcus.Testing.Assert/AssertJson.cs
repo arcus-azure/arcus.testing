@@ -307,10 +307,11 @@ namespace Arcus.Testing
         private static string Describe(JsonNode node)
         {
             JsonValueKind type = node.GetValueKind();
+            string nodeTxt = node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
             return type switch
             {
                 JsonValueKind.Undefined => "type none",
-                JsonValueKind.Object => $"an object: {node}",
+                JsonValueKind.Object => $"an object: {nodeTxt}",
                 JsonValueKind.Array => $"an array: {node}",
                 JsonValueKind.String => $"a string: {node}",
                 JsonValueKind.Number => $"a number: {node}",

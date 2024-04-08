@@ -260,13 +260,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "\"null\"",
                     "{ \"id\": 2 }",
-                    "has a string: null instead of an object: {\r\n  \"id\": 2\r\n} at $"
+                    "has a string: null instead of an object: {\"id\":2} at $"
                 };
                 yield return new object[]
                 {
                     "{ \"id\": 1 }",
                     "\"null\"",
-                    "has an object: {\r\n  \"id\": 1\r\n} instead of a string: null at $"
+                    "has an object: {\"id\":1} instead of a string: null at $"
                 };
                 yield return new object[]
                 {
@@ -332,7 +332,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"items\": [ { \"id\": 1 }, { \"id\": 3 }, { \"id\": 5 } ] }",
                     "{ \"items\": [ { \"id\": 1 }, { \"id\": 2 } ] }",
-                    "has 3 elements instead of 2 at $.items\r\n"
+                    "has 3 elements instead of 2 at $.items"
                 };
                 yield return new object[]
                 {
