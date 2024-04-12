@@ -34,7 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Guard.Net" Version="3.0.0" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="xunit.abstractions" Version="2.0.1" />
   </ItemGroup>

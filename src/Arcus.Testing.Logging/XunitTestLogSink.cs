@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 using Serilog.Core;
 using Serilog.Events;
 using Xunit.Abstractions;
@@ -20,7 +19,11 @@ namespace Arcus.Testing.Logging
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public XunitLogEventSink(ITestOutputHelper outputWriter)
         {
-            Guard.NotNull(outputWriter, nameof(outputWriter), "Requires a xUnit test output writer to write Serilog log messages to the xUnit test output");
+            if (outputWriter is null)
+            {
+                throw new ArgumentNullException(nameof(outputWriter));
+            }
+
             _outputWriter = outputWriter;
         }
 

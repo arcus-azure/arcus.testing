@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Testing.Logging
@@ -33,7 +32,10 @@ namespace Arcus.Testing.Logging
         /// <typeparam name="TState">The type of the object to be written.</typeparam>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            Guard.NotNull(formatter, nameof(formatter));
+            if (formatter is null)
+            {
+                throw new ArgumentNullException(nameof(formatter));
+            }
 
             string message = formatter(state, exception);
 

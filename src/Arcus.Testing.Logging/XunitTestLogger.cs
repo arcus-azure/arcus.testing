@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
@@ -18,7 +17,10 @@ namespace Arcus.Testing.Logging
         /// <param name="testOutput">The xUnit test output logger.</param>
         public XunitTestLogger(ITestOutputHelper testOutput)
         {
-            Guard.NotNull(testOutput, nameof(testOutput));
+            if (testOutput is null)
+            {
+                throw new ArgumentNullException(nameof(testOutput));
+            }
 
             _testOutput = testOutput;
         }
