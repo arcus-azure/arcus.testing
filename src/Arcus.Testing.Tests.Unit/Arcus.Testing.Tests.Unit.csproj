@@ -9,6 +9,14 @@
     <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="3.0.0" />
     <PackageReference Include="Bogus" Version="29.0.2" />
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="FsCheck.Xunit" Version="2.16.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck.Xunit;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
@@ -14,13 +13,27 @@ namespace Arcus.Testing.Tests.Unit.Assert_
     {
         private static readonly Faker Bogus = new();
 
+        [Fact]
+        public void Compare_WithDifferentPropertyName_FailsWithDescription()
+        {
+            // Arrange
+            TestJson expected = TestJson.GenerateObject();
+            TestJson actual = expected.Copy();
+
+            string newName = Bogus.Lorem.Word();
+            actual.InsertProperty(newName);
+
+            // Act / Assert
+            CompareShouldFailWithDifference(actual, expected, "misses property", newName);
+        }
+
         [Property]
         public void Compare_SameJson_Succeeds()
         {
-            string expected = RandomJson();
-            string actual = expected;
+            TestJson expected = TestJson.Generate();
+            TestJson actual = expected.Copy();
 
-            AssertJson.Equal(expected, actual);
+            AssertJson.Equal(expected.ToString(), actual.ToString());
         }
 
         [Property]
@@ -28,14 +41,16 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string[] diffExpectedNames = CreateNodeNames("diff-");
-            string expected = RandomJson();
-            string expectedDiff = diffExpectedNames.Aggregate(expected, AppendNode);
+            TestJson expected = TestJson.GenerateObject();
+            TestJson actual = expected.Copy();
+
+            Assert.All(diffExpectedNames, expected.InsertProperty);
 
             string[] diffActualNames = CreateNodeNames("diff-");
-            string actual = diffActualNames.Aggregate(expected, AppendNode);
+            Assert.All(diffActualNames, actual.InsertProperty);
 
             // Act / Assert
-            Equal(expectedDiff, actual, options =>
+            Equal(expected.ToString(), actual.ToString(), options =>
             {
                 Assert.All(diffExpectedNames.Concat(diffActualNames), name => options.IgnoreNode(name));
             });
@@ -46,78 +61,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return Bogus.Make(Bogus.Random.Int(5, 10), () => prefix + CreateNodeName()).ToArray();
         }
 
-        private static string AppendNode(string json, string nodeName)
-        {
-            JToken token = JToken.Parse(json);
-            token[nodeName] = JToken.Parse(CreateNodeValue());
-
-            return token.ToString();
-        }
-
         [Property]
         public void Compare_DiffJson_Fails()
         {
-            string expected = RandomJson();
-            string actual = RandomJson();
+            TestJson expected = TestJson.Generate();
+            TestJson actual = TestJson.Generate();
 
-            Assert.Throws<EqualAssertionException>(() => Equal(expected, actual));
-        }
-
-        private static string RandomJson()
-        {
-            int maxDepth = Bogus.Random.Int(1, 3);
-            StringBuilder Recurse(StringBuilder acc, int depth)
-            {
-                if (depth >= maxDepth)
-                {
-                    string nodeName = CreateNodeName();
-                    string nodeValue = CreateNodeValue();
-                    acc.AppendLine($"\"{nodeName}\": {nodeValue}");
-
-                    return acc;
-                }
-
-                string[] nodeNames = Bogus.Make(Bogus.Random.Int(1, 10), CreateNodeName).ToArray();
-                for (var index = 0; index < nodeNames.Length; index++)
-                {
-                    string name = nodeNames[index];
-                    if (Bogus.Random.Bool())
-                    {
-                        string nodeValue = CreateNodeValue();
-                        acc.AppendLine($"\"{name}\": {nodeValue}");
-                    }
-                    else
-                    {
-                        string nodeName = CreateNodeName();
-                        acc.AppendLine($"\"{nodeName}\": {{");
-                        Recurse(acc, depth + 1);
-                        acc.AppendLine("}");
-                    }
-
-                    bool isNotLast = index < nodeNames.Length - 1;
-                    if (isNotLast)
-                    {
-                        acc.Append(',');
-                    }
-                }
-
-                return acc;
-            }
-
-            var builder = new StringBuilder();
-            builder.AppendLine("{");
-            builder = Recurse(builder, 0);
-            builder.AppendLine("}");
-
-            return builder.ToString();
-        }
-
-        private static string CreateNodeValue()
-        {
-            return Bogus.PickRandom(
-                Bogus.Random.Int().ToString(),
-                "\"" + Bogus.Lorem.Word() + "\"",
-                Bogus.Random.Bool().ToString().ToLower());
+            Assert.Throws<EqualAssertionException>(() => Equal(expected.ToString(), actual.ToString()));
         }
 
         private static string CreateNodeName()
@@ -336,9 +286,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 };
                 yield return new object[]
                 {
-                    "{ \"foo\": \"1\" }",
+                    "{ \"foo\": \"test\" }",
                     "{ \"foo\": 1 }",
-                    "has a string: 1 instead of a number: 1 at $.foo"
+                    "has a string: test instead of a number: 1 at $.foo"
                 };
                 yield return new object[]
                 {
@@ -357,14 +307,22 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         private static void CompareShouldFailWithDifference(
+            TestJson actual,
+            TestJson expected,
+            params string[] expectedDifferences)
+        {
+            CompareShouldFailWithDifference(actual.ToString(), expected.ToString(), expectedDifferences);
+        }
+
+        private static void CompareShouldFailWithDifference(
             string actualJson,
             string expectedJson,
-            string expectedDifference)
+            params string[] expectedDifferences)
         {
             var exception = Assert.ThrowsAny<AssertionException>(
-                () => Equal(expectedJson, actualJson));
+                () => Equal(expectedJson, actualJson, options => options.MaxInputCharacters = int.MaxValue));
 
-            Assert.Contains(expectedDifference, exception.Message);
+            Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
         }
 
         [Fact]
@@ -404,7 +362,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             }
             else
             {
-                AssertJson.Equal(AssertJson.Load(expected), AssertJson.Load(actual), configureOptions);
+                AssertJson.Equal(
+                    AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
+                    AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
+                    configureOptions);
             }
         }
 

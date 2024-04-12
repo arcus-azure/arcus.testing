@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Arcus.Testing.Failure;
+using static Arcus.Testing.JsonDifferenceKind;
 
 namespace Arcus.Testing
 {
@@ -14,6 +15,7 @@ namespace Arcus.Testing
     public class AssertJsonOptions
     {
         private readonly Collection<string> _ignoredNodeNames = new();
+        private int _maxInputCharacters;
 
         /// <summary>
         /// Adds a local element node name which will get ignored when comparing JSON documents.
@@ -35,6 +37,24 @@ namespace Arcus.Testing
         /// Gets the configured ignored names of JSON documents.
         /// </summary>
         internal IEnumerable<string> IgnoredNodeNames => _ignoredNodeNames;
+
+        /// <summary>
+        /// Gets or sets the maximum characters of the expected and actual inputs should be written to the test output.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is lower than zero.</exception>
+        public int MaxInputCharacters
+        {
+            get => _maxInputCharacters;
+            set
+            {
+                if (value < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
+                }
+
+                _maxInputCharacters = value;
+            }
+        }
     }
 
     /// <summary>
@@ -42,7 +62,9 @@ namespace Arcus.Testing
     /// </summary>
     public static class AssertJson
     {
-        private const string JsonRootPath = "$";
+        private const string JsonRootPath = "$",
+                             EqualMethodName = $"{nameof(AssertJson)}.{nameof(Equal)}",
+                             LoadMethodName = $"{nameof(AssertJson)}.{nameof(Load)}";
 
         /// <summary>
         /// Verifies if the given raw <paramref name="expectedJson"/> is the same as the <paramref name="actualJson"/>.
@@ -104,10 +126,10 @@ namespace Arcus.Testing
                 string actualJson = actual?.ToString() ?? "null";
 
                 throw new EqualAssertionException(
-                    ReportBuilder.ForMethod($"{nameof(AssertJson)}.{nameof(Equal)}", "expected and actual JSON contents do not match")
-                                     .AppendLine(diff.ToString())
-                                     .AppendDiff(expectedJson, actualJson)
-                                     .ToString());
+                    ReportBuilder.ForMethod(EqualMethodName, "expected and actual JSON contents do not match")
+                                 .AppendLine(diff.ToString())
+                                 .AppendDiff(expectedJson, actualJson, options.MaxInputCharacters)
+                                 .ToString());
             }
         }
 
@@ -120,12 +142,12 @@ namespace Arcus.Testing
 
             if (actual is null)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualIsNull, JsonRootPath);
+                return new JsonDifference(ActualIsNull, JsonRootPath);
             }
 
             if (expected is null)
             {
-                return new JsonDifference(JsonDifferenceKind.ExpectedIsNull, JsonRootPath);
+                return new JsonDifference(ExpectedIsNull, JsonRootPath);
             }
 
             return CompareJsonNode(expected, actual, options);
@@ -138,8 +160,8 @@ namespace Arcus.Testing
                 JsonArray actualArray => CompareJsonArray(expected, actualArray, options),
                 JsonObject actualObject => CompareJsonObject(expected, actualObject, options),
                 JsonValue actualValue => CompareJsonValue(expected, actualValue),
-                null => expected is null ? null : new JsonDifference(JsonDifferenceKind.ActualIsNull, expected.GetPath()),
-                _ => throw new NotSupportedException(),
+                null => expected is null ? null : new JsonDifference(ActualIsNull, expected.GetPath()),
+                _ => null
             };
         }
 
@@ -147,7 +169,7 @@ namespace Arcus.Testing
         {
             if (expected is not JsonArray expectedArray)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherType, expected, actualArray);
+                return new(ActualOtherType, expected, actualArray);
             }
 
             JsonNode[] actualChildren = actualArray.ToArray();
@@ -155,10 +177,10 @@ namespace Arcus.Testing
 
             if (actualChildren.Length != expectedChildren.Length)
             {
-                return new JsonDifference(JsonDifferenceKind.DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
+                return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
             }
 
-            return actualChildren.Select((t, i) => CompareJsonNode(expectedChildren[i], t, options))
+            return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
                                  .FirstOrDefault(firstDifference => firstDifference != null);
         }
 
@@ -166,7 +188,7 @@ namespace Arcus.Testing
         {
             if (expected is not JsonObject expectedObject)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherType, expected, actual);
+                return new(ActualOtherType, expected, actual);
             }
 
             Dictionary<string, JsonNode> expectedDir = CreateDictionary(expectedObject, options);
@@ -174,13 +196,12 @@ namespace Arcus.Testing
 
             if (TryGetValue(expectedDir, key => !actualDir.ContainsKey(key), out JsonNode missingActualPair))
             {
-                return new JsonDifference(JsonDifferenceKind.ActualMissesProperty, missingActualPair.GetPath());
-
+                return new(ActualMissesProperty, missingActualPair.GetPath());
             }
 
             if (TryGetValue(actualDir, key => !expectedDir.ContainsKey(key), out JsonNode missingExpectedPair))
             {
-                return new JsonDifference(JsonDifferenceKind.ExpectedMissesProperty, missingExpectedPair.GetPath());
+                return new(ExpectedMissesProperty, missingExpectedPair.GetPath());
             }
 
             foreach (KeyValuePair<string, JsonNode> expectedPair in expectedDir)
@@ -209,7 +230,7 @@ namespace Arcus.Testing
             catch (ArgumentException exception)
             {
                 throw new JsonException(
-                    ReportBuilder.ForMethod($"{nameof(AssertJson)}.{nameof(Equal)}", $"cannot load the JSON contents to a dictionary to to invalid keys, please use unique JSON keys: {exception.Message}")
+                    ReportBuilder.ForMethod(EqualMethodName, $"cannot load the JSON contents to a dictionary to to invalid keys, please use unique JSON keys: {exception.Message}")
                                  .AppendInput(node.ToString())
                                  .ToString(), exception);
             }
@@ -225,12 +246,12 @@ namespace Arcus.Testing
         {
             if (expected is not JsonValue expectedValue)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherType, expected, actualValue);
+                return new(ActualOtherType, expected, actualValue);
             }
 
             if (actualValue.GetValueKind() != expectedValue.GetValueKind())
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherType, expectedValue, actualValue);
+                return new(ActualOtherType, expectedValue, actualValue);
             }
 
             bool identical = expectedValue.GetValueKind() switch
@@ -247,7 +268,7 @@ namespace Arcus.Testing
 
             if (!identical)
             {
-                return new JsonDifference(JsonDifferenceKind.ActualOtherValue, expected, actualValue);
+                return new(ActualOtherValue, expected, actualValue);
             }
 
             return null;
@@ -262,15 +283,34 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the <paramref name="json"/> could not be successfully loaded into a structured JSON document.</exception>
         public static JsonNode Load(string json)
         {
-            var options = new JsonNodeOptions { PropertyNameCaseInsensitive = true };
+            return Load(json, configureNodeOptions: null, configureDocOptions: null);
+        }
+
+        /// <summary>
+        /// Loads the given raw <paramref name="json"/> contents into a structured JSON document.
+        /// </summary>
+        /// <param name="json">The raw JSON input contents.</param>
+        /// <param name="configureNodeOptions">The function to configure the options to control the node node behavior after parsing.</param>
+        /// <param name="configureDocOptions">The function to configure the options to control the document behavior during parsing.</param>
+        /// <returns>The loaded JSON node; or <c>null</c> in case of a Null JSON node.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="json"/> is <c>null</c>.</exception>
+        /// <exception cref="JsonException">Thrown when the <paramref name="json"/> could not be successfully loaded into a structured JSON document.</exception>
+        public static JsonNode Load(string json, Action<JsonNodeOptions> configureNodeOptions, Action<JsonDocumentOptions> configureDocOptions)
+        {
+            var nodeOptions = new JsonNodeOptions { PropertyNameCaseInsensitive = true };
+            configureNodeOptions?.Invoke(nodeOptions);
+
+            var docOptions = new JsonDocumentOptions();
+            configureDocOptions?.Invoke(docOptions);
+
             try
             {
-                return JsonNode.Parse(json ?? throw new ArgumentNullException(nameof(json)), options);
+                return JsonNode.Parse(json ?? throw new ArgumentNullException(nameof(json)), nodeOptions, docOptions);
             }
             catch (JsonException exception)
             {
                 throw new JsonException(
-                    ReportBuilder.ForMethod($"{nameof(AssertJson)}.{nameof(Load)}", $"cannot correctly load the JSON contents to a deserialization failure: {exception.Message}")
+                    ReportBuilder.ForMethod(LoadMethodName, $"cannot correctly load the JSON contents to a deserialization failure: {exception.Message}")
                                  .AppendInput(json)
                                  .ToString(), exception);
             }
@@ -330,14 +370,14 @@ namespace Arcus.Testing
         {
             return _kind switch
             {
-                JsonDifferenceKind.ActualIsNull => "actual JSON is null",
-                JsonDifferenceKind.ExpectedIsNull => "expected JSON is null",
-                JsonDifferenceKind.ActualOtherType => $"has {_actual} instead of {_expected} at {_path}",
-                JsonDifferenceKind.ActualOtherValue => $"actual JSON has a different value at {_path}, expected {_expected} while actual {_actual}",
-                JsonDifferenceKind.DifferentLength => $"has {_actual} elements instead of {_expected} at {_path}",
-                JsonDifferenceKind.ActualMissesProperty => $"actual JSON misses property at {_path}",
-                JsonDifferenceKind.ExpectedMissesProperty => $"expected JSON misses property at {_path}",
-                JsonDifferenceKind.ActualMissesElement => $"actual JSON misses expected JSON element {_path}",
+                ActualIsNull => "actual JSON is null",
+                ExpectedIsNull => "expected JSON is null",
+                ActualOtherType => $"has {_actual} instead of {_expected} at {_path}",
+                ActualOtherValue => $"actual JSON has a different value at {_path}, expected {_expected} while actual {_actual}",
+                DifferentLength => $"has {_actual} elements instead of {_expected} at {_path}",
+                ActualMissesProperty => $"actual JSON misses property at {_path}",
+                ExpectedMissesProperty => $"expected JSON misses property at {_path}",
+                ActualMissesElement => $"actual JSON misses expected JSON element {_path}",
                 _ => throw new ArgumentOutOfRangeException("Unknown difference kind type", innerException: null),
             };
         }
