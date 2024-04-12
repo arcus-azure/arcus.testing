@@ -137,7 +137,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// </summary>
         public void ChangeRandomlyElementValue(string newValue)
         {
-            XmlElement element = SelectRandomlyElement(n => n.FirstChild is XmlText);
+            XmlElement element = SelectRandomlyElement();
             element.InnerText = newValue;
         }
 

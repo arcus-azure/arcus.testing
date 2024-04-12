@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
     {
         private static readonly Faker Bogus = new();
 
-        [Fact]
+        [Property]
         public void Compare_WithDifferentPropertyName_FailsWithDescription()
         {
             // Arrange

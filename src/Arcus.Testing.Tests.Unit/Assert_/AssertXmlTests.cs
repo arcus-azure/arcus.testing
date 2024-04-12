@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
     {
         private static readonly Faker Bogus = new();
 
-        [Fact]
+        [Property]
         public void Compare_DiffElementName_FailsWithDescription()
         {
             // Arrange
@@ -38,7 +38,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "has a different value at", "while actual");
         }
 
-        [Fact]
+        [Property]
         public void Compare_DiffElementValue_FailsWithDescription()
         {
             // Arrange
@@ -63,7 +63,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "different namespace");
         }
 
-        [Fact]
+        [Property]
         public void Compare_DiffElementCount_FailsWithDescription()
         {
             // Arrange
@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "has", "element(s)", "instead of");
         }
 
-        [Fact]
+        [Property]
         public void Compare_WithDiffAttributeName_FailsWithDescription()
         {
             // Arrange
@@ -90,7 +90,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "different name", "attribute", newName);
         }
 
-        [Fact]
+        [Property]
         public void Compare_WithDiffAttributeValue_FailsWithDescription()
         {
             // Arrange
@@ -104,7 +104,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "different value", "@", newValue);
         }
 
-        [Fact]
+        [Property]
         public void Compare_WithDiffAttributeCount_FailsWithDescription()
         {
             // Arrange
@@ -117,7 +117,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(actual, expected, "has", "attribute(s)", "instead of");
         }
 
-        [Fact]
+        [Property]
         public void Compare_WithDiffAttributeNamespace_FailsWithDescription()
         {
             // Arrange
@@ -344,7 +344,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return Bogus.Make(Bogus.Random.Int(5, 10), () => prefix + TestXml.GenNodeName()).ToArray();
         }
 
-        [Fact]
+        [Property]
         public void Compare_DiffXml_Fails()
         {
             string expected = TestXml.Generate().ToString();
@@ -352,7 +352,6 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             Assert.ThrowsAny<AssertionException>(() => Equal(expected, actual));
         }
-
 
         private static void CompareShouldFailWithDifference(TestXml actual, TestXml expected, params string[] expectedDifferences)
         {

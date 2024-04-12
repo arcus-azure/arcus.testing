@@ -458,7 +458,7 @@ namespace Arcus.Testing
         {
             if (node is null)
             {
-                throw new ArgumentNullException(nameof(node));
+                return "null";
             }
 
             return node.NodeType switch
