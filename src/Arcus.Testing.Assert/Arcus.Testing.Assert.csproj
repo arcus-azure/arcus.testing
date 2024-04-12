@@ -5,7 +5,7 @@
     <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides logging capabilities during Arcus testing</Description>
+    <Description>Provides assertion capabilities during Arcus testing</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
