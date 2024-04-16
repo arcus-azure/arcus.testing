@@ -1,5 +1,8 @@
 ﻿using System.IO;
+using System.Text.Json;
+using System.Xml;
 using System.Xml.Xsl;
+using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using Xunit;
 
@@ -40,6 +43,58 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             // Assert
             AssertJson.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TransformJson_WithInvalidOutput_FailsWithDescription()
+        {
+            // Arrange
+            string xslt = 
+                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                "<xsl:template match=\"/\"><root/></xsl:template></xsl:stylesheet>";
+
+            string input = TestXml.Generate().ToString();
+
+            // Act / Assert
+            var exception = Assert.ThrowsAny<JsonException>(() => TransformJson(xslt, input));
+            Assert.Contains(nameof(AssertJson), exception.Message);
+            Assert.Contains("deserialization failure", exception.Message);
+        }
+
+        [Fact]
+        public void TransformXml_WithInvalidOutput_FailsWithDescription()
+        {
+            // Arrange
+            string xslt = 
+                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                "<xsl:template match=\"/\">{ \"root\": [] }</xsl:template></xsl:stylesheet>";
+
+            string input = TestXml.Generate().ToString();
+
+            // Act / Assert
+            var exception = Assert.ThrowsAny<XmlException>(() => TransformXml(xslt, input));
+            Assert.Contains(nameof(AssertXml), exception.Message);
+            Assert.Contains("deserialization failure", exception.Message);
+        }
+
+        [Fact]
+        public void Transform_WithInvalidTransformation_FailsWithDescription()
+        {
+            // Arrange
+            string xslt = 
+                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                    "<xsl:template match=\"/\"><xsl:message terminate=\"yes\">NotImplementedException</xsl:message></xsl:template></xsl:stylesheet>";
+
+            string input = TestXml.Generate().ToString();
+
+            // Act / Assert
+            Assert.All(new[] { TransformXml, TransformJson }, transform =>
+            {
+                var exception = Assert.ThrowsAny<XsltException>(() => transform(xslt, input));
+
+                Assert.Contains(nameof(AssertXslt), exception.Message);
+                Assert.Contains("transformation failure", exception.Message);
+            });
         }
 
         private static string ReadResourceFileByName(string fileName)

@@ -57,8 +57,8 @@ namespace Arcus.Testing.Failure
         internal ReportBuilder AppendInput(string input)
         {
             _report.AppendLine();
-            _report.Append("Input:");
-            _report.Append(input);
+            _report.AppendLine("Input:");
+            _report.AppendLine(input);
 
             return this;
         }

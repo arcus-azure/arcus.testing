@@ -13,7 +13,8 @@ namespace Arcus.Testing
     /// </summary>
     public static class AssertXslt
     {
-        private const string LoadMethodName = $"{nameof(AssertXslt)}.{nameof(Load)}";
+        private const string TransformMethodName = $"{nameof(AssertXslt)}.{nameof(Transform)}",
+                             LoadMethodName = $"{nameof(AssertXslt)}.{nameof(Load)}";
 
         /// <summary>
         /// Transforms the raw <paramref name="inputXml"/> with the given raw <paramref name="xsltTransformer"/> to a XML output.
@@ -22,7 +23,9 @@ namespace Arcus.Testing
         /// <param name="inputXml">The raw XML input contents, subject to the XSLT transformation.</param>
         /// <returns>The raw XML result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="xsltTransformer"/> or the <paramref name="inputXml"/> is <c>null</c>.</exception>
-        /// <exception cref="XsltException">Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance.</exception>
+        /// <exception cref="XsltException">
+        ///     Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance or the transformation was not successful.
+        /// </exception>
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> or output could not be successfully loaded into a structured XML document.</exception>
         public static string TransformXml(string xsltTransformer, string inputXml)
         {
@@ -40,7 +43,9 @@ namespace Arcus.Testing
         /// <param name="arguments">The additional run-time arguments for the XSLT transformation.</param>
         /// <returns>The raw XML result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="xsltTransformer"/> or the <paramref name="inputXml"/> is <c>null</c>.</exception>
-        /// <exception cref="XsltException">Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance.</exception>
+        /// <exception cref="XsltException">
+        ///     Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance or the transformation was not successful.
+        /// </exception>
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> or output could not be successfully loaded into a structured XML document.</exception>
         public static string TransformXml(string xsltTransformer, string inputXml, XsltArgumentList arguments)
         {
@@ -58,6 +63,7 @@ namespace Arcus.Testing
         /// <param name="input">The XML input contents, subject to the XSLT transformation.</param>
         /// <returns>The XML result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
         public static XmlNode TransformXml(XslCompiledTransform transformer, XmlNode input)
         {
@@ -75,15 +81,32 @@ namespace Arcus.Testing
         /// <param name="arguments">The additional run-time arguments for the XSLT transformation.</param>
         /// <returns>The XML result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
         public static XmlNode TransformXml(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
-            string xml = Transform(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)),
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments);
+            if (transformer is null)
+            {
+                throw new ArgumentNullException(nameof(transformer));
+            }
 
-            return AssertXml.Load(xml);
+            if (input is null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            try
+            {
+                string xml = Transform(transformer, input, arguments);
+                return AssertXml.Load(xml);
+            }
+            catch (XsltException exception)
+            {
+                throw new XsltException(
+                    ReportBuilder.ForMethod(TransformMethodName, $"cannot correctly transform XML input to XML due to a transformation failure: {exception.Message}")
+                                 .AppendInput(input.OuterXml)
+                                 .ToString(), exception);
+            }
         }
 
         /// <summary>
@@ -93,7 +116,9 @@ namespace Arcus.Testing
         /// <param name="inputXml">The raw XML input contents, subject to the XSLT transformation.</param>
         /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="xsltTransformer"/> or the <paramref name="inputXml"/> is <c>null</c>.</exception>
-        /// <exception cref="XsltException">Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance.</exception>
+        /// <exception cref="XsltException">
+        ///     Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance or the transformation was not successful.
+        /// </exception>
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> could not be successfully loaded into a structured XML document.</exception>
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static string TransformJson(string xsltTransformer, string inputXml)
@@ -112,7 +137,9 @@ namespace Arcus.Testing
         /// <param name="arguments">The additional run-time arguments for the XSLT transformation.</param>
         /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="xsltTransformer"/> or the <paramref name="inputXml"/> is <c>null</c>.</exception>
-        /// <exception cref="XsltException">Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance.</exception>
+        /// <exception cref="XsltException">
+        ///     Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance or the transformation was not successful.
+        /// </exception>
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> could not be successfully loaded into a structured XML document.</exception>
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static string TransformJson(string xsltTransformer, string inputXml, XsltArgumentList arguments)
@@ -122,6 +149,67 @@ namespace Arcus.Testing
 
             JsonNode token = TransformJson(transformer, input, arguments);
             return token.ToString();
+        }
+
+        /// <summary>
+        /// Transforms the raw <paramref name="input"/> with the given raw <paramref name="transformer"/> to a JSON output.
+        /// </summary>
+        /// <param name="transformer">The raw XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
+        /// <param name="input">The raw XML input contents, subject to the XSLT transformation.</param>
+        /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
+        /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
+        public static JsonNode TransformJson(XslCompiledTransform transformer, XmlNode input)
+        {
+            return TransformJson(
+                transformer ?? throw new ArgumentNullException(nameof(transformer)),
+                input ?? throw new ArgumentNullException(nameof(input)),
+                arguments: null);
+        }
+
+        /// <summary>
+        /// Transforms the raw <paramref name="input"/> with the given raw <paramref name="transformer"/> to a JSON output.
+        /// </summary>
+        /// <param name="transformer">The raw XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
+        /// <param name="input">The raw XML input contents, subject to the XSLT transformation.</param>
+        /// <param name="arguments">The additional run-time arguments for the XSLT transformation.</param>
+        /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
+        /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
+        public static JsonNode TransformJson(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
+        {
+            if (input is null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
+
+            if (transformer is null)
+            {
+                throw new ArgumentNullException(nameof(transformer));
+            }
+
+            try
+            {
+                string json = Transform(transformer, input, arguments);
+                return AssertJson.Load(json);
+            }
+            catch (XsltException exception)
+            {
+                throw new XsltException(
+                    ReportBuilder.ForMethod(TransformMethodName, $"cannot correctly transform XML input to JSON due to a transformation failure: {exception.Message}")
+                                 .AppendInput(input.OuterXml)
+                                 .ToString(), exception);
+            }
+        }
+
+        private static string Transform(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments = null)
+        {
+            using var txtWriter = new StringWriter();
+            transformer.Transform(input, arguments, txtWriter);
+
+            return txtWriter.ToString();
         }
 
         /// <summary>
@@ -149,49 +237,6 @@ namespace Arcus.Testing
                                  .AppendInput(xsltTransformer)
                                  .ToString(), exception);
             }
-        }
-
-        /// <summary>
-        /// Transforms the raw <paramref name="input"/> with the given raw <paramref name="transformer"/> to a JSON output.
-        /// </summary>
-        /// <param name="transformer">The raw XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
-        /// <param name="input">The raw XML input contents, subject to the XSLT transformation.</param>
-        /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
-        /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
-        public static JsonNode TransformJson(XslCompiledTransform transformer, XmlNode input)
-        {
-            return TransformJson(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)),
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments: null);
-        }
-
-        /// <summary>
-        /// Transforms the raw <paramref name="input"/> with the given raw <paramref name="transformer"/> to a JSON output.
-        /// </summary>
-        /// <param name="transformer">The raw XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
-        /// <param name="input">The raw XML input contents, subject to the XSLT transformation.</param>
-        /// <param name="arguments">The additional run-time arguments for the XSLT transformation.</param>
-        /// <returns>The raw JSON result of the XSLT stylesheet transformation.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
-        /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
-        public static JsonNode TransformJson(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
-        {
-            string json = Transform(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)),
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments);
-            
-            return AssertJson.Load(json);
-        }
-
-        private static string Transform(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments = null)
-        {
-            using var txtWriter = new StringWriter();
-            transformer.Transform(input, arguments, txtWriter);
-
-            return txtWriter.ToString();
         }
     }
 }
