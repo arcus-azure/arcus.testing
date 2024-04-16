@@ -90,7 +90,7 @@ The library has an `AssertXslt` class that exposes useful test assertions when d
 🎖️ Since the XSLT transformation execution is now run as a test assertion, any failure during transformation or loading of the input/output/transformation will be reported to the tester in a humanly readable manner.
 
 ```csharp
-using Arcus.Testing.Assert;
+using Arcus.Testing;
 
 // XML -> XML
 // ----------------------------------------------------
