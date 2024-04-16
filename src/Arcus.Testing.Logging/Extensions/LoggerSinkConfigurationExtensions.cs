@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Testing.Logging;
-using GuardNet;
 using Xunit.Abstractions;
 
 // ReSharper disable once CheckNamespace
@@ -21,8 +20,15 @@ namespace Serilog.Configuration
             this LoggerSinkConfiguration config, 
             ITestOutputHelper outputWriter)
         {
-            Guard.NotNull(config, nameof(config), "Requires a Serilog logger configuration instance to add the xUnit test logging");
-            Guard.NotNull(outputWriter, nameof(outputWriter), "Requires a xUnit test output writer to write Serilog log messages to the xUnit test output");
+            if (config is null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            if (outputWriter is null)
+            {
+                throw new ArgumentNullException(nameof(outputWriter));
+            }
 
             return config.Sink(new XunitLogEventSink(outputWriter));
         }

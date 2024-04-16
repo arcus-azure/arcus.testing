@@ -5,7 +5,6 @@ using Serilog;
 using Serilog.Configuration;
 using Xunit;
 using Xunit.Abstractions;
-using LoggerSinkConfigurationExtensions = Arcus.Testing.Logging.Extensions.LoggerSinkConfigurationExtensions;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
@@ -30,24 +29,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
-        public void AddXunitTestLoggingDeprecated_WithXunitOutputWriter_Succeeds()
-        {
-            // Arrange
-            var config = new LoggerConfiguration();
-            
-            // Act
-#pragma warning disable CS0618 // Until deprecated extension is removed.
-            LoggerSinkConfigurationExtensions.XunitTestLogging(config.WriteTo, this);
-#pragma warning restore CS0618
-
-            // Assert
-            ILogger logger = config.CreateLogger();
-            var expected = "This information message should be present in the xUnit test output writer";
-            logger.Information(expected);
-            Assert.Single(_messages, expected);
-        }
-
-        [Fact]
         public void AddXunitTestLogging_WithoutOutputWriter_Fails()
         {
             // Arrange
@@ -56,19 +37,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => config.WriteTo.XunitTestLogging(outputWriter: null));
-        }
-
-        [Fact]
-        public void AddXunitTestLoggingDeprecated_WithoutOutputWriter_Fails()
-        {
-            // Arrange
-            var config = new LoggerConfiguration();
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-#pragma warning disable CS0618 // Until deprecated extension is removed.
-                () => LoggerSinkConfigurationExtensions.XunitTestLogging(config.WriteTo, outputWriter: null));
-#pragma warning restore CS0618
         }
 
         public void WriteLine(string message)

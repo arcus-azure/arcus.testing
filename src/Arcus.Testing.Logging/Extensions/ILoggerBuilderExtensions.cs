@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Testing.Logging;
-using GuardNet;
 using Xunit.Abstractions;
 
 // ReSharper disable once CheckNamespace
@@ -20,8 +19,15 @@ namespace Microsoft.Extensions.Logging
         /// <exception cref="ArgumentNullException">Thrown when either the <paramref name="builder"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public static ILoggingBuilder AddXunitTestLogging(this ILoggingBuilder builder, ITestOutputHelper outputWriter)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a logging builder to add the xUnit logging to");
-            Guard.NotNull(outputWriter, nameof(outputWriter), "Requires a xUnit test logger to add as a provider to the logging builder");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (outputWriter is null)
+            {
+                throw new ArgumentNullException(nameof(outputWriter));
+            }
 
             var logger = new XunitTestLogger(outputWriter);
             var provider = new CustomLoggerProvider(logger);
