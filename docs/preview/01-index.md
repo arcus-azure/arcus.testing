@@ -25,10 +25,10 @@ For more granular packages we recommend reading the documentation.
 
 # Features
 
-- [In-memory test secret provider the Arcus secret store](features/inmemory-secret-provider)
-- [In-memory test Azure Service Bus message pump](features/servicebus-messsage-pump.md)
-- [In-memory test Azure EventHubs message pump](features/eventhubs-messsage-pump.md)
-- [xUnit Logging and Logging Testing](features/logging)
+- [In-memory test secret provider the Arcus secret store](./02-Features/inmemory-secret-provider)
+- [In-memory test Azure Service Bus message pump](./02-Features/servicebus-messsage-pump.md)
+- [In-memory test Azure EventHubs message pump](./02-Features/eventhubs-messsage-pump.md)
+- [xUnit Logging and Logging Testing](./02-Features/logging)
 
 # License
 
