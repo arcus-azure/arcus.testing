@@ -330,3 +330,8 @@ ASALocalRun/
 .mfractor/
 
 docs/_site
+
+# Docusaurus
+docs/.docusaurus
+docs/node_modules
+docs/build
