@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging\Arcus.Testing.Logging.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.EventHubs\Arcus.Testing.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.ServiceBus\Arcus.Testing.Messaging.Pumps.ServiceBus.csproj" />
