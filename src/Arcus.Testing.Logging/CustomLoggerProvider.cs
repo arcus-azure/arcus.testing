@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Testing.Logging
@@ -18,7 +17,11 @@ namespace Arcus.Testing.Logging
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
         public CustomLoggerProvider(ILogger logger)
         {
-            Guard.NotNull(logger, nameof(logger), "Requires an logger instance to be returned when this provider creates the logger");
+            if (logger is null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
             _logger = logger;
         }
 
