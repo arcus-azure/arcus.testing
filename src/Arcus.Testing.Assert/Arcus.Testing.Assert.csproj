@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Arcus.Testing</RootNamespace>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Description>Provides assertion capabilities during Arcus testing</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Testing;Assert</PackageTags>
+    <PackageId>Arcus.Testing.Assert</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+</Project>
