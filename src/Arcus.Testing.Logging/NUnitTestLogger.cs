@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Testing.Logging
@@ -19,7 +18,11 @@ namespace Arcus.Testing.Logging
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut)
         {
-            Guard.NotNull(testContextOut, nameof(testContextOut));
+            if (testContextOut is null)
+            {
+                throw new ArgumentNullException(nameof(testContextOut));
+            }
+
             _testContextOut = testContextOut;
         }
 
@@ -31,8 +34,15 @@ namespace Arcus.Testing.Logging
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> or the <paramref name="testContextError"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError)
         {
-            Guard.NotNull(testContextOut, nameof(testContextOut));
-            Guard.NotNull(testContextError, nameof(testContextError));
+            if (testContextOut is null)
+            {
+                throw new ArgumentNullException(nameof(testContextOut));
+            }
+
+            if (testContextError is null)
+            {
+                throw new ArgumentNullException(nameof(testContextError));
+            }
 
             _testContextOut = testContextOut;
             _testContextError = testContextError;
