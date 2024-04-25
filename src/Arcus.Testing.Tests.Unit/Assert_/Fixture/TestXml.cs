@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml;
 using Bogus;
-using Bogus.DataSets;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
@@ -202,20 +201,6 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         public void InsertAttribute(string name)
         {
             SelectRandomlyElement().Attributes.Append(CreateAttribute(_doc, name));
-        }
-
-        public XmlAttribute RemoveAttribute()
-        {
-            XmlElement element = SelectRandomlyElement();
-            XmlAttribute attribute = Bogus.PickRandom(element.Attributes.OfType<XmlAttribute>());
-
-            element.Attributes.Remove(attribute);
-            return attribute;
-        }
-
-        public XmlAttribute CreateAttribute()
-        {
-            return CreateAttribute(_doc);
         }
 
         private static XmlAttribute CreateAttribute(XmlDocument doc, string name = null)
