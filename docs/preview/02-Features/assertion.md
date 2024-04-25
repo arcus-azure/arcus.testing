@@ -35,7 +35,7 @@ AssertXml.Equal(expected, actual);
 
 💡 Currently, the input contents are trimmed in case if the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
-### Configuration
+### Customization
 The test assertion also expose several options to tweak the behavior of the XML comparison.
 
 ```csharp
@@ -43,6 +43,15 @@ AssertXml.Equal(..., options =>
 {
     // Adds one ore more local names of XML nodes that should be excluded from the XML comparison.
     options.IgnoreNode("local-node-name");
+
+    // Sets the type of order which should be used when comparing XML attributes.
+    // REMARK: only the order of XML attributes can be set, XML elements are still compared by their contents.
+    // Default: Ignore.
+    options.Order = AssertXmlOrder.Include;
+
+    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Default: 500 characters.
+    options.MaxInputCharacters = 1000;
 });
 ```
 
@@ -73,7 +82,7 @@ AssertJson.Equal(expected, actual);
 
 💡 Currently, the input contents are trimmed in case if the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
-### Configuration
+### Customization
 The test assertion also expose several options to tweak the behavior of the JSON comparison.
 
 ```csharp
@@ -81,6 +90,15 @@ AssertJson.Equal(..., options =>
 {
     // Adds one ore more property names of JSON nodes that should be excluded from the JSON comparison.
     options.IgnoreNode("node-name");
+
+    // Sets the type of order which should be used when comparing JSON array values.
+    // REMARK: only the order of JSON values can be set, JSON objects within JSON arrays are still compared by their contents.
+    // Default: Ignore.
+    options.Order = AssertJsonOrder.Include;
+
+    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Default: 500 characters.
+    options.MaxInputCharacters = 1000;
 });
 ```
 
