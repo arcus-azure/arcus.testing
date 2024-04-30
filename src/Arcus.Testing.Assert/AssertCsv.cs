@@ -6,39 +6,39 @@ using static Arcus.Testing.CsvDifferenceKind;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents how the CSV document handles its header when comparing documents with <see cref="AssertCsv"/>.
+    /// Represents how the CSV table handles its header when comparing tables with <see cref="AssertCsv"/>.
     /// </summary>
     public enum CsvHeader
     {
         /// <summary>
-        /// Indicate that the CSV document has an header present.
+        /// Indicate that the CSV table has an header present.
         /// </summary>
         Present,
 
         /// <summary>
-        /// Indicate that the CSV document misses a header.
+        /// Indicate that the CSV table misses a header.
         /// </summary>
         Missing
     }
 
     /// <summary>
-    /// Represents the ordering when comparing two CSV documents.
+    /// Represents the ordering when comparing two CSV tables.
     /// </summary>
     public enum AssertCsvOrder
     {
         /// <summary>
-        /// Take the order of rows into account when comparing documents (default).
+        /// Take the order of rows into account when comparing tables (default).
         /// </summary>
         Include = 0,
 
         /// <summary>
-        /// Ignore the order of rows when comparing documents.
+        /// Ignore the order of rows when comparing tables.
         /// </summary>
         Ignore
     }
 
     /// <summary>
-    /// Represents the available options when asserting on different CSV documents in <see cref="AssertCsv"/>.
+    /// Represents the available options when asserting on different CSV tables in <see cref="AssertCsv"/>.
     /// </summary>
     public class AssertCsvOptions
     {
@@ -48,7 +48,7 @@ namespace Arcus.Testing
         private AssertCsvOrder _order = AssertCsvOrder.Include;
 
         /// <summary>
-        /// Gets or sets the separator character to be used when determining CSV columns in the loaded document, default semicolon: ';'.
+        /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default semicolon: ';'.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string Separator
@@ -58,7 +58,7 @@ namespace Arcus.Testing
             {
                 if (string.IsNullOrWhiteSpace(value))
                 {
-                    throw new ArgumentException("Requires a non-blank CSV separator character to load the CSV document", nameof(value));
+                    throw new ArgumentException("Requires a non-blank CSV separator character to load the CSV table", nameof(value));
                 }
 
                 _separator = value;
@@ -66,7 +66,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the new line character to be used when determining CSV lines in the loaded document, default: <see cref="Environment.NewLine"/>.
+        /// Gets or sets the new line character to be used when determining CSV lines in the loaded table, default: <see cref="Environment.NewLine"/>.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is empty.</exception>
         public string NewLine
@@ -76,7 +76,7 @@ namespace Arcus.Testing
             {
                 if (string.IsNullOrEmpty(value))
                 {
-                    throw new ArgumentException("Requires a non-empty CSV new line character to load the CSV document", nameof(value));
+                    throw new ArgumentException("Requires a non-empty CSV new line character to load the CSV table", nameof(value));
                 }
 
                 _newLine = value;
@@ -84,7 +84,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the type of header handling the loaded CSV document should have (default: <see cref="CsvHeader.Present"/>).
+        /// Gets or sets the type of header handling the loaded CSV table should have (default: <see cref="CsvHeader.Present"/>).
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
         public CsvHeader Header
@@ -102,10 +102,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the type of order which should be used when comparing CSV documents (default: <see cref="AssertCsvOrder.Include"/>).
+        /// Gets or sets the type of order which should be used when comparing CSV tables (default: <see cref="AssertCsvOrder.Include"/>).
         /// </summary>
         /// <remarks>
-        ///     Only the rows can be configured to ignore their place in the document.
+        ///     Only the rows can be configured to ignore their place in the table.
         /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
         public AssertCsvOrder Order
@@ -142,7 +142,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents assertion-like functionality related to comparing CSV documents.
+    /// Represents assertion-like functionality related to comparing CSV tables.
     /// </summary>
     public static class AssertCsv
     {
@@ -151,11 +151,11 @@ namespace Arcus.Testing
         /// <summary>
         /// Verifies if the given raw <paramref name="expectedCsv"/> is the same as the <paramref name="actualCsv"/>.
         /// </summary>
-        /// <param name="expectedCsv">The raw contents of the expected CSV document.</param>
-        /// <param name="actualCsv">The raw contents of the actual Csv document.</param>
+        /// <param name="expectedCsv">The raw contents of the expected CSV table.</param>
+        /// <param name="actualCsv">The raw contents of the actual Csv table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> is <c>null</c>.</exception>
         /// <exception cref="CsvException">
-        ///     Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> could not be successfully loaded into a structured Csv document.
+        ///     Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> could not be successfully loaded into a structured Csv table.
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv)
         {
@@ -167,20 +167,20 @@ namespace Arcus.Testing
         /// <summary>
         /// Verifies if the given raw <paramref name="expectedCsv"/> is the same as the <paramref name="actualCsv"/>.
         /// </summary>
-        /// <param name="expectedCsv">The raw contents of the expected CSV document.</param>
-        /// <param name="actualCsv">The raw contents of the actual Csv document.</param>
+        /// <param name="expectedCsv">The raw contents of the expected CSV table.</param>
+        /// <param name="actualCsv">The raw contents of the actual Csv table.</param>
         /// <param name="configureOptions">The function to configure additional comparison options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> is <c>null</c>.</exception>
         /// <exception cref="CsvException">
-        ///     Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> could not be successfully loaded into a structured Csv document.
+        ///     Thrown when the <paramref name="expectedCsv"/> or the <paramref name="actualCsv"/> could not be successfully loaded into a structured Csv table.
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv, Action<AssertCsvOptions> configureOptions)
         {
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
-            var expected = CsvDocument.Load(expectedCsv ?? throw new ArgumentNullException(nameof(expectedCsv)), options);
-            var actual = CsvDocument.Load(actualCsv ?? throw new ArgumentNullException(nameof(actualCsv)), options);
+            var expected = CsvTable.Load(expectedCsv ?? throw new ArgumentNullException(nameof(expectedCsv)), options);
+            var actual = CsvTable.Load(actualCsv ?? throw new ArgumentNullException(nameof(actualCsv)), options);
             CsvDifference diff = FindFirstDifference(expected, actual, options);
 
             if (diff != null)
@@ -196,13 +196,13 @@ namespace Arcus.Testing
         /// <summary>
         /// Verifies if the given raw <paramref name="expected"/> is the same as the <paramref name="actual"/>.
         /// </summary>
-        /// <param name="expected">The expected CSV document.</param>
-        /// <param name="actual">The actual CSV document.</param>
+        /// <param name="expected">The expected CSV table.</param>
+        /// <param name="actual">The actual CSV table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> is <c>null</c>.</exception>
         /// <exception cref="CsvException">
-        ///     Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> could not be successfully loaded into a structured Csv document.
+        ///     Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> could not be successfully loaded into a structured Csv table.
         /// </exception>
-        public static void Equal(CsvDocument expected, CsvDocument actual)
+        public static void Equal(CsvTable expected, CsvTable actual)
         {
             Equal(expected ?? throw new ArgumentNullException(nameof(expected)), 
                   actual ?? throw new ArgumentNullException(nameof(actual)), 
@@ -212,14 +212,14 @@ namespace Arcus.Testing
         /// <summary>
         /// Verifies if the given raw <paramref name="expected"/> is the same as the <paramref name="actual"/>.
         /// </summary>
-        /// <param name="expected">The expected CSV document.</param>
-        /// <param name="actual">The actual CSV document.</param>
+        /// <param name="expected">The expected CSV table.</param>
+        /// <param name="actual">The actual CSV table.</param>
         /// <param name="configureOptions">The function to configure additional comparison options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> is <c>null</c>.</exception>
         /// <exception cref="CsvException">
-        ///     Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> could not be successfully loaded into a structured Csv document.
+        ///     Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> could not be successfully loaded into a structured Csv table.
         /// </exception>
-        public static void Equal(CsvDocument expected, CsvDocument actual, Action<AssertCsvOptions> configureOptions)
+        public static void Equal(CsvTable expected, CsvTable actual, Action<AssertCsvOptions> configureOptions)
         {
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
@@ -240,34 +240,34 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Loads the given raw <paramref name="csv"/> contents into a structured CSV document.
+        /// Loads the given raw <paramref name="csv"/> contents into a structured CSV table.
         /// </summary>
         /// <param name="csv">The raw CSV input contents.</param>
-        /// <returns>The loaded CSV document.</returns>
+        /// <returns>The loaded CSV table.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="csv"/> is <c>null</c>.</exception>
-        /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV document.</exception>
-        public static CsvDocument Load(string csv)
+        /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV table.</exception>
+        public static CsvTable Load(string csv)
         {
             return Load(csv ?? throw new ArgumentNullException(nameof(csv)), configureOptions: null);
         }
 
         /// <summary>
-        /// Loads the given raw <paramref name="csv"/> contents into a structured CSV document.
+        /// Loads the given raw <paramref name="csv"/> contents into a structured CSV table.
         /// </summary>
         /// <param name="csv">The raw CSV input contents.</param>
         /// <param name="configureOptions">The function to configure the options to control the behavior when loading the <paramref name="csv"/> contents.</param>
-        /// <returns>The loaded CSV document.</returns>
+        /// <returns>The loaded CSV table.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="csv"/> is <c>null</c>.</exception>
-        /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV document.</exception>
-        public static CsvDocument Load(string csv, Action<AssertCsvOptions> configureOptions)
+        /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV table.</exception>
+        public static CsvTable Load(string csv, Action<AssertCsvOptions> configureOptions)
         {
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
-            return CsvDocument.Load(csv ?? throw new ArgumentNullException(nameof(csv)), options);
+            return CsvTable.Load(csv ?? throw new ArgumentNullException(nameof(csv)), options);
         }
 
-        private static CsvDifference FindFirstDifference(CsvDocument expected, CsvDocument actual, AssertCsvOptions options)
+        private static CsvDifference FindFirstDifference(CsvTable expected, CsvTable actual, AssertCsvOptions options)
         {
             if (expected.HeaderNames.Length != actual.HeaderNames.Length)
             {
@@ -393,14 +393,14 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a CSV document with named columns.
+    /// Represents a CSV tabular data structure with named columns.
     /// </summary>
-    public class CsvDocument
+    public sealed class CsvTable
     {
         private readonly string _originalCsv;
         private const string LoadMethodName = $"{nameof(AssertCsv)}.{nameof(Load)}";
 
-        private CsvDocument(string[] headerNames, CsvLine[] lines, string originalCsv)
+        private CsvTable(string[] headerNames, CsvLine[] lines, string originalCsv)
         {
             _originalCsv = originalCsv;
 
@@ -411,37 +411,37 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the names of the headers of the first line in the document.
+        /// Gets the names of the headers of the first line in the table.
         /// </summary>
         public string[] HeaderNames { get; }
 
         /// <summary>
-        /// Gets the amount of lines the document has.
+        /// Gets the amount of lines the table has.
         /// </summary>
         public int LineCount { get; }
 
         /// <summary>
-        /// Gets the amount of columns the document has.
+        /// Gets the amount of columns the table has.
         /// </summary>
         public int ColumnCount { get; }
 
         /// <summary>
-        /// Gets the lines of the document.
+        /// Gets the lines of the table.
         /// </summary>
         public CsvLine[] Lines { get; }
 
         /// <summary>
-        /// Loads the raw <paramref name="csv"/> to a validly parsed <see cref="CsvDocument"/>.
+        /// Loads the raw <paramref name="csv"/> to a validly parsed <see cref="CsvTable"/>.
         /// </summary>
-        /// <param name="csv">The raw contents that should represent the document.</param>
-        /// <param name="options">The user-defined options that control certain behavior of how the document should be loaded.</param>
-        /// <returns>The loaded CSV document.</returns>
+        /// <param name="csv">The raw contents that should represent the table.</param>
+        /// <param name="options">The user-defined options that control certain behavior of how the table should be loaded.</param>
+        /// <returns>The loaded CSV table.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="csv"/> or the <paramref name="options"/> is <c>null</c>.</exception>
         /// <exception cref="CsvException">Thrown when the raw <paramref name="csv"/> contents does not represent a valid CSV structure.</exception>
-        internal static CsvDocument Load(string csv, AssertCsvOptions options)
+        internal static CsvTable Load(string csv, AssertCsvOptions options)
         {
-            ArgumentNullException.ThrowIfNull(csv, nameof(csv));
-            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            ArgumentNullException.ThrowIfNull(csv);
+            ArgumentNullException.ThrowIfNull(options);
 
             string[][] rawLines = 
                 csv.Split(options.NewLine)
@@ -461,13 +461,18 @@ namespace Arcus.Testing
                 headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
             }
 
-            CsvLine[] lines = rawLines.Select((line, lineNumber) =>
+            CsvLine[] lines = rawLines.Select((rawLine, lineNumber) =>
             {
-                CsvCell[] cells = line.Select((l, columnNumber) => new CsvCell(headerNames[columnNumber], columnNumber, lineNumber, l)).ToArray();
+                CsvCell[] cells = rawLine.Select((cellValue, columnNumber) =>
+                {
+                    string headerName = headerNames[columnNumber];
+                    return new CsvCell(headerName, columnNumber, lineNumber, cellValue);
+                }).ToArray();
+
                 return new CsvLine(cells, lineNumber, options);
             }).ToArray();
 
-            return new CsvDocument(headerNames, lines, csv);
+            return new CsvTable(headerNames, lines, csv);
         }
 
         private static void EnsureAllLinesSameLength(string csv, string[][] rawLines)
@@ -484,7 +489,7 @@ namespace Arcus.Testing
                                        .Aggregate((x, y) => x + Environment.NewLine + y);
 
                 throw new CsvException(
-                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all lines in the CSV document has the same amount of columns:")
+                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all lines in the CSV table has the same amount of columns:")
                                  .AppendLine(description)
                                  .AppendInput(csv)
                                  .ToString());
@@ -502,9 +507,9 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a single line within the <see cref="CsvDocument"/>.
+    /// Represents a single line within the <see cref="CsvTable"/>.
     /// </summary>
-    public class CsvLine : IComparable<CsvLine>
+    public sealed class CsvLine : IComparable<CsvLine>
     {
         private readonly AssertCsvOptions _options;
 
@@ -520,12 +525,12 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Represents all the cells of a single line within a <see cref="CsvDocument"/>.
+        /// Represents all the cells of a single line within a <see cref="CsvTable"/>.
         /// </summary>
         public CsvCell[] Cells { get; }
 
         /// <summary>
-        /// Gets the index where the line resides within the <see cref="CsvDocument"/>.
+        /// Gets the index where the line resides within the <see cref="CsvTable"/>.
         /// </summary>
         public int LineNumber { get; }
 
@@ -551,7 +556,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a single cell of a <see cref="CsvLine"/> within a <see cref="CsvDocument"/>.
+    /// Represents a single cell of a <see cref="CsvLine"/> within a <see cref="CsvTable"/>.
     /// </summary>
     public sealed class CsvCell : IEquatable<CsvCell>
     {
@@ -574,12 +579,12 @@ namespace Arcus.Testing
         public string Value { get; }
 
         /// <summary>
-        /// Gets the number of the line of this current cell within the document.
+        /// Gets the number of the line of this current cell within the table.
         /// </summary>
         public int LineNumber { get; }
 
         /// <summary>
-        /// Gets the number of the column of this current cell within the document.
+        /// Gets the number of the column of this current cell within the table.
         /// </summary>
         public int ColumnNumber { get; }
 

@@ -246,8 +246,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
         private void EqualCsv(TestCsv expected, TestCsv actual, Action<AssertCsvOptions> configureOptions = null)
         {
-            CsvDocument expectedDoc = Load(expected, tag: "Expected");
-            CsvDocument actualDoc = Load(actual, tag: "Actual");
+            CsvTable expectedDoc = Load(expected, tag: "Expected");
+            CsvTable actualDoc = Load(actual, tag: "Actual");
             
             AssertCsv.Equal(expectedDoc, actualDoc, configureOptions: options =>
             {
@@ -274,7 +274,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             TestCsv csv = TestCsv.Generate();
             
             // Act
-            CsvDocument doc = Load(csv);
+            CsvTable doc = Load(csv);
 
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
@@ -297,7 +297,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             TestCsv csv = TestCsv.Generate(opt => opt.Header = CsvHeader.Missing);
 
             // Act
-            CsvDocument doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
+            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
 
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
@@ -324,7 +324,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             });
 
             // Act
-            CsvDocument doc = Load(csv, opt => opt.Header = CsvHeader.Present);
+            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Present);
 
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
@@ -349,7 +349,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void LoadConfiguredMissingHeader_WithBlankSingleCell_SucceedsWithSingeLine(string csv)
         {
             // Act
-            CsvDocument doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
+            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
 
             // Assert
             Assert.Equal(1, doc.LineCount);
@@ -369,7 +369,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void LoadConfiguredPresentHeader_WithBlankSingleCell_SucceedsWithEmptyLines(string csv)
         {
             // Act
-            CsvDocument doc = Load(csv, opt => opt.Header = CsvHeader.Present);
+            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Present);
 
             // Assert
             Assert.Equal(0, doc.LineCount);
@@ -384,7 +384,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.All(expectedFailures, expectedFailure => Assert.Contains(expectedFailure, exception.Message));
         }
 
-        private CsvDocument Load(TestCsv csv, Action<AssertCsvOptions> configureOptions = null, string tag = "Input")
+        private CsvTable Load(TestCsv csv, Action<AssertCsvOptions> configureOptions = null, string tag = "Input")
         {
             return Load(csv.ToString(), tag: tag, configureOptions: options =>
             {
@@ -395,7 +395,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             });
         }
 
-        private CsvDocument Load(string csv, Action<AssertCsvOptions> configureOptions = null,  string tag = "Input")
+        private CsvTable Load(string csv, Action<AssertCsvOptions> configureOptions = null,  string tag = "Input")
         {
             _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + tag, csv + Environment.NewLine);
 

@@ -137,6 +137,25 @@ AssertCsv.Equal(..., options =>
 });
 ```
 
+### Loading CSV tables yourself
+The CSV assertion equalization can be called directly with with raw contents - internally it parses the contents to a valid tabular structure: `CsvTable`. If it so happens that you want to compare two CSV tables each with different header, separators or other serialization settings, you can load the two tables separately and do the equalization on the loaded CSV tables.
+
+💡 It provides you with more options to control how your file should be loaded.
+
+```csharp
+using Arcus.Testing;
+
+string csv = ...;
+
+CsvTable expected = AssertCsv.Load(csv);
+
+// Or with options (same set as available with the AssertCsv.Equal)
+CsvTable actual = AssertCsv.Load(csv, options => ...);
+
+// Overload with tables.
+AssertCsv.Equal(expected, actual);
+```
+
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.
 
