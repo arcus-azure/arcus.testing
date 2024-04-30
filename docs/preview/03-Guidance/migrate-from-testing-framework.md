@@ -21,10 +21,10 @@ You can use `AssertXml` like any other assertion method. Instead of returning a 
 string expectedXml = ...;
 string actualXml = ...;
 
-- using var expectedStream = ...;
-- using var actualStream = ...;
+- using Stream expectedXmlStream = ...;
+- using Stream actualXmlStream = ...;
 - bool isEqual = Xml.Compare(
--     expectedStream, actualStream, out string message, nodesToIgnore: Array.Empty<string>());
+-     actualXmlStream, expectedXmlStream, out string userMessage, nodesToIgnore: Array.Empty<string>());
 
 + AssertXml.Equal(expectedXml, actualXml);
 ```
@@ -48,16 +48,16 @@ Any nodes that should be ignored can be configured with passing additional optio
 You can use `AssertJson` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference.
 
 ```diff
-- using Codit.Testing.Comparison;
+- using Codit.Testing.OutputComparison;
 + using Arcus.Testing;
 
 string expectedJson = ...;
 string actualJson = ...;
 
-- using var expectedStream = ...;
-- using var actualStream = ...;
+- using Stream expectedJsonStream = ...;
+- using Stream actualJsonStream = ...;
 - bool isEqual = Json.Compare(
--    expectedStream, actualStream, out string message, nodesToIgnore: Array.Empty<string>());
+-    actualJsonStream, expectedJsonStream, out string userMessage, nodesToIgnore: Array.Empty<string>());
 
 + AssertJson.Equal(expectedJson, actualJson);
 ```
@@ -65,7 +65,7 @@ string actualJson = ...;
 Any nodes that should be ignored can be configured with passing additional options:
 
 ```diff
-- using Codit.Testing.Comparison;
+- using Codit.Testing.OutputComparison;
 + using Arcus.Testing;
 
 - bool isEqual = Json.Compare(..., new[] { "ignore-this-node" });
@@ -75,7 +75,48 @@ Any nodes that should be ignored can be configured with passing additional optio
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertJson`.
+🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertJson` and the available options.
+
+### CSV
+You can use `AssertCsv` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference. The Arcus variant also allows for raw CSV to be compared, without the need for you to create a dedicated DTO serialization model before the comparison can happen. It is advised to use your custom domain comparison if you need custom comparison of rows.
+
+#### Use order of rows
+
+```diff
+- using Codit.Testing.OutputComparison;
++ using Arcus.Testing;
+
+string expectedCSv = ...;
+string actualCsv = ...;
+
+- using Stream expectedCsvStream = ...;
+- using Stream actualCsvStream = ...;
+- bool isEqual = Csv.Compare(actualCsvStream, expectedCsvStream, out string userMessage);
+
++ AssertCsv.Equal(expectedCsv, actualCsv);
+```
+
+#### Ignore order of rows
+
+```diff
+- using Codit.Testing.OutputComparison;
++ using Arcus.Testing;
+
+string expectedCSv = ...;
+string actualCsv = ...;
+
+- using Stream expectedCsvStream = ...;
+- using Stream actualCsvStream = ...;
+- bool isEqual = Csv.CompareWithoutOrdering<MyCsvRowModel>(
+-       actualCsvStream, expectedCsvStream, out string userMessage);
+
++ AssertCsv.Equal(expectedCsv, actualCsv, options =>
++ {
++     options.Order = AssertCsvOrder.Ignore;
++ });
+```
+
+🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertCsv` and the available options.
 
 ### XSLT
 Transforming XML-XML to XML-JSON now also happens in a test asserted manner.
@@ -90,7 +131,7 @@ Here's how XML-XML now works:
 - // _expected.xml file is loaded implicitly.
 - bool successfullyTransformed = XsltHelper.TestXslt(
 -     "transformer.xslt",
--     out string message,
+-     out string userMessage,
 -     xsltArgumentList: null,
 -     MessageOutputType.Xml);
 
