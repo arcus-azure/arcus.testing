@@ -151,7 +151,7 @@ string csv = ...;
 
 CsvTable expected = AssertCsv.Load(csv);
 
-// Or with options (same set as available with the AssertCsv.Equal)
+// Or with options (same set as available with the `AssertCsv.Equal`).
 CsvTable actual = AssertCsv.Load(csv, options => ...);
 
 // Overload with tables.
