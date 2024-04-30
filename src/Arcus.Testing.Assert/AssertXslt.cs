@@ -65,7 +65,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
         /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
-        public static XmlNode TransformXml(XslCompiledTransform transformer, XmlNode input)
+        public static XmlDocument TransformXml(XslCompiledTransform transformer, XmlNode input)
         {
             return TransformXml(
                 transformer ?? throw new ArgumentNullException(nameof(transformer)), 
@@ -83,7 +83,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
         /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
-        public static XmlNode TransformXml(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
+        public static XmlDocument TransformXml(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
             if (transformer is null)
             {
