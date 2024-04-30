@@ -84,6 +84,59 @@ AssertJson.Equal(..., options =>
 });
 ```
 
+## CSV
+The library has an `AssertCsv` class that exposes useful test assertions when dealing with CSV outputs. The most popular one is comparing CSV documents.
+
+```csharp
+using Arcus.Testing;
+
+string expected = "product name;description;price\nprinter;A double-sided printer;123,45";
+string actual = "product name;description;price\nprinter;A double-sided printer;234,56";
+
+AssertCsv.Equal(expectd, actual);
+// Assert.Testing.EqualAssertionException
+// AssertCsv.Equal failure: expected and actual CSV contents do not match
+// actual CSV has a different value at line number 0 (index-based, excluding header), expected 123,45 while actual 234,56 for column price
+//
+// Expected:
+// product name;description;price
+// printer;A double-sided printer;123,45
+//
+// Actual:
+// product name;description;price
+// printer;A double-sided printer;234,56
+```
+
+💡 Currently, the input contents are trimmed in case if the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+
+### Customization
+The test assertion also exposes several options to tweak the behavior of the CSV comparison.
+
+```csharp
+AssertCsv.Equal(..., options =>
+{
+    // The separator character to be used when determining CSV columns in the loaded document.
+    // Default: ;
+    options.Separator = ",";
+
+    // The new line character to be used when determining CSV lines in the loaded document.
+    // Default: Environment.NewLine
+    options.NewLine = "\n";
+
+    // The type of header handling the loaded CSV document should have.
+    // Default: Present.
+    options.Header = CsvHeader.Missing;
+
+    // The type of order which should be used when comparing CSV documents.
+    // Default: Include.
+    options.Order = AssertCsvOrder.Ignore;
+
+    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Default: 500 characters.
+    options.MaxInputCharacters = 1000;
+});
+```
+
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.
 

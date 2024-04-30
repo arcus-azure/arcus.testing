@@ -310,7 +310,7 @@ namespace Arcus.Testing
             catch (JsonException exception)
             {
                 throw new JsonException(
-                    ReportBuilder.ForMethod(LoadMethodName, $"cannot correctly load the JSON contents to a deserialization failure: {exception.Message}")
+                    ReportBuilder.ForMethod(LoadMethodName, $"cannot correctly load the JSON contents due to a deserialization failure: {exception.Message}")
                                  .AppendInput(json)
                                  .ToString(), exception);
             }
