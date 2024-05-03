@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
-using FsCheck;
 using FsCheck.Xunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -39,18 +37,17 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
-        public void CompareWithAllOptions_WithSameCsv_Succeeds()
+        public void CompareWithIgnoredOrderAndHeaders_WithSameCsv_Succeeds()
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(options => options.Header = CsvHeader.Present);
-            CsvTable expectedCsv = Load(expected);
-
+            TestCsv expected = TestCsv.Generate();
             TestCsv actual = expected.Copy();
             string[] ignoredHeaderNames = ChangeDifferentCellValues(actual);
-            actual.RemoveHeaders();
-            CsvTable actualCsv = Load(actual, options => options.Header = CsvHeader.Missing);
 
-            EqualCsv(expectedCsv, actualCsv, options =>
+            actual.ShuffleRows();
+            actual.ShuffleColumns();
+
+            EqualCsv(expected, actual, options =>
             {
                 options.ColumnOrder = AssertCsvOrder.Ignore;
                 options.RowOrder = AssertCsvOrder.Ignore;
@@ -59,19 +56,51 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
-        public void Compare_WithPresentExpectedHeaderAndMissingActualHeader_StillSucceeds()
+        public void CompareWithIgnoredColumn_WithDuplicateColumn_StillSucceeds()
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(options => options.Header = CsvHeader.Present);
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+
+            string duplicateColumn = Bogus.PickRandom(expected.HeaderNames);
+            actual.AddColumn(duplicateColumn);
+            expected.AddColumn(duplicateColumn);
+
+            EqualCsv(expected, actual, options =>
+            {
+                options.ColumnOrder = AssertCsvOrder.Ignore;
+                options.IgnoreColumn(duplicateColumn);
+            });
+        }
+
+        [Property]
+        public void CompareWithIgnoredColumnOrder_WithDuplicateColumn_FailsWithDescription()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+
+            string duplicateColumn = Bogus.PickRandom(expected.HeaderNames);
+            actual.AddColumn(duplicateColumn);
+            expected.AddColumn(duplicateColumn);
+
+            CompareShouldFailWithDescription(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore, 
+                "cannot compare", AssertCsvOrder.Ignore.ToString(), "duplicate", "columns", duplicateColumn);
+        }
+
+        [Property]
+        public void Compare_WithPresentExpectedHeaderAndMissingActualHeader_FailsWithDescription()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate(options => options.Header = AssertCsvHeader.Present);
             CsvTable expectedCsv = Load(expected);
 
             TestCsv actual = expected.Copy();
             actual.RemoveHeaders();
-            CsvTable actualCsv = Load(actual, options => options.Header = CsvHeader.Missing);
+            CsvTable actualCsv = Load(actual, options => options.Header = AssertCsvHeader.Missing);
 
             // Act / Assert
-            EqualCsv(expectedCsv, actualCsv);
-            EqualCsv(actualCsv, expectedCsv);
+            CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, "CSV header", "configured");
         }
 
         [Property]
@@ -117,11 +146,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void CompareWithIgnoredOrder_WithShuffledActual_StillSucceeds()
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(options =>
-            {
-                options.RowCount = 3;
-                options.ColumnCount = 3;
-            });
+            TestCsv expected = TestCsv.Generate();
             TestCsv actual = expected.Copy();
 
             actual.ShuffleRows();
@@ -159,6 +184,19 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             // Act / Assert
             EqualCsv(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Ignore);
+        }
+
+        [Property]
+        public void CompareWithoutHeader_WithSameCsv_Succeeds()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv actual = expected.Copy();
+
+            // Act / Assert
+            EqualCsv(
+                Load(expected, opt => opt.Header = AssertCsvHeader.Missing), 
+                Load(actual, opt => opt.Header = AssertCsvHeader.Missing));
         }
 
         [Property]
@@ -288,14 +326,14 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 };
                 yield return new object[]
                 {
-                    $"a;b;c;d{NewLine}1;2;3;4{NewLine}5;6;7;8",
-                    $"a;d;c;b{NewLine}1;4;3;2{NewLine}5;8;7;6",
+                    $"a;b;c;d{NewLine}1;2;3;4{NewLine}5;6;7;8{NewLine}9;10;11;12",
+                    $"a;d;c;b{NewLine}1;4;3;2{NewLine}5;8;7;6{NewLine}9;12;11;10",
                     void (AssertCsvOptions options) => options.ColumnOrder = AssertCsvOrder.Ignore
                 };
                 yield return new object[]
                 {
                     $"a;b;c;d{NewLine}0;1;0;1{NewLine}1;0;0;1{NewLine}0;0;1;1",
-                    $"a;b;c;d{NewLine}1;0;1;0{NewLine}0;1;1;0{NewLine}0;0;1;1",
+                    $"a;b;d;c{NewLine}1;0;1;0{NewLine}0;1;1;0{NewLine}0;0;1;1",
                     void (AssertCsvOptions options) =>
                     {
                         options.ColumnOrder = AssertCsvOrder.Ignore;
@@ -359,7 +397,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [MemberData(nameof(FailingBeEquivalentCases))]
         public void Compare_NotEqual_ShouldFailWithDifference(string expectedCsv, string actualCsv, params string[] expectedDifferences)
         {
-            CompareShouldFailWithDescription(expectedCsv, actualCsv, expectedDifferences);
+            CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, expectedDifferences);
         }
 
         private void CompareShouldFailWithDescription(TestCsv expected, TestCsv actual, params string[] expectedDifferences)
@@ -370,19 +408,23 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         private void CompareShouldFailWithDescription(TestCsv expected, TestCsv actual, Action<AssertCsvOptions> configureOptions, params string[] expectedDifferences)
         {
             var exception = Assert.ThrowsAny<AssertionException>(() => EqualCsv(expected, actual, configureOptions));
-            Assert.Contains(nameof(AssertCsv), exception.Message);
-            Assert.Contains("CSV contents", exception.Message);
-            Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
+            AssertFailureDescription(expectedDifferences, exception);
         }
 
-        private static void CompareShouldFailWithDescription(string expectedCsv, string actualCsv, params string[] expectedDifferences)
-        {
-            CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, expectedDifferences);
-        }
-
-        private static void CompareShouldFailWithDescription(string expectedCsv, string actualCsv, Action<AssertCsvOptions> configureOptions, params string[] expectedDifferences)
+        private static void CompareShouldFailWithDescription(string expectedCsv, string actualCsv, Action<AssertCsvOptions> configureOptions = null, params string[] expectedDifferences)
         {
             var exception = Assert.ThrowsAny<AssertionException>(() => EqualCsv(expectedCsv, actualCsv, configureOptions));
+            AssertFailureDescription(expectedDifferences, exception);
+        }
+
+        private void CompareShouldFailWithDescription(CsvTable expectedCsv, CsvTable actualCsv, Action<AssertCsvOptions> configureOptions, params string[] expectedDifferences)
+        {
+            var exception = Assert.ThrowsAny<AssertionException>(() => EqualCsv(expectedCsv, actualCsv, configureOptions));
+            AssertFailureDescription(expectedDifferences, exception);
+        }
+
+        private static void AssertFailureDescription(string[] expectedDifferences, AssertionException exception)
+        {
             Assert.Contains(nameof(AssertCsv), exception.Message);
             Assert.Contains("CSV contents", exception.Message);
             Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
@@ -452,10 +494,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Load_WithRandomCsvWithoutHeader_Succeeds()
         {
             // Arrange
-            TestCsv csv = TestCsv.Generate(opt => opt.Header = CsvHeader.Missing);
+            TestCsv csv = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
 
             // Act
-            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
+            CsvTable doc = Load(csv, opt => opt.Header = AssertCsvHeader.Missing);
 
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
@@ -477,12 +519,12 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Arrange
             TestCsv csv = TestCsv.Generate(opt =>
             {
-                opt.Header = CsvHeader.Missing;
+                opt.Header = AssertCsvHeader.Missing;
                 opt.RowCount = 1;
             });
 
             // Act
-            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Present);
+            CsvTable doc = Load(csv, opt => opt.Header = AssertCsvHeader.Present);
 
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
@@ -507,7 +549,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void LoadConfiguredMissingHeader_WithBlankSingleCell_SucceedsWithSingeRow(string csv)
         {
             // Act
-            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Missing);
+            CsvTable doc = Load(csv, opt => opt.Header = AssertCsvHeader.Missing);
 
             // Assert
             Assert.Equal(1, doc.RowCount);
@@ -527,7 +569,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void LoadConfiguredPresentHeader_WithBlankSingleCell_SucceedsWithEmptyRows(string csv)
         {
             // Act
-            CsvTable doc = Load(csv, opt => opt.Header = CsvHeader.Present);
+            CsvTable doc = Load(csv, opt => opt.Header = AssertCsvHeader.Present);
 
             // Assert
             Assert.Equal(0, doc.RowCount);
@@ -557,7 +599,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             _outputWriter.WriteLine("{0}: {1}", NewLine + tag, csv + NewLine);
 
-            return AssertCsv.Load(csv, configureOptions);
+            return configureOptions is null 
+                ? AssertCsv.Load(csv) 
+                : AssertCsv.Load(csv, configureOptions);
         }
     }
 }

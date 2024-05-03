@@ -86,16 +86,16 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             IList<string[]> columns = Bogus.Make(options.ColumnCount, () =>
             {
                 string[] col = GenerateColumn(options.RowCount);
-                if (options.Header is CsvHeader.Present)
+                if (options.Header is AssertCsvHeader.Present)
                 {
-                    return col.Prepend(Bogus.Database.Column()).ToArray();
+                    return col.Prepend(CreateColumnName()).ToArray();
                 }
 
                 return col.ToArray();
             });
 
             string[] headerNames = 
-                options.Header is CsvHeader.Present
+                options.Header is AssertCsvHeader.Present
                     ? columns.Select(col => col[0]).ToArray()
                     : columns.Select((_, index) => $"Col #{index}").ToArray();
 
@@ -105,12 +105,17 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// <summary>
         /// Adds a new random column to the CSV table.
         /// </summary>
-        public void AddColumn()
+        public void AddColumn(string headerName = null)
         {
-            string columnName = Bogus.Database.Column();
+            string columnName = headerName ?? CreateColumnName();
             List<string> newColumn = GenerateColumn(RowCount).Prepend(columnName).ToList();
             _columns.Insert(Bogus.Random.Int(0, _columns.Count - 1), newColumn);
             ColumnCount++;
+        }
+
+        private static string CreateColumnName()
+        {
+            return Bogus.Database.Column() + Bogus.Random.Guid().ToString()[..7];
         }
 
         /// <summary>
@@ -156,10 +161,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             return (col[0], changedValue);
         }
 
+        /// <summary>
+        /// Removes the headers from the generated CSV.
+        /// </summary>
         public void RemoveHeaders()
         {
             _columns = _columns.Select(c => c.Skip(1).ToList()).ToList();
-            _options.Header = CsvHeader.Missing;
+            _options.Header = AssertCsvHeader.Missing;
         }
 
         /// <summary>
@@ -218,9 +226,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
             if (_shouldShuffleRows)
             {
-                if (_options.Header is CsvHeader.Present)
+                if (_options.Header is AssertCsvHeader.Present)
                 {
-                    List<string> headers = rows.First();
+                    List<string> headers = rows[0];
                     List<List<string>> shuffled = Bogus.Random.Shuffle(rows.Skip(1)).ToList();
                     rows = shuffled.Prepend(headers).ToList();
                 }
