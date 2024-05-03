@@ -29,7 +29,7 @@ string actualXml = ...;
 + AssertXml.Equal(expectedXml, actualXml);
 ```
 
-Any nodes that should be ignored can be configured with passing additional options:
+Any nodes that should be ignored can be configured by passing additional options:
 
 ```diff
 - using Codit.Testing.OutputComparison;
@@ -62,7 +62,7 @@ string actualJson = ...;
 + AssertJson.Equal(expectedJson, actualJson);
 ```
 
-Any nodes that should be ignored can be configured with passing additional options:
+Any nodes that should be ignored can be configured by passing additional options:
 
 ```diff
 - using Codit.Testing.OutputComparison;
