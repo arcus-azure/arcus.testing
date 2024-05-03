@@ -117,6 +117,7 @@ using Arcus.Testing;
 AssertJson.Equal(..., options =>
 {
     // Adds one ore more property names of JSON nodes that should be excluded from the JSON comparison.
+    options.IgnoreNode("node-name");
 
     // Sets the type of order which should be used when comparing JSON array values.
     // REMARK: only the order of JSON values can be set, JSON objects within JSON arrays are still compared by their contents.
