@@ -50,6 +50,9 @@ namespace Arcus.Testing.Failure
             return this;
         }
 
+        /// <summary>
+        /// Appends a new line to the test report.
+        /// </summary>
         internal ReportBuilder AppendLine()
         {
             _report.AppendLine();
