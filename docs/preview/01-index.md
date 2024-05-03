@@ -9,8 +9,11 @@ sidebar_position: 1
 # Introduction
 The Arcus Testing library provides test-friendly capabilities to kick-start your test suite. Ranges from tech-independent infrastructure code to fully production-ready assertions. The library contains also Azure-related test fixtures to make interactions during testing more maintainable, testable and fun to write.
 
+## Guides
+* [Migrate from Testing Framework](03-Guidance/migrate-from-testing-framework.md)
+
 # Installation
-The Arcus.WebApi library can be installed via NuGet, for instance:
+The Arcus.Testing library can be installed via NuGet, for instance:
 
 ```shell
 PM > Install-Package Arcus.Testing.Logging
