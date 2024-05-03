@@ -50,6 +50,12 @@ namespace Arcus.Testing.Failure
             return this;
         }
 
+        internal ReportBuilder AppendLine()
+        {
+            _report.AppendLine();
+            return this;
+        }
+
         /// <summary>
         /// Appends the test input of the test assertion method to the report.
         /// </summary>

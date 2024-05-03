@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.Versioning;
 using Arcus.Testing.Failure;
 using static Arcus.Testing.CsvDifferenceKind;
 
@@ -42,10 +45,32 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertCsvOptions
     {
+        private readonly Collection<string> _ignoredColumnNames = new();
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
-        private string _separator = ";", _newLine = Environment.NewLine;
+        private string _separator = ";", _newRow = Environment.NewLine;
         private CsvHeader _header = CsvHeader.Present;
-        private AssertCsvOrder _order = AssertCsvOrder.Include;
+        private AssertCsvOrder _rowOrder = AssertCsvOrder.Include, _columnOrder = AssertCsvOrder.Include;
+
+        /// <summary>
+        /// Adds a column name which will get ignored when comparing CSV tables.
+        /// </summary>
+        /// <param name="columnName">The name of the column that should be ignored.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="columnName"/> is blank.</exception>
+        public AssertCsvOptions IgnoreColumn(string columnName)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+            {
+                throw new ArgumentException($"Requires a non-blank '{nameof(columnName)}' when adding an ignored column name of a CSV table", nameof(columnName));
+            }
+
+            _ignoredColumnNames.Add(columnName);
+            return this;
+        }
+
+        /// <summary>
+        /// Gets the names of the columns that should be ignored when comparing CSV tables.
+        /// </summary>
+        internal IEnumerable<string> IgnoredColumnNames => _ignoredColumnNames;
 
         /// <summary>
         /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default semicolon: ';'.
@@ -66,20 +91,20 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the new line character to be used when determining CSV lines in the loaded table, default: <see cref="Environment.NewLine"/>.
+        /// Gets or sets the new row character to be used when determining CSV rows in the loaded table, default: <see cref="Environment.NewLine"/>.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is empty.</exception>
         public string NewLine
         {
-            get => _newLine;
+            get => _newRow;
             set
             {
                 if (string.IsNullOrEmpty(value))
                 {
-                    throw new ArgumentException("Requires a non-empty CSV new line character to load the CSV table", nameof(value));
+                    throw new ArgumentException("Requires a non-empty CSV new row character to load the CSV table", nameof(value));
                 }
 
-                _newLine = value;
+                _newRow = value;
             }
         }
 
@@ -102,23 +127,38 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the type of order which should be used when comparing CSV tables (default: <see cref="AssertCsvOrder.Include"/>).
+        /// Gets or sets the type of row order which should be used when comparing CSV tables (default: <see cref="AssertCsvOrder.Include"/>).
         /// </summary>
-        /// <remarks>
-        ///     Only the rows can be configured to ignore their place in the table.
-        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
-        public AssertCsvOrder Order
+        public AssertCsvOrder RowOrder
         {
-            get => _order;
+            get => _rowOrder;
             set
             {
                 if (!Enum.IsDefined(value))
                 {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Requires a CSV order value that is within the bounds of the enumeration");
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Requires a CSV row order value that is within the bounds of the enumeration");
                 }
 
-                _order = value;
+                _rowOrder = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the type of column order which should be used when comparing CSV tables (default: <see cref="AssertCsvOrder.Include"/>).
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
+        public AssertCsvOrder ColumnOrder
+        {
+            get => _columnOrder;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Requires a CSV column order value that is within the bounds of the enumeration");
+                }
+
+                _columnOrder = value;
             }
         }
 
@@ -138,6 +178,18 @@ namespace Arcus.Testing
 
                 _maxInputCharacters = value;
             }
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
+        {
+            return $"Options: {Environment.NewLine}" +
+                   $"\t- ignored columns: [{string.Join($"{Separator} ", _ignoredColumnNames)}]{Environment.NewLine}" +
+                   $"\t- column order: {ColumnOrder}{Environment.NewLine}" +
+                   $"\t- row order: {RowOrder}";
         }
     }
 
@@ -181,16 +233,8 @@ namespace Arcus.Testing
 
             var expected = CsvTable.Load(expectedCsv ?? throw new ArgumentNullException(nameof(expectedCsv)), options);
             var actual = CsvTable.Load(actualCsv ?? throw new ArgumentNullException(nameof(actualCsv)), options);
-            CsvDifference diff = FindFirstDifference(expected, actual, options);
-
-            if (diff != null)
-            {
-                throw new EqualAssertionException(
-                    ReportBuilder.ForMethod(EqualMethodName, "expected and actual CSV contents do not match")
-                                 .AppendLine(diff.ToString())
-                                 .AppendDiff(expectedCsv, actualCsv, options.MaxInputCharacters)
-                                 .ToString());
-            }
+            
+            Equal(expected, actual, configureOptions);
         }
 
         /// <summary>
@@ -234,6 +278,8 @@ namespace Arcus.Testing
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "expected and actual CSV contents do not match")
                                  .AppendLine(diff.ToString())
+                                 .AppendLine()
+                                 .AppendLine(options.ToString())
                                  .AppendDiff(expected.ToString(), actual.ToString(), options.MaxInputCharacters)
                                  .ToString());
             }
@@ -274,52 +320,79 @@ namespace Arcus.Testing
                 return new(DifferentColumnLength, expected.HeaderNames.Length, actual.HeaderNames.Length);
             }
 
-            if (expected.LineCount != actual.LineCount)
+            if (expected.RowCount != actual.RowCount)
             {
-                return new(DifferentLineLength, expected.LineCount, actual.LineCount);
+                return new(DifferentRowLength, expected.RowCount, actual.RowCount);
             }
 
-            for (var i = 0; i < expected.HeaderNames.Length; i++)
+            return CompareHeaders(expected, actual, options) ?? CompareRows(expected.Rows, actual.Rows, options);
+        }
+
+        private static CsvDifference CompareHeaders(CsvTable expected, CsvTable actual, AssertCsvOptions options)
+        {
+            if (expected.Header is CsvHeader.Missing || actual.Header is CsvHeader.Missing)
             {
-                string expectedHeader = expected.HeaderNames[i];
-                string actualHeader = actual.HeaderNames[i];
+                return null;
+            }
+
+            string[] expectedColumns = expected.HeaderNames;
+            string[] actualColumns = actual.HeaderNames;
+            if (options.ColumnOrder is AssertCsvOrder.Ignore)
+            {
+                expectedColumns = expectedColumns.Order().ToArray();
+                actualColumns = actualColumns.Order().ToArray();
+            }
+
+            for (var i = 0; i < expectedColumns.Length; i++)
+            {
+                string expectedHeader = expectedColumns[i];
+                string actualHeader = actualColumns[i];
                 if (expectedHeader != actualHeader)
                 {
-                    return new(ActualMissingColumn, expectedHeader, actualHeader, lineNumber: 0);
+                    return new(ActualMissingColumn, expectedHeader, actualHeader, rowNumber: 0);
                 }
-            }
-
-            CsvDifference diff = CompareLines(expected.Lines, actual.Lines, options);
-            if (diff != null)
-            {
-                return diff;
             }
 
             return null;
         }
 
-        private static CsvDifference CompareLines(CsvLine[] expected, CsvLine[] actual, AssertCsvOptions options)
+        private static CsvDifference CompareRows(CsvRow[] expected, CsvRow[] actual, AssertCsvOptions options)
         {
-            bool shouldIgnoreOrder = options.Order is AssertCsvOrder.Ignore && expected.Length > 1;
+            if (options.ColumnOrder is AssertCsvOrder.Ignore)
+            {
+                expected = expected.Select(r => r.WithOrderedCells()).ToArray();
+                actual = actual.Select(r => r.WithOrderedCells()).ToArray();
+            }
+
+            bool shouldIgnoreOrder = options.RowOrder is AssertCsvOrder.Ignore && expected.Length > 1;
             if (shouldIgnoreOrder)
             {
                 expected = expected.OrderBy(l => l).ToArray();
                 actual = actual.OrderBy(l => l).ToArray();
             }
 
-            for (var line = 0; line < expected.Length; line++)
+            for (var row = 0; row < expected.Length; row++)
             {
-                CsvLine expectedLine = expected[line];
-                CsvLine actualLine = actual[line];
+                CsvRow expectedRow = expected[row],
+                       actualRow = actual[row];
+                
+                CsvCell[] expectedCells = expectedRow.Cells,
+                          actualCells = actualRow.Cells;
 
-                for (var col = 0; col < expectedLine.Cells.Length; col++)
+                for (var col = 0; col < expectedCells.Length; col++)
                 {
-                    CsvCell expectedCell = expectedLine.Cells[col];
-                    CsvCell actualCell = actualLine.Cells[col];
+                    CsvCell expectedCell = expectedCells[col],
+                            actualCell = actualCells[col];
+
+                    if (options.IgnoredColumnNames.Contains(expectedCell.ColumnHeader))
+                    {
+                        continue;
+                    }
+
                     if (!expectedCell.Equals(actualCell))
                     {
                         return shouldIgnoreOrder
-                            ? new(ActualMissingLine, expectedLine, actualLine)
+                            ? new(ActualMissingRow, expectedRow, actualRow)
                             : new(ActualOtherValue,  expectedCell, actualCell);
                     }
                 }
@@ -336,30 +409,30 @@ namespace Arcus.Testing
     {
         private readonly CsvDifferenceKind _kind;
         private readonly string _expected, _actual, _column;
-        private readonly int _lineNumber;
+        private readonly int _rowNumber;
 
-        internal CsvDifference(CsvDifferenceKind kind, CsvLine expected, CsvLine actual)
-            : this(kind, expected.ToString(), actual.ToString(), expected.LineNumber)
+        internal CsvDifference(CsvDifferenceKind kind, CsvRow expected, CsvRow actual)
+            : this(kind, expected.ToString(), actual.ToString(), expected.RowNumber)
         {
         }
 
         internal CsvDifference(CsvDifferenceKind kind, CsvCell expected, CsvCell actual)
-            : this(kind, expected.Value, actual.Value, expected.LineNumber)
+            : this(kind, expected.Value, actual.Value, expected.RowNumber)
         {
             _column = expected.ColumnHeader;
         }
 
         internal CsvDifference(CsvDifferenceKind kind, int expected, int actual)
-            : this(kind, expected.ToString(), actual.ToString(), lineNumber: 0)
+            : this(kind, expected.ToString(), actual.ToString(), rowNumber: 0)
         {
         }
 
-        internal CsvDifference(CsvDifferenceKind kind, string expected, string actual, int lineNumber)
+        internal CsvDifference(CsvDifferenceKind kind, string expected, string actual, int rowNumber)
         {
             _kind = kind;
             _expected = expected;
             _actual = actual;
-            _lineNumber = lineNumber;
+            _rowNumber = rowNumber;
         }
 
         /// <summary>
@@ -371,10 +444,10 @@ namespace Arcus.Testing
             return _kind switch
             {
                 ActualMissingColumn => $"actual CSV is missing a column: {_expected}",
-                ActualMissingLine => $"actual CSV does not contain a line: {_expected} which was found in expected CSV at line number {_lineNumber} (index-based, excluding header)",
-                ActualOtherValue => $"actual CSV cell has a different value at line number {_lineNumber} (index-based, excluding header), expected {_expected} while actual {_actual} for column {_column}",
+                ActualMissingRow => $"actual CSV does not contain a row: {_expected} which was found in expected CSV at row number {_rowNumber} (index-based, excluding header)",
+                ActualOtherValue => $"actual CSV cell has a different value at row number {_rowNumber} (index-based, excluding header), expected {_expected} while actual {_actual} for column {_column}",
                 DifferentColumnLength => $"actual CSV has {_actual} columns instead of {_expected}",
-                DifferentLineLength => $"actual CSV has {_actual} lines instead of {_expected}",
+                DifferentRowLength => $"actual CSV has {_actual} rows instead of {_expected}",
                 _ => throw new ArgumentOutOfRangeException(nameof(_kind), _kind, "Unknown CSV difference kind type")
             };
         }
@@ -386,10 +459,10 @@ namespace Arcus.Testing
     internal enum CsvDifferenceKind
     {
         ActualMissingColumn,
-        ActualMissingLine,
+        ActualMissingRow,
         ActualOtherValue,
         DifferentColumnLength,
-        DifferentLineLength
+        DifferentRowLength
     }
 
     /// <summary>
@@ -398,27 +471,31 @@ namespace Arcus.Testing
     public sealed class CsvTable
     {
         private readonly string _originalCsv;
+        private readonly AssertCsvOptions _options;
         private const string LoadMethodName = $"{nameof(AssertCsv)}.{nameof(Load)}";
 
-        private CsvTable(string[] headerNames, CsvLine[] lines, string originalCsv)
+        private CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
         {
             _originalCsv = originalCsv;
+            _options = options;
 
             HeaderNames = headerNames;
-            LineCount = lines.Length;
+            RowCount = rows.Length;
             ColumnCount = headerNames.Length;
-            Lines = lines;
+            Rows = rows;
         }
 
+        internal CsvHeader Header => _options.Header;
+
         /// <summary>
-        /// Gets the names of the headers of the first line in the table.
+        /// Gets the names of the headers of the first row in the table.
         /// </summary>
         public string[] HeaderNames { get; }
 
         /// <summary>
-        /// Gets the amount of lines the table has.
+        /// Gets the amount of rows the table has.
         /// </summary>
-        public int LineCount { get; }
+        public int RowCount { get; }
 
         /// <summary>
         /// Gets the amount of columns the table has.
@@ -426,9 +503,9 @@ namespace Arcus.Testing
         public int ColumnCount { get; }
 
         /// <summary>
-        /// Gets the lines of the table.
+        /// Gets the rows of the table.
         /// </summary>
-        public CsvLine[] Lines { get; }
+        public CsvRow[] Rows { get; }
 
         /// <summary>
         /// Loads the raw <paramref name="csv"/> to a validly parsed <see cref="CsvTable"/>.
@@ -445,10 +522,10 @@ namespace Arcus.Testing
 
             string[][] rawLines = 
                 csv.Split(options.NewLine)
-                   .Select(line => line.Split(options.Separator))
+                   .Select(row => row.Split(options.Separator))
                    .ToArray();
 
-            EnsureAllLinesSameLength(csv, rawLines);
+            EnsureAllRowsSameLength(csv, rawLines);
 
             string[] headerNames;
             if (options.Header is CsvHeader.Present)
@@ -461,35 +538,35 @@ namespace Arcus.Testing
                 headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
             }
 
-            CsvLine[] lines = rawLines.Select((rawLine, lineNumber) =>
+            CsvRow[] rows = rawLines.Select((rawRow, rowNumber) =>
             {
-                CsvCell[] cells = rawLine.Select((cellValue, columnNumber) =>
+                CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
                 {
                     string headerName = headerNames[columnNumber];
-                    return new CsvCell(headerName, columnNumber, lineNumber, cellValue);
+                    return new CsvCell(headerName, columnNumber, rowNumber, cellValue);
                 }).ToArray();
 
-                return new CsvLine(cells, lineNumber, options);
+                return new CsvRow(cells, rowNumber, options);
             }).ToArray();
 
-            return new CsvTable(headerNames, lines, csv);
+            return new CsvTable(headerNames, rows, csv, options);
         }
 
-        private static void EnsureAllLinesSameLength(string csv, string[][] rawLines)
+        private static void EnsureAllRowsSameLength(string csv, string[][] rawRows)
         {
-            var linesWithDiffLength =
-                rawLines.GroupBy(line => line.Length)
+            var rowsWithDiffLength =
+                rawRows.GroupBy(row => row.Length)
                         .ToArray();
 
-            if (linesWithDiffLength.Length > 1)
+            if (rowsWithDiffLength.Length > 1)
             {
                 string description =
-                    linesWithDiffLength.OrderBy(line => line.Key)
-                                       .Select(line => $"\t - {line.Count()} line(s) with {line.Key} columns")
-                                       .Aggregate((x, y) => x + Environment.NewLine + y);
+                    rowsWithDiffLength.OrderBy(row => row.Key)
+                                      .Select(row => $"\t - {row.Count()} row(s) with {row.Key} columns")
+                                      .Aggregate((x, y) => x + Environment.NewLine + y);
 
                 throw new CsvException(
-                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all lines in the CSV table has the same amount of columns:")
+                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all rows in the CSV table has the same amount of columns:")
                                  .AppendLine(description)
                                  .AppendInput(csv)
                                  .ToString());
@@ -507,32 +584,44 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a single line within the <see cref="CsvTable"/>.
+    /// Represents a single row within the <see cref="CsvTable"/>.
     /// </summary>
-    public sealed class CsvLine : IComparable<CsvLine>
+    public sealed class CsvRow : IComparable<CsvRow>
     {
         private readonly AssertCsvOptions _options;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CsvLine" /> class.
+        /// Initializes a new instance of the <see cref="CsvRow" /> class.
         /// </summary>
-        internal CsvLine(CsvCell[] cells, int lineNumber, AssertCsvOptions options)
+        internal CsvRow(CsvCell[] cells, int rowNumber, AssertCsvOptions options)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
 
             Cells = cells ?? throw new ArgumentNullException(nameof(cells));
-            LineNumber = lineNumber;
+            RowNumber = rowNumber;
         }
 
         /// <summary>
-        /// Represents all the cells of a single line within a <see cref="CsvTable"/>.
+        /// Represents all the cells of a single row within a <see cref="CsvTable"/>.
         /// </summary>
-        public CsvCell[] Cells { get; }
+        public CsvCell[] Cells { get; private set; }
 
         /// <summary>
-        /// Gets the index where the line resides within the <see cref="CsvTable"/>.
+        /// Gets the index where the row resides within the <see cref="CsvTable"/>.
         /// </summary>
-        public int LineNumber { get; }
+        public int RowNumber { get; }
+
+        internal CsvRow WithCells(CsvCell[] cells)
+        {
+            Cells = cells;
+            return this;
+        }
+
+        internal CsvRow WithOrderedCells()
+        {
+            Cells = Cells.OrderBy(c => c.Value).ToArray();
+            return this;
+        }
 
         /// <summary>
         /// Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.
@@ -540,7 +629,7 @@ namespace Arcus.Testing
         /// <param name="other">An object to compare with this instance.</param>
         /// <returns>A value that indicates the relative order of the objects being compared. The return value has these meanings:
         /// <list type="table"><listheader><term> Value</term><description> Meaning</description></listheader><item><term> Less than zero</term><description> This instance precedes <paramref name="other" /> in the sort order.</description></item><item><term> Zero</term><description> This instance occurs in the same position in the sort order as <paramref name="other" />.</description></item><item><term> Greater than zero</term><description> This instance follows <paramref name="other" /> in the sort order.</description></item></list></returns>
-        public int CompareTo(CsvLine other)
+        public int CompareTo(CsvRow other)
         {
             return string.Compare(ToString(), other.ToString(), StringComparison.Ordinal);
         }
@@ -556,15 +645,15 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a single cell of a <see cref="CsvLine"/> within a <see cref="CsvTable"/>.
+    /// Represents a single cell of a <see cref="CsvRow"/> within a <see cref="CsvTable"/>.
     /// </summary>
     public sealed class CsvCell : IEquatable<CsvCell>
     {
-        internal CsvCell(string headerName, int columnNumber, int lineNumber, string value)
+        internal CsvCell(string headerName, int columnNumber, int rowNumber, string value)
         {
             ColumnHeader = headerName;
             ColumnNumber = columnNumber;
-            LineNumber = lineNumber;
+            RowNumber = rowNumber;
             Value = value;
         }
 
@@ -579,9 +668,9 @@ namespace Arcus.Testing
         public string Value { get; }
 
         /// <summary>
-        /// Gets the number of the line of this current cell within the table.
+        /// Gets the number of the row of this current cell within the table.
         /// </summary>
-        public int LineNumber { get; }
+        public int RowNumber { get; }
 
         /// <summary>
         /// Gets the number of the column of this current cell within the table.

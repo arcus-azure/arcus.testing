@@ -1,20 +1,26 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Bogus;
-using FsCheck;
-using Moq;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 {
+    /// <summary>
+    /// Represents additional options to control how the generated <see cref="TestCsv"/> will look like.
+    /// </summary>
     public class TestCsvOptions : AssertCsvOptions
     {
         private static readonly Faker Bogus = new();
 
-        public int LineCount { get; set; } = Bogus.Random.Int(1, 10);
+        /// <summary>
+        /// Gets or sets the amount of rows the generated CSV table should have (ignoring the header).
+        /// </summary>
+        public int RowCount { get; set; } = Bogus.Random.Int(1, 10);
 
+        /// <summary>
+        /// Gets or sets the amount of columns the generated CSV table should have.
+        /// </summary>
         public int ColumnCount { get; set; } = Bogus.Random.Int(1, 10);
     }
 
@@ -24,10 +30,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
     public class TestCsv
     {
         private readonly TestCsvOptions _options;
-        private readonly List<List<string>> _columns;
-        private readonly List<List<string>> _invalidLines = new();
+        private List<List<string>> _columns;
+        private readonly List<List<string>> _invalidrows = new();
         private static readonly Faker Bogus = new();
-        private bool _shouldShuffle;
+        private bool _shouldShuffleRows;
 
         private TestCsv(IEnumerable<string[]> columns, string[] headerNames, TestCsvOptions options)
         {
@@ -36,16 +42,42 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
             HeaderNames = headerNames;
             ColumnCount = options.ColumnCount;
-            LineCount = options.LineCount;
+            RowCount = options.RowCount;
         }
 
+        /// <summary>
+        /// Gets the names of the columns in the generated CSV table.
+        /// </summary>
         public string[] HeaderNames { get; }
-        public string[][] Lines => Transpose(_columns).Select(col => col.ToArray()).ToArray();
+
+        /// <summary>
+        /// Gets the collected rows of the CSV table (excluding the header).
+        /// </summary>
+        public string[][] Rows => Transpose(_columns).Select(col => col.ToArray()).ToArray();
+
+        /// <summary>
+        /// Gets the amount of columns of the generated CSV table
+        /// </summary>
         public int ColumnCount { get; private set; }
-        public int LineCount { get; private set; }
+        
+        /// <summary>
+        /// Gets the amount of rows of the generated CSV table (excluding the header).
+        /// </summary>
+        public int RowCount { get; private set; }
+
+        /// <summary>
+        /// Gets the separator used for this generated CSV table.
+        /// </summary>
         public string Separator { get; } = Bogus.PickRandom(";", ",.");
+
+        /// <summary>
+        /// Gets the new-row character used for this generated CSV table.
+        /// </summary>
         public string NewLine { get; } = Bogus.PickRandom(Environment.NewLine, "\n");
 
+        /// <summary>
+        /// Generate a new <see cref="TestCsv"/> model.
+        /// </summary>
         public static TestCsv Generate(Action<TestCsvOptions> configureOptions = null)
         {
             var options = new TestCsvOptions();
@@ -53,7 +85,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
             IList<string[]> columns = Bogus.Make(options.ColumnCount, () =>
             {
-                string[] col = GenerateColumn(options.LineCount);
+                string[] col = GenerateColumn(options.RowCount);
                 if (options.Header is CsvHeader.Present)
                 {
                     return col.Prepend(Bogus.Database.Column()).ToArray();
@@ -70,25 +102,37 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             return new TestCsv(columns, headerNames, options);
         }
 
+        /// <summary>
+        /// Adds a new random column to the CSV table.
+        /// </summary>
         public void AddColumn()
         {
             string columnName = Bogus.Database.Column();
-            List<string> newColumn = GenerateColumn(LineCount).Prepend(columnName).ToList();
+            List<string> newColumn = GenerateColumn(RowCount).Prepend(columnName).ToList();
             _columns.Insert(Bogus.Random.Int(0, _columns.Count - 1), newColumn);
             ColumnCount++;
         }
 
-        public void AddLine()
+        /// <summary>
+        /// Adds a new row to the CSV table.
+        /// </summary>
+        public void AddRow()
         {
             Assert.All(_columns, col => col.Add(GenValueFunc()()));
-            LineCount++;
+            RowCount++;
         }
 
-        public void AddInvalidLine()
+        /// <summary>
+        /// Adds a new row to the CSV table that does not corresponds with the expected column count.
+        /// </summary>
+        public void AddInvalidRow()
         {
-            _invalidLines.Add(Bogus.Make(Bogus.Random.Int(11, 20), GenValue).ToList());
+            _invalidrows.Add(Bogus.Make(Bogus.Random.Int(11, 20), GenValue).ToList());
         }
 
+        /// <summary>
+        /// Change a randomly picked column name in the CSV table.
+        /// </summary>
         public string ChangeColumnValue()
         {
             List<string> col = Bogus.PickRandom(_columns);
@@ -98,7 +142,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             return original;
         }
 
-        public string ChangeCellValue()
+        /// <summary>
+        /// Change a randomly picked cell value in the CSV table.
+        /// </summary>
+        public (string headerName, string changedValue) ChangeCellValue()
         {
             List<string> col = Bogus.PickRandom(_columns);
             int index = Bogus.Random.Int(1, col.Count - 1);
@@ -106,12 +153,29 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             string changedValue = GenValue();
             col[index] = "diff-" + changedValue;
 
-            return changedValue;
+            return (col[0], changedValue);
         }
 
-        public void Shuffle()
+        public void RemoveHeaders()
         {
-            _shouldShuffle = true;
+            _columns = _columns.Select(c => c.Skip(1).ToList()).ToList();
+            _options.Header = CsvHeader.Missing;
+        }
+
+        /// <summary>
+        /// Shuffle the CSV table's rows.
+        /// </summary>
+        public void ShuffleRows()
+        {
+            _shouldShuffleRows = true;
+        }
+
+        /// <summary>
+        /// Shuffle the CSV table's columns.
+        /// </summary>
+        public void ShuffleColumns()
+        {
+            _columns = Bogus.Random.Shuffle(_columns).ToList();
         }
 
         /// <summary>
@@ -123,10 +187,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             return new TestCsv(_columns.Select(col => col.ToArray()), HeaderNames, _options);
         }
 
-        private static string[] GenerateColumn(int lineCount)
+        private static string[] GenerateColumn(int rowCount)
         {
             Func<string> genValue = GenValueFunc();
-            return Bogus.Make(lineCount, genValue).ToArray();
+            return Bogus.Make(rowCount, genValue).ToArray();
         }
 
         private static string GenValue()
@@ -149,39 +213,39 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            List<List<string>> lines = Transpose(_columns);
-            lines.AddRange(_invalidLines);
+            List<List<string>> rows = Transpose(_columns);
+            rows.AddRange(_invalidrows);
 
-            if (_shouldShuffle)
+            if (_shouldShuffleRows)
             {
                 if (_options.Header is CsvHeader.Present)
                 {
-                    List<string> headers = lines.First();
-                    List<List<string>> shuffled = Bogus.Random.Shuffle(lines.Skip(1)).ToList();
-                    lines = shuffled.Prepend(headers).ToList();
+                    List<string> headers = rows.First();
+                    List<List<string>> shuffled = Bogus.Random.Shuffle(rows.Skip(1)).ToList();
+                    rows = shuffled.Prepend(headers).ToList();
                 }
                 else
                 {
-                    lines = Bogus.Random.Shuffle(lines).ToList();
+                    rows = Bogus.Random.Shuffle(rows).ToList();
                 }
             }
 
             string csv = 
-                lines.Select(line => string.Join(Separator, line))
-                     .Aggregate((line1, line2) => line1 + NewLine + line2);
+                rows.Select(row => string.Join(Separator, row))
+                     .Aggregate((row1, row2) => row1 + NewLine + row2);
 
             return csv;
         }
 
-        private static List<List<string>> Transpose(List<List<string>> lines)
+        private static List<List<string>> Transpose(List<List<string>> rows)
         {
-            if (lines[0].Count <= 0)
+            if (rows[0].Count <= 0)
             {
                 return new List<List<string>>();
             }
 
-            List<string> head = lines.Select(line => line[0]).ToList();
-            List<List<string>> tail = Transpose(lines.Select(line => line.Skip(1).ToList()).ToList());
+            List<string> head = rows.Select(row => row[0]).ToList();
+            List<List<string>> tail = Transpose(rows.Select(row => row.Skip(1).ToList()).ToList());
 
             return tail.Prepend(head).Select(col => col.ToList()).ToList();
         }
