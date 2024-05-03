@@ -33,7 +33,7 @@ AssertXml.Equal(expected, actual);
 // </diff-root>
 ```
 
-💡 Currently, the input contents are trimmed in case if the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the XML comparison.
@@ -106,7 +106,7 @@ AssertJson.Equal(expected, actual);
 // }
 ```
 
-💡 Currently, the input contents are trimmed in case if the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the JSON comparison.
