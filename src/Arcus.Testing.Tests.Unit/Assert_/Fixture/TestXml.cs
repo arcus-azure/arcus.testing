@@ -12,7 +12,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
     /// </summary>
     public class TestXml
     {
-        private readonly XmlDocument _doc;
+        private XmlDocument _doc;
         private static readonly Faker Bogus = new();
 
         private TestXml(XmlDocument doc)
@@ -40,7 +40,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 }
 
                 XmlElement[] children = 
-                    Bogus.Make(Bogus.Random.Int(1, 10), GenNodeName)
+                    Bogus.Make(Bogus.Random.Int(1, 5), GenNodeName)
                          .Select(name =>
                          {
                              string ns = Bogus.Random.Bool() ? current.NamespaceURI : GenNamespace();
@@ -71,14 +71,14 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
         private static XmlAttribute[] GenAttributes(XmlDocument doc)
         {
-            return Bogus.Make(Bogus.Random.Int(1, 10), () => CreateAttribute(doc)).ToArray();
+            return Bogus.Make(Bogus.Random.Int(5, 10), () => CreateAttribute(doc)).ToArray();
         }
 
         private static string GenPrefix()
         {
             string Gen()
             {
-                return string.Concat(Bogus.PickRandom(Alphabet(), Bogus.Random.Int(1, 5)));
+                return string.Concat(Bogus.PickRandom(Alphabet(), Bogus.Random.Int(4, 6)));
             }
 
             string prefix = Gen();
@@ -272,12 +272,43 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
         private static XmlElement SelectRandomly(XmlElement node, Func<XmlElement, bool> filter)
         {
-            IEnumerable<XmlElement> elements = node.ChildNodes.OfType<XmlElement>()
-                                                      .Select(n => SelectRandomly(n, filter))
-                                                      .Where(n => filter?.Invoke(n) ?? true)
-                                                      .Concat(filter?.Invoke(node) ?? true ? new[] { node } : Array.Empty<XmlElement>());
-            return Bogus.PickRandom(
-                elements);
+            IEnumerable<XmlElement> elements = 
+                node.ChildNodes.OfType<XmlElement>()
+                    .Select(n => SelectRandomly(n, filter))
+                    .Where(n => filter?.Invoke(n) ?? true)
+                    .Concat(filter?.Invoke(node) ?? true ? new[] { node } : Array.Empty<XmlElement>());
+            
+            return Bogus.PickRandom(elements);
+        }
+
+        public void Shuffle()
+        {
+            XmlNode shuffled = Shuffle(_doc.DocumentElement);
+            
+            var xml = new XmlDocument();
+            xml.LoadXml(shuffled.OuterXml);
+            _doc = xml;
+        }
+
+        private static XmlNode Shuffle(XmlNode node)
+        {
+            if (node is XmlElement element)
+            {
+                var attributes = Bogus.Random.Shuffle(
+                    element.Attributes.OfType<XmlAttribute>()
+                           .Where(a => a.NamespaceURI != "http://www.w3.org/2000/xmlns/")).ToArray();
+                
+                Assert.All(attributes, attr => element.RemoveAttribute(attr.Name));
+
+                foreach (var attr in attributes)
+                {
+                    element.SetAttributeNode(attr);
+                }
+
+                return element;
+            }
+
+            return node;
         }
     }
 }

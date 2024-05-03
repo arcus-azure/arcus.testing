@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Azure.Storage.Blobs.Models;
 using Bogus;
 
 namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
@@ -11,7 +15,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
     /// </summary>
     public class TestJson
     {
-        private readonly JsonNode _doc;
+        private JsonNode _doc;
         private static readonly Faker Bogus = new();
 
         private TestJson(JsonNode doc)
@@ -36,7 +40,12 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// <summary>
         /// Generates random JSON array with randomly number of objects, arrays, properties and values.
         /// </summary>
-        public static string GenerateJsonArray()
+        public static TestJson GenerateArray()
+        {
+            return new TestJson(GenerateJsonArray());
+        }
+
+        private static string GenerateJsonArray()
         {
             var builder = new StringBuilder();
             builder.AppendLine("[");
@@ -172,12 +181,49 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         }
 
         /// <summary>
+        /// Moves the nodes randomly around the document.
+        /// </summary>
+        public void Shuffle()
+        {
+            _doc = Shuffle(_doc);
+        }
+
+        private static JsonNode Shuffle(JsonNode node)
+        {
+            if (node is JsonArray array)
+            {
+                IEnumerable<JsonNode> items =
+                    array.OfType<JsonObject>().Any()
+                        ? array.Select(Shuffle)
+                        : Bogus.Random.Shuffle(array);
+
+                var json = JsonNode.Parse(JsonSerializer.Serialize(items));
+                return json;
+            }
+
+            if (node is JsonObject obj)
+            {
+                IDictionary<string, JsonNode> items = 
+                    Bogus.Random.Shuffle(obj)
+                         .ToDictionary(p => p.Key, p => p.Value);
+
+                var json = JsonNode.Parse(JsonSerializer.Serialize(items));
+                return json;
+            }
+
+            return node;
+        }
+
+        /// <summary>
         /// Returns a string that represents the current object.
         /// </summary>
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            return _doc.ToString();
+            return _doc.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = false
+            });
         }
     }
 }
