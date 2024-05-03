@@ -29,7 +29,7 @@ string actualXml = ...;
 + AssertXml.Equal(expectedXml, actualXml);
 ```
 
-Any nodes that should be ignored can be configured with passing additional options:
+Any nodes that should be ignored can be configured by passing additional options:
 
 ```diff
 - using Codit.Testing.OutputComparison;
@@ -62,7 +62,7 @@ string actualJson = ...;
 + AssertJson.Equal(expectedJson, actualJson);
 ```
 
-Any nodes that should be ignored can be configured with passing additional options:
+Any nodes that should be ignored can be configured by passing additional options:
 
 ```diff
 - using Codit.Testing.OutputComparison;
@@ -80,7 +80,7 @@ Any nodes that should be ignored can be configured with passing additional optio
 ### CSV
 You can use `AssertCsv` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference. The Arcus variant also allows for raw CSV to be compared, without the need for you to create a dedicated DTO serialization model before the comparison can happen. It is advised to use your custom domain comparison if you need custom comparison of rows.
 
-#### Use order of rows
+#### Use order of rows & columns
 
 ```diff
 - using Codit.Testing.OutputComparison;
@@ -96,7 +96,7 @@ string actualCsv = ...;
 + AssertCsv.Equal(expectedCsv, actualCsv);
 ```
 
-#### Ignore order of rows
+#### Ignore order of rows & columns
 
 ```diff
 - using Codit.Testing.OutputComparison;
@@ -112,7 +112,8 @@ string actualCsv = ...;
 
 + AssertCsv.Equal(expectedCsv, actualCsv, options =>
 + {
-+     options.Order = AssertCsvOrder.Ignore;
++     options.ColumnOrder = AssertCsvOrder.Ignore;
++     options.RowOrder = AssertCsvOrder.Ignore;
 + });
 ```
 
