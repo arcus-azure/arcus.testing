@@ -182,6 +182,8 @@ AssertCsv.Equal(expectd, actual);
 The test assertion also exposes several options to tweak the behavior of the CSV comparison.
 
 ```csharp
+using Arcus.Testing;
+
 AssertCsv.Equal(..., options =>
 {
     // The separator character to be used when determining CSV columns in the loaded document.
@@ -218,7 +220,7 @@ string csv = ...;
 
 CsvTable expected = AssertCsv.Load(csv);
 
-// Or with options (same set as available with the AssertCsv.Equal)
+// Or with options (same set as available with the `AssertCsv.Equal`).
 CsvTable actual = AssertCsv.Load(csv, options => ...);
 
 // Overload with tables.
