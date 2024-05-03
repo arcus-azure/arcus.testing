@@ -11,11 +11,29 @@ using static Arcus.Testing.XmlDifferenceKind;
 namespace Arcus.Testing
 {
     /// <summary>
+    /// Represents the available options when asserting the order of XML elements in documents in the <see cref="AssertXml"/>.
+    /// </summary>
+    public enum AssertXmlOrder
+    {
+        /// <summary>
+        /// Ignore the order of attributes when comparing documents (default).
+        /// </summary>
+        Ignore = 0,
+
+        /// <summary>
+        /// Take the order of attributes into account when comparing documents.
+        /// </summary>
+        Include
+    }
+
+
+    /// <summary>
     /// Represents the available options when asserting on different XML documents in <see cref="AssertXml"/>.
     /// </summary>
     public class AssertXmlOptions
     {
         private readonly Collection<string> _ignoredNodeNames = new();
+        private AssertXmlOrder _order = AssertXmlOrder.Ignore;
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 
         /// <summary>
@@ -40,9 +58,31 @@ namespace Arcus.Testing
         internal IEnumerable<string> IgnoredNodeNames => _ignoredNodeNames;
 
         /// <summary>
+        /// Gets or sets the type of order should be used when comparing XML documents.
+        /// </summary>
+        /// <remarks>
+        ///     Only XML attributes can be configured to ignore their order as they are unique by their name,
+        ///     XML elements are unique by their contents and cannot be ordered without custom code.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
+        public AssertXmlOrder Order
+        {
+            get => _order;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "XML order enumeration value is outside the bounds of the enumeration");
+                }
+
+                _order = value;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the maximum characters of the expected and actual inputs should be written to the test output.
         /// </summary>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value is lower than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is lower than zero.</exception>
         public int MaxInputCharacters
         {
             get => _maxInputCharacters;
@@ -125,7 +165,10 @@ namespace Arcus.Testing
             var options = new AssertXmlOptions();
             configureOptions?.Invoke(options);
 
-            XmlDifference diff = CompareNode(XPathXmlNode.Root(expected, options), XPathXmlNode.Root(actual, options));
+            XPathXmlNode expectedNode = XPathXmlNode.Root(expected, options);
+            XPathXmlNode actualNode = XPathXmlNode.Root(actual, options);
+            XmlDifference diff = CompareNode(expectedNode, actualNode, options);
+            
             if (diff != null)
             {
                 string expectedXml = ReadXml(expected);
@@ -133,9 +176,9 @@ namespace Arcus.Testing
 
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "expected and actual XML documents do not match")
-                                     .AppendLine(diff.ToString())
-                                     .AppendDiff(expectedXml, actualXml, options.MaxInputCharacters)
-                                     .ToString());
+                                 .AppendLine(diff.ToString())
+                                 .AppendDiff(expectedXml, actualXml, options.MaxInputCharacters)
+                                 .ToString());
             }
         }
 
@@ -157,16 +200,16 @@ namespace Arcus.Testing
             }
         }
 
-        private static XmlDifference CompareNode(XPathXmlNode expected, XPathXmlNode actual)
+        private static XmlDifference CompareNode(XPathXmlNode expected, XPathXmlNode actual, AssertXmlOptions options)
         {
             return expected.NodeType switch
             {
-                XmlNodeType.Element => CompareElement(expected, actual),
+                XmlNodeType.Element => CompareElement(expected, actual, options),
                 _ => null
             };
         }
 
-        private static XmlDifference CompareElement(XPathXmlNode expected, XPathXmlNode actual)
+        private static XmlDifference CompareElement(XPathXmlNode expected, XPathXmlNode actual, AssertXmlOptions options)
         {
             if (expected.NodeType != actual.NodeType)
             {
@@ -190,17 +233,17 @@ namespace Arcus.Testing
                 return new(ActualOtherValue, expectedValue, actualValue, expected.Path + "/text()");
             }
 
-            XmlDifference attributeDiff = CompareAttributes(expected, actual);
+            XmlDifference attributeDiff = CompareAttributes(expected, actual, options);
             if (attributeDiff != null)
             {
                 return attributeDiff;
             }
 
-            XmlDifference childrenDiff = CompareChildNodes(expected, actual);
+            XmlDifference childrenDiff = CompareChildNodes(expected, actual, options);
             return childrenDiff;
         }
 
-        private static XmlDifference CompareChildNodes(XPathXmlNode expected, XPathXmlNode actual)
+        private static XmlDifference CompareChildNodes(XPathXmlNode expected, XPathXmlNode actual, AssertXmlOptions options)
         {
             if (expected.Children.Length != actual.Children.Length)
             {
@@ -212,7 +255,7 @@ namespace Arcus.Testing
                 XPathXmlNode expectedChild = expected.Children[index];
                 XPathXmlNode actualChild = actual.Children[index];
 
-                XmlDifference firstDifference = CompareNode(expectedChild, actualChild);
+                XmlDifference firstDifference = CompareNode(expectedChild, actualChild, options);
                 if (firstDifference != null)
                 {
                     return firstDifference;
@@ -222,7 +265,7 @@ namespace Arcus.Testing
             return null;
         }
 
-        private static XmlDifference CompareAttributes(XPathXmlNode expected, XPathXmlNode actual)
+        private static XmlDifference CompareAttributes(XPathXmlNode expected, XPathXmlNode actual, AssertXmlOptions options)
         {
             if (expected.Attributes.Length != actual.Attributes.Length)
             {
@@ -232,12 +275,23 @@ namespace Arcus.Testing
             for (var index = 0; index < expected.Attributes.Length; index++)
             {
                 XmlAttribute expectedAttr = expected.Attributes[index];
-                XmlAttribute actualAttr = actual.Attributes[index];
-
                 var path = $"{expected.Path}[@{expectedAttr.LocalName}]";
+
+                XmlAttribute actualAttr = 
+                    options.Order is AssertXmlOrder.Ignore
+                        ? Array.Find(actual.Attributes, a => a.LocalName == expectedAttr.LocalName && a.NamespaceURI == expectedAttr.NamespaceURI)
+                        : actual.Attributes[index];
+                
+                if (actualAttr is null)
+                {
+                    return new(ActualMissingAttribute, XmlDifference.Describe(expectedAttr), actual: "", path);
+                }
+
                 if (expectedAttr.NamespaceURI != actualAttr.NamespaceURI)
                 {
-                    return new(ActualOtherNamespace, expectedAttr.NamespaceURI, actualAttr.NamespaceURI, path);
+                    return new(ActualOtherNamespace, 
+                        expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI, 
+                        actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path);
                 }
 
                 if (expectedAttr.LocalName != actualAttr.LocalName)
@@ -370,15 +424,18 @@ namespace Arcus.Testing
                    .Where(n => !options.IgnoredNodeNames.Contains(n.LocalName))
                    .ToArray();
 
-            bool hasSingleChild = children.Length == 1;
             return new Node
             {
                 Current = xml,
                 Path = path,
-                Children = children.Select((ch, i) =>
+                Children = children.GroupBy(ch => ch.LocalName).SelectMany(group =>
                 {
-                    string childPath = hasSingleChild ? $"{path}/{ch.LocalName}" : $"{path}/{ch.LocalName}[{i}]";
-                    return new XPathXmlNode(CreateNode(ch, childPath, options), options);
+                    bool hasSingleNamedChild = group.Count() == 1;
+                    return group.Select((ch, i) =>
+                    {
+                        string childPath = hasSingleNamedChild ? $"{path}/{ch.LocalName}" : $"{path}/{ch.LocalName}[{i}]";
+                        return new XPathXmlNode(CreateNode(ch, childPath, options), options);
+                    });
                 }).ToArray()
             };
         }
@@ -399,6 +456,7 @@ namespace Arcus.Testing
         DifferentElementLength,
         DifferentAttributeLength,
 
+        ActualMissingAttribute,
         ActualOtherType,
         ActualOtherName,
         ActualOtherNamespace,
@@ -480,6 +538,7 @@ namespace Arcus.Testing
         {
             return _kind switch
             {
+                ActualMissingAttribute => $"actual XML misses {_expected} at {_path}",
                 ActualOtherType => $"has {_actual} instead of {_expected} at {_path}",
                 ActualOtherName => $"actual XML has a different name at {_path}, expected {_expected} while actual {_actual}",
                 ActualOtherValue => $"actual XML has a different value at {_path}, expected {_expected} while actual {_actual}",

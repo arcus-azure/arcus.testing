@@ -10,12 +10,29 @@ using static Arcus.Testing.JsonDifferenceKind;
 namespace Arcus.Testing
 {
     /// <summary>
+    /// Represents the available options when asserting the order of JSON elements in documents in the <see cref="AssertJson"/>.
+    /// </summary>
+    public enum AssertJsonOrder
+    {
+        /// <summary>
+        /// Ignore the order of elements (array values, object properties) when comparing documents (default).
+        /// </summary>
+        Ignore = 0,
+
+        /// <summary>
+        /// Take the order of elements (array values, object properties) into account when comparing documents.
+        /// </summary>
+        Include
+    }
+
+    /// <summary>
     /// Represents the available options when asserting on different JSON documents in <see cref="AssertJson"/>.
     /// </summary>
     public class AssertJsonOptions
     {
         private readonly Collection<string> _ignoredNodeNames = new();
-        private int _maxInputCharacters;
+        private AssertJsonOrder _order = AssertJsonOrder.Ignore;
+        private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 
         /// <summary>
         /// Adds a local element node name which will get ignored when comparing JSON documents.
@@ -37,6 +54,28 @@ namespace Arcus.Testing
         /// Gets the configured ignored names of JSON documents.
         /// </summary>
         internal IEnumerable<string> IgnoredNodeNames => _ignoredNodeNames;
+
+        /// <summary>
+        /// Gets or sets the type of order which should be used when comparing JSON documents.
+        /// </summary>
+        /// <remarks>
+        ///     Only JSON array values can be configured to ignore their order as they are unique by their name,
+        ///     JSON objects are unique by their contents and cannot be ordered without custom code.
+        /// </remarks>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
+        public AssertJsonOrder Order
+        {
+            get => _order;
+            set
+            {
+                if (!Enum.IsDefined(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "JSON order enumeration value is outside the bounds of the enumeration");
+                }
+
+                _order = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the maximum characters of the expected and actual inputs should be written to the test output.
@@ -178,6 +217,15 @@ namespace Arcus.Testing
             if (actualChildren.Length != expectedChildren.Length)
             {
                 return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
+            }
+
+            if (options.Order is AssertJsonOrder.Ignore)
+            {
+                if (expectedChildren.OfType<JsonValue>().Any())
+                {
+                    expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
+                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
+                }
             }
 
             return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
