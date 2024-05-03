@@ -58,7 +58,7 @@ AssertXml.Equal(..., options =>
 ```
 
 ### Loading XML documents yourself
-The XML assertion equalization can be called directly with raw contents - internally it parses to a valid XML structure: `XmlDocument`. It it so happens that you want to compare two XML nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
+The XML assertion equalization can be called directly with raw contents - internally it parses to a valid XML structure: `XmlDocument`. If you want to compare two XML nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
 💡 It provides you with more options to control how your file should be loaded.
 
@@ -131,7 +131,7 @@ AssertJson.Equal(..., options =>
 ```
 
 ### Loading JSON nodes yourself
-The JSON assertion equalization can be called directly with raw contents - internally it parses to a valid JSON structure: `JsonNode`. It it so happens that you want to compare two JSON nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
+The JSON assertion equalization can be called directly with raw contents - internally it parses to a valid JSON structure: `JsonNode`. If you want to compare two JSON nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
 💡 It provides you with more options to control how your file should be loaded.
 
