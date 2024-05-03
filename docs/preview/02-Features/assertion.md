@@ -51,7 +51,7 @@ AssertXml.Equal(..., options =>
     // Default: Ignore.
     options.Order = AssertXmlOrder.Include;
 
-    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
 });
@@ -124,7 +124,7 @@ AssertJson.Equal(..., options =>
     // Default: Ignore.
     options.Order = AssertJsonOrder.Include;
 
-    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
 });
