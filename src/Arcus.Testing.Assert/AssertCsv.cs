@@ -44,32 +44,32 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertCsvOptions
     {
-        private readonly Collection<string> _ignoredColumnNames = new();
+        private readonly Collection<string> _ignoredColumns = new();
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
         private string _separator = ";", _newRow = Environment.NewLine;
         private AssertCsvHeader _header = AssertCsvHeader.Present;
         private AssertCsvOrder _rowOrder = AssertCsvOrder.Include, _columnOrder = AssertCsvOrder.Include;
 
         /// <summary>
-        /// Adds a column name which will get ignored when comparing CSV tables.
+        /// Adds a column which will get ignored when comparing CSV tables.
         /// </summary>
-        /// <param name="columnName">The name of the column that should be ignored.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="columnName"/> is blank.</exception>
-        public AssertCsvOptions IgnoreColumn(string columnName)
+        /// <param name="headerName">The name of the column that should be ignored.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="headerName"/> is blank.</exception>
+        public AssertCsvOptions IgnoreColumn(string headerName)
         {
-            if (string.IsNullOrWhiteSpace(columnName))
+            if (string.IsNullOrWhiteSpace(headerName))
             {
-                throw new ArgumentException($"Requires a non-blank '{nameof(columnName)}' when adding an ignored column name of a CSV table", nameof(columnName));
+                throw new ArgumentException($"Requires a non-blank '{nameof(headerName)}' when adding an ignored column of a CSV table", nameof(headerName));
             }
 
-            _ignoredColumnNames.Add(columnName);
+            _ignoredColumns.Add(headerName);
             return this;
         }
 
         /// <summary>
-        /// Gets the names of the columns that should be ignored when comparing CSV tables.
+        /// Gets the header names of the columns that should be ignored when comparing CSV tables.
         /// </summary>
-        internal IEnumerable<string> IgnoredColumnNames => _ignoredColumnNames;
+        internal IEnumerable<string> IgnoredColumns => _ignoredColumns;
 
         /// <summary>
         /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default semicolon: ';'.
@@ -186,7 +186,7 @@ namespace Arcus.Testing
         public override string ToString()
         {
             return $"Options: {Environment.NewLine}" +
-                   $"\t- ignored columns: [{string.Join($"{Separator} ", _ignoredColumnNames)}]{Environment.NewLine}" +
+                   $"\t- ignored columns: [{string.Join($"{Separator} ", _ignoredColumns)}]{Environment.NewLine}" +
                    $"\t- column order: {ColumnOrder}{Environment.NewLine}" +
                    $"\t- row order: {RowOrder}";
         }
@@ -332,7 +332,7 @@ namespace Arcus.Testing
         private static void EnsureOnlyIgnoreColumnsOnUniqueColumns(CsvTable expected, AssertCsvOptions options)
         {
             var duplicateHeaderNames =
-                expected.HeaderNames.Where(n => !options.IgnoredColumnNames.Contains(n))
+                expected.HeaderNames.Where(n => !options.IgnoredColumns.Contains(n))
                                     .GroupBy(n => n)
                                     .Where(n => n.Count() > 1)
                                     .ToArray();
@@ -357,18 +357,20 @@ namespace Arcus.Testing
                 return new(DifferentHeaderConfig, expected.Header.ToString(), actual.Header.ToString(), rowNumber: 0);
             }
 
-            string[] expectedColumns = expected.HeaderNames;
-            string[] actualColumns = actual.HeaderNames;
+            string[] expectedHeaders = expected.HeaderNames,
+                     actualHeaders = actual.HeaderNames;
+            
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
-                expectedColumns = expectedColumns.Order().ToArray();
-                actualColumns = actualColumns.Order().ToArray();
+                expectedHeaders = expectedHeaders.Order().ToArray();
+                actualHeaders = actualHeaders.Order().ToArray();
             }
 
-            for (var i = 0; i < expectedColumns.Length; i++)
+            for (var i = 0; i < expectedHeaders.Length; i++)
             {
-                string expectedHeader = expectedColumns[i];
-                string actualHeader = actualColumns[i];
+                string expectedHeader = expectedHeaders[i],
+                       actualHeader = actualHeaders[i];
+                
                 if (expectedHeader != actualHeader)
                 {
                     return new(ActualMissingColumn, expectedHeader, actualHeader, rowNumber: 0);
@@ -409,7 +411,7 @@ namespace Arcus.Testing
                     CsvCell expectedCell = expectedCells[col],
                             actualCell = actualCells[col];
 
-                    if (options.IgnoredColumnNames.Contains(expectedCell.ColumnHeader))
+                    if (options.IgnoredColumns.Contains(expectedCell.HeaderName))
                     {
                         continue;
                     }
@@ -444,7 +446,7 @@ namespace Arcus.Testing
         internal CsvDifference(CsvDifferenceKind kind, CsvCell expected, CsvCell actual)
             : this(kind, expected.Value, actual.Value, expected.RowNumber)
         {
-            _column = expected.ColumnHeader;
+            _column = expected.HeaderName;
         }
 
         internal CsvDifference(CsvDifferenceKind kind, int expected, int actual)
@@ -613,7 +615,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a single row within the <see cref="CsvTable"/>.
     /// </summary>
-    public sealed class CsvRow : IComparable<CsvRow>
+    public sealed class CsvRow
     {
         private readonly AssertCsvOptions _options;
 
@@ -640,31 +642,24 @@ namespace Arcus.Testing
 
         internal static CsvRow[] WithOrderedCells(CsvRow[] rows)
         {
+            ArgumentNullException.ThrowIfNull(rows);
             return rows.Select(row =>
             {
-                row.Cells = row.Cells.OrderBy(c => c.ColumnHeader).ToArray();
+                row.Cells = row.Cells.OrderBy(c => c.HeaderName).ToArray();
                 return row;
             }).ToArray();
         }
 
         internal static CsvRow[] WithOrderedRows(CsvRow[] rows, AssertCsvOptions options)
         {
+            ArgumentNullException.ThrowIfNull(rows);
+            ArgumentNullException.ThrowIfNull(options);
+
             return rows.OrderBy(r =>
             {
-                string[] line = r.Cells.Where(c => !options.IgnoredColumnNames.Contains(c.ColumnHeader)).Select(c => c.Value).ToArray();
+                string[] line = r.Cells.Where(c => !options.IgnoredColumns.Contains(c.HeaderName)).Select(c => c.Value).ToArray();
                 return string.Join(options.Separator, line);
             }).ToArray();
-        }
-
-        /// <summary>
-        /// Compares the current instance with another object of the same type and returns an integer that indicates whether the current instance precedes, follows, or occurs in the same position in the sort order as the other object.
-        /// </summary>
-        /// <param name="other">An object to compare with this instance.</param>
-        /// <returns>A value that indicates the relative order of the objects being compared. The return value has these meanings:
-        /// <list type="table"><listheader><term> Value</term><description> Meaning</description></listheader><item><term> Less than zero</term><description> This instance precedes <paramref name="other" /> in the sort order.</description></item><item><term> Zero</term><description> This instance occurs in the same position in the sort order as <paramref name="other" />.</description></item><item><term> Greater than zero</term><description> This instance follows <paramref name="other" /> in the sort order.</description></item></list></returns>
-        public int CompareTo(CsvRow other)
-        {
-            return string.Compare(ToString(), other.ToString(), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -684,7 +679,7 @@ namespace Arcus.Testing
     {
         internal CsvCell(string headerName, int columnNumber, int rowNumber, string value)
         {
-            ColumnHeader = headerName;
+            HeaderName = headerName;
             ColumnNumber = columnNumber;
             RowNumber = rowNumber;
             Value = value;
@@ -693,7 +688,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the name of the header of current column.
         /// </summary>
-        public string ColumnHeader { get; }
+        public string HeaderName { get; }
 
         /// <summary>
         /// Gets the value of the current cell's location.
