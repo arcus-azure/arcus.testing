@@ -314,11 +314,12 @@ namespace Arcus.Testing
 
         private static CsvDifference FindFirstDifference(CsvTable expected, CsvTable actual, AssertCsvOptions options)
         {
+            EnsureOnlyIgnoreOnPresentHeaders(expected, actual, options);
             EnsureOnlyIgnoreColumnsOnUniqueColumns(expected, options);
 
-            if (expected.HeaderNames.Length != actual.HeaderNames.Length)
+            if (expected.HeaderNames.Count != actual.HeaderNames.Count)
             {
-                return new(DifferentColumnLength, expected.HeaderNames.Length, actual.HeaderNames.Length);
+                return new(DifferentColumnLength, expected.HeaderNames.Count, actual.HeaderNames.Count);
             }
 
             if (expected.RowCount != actual.RowCount)
@@ -327,6 +328,18 @@ namespace Arcus.Testing
             }
 
             return CompareHeaders(expected, actual, options) ?? CompareRows(expected, actual, options);
+        }
+
+        private static void EnsureOnlyIgnoreOnPresentHeaders(CsvTable expected, CsvTable actual, AssertCsvOptions options)
+        {
+            bool missingHeaders = expected.Header is AssertCsvHeader.Missing || actual.Header is AssertCsvHeader.Missing;
+            if (missingHeaders && options.ColumnOrder is AssertCsvOrder.Ignore)
+            {
+                throw new EqualAssertionException(
+                    ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
+                                 .AppendLine($"columns can only be ignored when the header names are present in the expected and actual CSV tables, please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
+                                 .ToString());
+            }
         }
 
         private static void EnsureOnlyIgnoreColumnsOnUniqueColumns(CsvTable expected, AssertCsvOptions options)
@@ -344,8 +357,8 @@ namespace Arcus.Testing
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
                                  .AppendLine(
-                                     $"columns can only be ignored when the column names are unique, but got duplicates: [{description}], " +
-                                     $"please either remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}' or ignore these column names with 'options.{nameof(AssertCsvOptions.IgnoreColumn)}'")
+                                     $"columns can only be ignored when the header names are unique, but got duplicates: [{description}], " +
+                                     $"please either remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}' or ignore these columns with 'options.{nameof(AssertCsvOptions.IgnoreColumn)}'")
                                  .ToString());
             }
         }
@@ -357,8 +370,9 @@ namespace Arcus.Testing
                 return new(DifferentHeaderConfig, expected.Header.ToString(), actual.Header.ToString(), rowNumber: 0);
             }
 
-            string[] expectedHeaders = expected.HeaderNames,
-                     actualHeaders = actual.HeaderNames;
+            IReadOnlyCollection<string> 
+                expectedHeaders = expected.HeaderNames,
+                actualHeaders = actual.HeaderNames;
             
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
@@ -366,10 +380,10 @@ namespace Arcus.Testing
                 actualHeaders = actualHeaders.Order().ToArray();
             }
 
-            for (var i = 0; i < expectedHeaders.Length; i++)
+            for (var i = 0; i < expectedHeaders.Count; i++)
             {
-                string expectedHeader = expectedHeaders[i],
-                       actualHeader = actualHeaders[i];
+                string expectedHeader = expectedHeaders.ElementAt(i),
+                       actualHeader = actualHeaders.ElementAt(i);
                 
                 if (expectedHeader != actualHeader)
                 {
@@ -382,34 +396,36 @@ namespace Arcus.Testing
 
         private static CsvDifference CompareRows(CsvTable expectedCsv, CsvTable actualCsv, AssertCsvOptions options)
         {
-            var expected = expectedCsv.Rows;
-            var actual = actualCsv.Rows;
-
+            IReadOnlyCollection<CsvRow> 
+                expectedRows = expectedCsv.Rows,
+                actualRows = actualCsv.Rows;
+            
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
-                expected = CsvRow.WithOrderedCells(expected);
-                actual = CsvRow.WithOrderedCells(actual);
+                expectedRows = CsvRow.WithOrderedCells(expectedRows);
+                actualRows = CsvRow.WithOrderedCells(actualRows);
             }
 
-            bool shouldIgnoreOrder = options.RowOrder is AssertCsvOrder.Ignore && expected.Length > 1;
+            bool shouldIgnoreOrder = options.RowOrder is AssertCsvOrder.Ignore && expectedRows.Count > 1;
             if (shouldIgnoreOrder)
             {
-                expected = CsvRow.WithOrderedRows(expected, options);
-                actual = CsvRow.WithOrderedRows(actual, options);
+                expectedRows = CsvRow.WithOrderedRows(expectedRows, options);
+                actualRows = CsvRow.WithOrderedRows(actualRows, options);
             }
 
-            for (var row = 0; row < expected.Length; row++)
+            for (var row = 0; row < expectedRows.Count; row++)
             {
-                CsvRow expectedRow = expected[row],
-                       actualRow = actual[row];
+                CsvRow expectedRow = expectedRows.ElementAt(row),
+                       actualRow = actualRows.ElementAt(row);
                 
-                CsvCell[] expectedCells = expectedRow.Cells,
-                          actualCells = actualRow.Cells;
+                IReadOnlyCollection<CsvCell> 
+                    expectedCells = expectedRow.Cells,
+                    actualCells = actualRow.Cells;
 
-                for (var col = 0; col < expectedCells.Length; col++)
+                for (var col = 0; col < expectedCells.Count; col++)
                 {
-                    CsvCell expectedCell = expectedCells[col],
-                            actualCell = actualCells[col];
+                    CsvCell expectedCell = expectedCells.ElementAt(col),
+                            actualCell = actualCells.ElementAt(col);
 
                     if (options.IgnoredColumns.Contains(expectedCell.HeaderName))
                     {
@@ -503,13 +519,13 @@ namespace Arcus.Testing
         private readonly AssertCsvOptions _options;
         private const string LoadMethodName = $"{nameof(AssertCsv)}.{nameof(Load)}";
 
-        private CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
+        private CsvTable(string[] headerNames, IReadOnlyCollection<CsvRow> rows, string originalCsv, AssertCsvOptions options)
         {
             _originalCsv = originalCsv;
             _options = options;
 
             HeaderNames = headerNames;
-            RowCount = rows.Length;
+            RowCount = rows.Count;
             ColumnCount = headerNames.Length;
             Rows = rows;
         }
@@ -519,7 +535,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the names of the headers of the first row in the table.
         /// </summary>
-        public string[] HeaderNames { get; }
+        public IReadOnlyCollection<string> HeaderNames { get; }
 
         /// <summary>
         /// Gets the amount of rows the table has.
@@ -534,7 +550,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the rows of the table.
         /// </summary>
-        public CsvRow[] Rows { get; }
+        public IReadOnlyCollection<CsvRow> Rows { get; }
 
         /// <summary>
         /// Loads the raw <paramref name="csv"/> to a validly parsed <see cref="CsvTable"/>.
@@ -633,14 +649,17 @@ namespace Arcus.Testing
         /// <summary>
         /// Represents all the cells of a single row within a <see cref="CsvTable"/>.
         /// </summary>
-        public CsvCell[] Cells { get; private set; }
+        public IReadOnlyCollection<CsvCell> Cells { get; private set; }
 
         /// <summary>
         /// Gets the index where the row resides within the <see cref="CsvTable"/>.
         /// </summary>
         public int RowNumber { get; }
 
-        internal static CsvRow[] WithOrderedCells(CsvRow[] rows)
+        /// <summary>
+        /// Order the cells of each row in the passed <paramref name="rows"/>, a.k.a. horizontal ordering.
+        /// </summary>
+        internal static CsvRow[] WithOrderedCells(IReadOnlyCollection<CsvRow> rows)
         {
             ArgumentNullException.ThrowIfNull(rows);
             return rows.Select(row =>
@@ -650,7 +669,10 @@ namespace Arcus.Testing
             }).ToArray();
         }
 
-        internal static CsvRow[] WithOrderedRows(CsvRow[] rows, AssertCsvOptions options)
+        /// <summary>
+        /// Order the rows by the current configured <paramref name="options"/>, a.k.a. vertical ordering.
+        /// </summary>
+        internal static CsvRow[] WithOrderedRows(IReadOnlyCollection<CsvRow> rows, AssertCsvOptions options)
         {
             ArgumentNullException.ThrowIfNull(rows);
             ArgumentNullException.ThrowIfNull(options);

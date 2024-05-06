@@ -217,6 +217,7 @@ AssertCsv.Equal(..., options =>
 ```
 
 > ⚠️ **️IMPORTANT:** beware of combining ordering options:
+> * If you want to ignore the order of columns, but do not use headers in your CSV contents (`options.Header = Missing`), the order cannot be determined. Make sure to include headers in your CSV contents, or do not use `Ignore` for columns.
 > * If you want to ignore the order of columns, but use duplicate columns, the comparison cannot determine whether all the cells are there. Use `IgnoreColumn` to remove any duplicates, or do not use `Ignore` for columns. 
 
 ### Loading CSV tables yourself

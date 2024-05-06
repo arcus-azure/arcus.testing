@@ -200,6 +200,40 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
+        public void CompareWithoutHeader_WithIgnoredColumn_FailsWithMissingHeadersDescription()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv actual = expected.Copy();
+
+            actual.ShuffleRows();
+            actual.ShuffleColumns();
+
+            // Act / Assert
+            CompareShouldFailWithDescription(
+                Load(expected, opt => opt.Header = AssertCsvHeader.Missing), 
+                Load(actual, opt => opt.Header = AssertCsvHeader.Missing),
+                options => options.ColumnOrder = AssertCsvOrder.Ignore, 
+                "columns can only be ignored", "header names", "present");
+        }
+
+        [Property]
+        public void CompareWithoutHeader_WithIgnoredRow_FailsWithMissingHeadersDescription()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv actual = expected.Copy();
+
+            actual.ShuffleRows();
+
+            // Act / Assert
+            EqualCsv(
+                Load(expected, opt => opt.Header = AssertCsvHeader.Missing), 
+                Load(actual, opt => opt.Header = AssertCsvHeader.Missing),
+                options => options.RowOrder = AssertCsvOrder.Ignore);
+        }
+
+        [Property]
         public void CompareWithIncludeRowOrder_WithDifferentCellValue_FailsWithDescription()
         {
             // Arrange
@@ -479,7 +513,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
             Assert.Equal(csv.HeaderNames, doc.HeaderNames);
-            Assert.Equal(csv.RowCount, doc.Rows.Length);
+            Assert.Equal(csv.RowCount, doc.Rows.Count);
 
             Assert.All(csv.Rows.Skip(1).Zip(doc.Rows), line =>
             {
@@ -503,7 +537,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
             Assert.Equal(csv.HeaderNames, doc.HeaderNames);
 
-            Assert.Equal(csv.RowCount, doc.Rows.Length);
+            Assert.Equal(csv.RowCount, doc.Rows.Count);
             Assert.All(csv.Rows.Zip(doc.Rows), line =>
             {
                 Assert.All(line.First.Zip(line.Second.Cells), cell =>
