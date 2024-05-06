@@ -69,7 +69,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the header names of the columns that should be ignored when comparing CSV tables.
         /// </summary>
-        internal IEnumerable<string> IgnoredColumns => _ignoredColumns;
+        internal IReadOnlyCollection<string> IgnoredColumns => _ignoredColumns;
 
         /// <summary>
         /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default semicolon: ';'.
@@ -314,8 +314,8 @@ namespace Arcus.Testing
 
         private static CsvDifference FindFirstDifference(CsvTable expected, CsvTable actual, AssertCsvOptions options)
         {
-            EnsureOnlyIgnoreOnPresentHeaders(expected, actual, options);
-            EnsureOnlyIgnoreColumnsOnUniqueColumns(expected, options);
+            EnsureOnlyIgnoreColumnsOnPresentHeaders(expected, actual, options);
+            EnsureOnlyIgnoreColumnsOnUniqueHeaders(expected, options);
 
             if (expected.HeaderNames.Count != actual.HeaderNames.Count)
             {
@@ -330,19 +330,29 @@ namespace Arcus.Testing
             return CompareHeaders(expected, actual, options) ?? CompareRows(expected, actual, options);
         }
 
-        private static void EnsureOnlyIgnoreOnPresentHeaders(CsvTable expected, CsvTable actual, AssertCsvOptions options)
+        private static void EnsureOnlyIgnoreColumnsOnPresentHeaders(CsvTable expected, CsvTable actual, AssertCsvOptions options)
         {
             bool missingHeaders = expected.Header is AssertCsvHeader.Missing || actual.Header is AssertCsvHeader.Missing;
             if (missingHeaders && options.ColumnOrder is AssertCsvOrder.Ignore)
             {
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
-                                 .AppendLine($"columns can only be ignored when the header names are present in the expected and actual CSV tables, please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
+                                 .AppendLine($"order of columns can only be ignored when the header names are present in the expected and actual CSV tables, " +
+                                             $"please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
+                                 .ToString());
+            }
+
+            if (missingHeaders && options.IgnoredColumns.Count > 0)
+            {
+                throw new EqualAssertionException(
+                    ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
+                                 .AppendLine($"specific column(s) can only be ignored when the header names are present in the expected and actual CSV tables, " +
+                                             $"please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}' call(s)")
                                  .ToString());
             }
         }
 
-        private static void EnsureOnlyIgnoreColumnsOnUniqueColumns(CsvTable expected, AssertCsvOptions options)
+        private static void EnsureOnlyIgnoreColumnsOnUniqueHeaders(CsvTable expected, AssertCsvOptions options)
         {
             var duplicateHeaderNames =
                 expected.HeaderNames.Where(n => !options.IgnoredColumns.Contains(n))
@@ -350,15 +360,14 @@ namespace Arcus.Testing
                                     .Where(n => n.Count() > 1)
                                     .ToArray();
 
-            if (duplicateHeaderNames.Any() && options.ColumnOrder is AssertCsvOrder.Ignore)
+            if (duplicateHeaderNames.Length > 0 && options.ColumnOrder is AssertCsvOrder.Ignore)
             {
                 var description = string.Join(", ", duplicateHeaderNames.Select(h => h.Key));
 
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
-                                 .AppendLine(
-                                     $"columns can only be ignored when the header names are unique, but got duplicates: [{description}], " +
-                                     $"please either remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}' or ignore these columns with 'options.{nameof(AssertCsvOptions.IgnoreColumn)}'")
+                                 .AppendLine($"columns can only be ignored when the header names are unique, but got duplicates: [{description}], " +
+                                             $"please either remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}' or ignore these columns with 'options.{nameof(AssertCsvOptions.IgnoreColumn)}'")
                                  .ToString());
             }
         }
@@ -473,8 +482,8 @@ namespace Arcus.Testing
         internal CsvDifference(CsvDifferenceKind kind, string expected, string actual, int rowNumber)
         {
             _kind = kind;
-            _expected = expected;
-            _actual = actual;
+            _expected = expected ?? throw new ArgumentNullException(nameof(expected));
+            _actual = actual ?? throw new ArgumentNullException(nameof(actual));
             _rowNumber = rowNumber;
         }
 
@@ -484,7 +493,12 @@ namespace Arcus.Testing
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            return _kind switch
+            return DetermineErrorMessage(_kind);
+        }
+
+        private string DetermineErrorMessage(CsvDifferenceKind kind)
+        {
+            return kind switch
             {
                 ActualMissingColumn => $"actual CSV is missing a column: {_expected}",
                 ActualMissingRow => $"actual CSV does not contain a row: {_expected} which was found in expected CSV at row number {_rowNumber} (index-based, excluding header)",
@@ -492,7 +506,7 @@ namespace Arcus.Testing
                 DifferentColumnLength => $"actual CSV has {_actual} columns instead of {_expected}",
                 DifferentRowLength => $"actual CSV has {_actual} rows instead of {_expected}",
                 DifferentHeaderConfig => $"expected CSV is configured with '{_expected}' CSV header while actual is configured with '{_actual}' CSV header",
-                _ => throw new ArgumentOutOfRangeException(nameof(_kind), _kind, "Unknown CSV difference kind type")
+                _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown CSV difference kind type")
             };
         }
     }
@@ -519,15 +533,15 @@ namespace Arcus.Testing
         private readonly AssertCsvOptions _options;
         private const string LoadMethodName = $"{nameof(AssertCsv)}.{nameof(Load)}";
 
-        private CsvTable(string[] headerNames, IReadOnlyCollection<CsvRow> rows, string originalCsv, AssertCsvOptions options)
+        private CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
         {
-            _originalCsv = originalCsv;
-            _options = options;
+            _originalCsv = originalCsv ?? throw new ArgumentNullException(nameof(originalCsv));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
 
-            HeaderNames = headerNames;
-            RowCount = rows.Count;
+            HeaderNames = headerNames ?? throw new ArgumentNullException(nameof(headerNames));
+            Rows = rows ?? throw new ArgumentNullException(nameof(rows));
+            RowCount = rows.Length;
             ColumnCount = headerNames.Length;
-            Rows = rows;
         }
 
         internal AssertCsvHeader Header => _options.Header;
@@ -611,7 +625,7 @@ namespace Arcus.Testing
                                       .Aggregate((x, y) => x + Environment.NewLine + y);
 
                 throw new CsvException(
-                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all rows in the CSV table has the same amount of columns:")
+                    ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all rows in the CSV table has the same amount of columns")
                                  .AppendLine(description)
                                  .AppendInput(csv)
                                  .ToString());
