@@ -219,13 +219,10 @@ namespace Arcus.Testing
                 return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
             }
 
-            if (options.Order is AssertJsonOrder.Ignore)
+            if (options.Order is AssertJsonOrder.Ignore && expectedChildren.OfType<JsonValue>().Any())
             {
-                if (expectedChildren.OfType<JsonValue>().Any())
-                {
-                    expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
-                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
-                }
+                expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
+                actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
             }
 
             return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
@@ -297,6 +294,7 @@ namespace Arcus.Testing
                 return new(ActualOtherType, expected, actualValue);
             }
 
+#if  NET8_0
             if (actualValue.GetValueKind() != expectedValue.GetValueKind())
             {
                 return new(ActualOtherType, expectedValue, actualValue);
@@ -314,9 +312,27 @@ namespace Arcus.Testing
                 _ => false
             };
 
+#elif NET6_0
+            bool identicalFloats =
+                expectedValue.TryGetValue(out float expectedFloat)
+                && actualValue.TryGetValue(out float actualFloat)
+                && expectedFloat.Equals(actualFloat);
+            
+            bool identicalBool =
+                expectedValue.TryGetValue(out bool expectedBool)
+                && actualValue.TryGetValue(out bool actualBool)
+                && expectedBool == actualBool;
+
+            bool identicalString =
+                expectedValue.TryGetValue(out string expectedString)
+                && actualValue.TryGetValue(out string actualString)
+                && expectedString.Equals(actualString);
+
+            bool identical = identicalFloats || identicalBool || identicalString;
+#endif
             if (!identical)
             {
-                return new(ActualOtherValue, expected, actualValue);
+                return new(ActualOtherValue, expectedValue, actualValue);
             }
 
             return null;
@@ -394,8 +410,10 @@ namespace Arcus.Testing
 
         private static string Describe(JsonNode node)
         {
-            JsonValueKind type = node.GetValueKind();
             string nodeTxt = node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+#if NET8_0
+
+            JsonValueKind type = node.GetValueKind();
             return type switch
             {
                 JsonValueKind.Undefined => "type none",
@@ -408,6 +426,30 @@ namespace Arcus.Testing
                 JsonValueKind.Null => "type null",
                 _ => throw new ArgumentOutOfRangeException(nameof(node), type, "Unknown JSON value type")
             };
+#elif NET6_0
+            string DescribeJsonValue(JsonValue jsonValue)
+            {
+                if (jsonValue.TryGetValue(out float _))
+                {
+                    return $"a number: {node}";
+                }
+
+                if (jsonValue.TryGetValue(out bool b))
+                {
+                    return $"{b} boolean";
+                }
+
+                return $"a string: {node}";
+            }
+
+            return node switch
+            {
+                JsonObject _ => $"an object: {nodeTxt}",
+                JsonArray _ => $"an array: {node}",
+                JsonValue value => DescribeJsonValue(value),
+                _ => throw new ArgumentOutOfRangeException(nameof(node), node, "Unknown JSON value type")
+            };
+#endif
         }
 
         /// <summary>
@@ -420,9 +462,9 @@ namespace Arcus.Testing
             {
                 ActualIsNull => "actual JSON is null",
                 ExpectedIsNull => "expected JSON is null",
-                ActualOtherType => $"has {_actual} instead of {_expected} at {_path}",
+                ActualOtherType => $"actual JSON has a different type at {_path}, expected {_expected} while actual {_actual}",
                 ActualOtherValue => $"actual JSON has a different value at {_path}, expected {_expected} while actual {_actual}",
-                DifferentLength => $"has {_actual} elements instead of {_expected} at {_path}",
+                DifferentLength => $"actual JSON has {_actual} elements instead of {_expected} at {_path}",
                 ActualMissesProperty => $"actual JSON misses property at {_path}",
                 ExpectedMissesProperty => $"expected JSON misses property at {_path}",
                 ActualMissesElement => $"actual JSON misses expected JSON element {_path}",
