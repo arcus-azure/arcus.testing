@@ -5,14 +5,26 @@ using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck;
 using FsCheck.Xunit;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Newtonsoft.Json.Linq;
 using Xunit;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
     public class AssertJsonTests
     {
+        private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AssertJsonTests" /> class.
+        /// </summary>
+        public AssertJsonTests(ITestOutputHelper outputWriter)
+        {
+            _outputWriter = outputWriter;
+        }
 
         [Property]
         public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds()
@@ -24,7 +36,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             expected.Shuffle();
 
             // Act
-            Equal(expected, actual);
+            EqualJson(expected, actual);
         }
 
         [Property]
@@ -37,7 +49,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             expected.Shuffle();
 
             // Act / Assert
-            return Prop.When(expected != actual, () => CompareShouldFail(() => Equal(actual, expected, options => options.Order = AssertJsonOrder.Include)));
+            return Prop.When(expected != actual, () => CompareShouldFailWithDifference(actual, expected, options => options.Order = AssertJsonOrder.Include));
         }
 
         [Property]
@@ -77,7 +89,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.All(diffActualNames, actual.InsertProperty);
 
             // Act / Assert
-            Equal(expected.ToString(), actual.ToString(), options =>
+            EqualJson(expected.ToString(), actual.ToString(), options =>
             {
                 Assert.All(diffExpectedNames.Concat(diffActualNames), name => options.IgnoreNode(name));
             });
@@ -94,7 +106,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             TestJson expected = TestJson.Generate();
             TestJson actual = TestJson.Generate();
 
-            Assert.Throws<EqualAssertionException>(() => Equal(expected.ToString(), actual.ToString()));
+            Assert.Throws<EqualAssertionException>(() => EqualJson(expected.ToString(), actual.ToString()));
         }
 
         private static string CreateNodeName()
@@ -195,7 +207,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [MemberData(nameof(FailingBeEquivalentCases))]
         public void Compare_WithNotEqual_ShouldFailWithDifference(string expectedJson, string actualJson, string expectedDifference, AssertJsonOrder? order = null)
         {
-            CompareShouldFail(() => Equal(expectedJson, actualJson, options => options.Order = order ?? options.Order), expectedDifference);
+            CompareShouldFailWithDifference(expectedJson, actualJson, options => options.Order = order ?? options.Order, expectedDifference);
         }
 
         [Fact]
@@ -218,7 +230,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             Assert.All(testCases, testCase =>
             {
-                Equal(testCase.Item2.ToString(), testCase.Item2.ToString());
+                EqualJson(testCase.Item2.ToString(), testCase.Item2.ToString());
             });
         }
 
@@ -228,7 +240,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("[ true, false, true ]", "[ false, true, true ]")]
         public void Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds(string expected, string actual)
         {
-            Equal(expected, actual);
+            EqualJson(expected, actual);
         }
 
         [Fact]
@@ -356,27 +368,43 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expectedJson, actualJson, expectedDifference);
         }
 
-        private static void CompareShouldFailWithDifference(TestJson expected, TestJson actual, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(TestJson expected, TestJson actual, params string[] expectedDifferences)
         {
-            CompareShouldFailWithDifference(expected.ToString(), actual.ToString(), expectedDifferences);
+            CompareShouldFailWithDifference(expected, actual, configureOptions: null, expectedDifferences);
         }
 
-        private static void CompareShouldFailWithDifference(string expectedJson, string actualJson, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(TestJson expected, TestJson actual, Action<AssertJsonOptions> configureOptions, params string[] expectedDifferences)
         {
-           CompareShouldFail(() => Equal(expectedJson, actualJson, options => options.MaxInputCharacters = int.MaxValue), expectedDifferences);
+            CompareShouldFailWithDifference(expected.ToString(), actual.ToString(), configureOptions, expectedDifferences);
         }
 
-        private static void CompareShouldFail(Action testCode, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(string expectedJson, string actualJson, params string[] expectedDifferences)
         {
-            var exception = Assert.ThrowsAny<AssertionException>(testCode);
-            Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
+            CompareShouldFailWithDifference(expectedJson, actualJson, configureOptions: null, expectedDifferences);
+        }
+
+        private void CompareShouldFailWithDifference(string expectedJson, string actualJson, Action<AssertJsonOptions> configureOptions, params string[] expectedDifferences)
+        {
+            try
+            {
+                var exception = Assert.ThrowsAny<AssertionException>(() => EqualJson(expectedJson, actualJson, configureOptions));
+                Assert.Contains(nameof(AssertJson), exception.Message);
+                Assert.Contains("JSON contents", exception.Message);
+                Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
+            }
+            catch (XunitException)
+            {
+                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Expected", expectedJson + Environment.NewLine);
+                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Actual", actualJson + Environment.NewLine);
+                throw;
+            }
         }
 
         [Fact]
         public void Compare_WithNull_Succeeds()
         {
-            Equal("null", "null");
-            Equal("{ \"id\": null }", "{ \"Id\": null }");
+            EqualJson("null", "null");
+            EqualJson("{ \"id\": null }", "{ \"Id\": null }");
         }
 
         [Fact]
@@ -397,27 +425,33 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             Assert.All(testCases, testCase =>
             {
-                Equal(testCase.Value, testCase.Key);
+                EqualJson(testCase.Value, testCase.Key);
             });
         }
 
-        private static void Equal(TestJson expected, TestJson actual, Action<AssertJsonOptions> configureOptions = null)
+        private static void EqualJson(TestJson expected, TestJson actual, Action<AssertJsonOptions> configureOptions = null)
         {
-            Equal(expected.ToString(), actual.ToString(), configureOptions);
+            EqualJson(expected.ToString(), actual.ToString(), configureOptions);
         }
 
-        private static void Equal(string expected, string actual, Action<AssertJsonOptions> configureOptions = null)
+        private static void EqualJson(string expected, string actual, Action<AssertJsonOptions> configureOptions = null)
         {
+            void ConfigureOptions(AssertJsonOptions options)
+            {
+                options.MaxInputCharacters = int.MaxValue;
+                configureOptions?.Invoke(options);
+            }
+
             if (Bogus.Random.Bool())
             {
-                AssertJson.Equal(expected, actual, configureOptions);
+                AssertJson.Equal(expected, actual, ConfigureOptions);
             }
             else
             {
                 AssertJson.Equal(
                     AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
                     AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
-                    configureOptions);
+                    ConfigureOptions);
             }
         }
 
