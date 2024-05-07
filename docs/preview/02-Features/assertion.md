@@ -212,7 +212,7 @@ AssertCsv.Equal(..., options =>
 
     // The specific culture of the loaded CSV tables - this is especially useful when comparing floating numbers.
     // Default: `CultureInfo.InvariantCulture`
-    options.CultureInfo = CultureInfo.GetCultureInfo("fr-FR");
+    options.CultureInfo = CultureInfo.GetCultureInfo("en-US");
 
     // Sets the maximum characters of the expected and actual inputs should be written to the test output.
     // Default: 500 characters.
