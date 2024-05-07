@@ -6,12 +6,23 @@ using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck.Xunit;
 using Xunit;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
     public class AssertXmlTests
     {
+        private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AssertXmlTests" /> class.
+        /// </summary>
+        public AssertXmlTests(ITestOutputHelper outputWriter)
+        {
+            _outputWriter = outputWriter;
+        }
 
         [Property]
         public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds()
@@ -23,7 +34,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             expected.Shuffle();
 
             // Act
-            Equal(expected, actual);
+            EqualXml(expected, actual);
         }
 
         [Property]
@@ -36,7 +47,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             expected.Shuffle();
 
             // Act / Assert
-            CompareShouldFail(() => Equal(expected, actual, options => options.Order = AssertXmlOrder.Include));
+            CompareShouldFailWithDifference(expected, actual, opt => opt.Order = AssertXmlOrder.Include);
         }
 
         [Property]
@@ -71,7 +82,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Compare_DiffElementType_FailsWithDescription()
         {
             // Arrange
-            var expected = $"<root>{Bogus.Random.Word()}</root>";
+            var expected = $"<root>{Bogus.Lorem.Word()}</root>";
             var actual = $"<root>{Bogus.Random.Int()}</root>";
 
             // Act / Assert
@@ -127,7 +138,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             actual.ChangeAttributeName("diff" + newName);
 
             // Act / Assert
-            CompareShouldFail(() => Equal(expected, actual, options => options.Order = AssertXmlOrder.Include),
+            CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
                 "different name", "attribute", newName);
         }
 
@@ -168,7 +179,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             actual.ChangeAttributeNamespace(Bogus.Internet.Url());
 
             // Act / Assert
-            CompareShouldFail(() => Equal(expected, actual, options => options.Order = AssertXmlOrder.Include),
+            CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
                 "different namespace", "@");
         }
 
@@ -213,7 +224,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [MemberData(nameof(SucceedingBeEquivalentCases))]
         public void Compare_WithEqual_SucceedsNonetheless(string expected, string actual)
         {
-            Equal(expected, actual);
+            EqualXml(expected, actual);
         }
 
         private static string Spaces() => string.Concat(Bogus.Make(Bogus.Random.Int(1, 10), () => " "));
@@ -334,7 +345,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [MemberData(nameof(FailingBeEquivalentCases))]
         public void Compare_WithNotEqual_ShouldFailWithDifference(string expectedXml, string actualXml, string expectedDifference, AssertXmlOrder? order = null)
         {
-            CompareShouldFail(() => Equal(expectedXml, actualXml, options => options.Order = order ?? options.Order), expectedDifference);
+            CompareShouldFailWithDifference(expectedXml, actualXml, options => options.Order = order ?? options.Order, expectedDifference);
         }
 
         [Property]
@@ -343,7 +354,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string expected = TestXml.Generate().ToString();
             string actual = expected;
 
-            Equal(expected, actual);
+            EqualXml(expected, actual);
         }
 
         [Property]
@@ -360,14 +371,14 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             InsertDiffNodes(actual, diffActualNames);
 
             // Act / Assert
-            Equal(expected, actual, 
+            EqualXml(expected, actual, 
                 options => Assert.All(diffActualNames.Concat(diffExpectedNames), name =>
                 {
                     options.IgnoreNode(name);
                 }));
         }
 
-        private void InsertDiffNodes(TestXml xml, string[] names)
+        private static void InsertDiffNodes(TestXml xml, string[] names)
         {
             Assert.All(names, name =>
             {
@@ -391,7 +402,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             // Act / Assert
             Assert.ThrowsAny<InvalidOperationException>(
-                () => Equal(expected.OuterXml, actual.OuterXml, options => options.IgnoreNode(expected.LocalName)));
+                () => EqualXml(expected.OuterXml, actual.OuterXml, options => options.IgnoreNode(expected.LocalName)));
         }
 
         private static string[] CreateNodeNames(string prefix)
@@ -405,31 +416,47 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string expected = TestXml.Generate().ToString();
             string actual = TestXml.Generate().ToString();
 
-            Assert.ThrowsAny<AssertionException>(() => Equal(expected, actual));
+            Assert.ThrowsAny<AssertionException>(() => EqualXml(expected, actual));
         }
 
-        private static void CompareShouldFailWithDifference(TestXml expected, TestXml actual, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(TestXml expected, TestXml actual, params string[] expectedDifferences)
         {
-            CompareShouldFailWithDifference(expected.ToString(), actual.ToString(), expectedDifferences);
+            CompareShouldFailWithDifference(expected, actual, configureOptions: null, expectedDifferences);
         }
 
-        private static void CompareShouldFailWithDifference(string expectedXml, string actualXml, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(TestXml expected, TestXml actual, Action<AssertXmlOptions> configureOptions, params string[] expectedDifferences)
         {
-            CompareShouldFail(() => Equal(expectedXml, actualXml, options => options.MaxInputCharacters = int.MaxValue), expectedDifferences);
+            CompareShouldFailWithDifference(expected.ToString(), actual.ToString(), configureOptions, expectedDifferences);
         }
 
-        private static void CompareShouldFail(Action testCode, params string[] expectedDifferences)
+        private void CompareShouldFailWithDifference(string expectedXml, string actualXml, params string[] expectedDifferences)
         {
-            var exception = Assert.ThrowsAny<AssertionException>(testCode);
-            Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
+            CompareShouldFailWithDifference(expectedXml, actualXml, configureOptions: null, expectedDifferences);
         }
 
-        private static void Equal(TestXml expected, TestXml actual, Action<AssertXmlOptions> configureOptions = null)
+        private void CompareShouldFailWithDifference(string expectedXml, string actualXml, Action<AssertXmlOptions> configureOptions, params string[] expectedDifferences)
         {
-            Equal(expected.ToString(), actual.ToString(), configureOptions);
+            try
+            {
+                var exception = Assert.ThrowsAny<AssertionException>(() => EqualXml(expectedXml, actualXml, configureOptions));
+                Assert.Contains(nameof(AssertXml), exception.Message);
+                Assert.Contains("XML documents", exception.Message);
+                Assert.All(expectedDifferences, expectedDifference => Assert.Contains(expectedDifference, exception.Message));
+            }
+            catch (XunitException)
+            {
+                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Expected", expectedXml + Environment.NewLine);
+                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Actual", actualXml + Environment.NewLine);
+                throw;
+            }
         }
 
-        private static void Equal(string expected, string actual, Action<AssertXmlOptions> configureOptions = null)
+        private void EqualXml(TestXml expected, TestXml actual, Action<AssertXmlOptions> configureOptions = null)
+        {
+            EqualXml(expected.ToString(), actual.ToString(), configureOptions);
+        }
+
+        private void EqualXml(string expected, string actual, Action<AssertXmlOptions> configureOptions = null)
         {
             void ConfigureOptions(AssertXmlOptions options)
             {

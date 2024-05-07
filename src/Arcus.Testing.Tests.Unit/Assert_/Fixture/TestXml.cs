@@ -294,15 +294,20 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             if (node is XmlElement element)
             {
-                var attributes = Bogus.Random.Shuffle(
+                XmlAttribute[] attributes = Bogus.Random.Shuffle(
                     element.Attributes.OfType<XmlAttribute>()
                            .Where(a => a.NamespaceURI != "http://www.w3.org/2000/xmlns/")).ToArray();
                 
                 Assert.All(attributes, attr => element.RemoveAttribute(attr.Name));
 
-                foreach (var attr in attributes)
+                foreach (XmlAttribute attr in attributes)
                 {
                     element.SetAttributeNode(attr);
+                }
+
+                foreach (XmlElement child in element.ChildNodes.OfType<XmlElement>())
+                {
+                    Shuffle(child);
                 }
 
                 return element;
