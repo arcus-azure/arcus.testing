@@ -154,6 +154,94 @@ AssertJson.Equal(expected, actual);
 
 The `AssertJson.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 
+## CSV
+The library has an `AssertCsv` class that exposes useful test assertions when dealing with CSV outputs. The most popular one is comparing CSV documents.
+
+```csharp
+using Arcus.Testing;
+
+string expected = "product name;description;price\nprinter;A double-sided printer;123,45";
+string actual = "product name;description;price\nprinter;A double-sided printer;234,56";
+
+AssertCsv.Equal(expected, actual);
+// Assert.Testing.EqualAssertionException
+// AssertCsv.Equal failure: expected and actual CSV contents do not match
+// actual CSV has a different value at line number 0 (index-based, excluding header), expected 123,45 while actual 234,56 for column price
+//
+// Expected:
+// product name;description;price
+// printer;A double-sided printer;123,45
+//
+// Actual:
+// product name;description;price
+// printer;A double-sided printer;234,56
+```
+
+💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+
+### Customization
+The test assertion also exposes several options to tweak the behavior of the CSV comparison.
+
+```csharp
+using Arcus.Testing;
+
+AssertCsv.Equal(..., options =>
+{
+    // Adds one ore more column names that should be excluded from the CSV comparison.
+    options.IgnoreColumn("ignore-this-column");
+
+    // The type of header handling the loaded CSV document should have.
+    // Default: Present.
+    options.Header = CsvHeader.Missing;
+
+    // The type of row order which should be used when comparing CSV documents.
+    // Default: Include.
+    options.RowOrder = AssertCsvOrder.Ignore;
+
+    // The type of column order which should be used when comparing CSV documents.
+    // Default: Include.
+    options.ColumnOrder = AssertCsvOrder.Ignore;
+
+    // The separator character to be used when determining CSV columns in the loaded document.
+    // Default: ;
+    options.Separator = ",";
+
+    // The new line character to be used when determining CSV lines in the loaded document.
+    // Default: `System.Environment.NewLine`
+    options.NewLine = "\n";
+
+    // The specific culture of the loaded CSV tables - this is especially useful when comparing floating numbers.
+    // Default: `CultureInfo.InvariantCulture`
+    options.CultureInfo = CultureInfo.GetCultureInfo("en-US");
+
+    // Sets the maximum characters of the expected and actual inputs should be written to the test output.
+    // Default: 500 characters.
+    options.MaxInputCharacters = 1000;
+});
+```
+
+> ⚠️ **️IMPORTANT:** beware of combining ordering options:
+> * If you want to ignore the order of columns, but do not use headers in your CSV contents (`options.Header = Missing`), the order cannot be determined. Make sure to include headers in your CSV contents, or do not use `Ignore` for columns.
+> * If you want to ignore the order of columns, but do not use headers or use duplicate headers, the comparison cannot determine whether all the cells are there. Make sure to include headers and use `IgnoreColumn` to remove any duplicates, or do not use `Ignore` for columns. 
+
+### Loading CSV tables yourself
+The CSV assertion equalization can be called directly with with raw contents - internally it parses the contents to a valid tabular structure: `CsvTable`. If it so happens that you want to compare two CSV tables each with different header, separators or other serialization settings, you can load the two tables separately and do the equalization on the loaded CSV tables.
+
+💡 It provides you with more options to control how your file should be loaded.
+
+```csharp
+using Arcus.Testing;
+
+string csv = ...;
+
+CsvTable expected = AssertCsv.Load(csv);
+
+// Or with options (same set as available with the `AssertCsv.Equal`).
+CsvTable actual = AssertCsv.Load(csv, options => ...);
+
+// Overload with tables.
+AssertCsv.Equal(expected, actual);
+```
 
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.

@@ -44,9 +44,18 @@ namespace Arcus.Testing.Failure
         /// <summary>
         /// Appends a new line to the test report.
         /// </summary>
-        internal ReportBuilder AppendLine(string message)
+        internal ReportBuilder AppendLine(string message, int maxCharacters = 1000)
         {
-            _report.AppendLine(message);
+            _report.AppendLine(Trim(message, maxCharacters));
+            return this;
+        }
+
+        /// <summary>
+        /// Appends a new line to the test report.
+        /// </summary>
+        internal ReportBuilder AppendLine()
+        {
+            _report.AppendLine();
             return this;
         }
 
@@ -76,18 +85,18 @@ namespace Arcus.Testing.Failure
                 return this;
             }
 
-            string Trim(string txt) => txt.Length > maxCharacters ? txt[..maxCharacters] + "..." : txt;
-
             _report.AppendLine();
             _report.AppendLine("Expected:");
-            _report.AppendLine(Trim(expected));
+            _report.AppendLine(Trim(expected, maxCharacters));
             _report.AppendLine();
             _report.AppendLine("Actual:");
-            _report.AppendLine(Trim(actual));
+            _report.AppendLine(Trim(actual, maxCharacters));
             _report.AppendLine();
 
             return this;
         }
+
+        private string Trim(string txt, int maxCharacters) => txt.Length > maxCharacters ? txt[..maxCharacters] + "..." : txt;
 
         /// <summary>
         /// Returns a string that represents the current object.
