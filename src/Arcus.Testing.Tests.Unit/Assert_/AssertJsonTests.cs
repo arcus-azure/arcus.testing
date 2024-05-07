@@ -63,7 +63,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             actual.InsertProperty(newName);
 
             // Act / Assert
-            CompareShouldFailWithDifference(actual, expected, "misses property", newName);
+            CompareShouldFailWithDifference(expected, actual, "misses property", newName);
         }
 
         [Property]
@@ -124,7 +124,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"items\": 2 }",
                     "{ \"items\": [] }",
-                    "has an array: [] instead of a number: 2 at $.items"
+                    "different type at $.items, expected a number: 2 while actual an array: []"
                 };
                 yield return new object[]
                 {
@@ -148,7 +148,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"tree\": \"oak\" }",
                     "{ \"tree\": { } }",
-                    "has an object: {} instead of a string: oak at $.tree"
+                    "different type at $.tree, expected a string: oak while actual an object: {}"
                 };
                 yield return new object[]
                 {
@@ -166,25 +166,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"tree\": { \"leaves\": 10} }",
                     "{ \"tree\": { \"leaves\": 5 } }",
-                    "has a different value at $.tree.leaves"
+                    "different value at $.tree.leaves, expected a number: 10 while actual a number: 5"
                 };
                 yield return new object[]
                 {
                     "{ \"eyes\": [] }",
                     "{ \"eyes\": \"blue\" }",
-                    "has a string: blue instead of an array: [] at $.eyes"
+                    "different type at $.eyes, expected an array: [] while actual a string: blue"
                 };
                 yield return new object[]
                 {
                     "{ \"eyes\": 2 }",
                     "{ \"eyes\": \"blue\" }",
-                    "has a string: blue instead of a number: 2 at $.eyes"
+                    "at $.eyes, expected a number: 2 while actual a string: blue"
                 };
                 yield return new object[]
                 {
                     "{ \"id\": 2 }",
                     "{ \"id\": 1 }",
-                    "has a different value at $.id"
+                    "different value at $.id, expected a number: 2 while actual a number: 1"
                 };
                 yield return new object[]
                 {
@@ -272,13 +272,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"id\": 2 }",
                     "\"null\"",
-                    "has a string: null instead of an object: {\"id\":2} at $"
+                    "different type at $, expected an object: {\"id\":2} while actual a string: null"
                 };
                 yield return new object[]
                 {
                     "\"null\"",
                     "{ \"id\": 1 }",
-                    "has an object: {\"id\":1} instead of a string: null at $"
+                    "different type at $, expected a string: null while actual an object: {\"id\":1}"
                 };
                 yield return new object[]
                 {
@@ -290,7 +290,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"items\": 2 }",
                     "{ \"items\": [] }",
-                    "has an array: [] instead of a number: 2 at $.items"
+                    "different type at $.items, expected a number: 2 while actual an array: []"
                 };
                 yield return new object[]
                 {
@@ -308,7 +308,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"tree\": \"oak\" }",
                     "{ \"tree\": { } }",
-                    "has an object: {} instead of a string: oak at $.tree"
+                    "different type at $.tree, expected a string: oak while actual an object: {}"
                 };
                 yield return new object[]
                 {
@@ -320,25 +320,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"tree\": { \"leaves\": 10} }",
                     "{ \"tree\": { \"leaves\": 5 } }",
-                    "has a different value at $.tree.leaves"
+                    "different value at $.tree.leaves, expected a number: 10 while actual a number: 5"
                 };
                 yield return new object[]
                 {
                     "{ \"eyes\": [] }",
                     "{ \"eyes\": \"blue\" }",
-                    "has a string: blue instead of an array: [] at $.eyes"
+                    "different type at $.eyes, expected an array: [] while actual a string: blue"
                 };
                 yield return new object[]
                 {
                     "{ \"eyes\": 2 }",
                     "{ \"eyes\": \"blue\" }",
-                    "has a string: blue instead of a number: 2 at $.eyes"
+                    "at $.eyes, expected a number: 2 while actual a string: blue"
                 };
                 yield return new object[]
                 {
                     "{ \"id\": 2 }",
                     "{ \"id\": 1 }",
-                    "has a different value at $.id"
+                    "different value at $.id, expected a number: 2 while actual a number: 1"
                 };
                 yield return new object[]
                 {
@@ -350,7 +350,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 {
                     "{ \"foo\": 1 }",
                     "{ \"foo\": \"test\" }",
-                    "has a string: test instead of a number: 1 at $.foo"
+                    "at $.foo, expected a number: 1 while actual a string: test"
                 };
                 yield return new object[]
                 {

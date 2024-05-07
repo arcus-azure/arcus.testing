@@ -31,7 +31,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
     {
         private readonly TestCsvOptions _options;
         private List<List<string>> _columns;
-        private readonly List<List<string>> _invalidrows = new();
+        private readonly List<List<string>> _invalidRows = new();
         private static readonly Faker Bogus = new();
         private bool _shouldShuffleRows;
 
@@ -132,7 +132,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// </summary>
         public void AddInvalidRow()
         {
-            _invalidrows.Add(Bogus.Make(Bogus.Random.Int(11, 20), GenValue).ToList());
+            _invalidRows.Add(Bogus.Make(Bogus.Random.Int(11, 20), GenValue).ToList());
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         public override string ToString()
         {
             List<List<string>> rows = Transpose(_columns);
-            rows.AddRange(_invalidrows);
+            rows.AddRange(_invalidRows);
 
             if (_shouldShuffleRows)
             {
