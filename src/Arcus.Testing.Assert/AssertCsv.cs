@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using Arcus.Testing.Failure;
 using static Arcus.Testing.CsvDifferenceKind;
@@ -49,6 +50,7 @@ namespace Arcus.Testing
         private string _separator = ";", _newRow = Environment.NewLine;
         private AssertCsvHeader _header = AssertCsvHeader.Present;
         private AssertCsvOrder _rowOrder = AssertCsvOrder.Include, _columnOrder = AssertCsvOrder.Include;
+        private CultureInfo _cultureInfo = CultureInfo.InvariantCulture;
 
         /// <summary>
         /// Adds a column which will get ignored when comparing CSV tables.
@@ -159,6 +161,16 @@ namespace Arcus.Testing
 
                 _columnOrder = value;
             }
+        }
+
+        /// <summary>
+        /// Gets or sets the specific culture of the loaded CSV tables - this is especially useful when comparing floating numbers.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is <c>null</c>.</exception>
+        public CultureInfo CultureInfo
+        {
+            get => _cultureInfo;
+            set => _cultureInfo = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
@@ -602,7 +614,7 @@ namespace Arcus.Testing
                 CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
                 {
                     string headerName = headerNames[columnNumber];
-                    return new CsvCell(headerName, columnNumber, rowNumber, cellValue);
+                    return new CsvCell(headerName, columnNumber, rowNumber, cellValue, options.CultureInfo);
                 }).ToArray();
 
                 return new CsvRow(cells, rowNumber, options);
@@ -678,7 +690,7 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(rows);
             return rows.Select(row =>
             {
-                row.Cells = row.Cells.OrderBy(c => c.HeaderName).ToArray();
+                row.Cells = row.Cells.OrderBy(c => c.HeaderName, StringComparer.InvariantCulture).ToArray();
                 return row;
             }).ToArray();
         }
@@ -713,8 +725,12 @@ namespace Arcus.Testing
     /// </summary>
     public sealed class CsvCell : IEquatable<CsvCell>
     {
-        internal CsvCell(string headerName, int columnNumber, int rowNumber, string value)
+        private readonly CultureInfo _culture;
+
+        internal CsvCell(string headerName, int columnNumber, int rowNumber, string value, CultureInfo culture)
         {
+            _culture = culture;
+
             HeaderName = headerName;
             ColumnNumber = columnNumber;
             RowNumber = rowNumber;
@@ -759,8 +775,8 @@ namespace Arcus.Testing
                 return true;
             }
 
-            if (float.TryParse(Value, out float expectedValue)
-                && float.TryParse(other.Value, out float actualValue))
+            if (float.TryParse(Value, _culture, out float expectedValue)
+                && float.TryParse(other.Value, _culture, out float actualValue))
             {
                 if (!expectedValue.Equals(actualValue))
                 {

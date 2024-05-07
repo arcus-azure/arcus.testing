@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
@@ -347,7 +348,14 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 yield return new object[]
                 {
                     $"total{NewLine}100,02",
-                    $"total{NewLine}100,020"
+                    $"total{NewLine}100,020",
+                    void (AssertCsvOptions options) => options.CultureInfo = CultureInfo.GetCultureInfo("fr-FR")
+                };
+                yield return new object[]
+                {
+                    $"total{NewLine}123.1330",
+                    $"total{NewLine}123.133000",
+                    void (AssertCsvOptions options) => options.CultureInfo = CultureInfo.GetCultureInfo("en-US")
                 };
                 yield return new object[]
                 {
@@ -369,7 +377,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 yield return new object[]
                 {
                     $"a;b;time;c{NewLine}1;2;{Now};3",
-                    $"a;b;time;c{NewLine}1;2;{UtcNow};3", 
+                    $"a;b;time;c{NewLine}1;2;{UtcNow};3",
                     void (AssertCsvOptions options) => options.IgnoreColumn("time")
                 };
                 yield return new object[]
