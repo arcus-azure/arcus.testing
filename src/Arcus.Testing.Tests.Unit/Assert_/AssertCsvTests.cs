@@ -98,6 +98,33 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
+        public void CompareWithFloatWithTrailingZeros_WithEscapedComma_StillSucceeds()
+        {
+            // Arrange
+            var commaFloatCulture = CultureInfo.GetCultureInfo("nl-NL");
+            TestCsv expected = TestCsv.Generate(opt =>
+            {
+                opt.CultureInfo = commaFloatCulture;
+                opt.Separator = ',';
+            });
+            TestCsv actual = expected.Copy();
+
+            (int row, int col) = expected.GetRandomCellIndex();
+
+            string trailingZeros = string.Concat(Bogus.Make(Bogus.Random.Int(1, 10), () => "0"));
+            string value = Bogus.Random.Float().ToString(commaFloatCulture).Replace(",", "\\,");
+            expected.ChangeCellValue(row, col, value);
+            actual.ChangeCellValue(row, col, value + trailingZeros);
+
+            // Act / Assert
+            EqualCsv(expected, actual, opt =>
+            {
+                opt.CultureInfo = commaFloatCulture;
+                opt.Separator = ',';
+            });
+        }
+
+        [Property]
         public void CompareWithIgnoreRowOrder_WithDifferentCellValue_FailsWithDescription()
         {
             // Arrange
@@ -359,6 +386,22 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 };
                 yield return new object[]
                 {
+                    $"product,total cost{NewLine}printer,123\\,450",
+                    $"product,total cost{NewLine}printer,123\\,45",
+                    void (AssertCsvOptions options) =>
+                    {
+                        options.Separator = ',';
+                        options.Escape = '\\';
+                        options.CultureInfo = CultureInfo.GetCultureInfo("nl-NL");
+                    }
+                };
+                yield return new object[]
+                {
+                    $"a;b;c{NewLine}\"this is a sentence with separator ; in quotes\";100,00;foo",
+                    $"a;b;c{NewLine}\"this is a sentence with separator ; in quotes\";100,00;foo"
+                };
+                yield return new object[]
+                {
                     $"trailing;semicolon;works;{NewLine}foo;bar;10;",
                     $"trailing;semicolon;works;{NewLine}foo;bar;10;"
                 };
@@ -458,6 +501,18 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     $"name;category{NewLine}pc;IT{NewLine}printer;Infra{NewLine}printer;Infra",
                     "different", "value", "pc while actual printer", "row number 1"
                 };
+                yield return new object[]
+                {
+                    $"a;b{NewLine}\"some value\";4\\,2",
+                    $"a;b{NewLine}\"some value\";4\\,3",
+                    "different", "value", "4,2 while actual 4,3"
+                };
+                yield return new object[]
+                {
+                    $"a;b{NewLine}\"some\\; value\";19",
+                    $"a;b{NewLine}\"some; diff value\";19",
+                    "different", "value", "\"some; value\" while actual \"some; diff value\""
+                };
             }
         }
 
@@ -533,21 +588,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Load_WithRandomCsvWithHeader_Succeeds()
         {
             // Arrange
-            TestCsv csv = TestCsv.Generate();
+            TestCsv expected = TestCsv.Generate();
             
             // Act
-            CsvTable doc = LoadCsv(csv);
+            CsvTable actual = LoadCsv(expected, opt =>
+            {
+                opt.Separator = expected.Separator;
+                opt.NewLine = expected.NewLine;
+            });
 
             // Assert
-            Assert.Equal(csv.ColumnCount, doc.ColumnCount);
-            Assert.Equal(csv.HeaderNames, doc.HeaderNames);
-            Assert.Equal(csv.RowCount, doc.Rows.Count);
+            Assert.Equal(expected.ColumnCount, actual.ColumnCount);
+            Assert.Equal(expected.HeaderNames, actual.HeaderNames);
+            Assert.Equal(expected.RowCount, actual.Rows.Count);
 
-            Assert.All(csv.Rows.Skip(1).Zip(doc.Rows), line =>
+            Assert.All(expected.Rows.Skip(1).Zip(actual.Rows), line =>
             {
                 Assert.All(line.First.Zip(line.Second.Cells), cell =>
                 {
-                    Assert.Equal(cell.First, cell.Second.Value);
+                    EqualCellValue(cell.First, cell.Second.Value);
                 });
             });
         }
@@ -556,23 +615,61 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Load_WithRandomCsvWithoutHeader_Succeeds()
         {
             // Arrange
-            TestCsv csv = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
 
             // Act
-            CsvTable doc = LoadCsv(csv, opt => opt.Header = AssertCsvHeader.Missing);
+            CsvTable actual = LoadCsv(expected, opt =>
+            {
+                opt.Header = AssertCsvHeader.Missing;
+                opt.Separator = expected.Separator;
+                opt.NewLine = expected.NewLine;
+            });
 
             // Assert
-            Assert.Equal(csv.ColumnCount, doc.ColumnCount);
-            Assert.Equal(csv.HeaderNames, doc.HeaderNames);
+            Assert.Equal(expected.ColumnCount, actual.ColumnCount);
+            Assert.Equal(expected.HeaderNames, actual.HeaderNames);
 
-            Assert.Equal(csv.RowCount, doc.Rows.Count);
-            Assert.All(csv.Rows.Zip(doc.Rows), line =>
+            Assert.Equal(expected.RowCount, actual.Rows.Count);
+            Assert.All(expected.Rows.Zip(actual.Rows), line =>
             {
                 Assert.All(line.First.Zip(line.Second.Cells), cell =>
                 {
-                    Assert.Equal(cell.First, cell.Second.Value);
+                    EqualCellValue(cell.First, cell.Second.Value);
                 });
             });
+        }
+
+        private static void EqualCellValue(string expected, string actual)
+        {
+            Assert.Equal(expected.Replace("\\", string.Empty), actual);
+
+        }
+
+        public static IEnumerable<object[]> SucceedingCsvSizesCases
+        {
+            get
+            {
+                yield return new object[] { $"a;b;c{NewLine}1;2;3", 1, 3 };
+                yield return new object[] { $"a;b;c;{NewLine}1;2;3;", 1, 4 };
+                yield return new object[] { $"a;b;c{NewLine}1;2;3{NewLine}", 1, 3 };
+                yield return new object[] { $"a;b{NewLine}1\\;2;3", 1, 2 };
+                yield return new object[] { $"a;b{NewLine}\"1\\;2\";3", 1, 2 };
+                yield return new object[] { $"a;b{NewLine}\"1;2\";3", 1, 2 };
+                yield return new object[] { $"a;b{NewLine}\"1\\\"2\";3", 1, 2 };
+                yield return new object[] { $"a;b{NewLine}\"1;\\\"2\";3", 1, 2 };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(SucceedingCsvSizesCases))]
+        public void Load_WithSpecialCases_Succeeds(string csv, int rows, int cols)
+        {
+            // Act
+            CsvTable table = AssertCsv.Load(csv);
+
+            // Assert
+            Assert.Equal(rows, table.RowCount);
+            Assert.Equal(cols, table.ColumnCount);
         }
 
         [Property]
@@ -594,38 +691,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Theory]
-        [InlineData("")]
-        [InlineData(" ")]
-        [InlineData("     ")]
-        public void LoadConfiguredMissingHeader_WithBlankSingleCell_SucceedsWithSingeRow(string csv)
+        [ClassData(typeof(Blanks))]
+        public void Load_WithBlankInput_FailsGenerally(string csv)
         {
-            // Act
-            CsvTable doc = LoadCsv(csv, opt => opt.Header = AssertCsvHeader.Missing);
-
-            // Assert
-            Assert.Equal(1, doc.RowCount);
-            Assert.Equal(1, doc.ColumnCount);
-
-            CsvRow line = Assert.Single(doc.Rows);
-            CsvCell cell = Assert.Single(line.Cells);
-            Assert.Equal(csv, cell.Value);
-            Assert.Equal(0, cell.ColumnNumber);
-            Assert.Equal(0, cell.RowNumber);
-        }
-
-        [Theory]
-        [InlineData("")]
-        [InlineData(" ")]
-        [InlineData("     ")]
-        public void LoadConfiguredPresentHeader_WithBlankSingleCell_SucceedsWithEmptyRows(string csv)
-        {
-            // Act
-            CsvTable doc = LoadCsv(csv, opt => opt.Header = AssertCsvHeader.Present);
-
-            // Assert
-            Assert.Equal(0, doc.RowCount);
-            Assert.Equal(1, doc.ColumnCount);
-            Assert.Empty(doc.Rows);
+            Assert.ThrowsAny<ArgumentException>(() => LoadCsv(csv, opt => opt.Header = AssertCsvHeader.Present));
+            Assert.ThrowsAny<ArgumentException>(() => LoadCsv(csv, opt => opt.Header = AssertCsvHeader.Missing));
         }
 
         private void LoadShouldFailWithDescription(TestCsv csv, params string[] expectedFailures)
