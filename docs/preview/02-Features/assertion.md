@@ -204,7 +204,21 @@ AssertCsv.Equal(..., options =>
 
     // The separator character to be used when determining CSV columns in the loaded document.
     // Default: ;
-    options.Separator = ",";
+    options.Separator = ',';
+
+    // The escape character to be used when ignoring the special separator or quote characters in the CSV cell value;
+    // especially useful for comparing floating point numbers with trailing zeros in a CSV table with commas as separator. 
+    // Default: \ (backslash).
+    // Example: total,123\,45
+    // 🚩 The escaped character itself is not considered part of the cell's value.
+    options.Escape = '/';
+
+    // The quote character to be used when marking a CSV cell value as a string;
+    // especially useful when the CSV cell value includes the separator character.
+    // Default: " (double quote).
+    // Example: 123;"this is a sentence; this too";456
+    // 🚩 The quote character itself is considered part of the cell's value.
+    options.Quote = '\'';
 
     // The new line character to be used when determining CSV lines in the loaded document.
     // Default: `System.Environment.NewLine`

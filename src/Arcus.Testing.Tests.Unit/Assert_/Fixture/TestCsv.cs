@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Bogus;
 using Xunit;
@@ -68,19 +69,23 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// <summary>
         /// Gets the separator used for this generated CSV table.
         /// </summary>
-        public string Separator { get; } = Bogus.PickRandom(";", ",.");
+        public char Separator => _options.Separator;
 
         /// <summary>
         /// Gets the new-row character used for this generated CSV table.
         /// </summary>
-        public string NewLine { get; } = Bogus.PickRandom(Environment.NewLine, "\n");
+        public string NewLine => _options.NewLine;
 
         /// <summary>
         /// Generate a new <see cref="TestCsv"/> model.
         /// </summary>
         public static TestCsv Generate(Action<TestCsvOptions> configureOptions = null)
         {
-            var options = new TestCsvOptions();
+            var options = new TestCsvOptions
+            {
+                Separator = Bogus.PickRandom(',', ';', '%'),
+                NewLine = Bogus.PickRandom(Environment.NewLine, "\n")
+            };
             configureOptions?.Invoke(options);
 
             IList<string[]> columns = Bogus.Make(options.ColumnCount, () =>
@@ -148,6 +153,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         }
 
         /// <summary>
+        /// Gets the index of a random cell within the CSV table.
+        /// </summary>
+        public (int row, int col) GetRandomCellIndex()
+        {
+            int col = Bogus.Random.Int(0, _columns.Count - 1);
+            int row = Bogus.Random.Int(1, _columns[0].Count - 1);
+
+            return (row, col);
+        }
+
+        /// <summary>
+        /// Change the cell value at a certain location.
+        /// </summary>
+        public void ChangeCellValue(int row, int col, string value)
+        {
+            _columns[col][row] = value;
+        }
+
+        /// <summary>
         /// Change a randomly picked cell value in the CSV table.
         /// </summary>
         public (string headerName, string changedValue) ChangeCellValue()
@@ -208,11 +232,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
         private static Func<string> GenValueFunc()
         {
+            CultureInfo cultureWithComma = new("nl-NL");
+            CultureInfo cultureWithDot = new("en-US");
+
             return Bogus.PickRandom(
                 () => Bogus.Lorem.Word(),
+                () => $"\"{RandomlyInsert(Bogus.Lorem.Sentence(), ",", ";", "%", "\\\"")}\"",
                 () => Bogus.Random.Int().ToString(),
-                () => Bogus.Random.Float() + string.Concat(Bogus.Make(Bogus.Random.Int(1, 10), () => "0")),
+                () => Bogus.Random.Float().ToString(cultureWithComma).Replace(",", "\\,"),
+                () => Bogus.Random.Float().ToString(cultureWithDot),
                 () => Bogus.Date.RecentOffset().ToString());
+        }
+
+        private static string RandomlyInsert(string input, params string[] values)
+        {
+            return values.Aggregate(input, (acc, value) =>
+            {
+                int index = Bogus.Random.Int(0, acc.Length - 1);
+                return acc.Insert(index, value);
+            });
         }
 
         /// <summary>
