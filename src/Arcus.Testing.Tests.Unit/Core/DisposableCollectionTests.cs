@@ -93,6 +93,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         public async Task Create_WithoutItems_Succeeds()
         {
             await using DisposableCollection disposables = CreateCollection();
+            Assert.NotNull(disposables);
         }
 
         [Fact]
@@ -120,7 +121,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             var disposables = new DisposableCollection(_logger);
 
             disposables.Options.RetryCount = Bogus.Random.Int(1, 3);
-            disposables.Options.RetryInterval = TimeSpan.FromMicroseconds(Bogus.Random.Int(100, 300));
+            disposables.Options.RetryInterval = TimeSpan.FromMilliseconds(Bogus.Random.Int(100, 300));
 
             return disposables;
         }

@@ -396,8 +396,8 @@ namespace Arcus.Testing
             
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
-                expectedHeaders = expectedHeaders.Order().ToArray();
-                actualHeaders = actualHeaders.Order().ToArray();
+                expectedHeaders = expectedHeaders.OrderBy(h => h).ToArray();
+                actualHeaders = actualHeaders.OrderBy(h => h).ToArray();
             }
 
             for (var i = 0; i < expectedHeaders.Count; i++)
@@ -826,8 +826,9 @@ namespace Arcus.Testing
                 return true;
             }
 
-            if (float.TryParse(Value, _culture, out float expectedValue)
-                && float.TryParse(other.Value, _culture, out float actualValue))
+            const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
+            if (float.TryParse(Value, style, _culture, out float expectedValue)
+                && float.TryParse(other.Value, style, _culture, out float actualValue))
             {
                 if (!expectedValue.Equals(actualValue))
                 {
