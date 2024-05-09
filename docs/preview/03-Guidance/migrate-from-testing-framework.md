@@ -6,7 +6,7 @@ The `Codit.Testing.OutputComparison` library has some functionality to compare d
 
 Start by installing this library:
 ```shell
-PM > Install-Package -Name Arcus.Testing.Asser
+PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
 🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the supported assertions.
