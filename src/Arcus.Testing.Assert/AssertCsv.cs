@@ -211,8 +211,15 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(expectedCsv);
-            ArgumentException.ThrowIfNullOrWhiteSpace(actualCsv);
+            if (string.IsNullOrWhiteSpace(expectedCsv))
+            {
+                throw new ArgumentException("Cannot compare CSV contents when the expected CSV is blank", nameof(expectedCsv));
+            }
+
+            if (string.IsNullOrWhiteSpace(actualCsv))
+            {
+                throw new ArgumentException("Cannot compare CSV contents when the actual CSV is blank", nameof(actualCsv));
+            }
 
             Equal(expectedCsv, actualCsv, configureOptions: null);
         }
@@ -229,8 +236,15 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv, Action<AssertCsvOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(expectedCsv);
-            ArgumentException.ThrowIfNullOrWhiteSpace(actualCsv);
+            if (string.IsNullOrWhiteSpace(expectedCsv))
+            {
+                throw new ArgumentException("Cannot compare CSV contents when the expected CSV is blank", nameof(expectedCsv));
+            }
+
+            if (string.IsNullOrWhiteSpace(actualCsv))
+            {
+                throw new ArgumentException("Cannot compare CSV contents when the actual CSV is blank", nameof(actualCsv));
+            }
 
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
@@ -588,7 +602,11 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the raw <paramref name="csv"/> contents does not represent a valid CSV structure.</exception>
         internal static CsvTable Load(string csv, AssertCsvOptions options)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(csv);
+            if (string.IsNullOrWhiteSpace(csv))
+            {
+                throw new ArgumentException("Cannot load CSV contents when the CSV is blank", nameof(csv));
+            }
+
             ArgumentNullException.ThrowIfNull(options);
 
             string[][] rawLines = SplitCsv(csv, options);
