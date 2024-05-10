@@ -1,4 +1,4 @@
-# Migrate your test suite from Testing Framework to Arcus.Testing
+# Migrate your test suite from Testing Framework to Arcus.Testing v1.0
 This guide will walk you through the process of migrating your test suite from using the Testing Framework to `Arcus.Testing`.
 
 ## Replace `Codit.Testing.OutputComparison/Xslt` with `Arcus.Testing.Assert`
