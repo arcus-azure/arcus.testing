@@ -282,6 +282,15 @@ string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 string expected = "{ \"data\": ... }";
 string actual = AssertXslt.TransformJson(xslt, input);
 // Use `AssertJson.Equal` to do the equalization.
+
+// XML -> CSV
+// ----------------------------------------------------
+string input = "<data>...</data>";
+string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
+
+string expected = "data;cost\nsome-data;123,45";
+string actual = AssertXslt.TransformCsv(xslt, input);
+// Use `AssertCsv.Equal` to do the equalization.
 ```
 
 💡 Both types of transformations can be adapted by passing any runtime XSLT arguments.

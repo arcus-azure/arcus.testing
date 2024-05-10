@@ -39,6 +39,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.output.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.input.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.transformer.xslt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assert_\Resources\xslt-transform.xml-xml.sample.output.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
