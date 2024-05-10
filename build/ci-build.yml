@@ -102,8 +102,8 @@ stages:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download build artifacts'
             inputs:
-            artifact: 'Build'
-            path: '$(Build.SourcesDirectory)'
+              artifact: 'Build'
+              path: '$(Build.SourcesDirectory)'
           - task: UseDotNet@2
             displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
             inputs:
