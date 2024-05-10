@@ -107,13 +107,13 @@ stages:
           - task: UseDotNet@2
             displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
             inputs:
-            packageType: 'sdk'
-            version: '$(DotNet.Sdk.VersionBC)'
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.VersionBC)'
           - template: test/run-sample-tests.yml@templates
             parameters:
-            dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-            projectName: '$(Project).Sample.TestingFrameworkMigration'
-            includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+              projectName: '$(Project).Sample.TestingFrameworkMigration'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
   - stage: IntegrationTests
     displayName: Integration Tests
