@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Assert", "Arc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{98EE1BF1-7C67-49C4-8E02-E0145C5161DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Sample.TestingFrameworkMigration", "..\samples\Arcus.Testing.Sample.TestingFrameworkMigration\Arcus.Testing.Sample.TestingFrameworkMigration.csproj", "{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Sample.TestingFrameworkMigration", "..\samples\Arcus.Testing.Sample.TestingFrameworkMigration\Arcus.Testing.Sample.TestingFrameworkMigration.csproj", "{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,7 +64,9 @@ Global
 		{014C45A4-1899-4486-88B0-7503AFE694EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{014C45A4-1899-4486-88B0-7503AFE694EB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5A7114B-51F7-4528-AFEE-62AAFCF5E4ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
