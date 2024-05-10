@@ -21,7 +21,7 @@ namespace Arcus.Testing.Sample.TestingFrameworkMigration.OutputComparison
         {
             // Arrange
             var fileName = "TestXslt_XmlToXml.xslt";
-            var nodesToIgnore = new[] { "Node1", "dummyNS" };
+            var nodesToIgnore = new[] { "Node1" };
 
             // Act
             bool isSuccess = XsltHelper.TestXslt(fileName, out string failureMessage, xsltArgumentList: null, MessageType.Xml, nodesToIgnore);
@@ -47,8 +47,7 @@ namespace Arcus.Testing.Sample.TestingFrameworkMigration.OutputComparison
             string expected = ScenarioFiles.ReadFileTextByName("TestXslt_XmlToXml_Pass_expected.xml");
             AssertXml.Equal(expected, actual, opt =>
             {
-                opt.IgnoreNode("Node1")
-                   .IgnoreNode("dummyNS");
+                opt.IgnoreNode("Node1");
             });
         }
 
