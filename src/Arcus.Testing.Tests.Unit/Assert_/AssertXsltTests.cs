@@ -122,7 +122,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string input = TestXml.Generate().ToString();
 
             // Act / Assert
-            Assert.All(new[] { TransformXml, TransformJson, TransformXml }, transform =>
+            Assert.All(new[] { TransformXml, TransformJson, TransformCsv }, transform =>
             {
                 var exception = Assert.ThrowsAny<XsltException>(() => transform(xslt, input));
 
