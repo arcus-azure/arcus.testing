@@ -27,6 +27,7 @@ resources:
       endpoint: arcus-azure
 
 variables:
+  - group: 'Arcus Testing - Integration Testing'
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
@@ -87,6 +88,32 @@ stages:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Unit'
               includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+
+  - stage: SampleTests
+    displayName: Sample Tests
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: SampleTests
+        displayName: 'Run sample tests'
+        pool:
+          vmImage: '$(Vm.Image)'
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download build artifacts'
+            inputs:
+            artifact: 'Build'
+            path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
+            inputs:
+            packageType: 'sdk'
+            version: '$(DotNet.Sdk.VersionBC)'
+          - template: test/run-sample-tests.yml@templates
+            parameters:
+            dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+            projectName: '$(Project).Sample.TestingFrameworkMigration'
+            includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
   - stage: IntegrationTests
     displayName: Integration Tests
