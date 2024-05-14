@@ -47,6 +47,9 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.VersionBC)'
+          - task: NuGetAuthenticate@1
+            inputs:
+              nuGetServiceConnections: 'Codit Testing Framework NuGet feed'
           - template: 'build/build-solution.yml@templates'
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
