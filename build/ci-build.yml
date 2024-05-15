@@ -47,6 +47,11 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.VersionBC)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET SDK ($(DotNet.Sdk.Version))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.Version)'
           - task: NuGetCommand@2
             inputs:
               command: 'restore'
