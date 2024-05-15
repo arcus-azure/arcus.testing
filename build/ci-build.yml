@@ -55,6 +55,7 @@ stages:
           - task: DotNetCoreCLI@2
             inputs:
               command: 'restore'
+              projects: 'src/*.sln'
               feedsToUse: 'config'
               nugetConfigPath: 'nuget.config'
               externalFeedCredentials: CoditTestingFramework
