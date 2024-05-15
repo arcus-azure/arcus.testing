@@ -52,7 +52,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.Version)'
-          - task: NuGetCommand@2
+          - task: DotNetCoreCLI@2
             inputs:
               command: 'restore'
               feedsToUse: 'config'
