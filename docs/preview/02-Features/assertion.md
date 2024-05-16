@@ -271,7 +271,7 @@ string input = "<data>...</data>";
 string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 
 string expected = "<other-data>...</other-data>"
-string actual = AssertXslt.TransformXml(xslt, input);
+string actual = AssertXslt.TransformToXml(xslt, input);
 // Use `AssertXml.Equal` to do the equalization.
 
 // XML -> JSON
@@ -280,8 +280,17 @@ string input = "<data>...</data>";
 string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 
 string expected = "{ \"data\": ... }";
-string actual = AssertXslt.TransformJson(xslt, input);
+string actual = AssertXslt.TransformToJson(xslt, input);
 // Use `AssertJson.Equal` to do the equalization.
+
+// XML -> CSV
+// ----------------------------------------------------
+string input = "<data>...</data>";
+string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
+
+string expected = "data;cost\nsome-data;123,45";
+string actual = AssertXslt.TransformToCsv(xslt, input);
+// Use `AssertCsv.Equal` to do the equalization.
 ```
 
 💡 Both types of transformations can be adapted by passing any runtime XSLT arguments.
@@ -303,8 +312,8 @@ string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 XslCompiledTransform transformer = AssertXslt.Load(xslt);
 
 // Use overload with compiled transform instead.
-XmlDocument xml = AssertXslt.TransformXml(transformer, ...);
-JsonNode json = AssertXslt.TransformJson(transformer, ...);
+XmlDocument xml = AssertXslt.TransformToXml(transformer, ...);
+JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 ```
 
 > ❓ Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?
