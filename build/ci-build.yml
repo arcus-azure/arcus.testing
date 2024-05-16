@@ -27,7 +27,6 @@ resources:
       endpoint: arcus-azure
 
 variables:
-  - group: 'Arcus Testing - Integration Testing'
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
@@ -47,18 +46,6 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.VersionBC)'
-          - task: UseDotNet@2
-            displayName: 'Import .NET SDK ($(DotNet.Sdk.Version))'
-            inputs:
-              packageType: 'sdk'
-              version: '$(DotNet.Sdk.Version)'
-          - task: DotNetCoreCLI@2
-            inputs:
-              command: 'restore'
-              projects: 'src/*.sln'
-              feedsToUse: 'config'
-              nugetConfigPath: 'nuget.config'
-              externalFeedCredentials: CoditTestingFramework
           - template: 'build/build-solution.yml@templates'
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -99,32 +86,6 @@ stages:
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Unit'
-              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
-
-  - stage: SampleTests
-    displayName: Sample Tests
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - job: SampleTests
-        displayName: 'Run sample tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifacts'
-            inputs:
-              artifact: 'Build'
-              path: '$(Build.SourcesDirectory)'
-          - task: UseDotNet@2
-            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
-            inputs:
-              packageType: 'sdk'
-              version: '$(DotNet.Sdk.VersionBC)'
-          - template: test/run-integration-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Sample.TestingFrameworkMigration'
               includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
   - stage: IntegrationTests
