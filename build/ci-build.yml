@@ -58,7 +58,6 @@ stages:
               projects: 'src/*.sln'
               feedsToUse: 'config'
               nugetConfigPath: 'nuget.config'
-              externalFeedCredentials: CoditTestingFramework
           - template: 'build/build-solution.yml@templates'
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
