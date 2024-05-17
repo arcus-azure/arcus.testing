@@ -1,0 +1,139 @@
+﻿{
+  "id": "1267781",
+  "creationDate": "2021-06-25T00:00:00Z",
+  "eta": "2021-08-20T00:00:00Z",
+  "etd": "2021-07-23T00:00:00Z",
+  "vendorNumber": "2086295   ",
+  "vendorName": "CAPKINOGLU TEKSTIL",
+  "lines": [
+
+    {
+      "articleDescription": "5613/LENO WEAVE/BEIGE -320 Saar",
+      "articleNumber": "42100625       ",
+      "ean": "8714901781716",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "5613/LENO WEAVE/GRIJS -320 Saar",
+      "articleNumber": "42100626       ",
+      "ean": "8714901781723",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4577/1000/WIT-295 Riga",
+      "articleNumber": "42100627       ",
+      "ean": "8714901781730",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1200.000
+    },
+    {
+      "articleDescription": "4577/218/ECRU-295 Riga",
+      "articleNumber": "42100628       ",
+      "ean": "8714901781747",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1200.000
+    },
+    {
+      "articleDescription": "4577/62311C/GRIJS-295 Riga",
+      "articleNumber": "42100629       ",
+      "ean": "8714901781754",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1200.000
+    },
+    {
+      "articleDescription": "4577/32363/MOSTERD-295 Riga",
+      "articleNumber": "42100630       ",
+      "ean": "8714901781761",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4577/32293/NUDE-295 Riga",
+      "articleNumber": "42100631       ",
+      "ean": "8714901781778",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4577/718916/GROEN-295 Riga",
+      "articleNumber": "42100632       ",
+      "ean": "8714901781785",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4577/718193/BLAUW-295 Riga",
+      "articleNumber": "42100633       ",
+      "ean": "8714901781792",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4577/90793/ANTRACIET-295 Riga",
+      "articleNumber": "42100634       ",
+      "ean": "8714901781808",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1200.000
+    },
+    {
+      "articleDescription": "5032/LINNEN-295 Mumbai",
+      "articleNumber": "42100635       ",
+      "ean": "8714901781815",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4789/WHITE-295 Babs",
+      "articleNumber": "42100636       ",
+      "ean": "8714901781822",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "5326/146/OFF-WHITE-300 Jasmijn",
+      "articleNumber": "42100637       ",
+      "ean": "8714901781839",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "5559/125/TAUPE-300 Bergen",
+      "articleNumber": "42100638       ",
+      "ean": "8714901781846",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "5595/6/OFF-WHITE-295 Auke",
+      "articleNumber": "42100639       ",
+      "ean": "8714901781853",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    },
+    {
+      "articleDescription": "4789/ZWART-295 Babs",
+      "articleNumber": "42100640       ",
+      "ean": "8714901782249",
+      "eta": "2021-08-20T00:00:00Z",
+      "etd": "2021-07-23T00:00:00Z",
+      "quantityOrdered": 1000.000
+    }
+  ]
+}
