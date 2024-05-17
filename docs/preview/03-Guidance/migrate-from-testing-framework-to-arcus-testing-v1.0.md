@@ -139,7 +139,7 @@ Here's how XML-XML now works:
 + string inputXml = ... // Load _input.xml file explicitly.
 + string transformerXslt = ... // Load transformer.xslt file's contents here.
 
-+ string actualXml = AssertXslt.TransformXml(transformerXslt, inputXml);
++ string actualXml = AssertXslt.TransformToXml(transformerXslt, inputXml);
 + // Use `AssertXml.Equal` to determine the difference next.
 ```
 
@@ -164,11 +164,36 @@ Here's how XML-JSON now works:
 + string inputXml = ... // Load _input.xml file explicitly.
 + string transformerXslt = ... // Load transformer.xslt file's contents here.
 
-+ string actualJson = AssertXslt.TransformJson(transformerXslt, inputXml);
++ string actualJson = AssertXslt.TransformToJson(transformerXslt, inputXml);
 + // Use `AssertJson.Equal` to determine the difference next.
 ```
 
-> 💡You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
+> 💡You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/JSON document. Upon failure, a load exception with a detailed description will be reported to the tester.
+
+> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+
+Here's how XML-CSV now works:
+
+```diff
+- using Codit.Testing.Xslt;
++ using Arcus.Testing;
+
+- // _input.xml file is loaded implicitly.
+- // _expected.csv file is loaded implicitly.
+- bool success = XsltHelper.TestXslt(
+-     "transformer.xslt",
+-     out string message,
+-     xsltArgumentsList: null,
+-     MessageOutputType.Csv);
+
++ string inputXml = ... // Load _input.xml file explicitly.
++ string transformerXslt = ... // Load transformer.xslt file's contents here.
+
++ string actualCsv = AssertXslt.TransformToCsv(transformerXslt, inputXml);
++ // Use `AssertCsv.Equal` to determine the difference next.
+```
+
+> 💡You can use the test-friendly `AssertXml/Csv/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/CSV document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
 > 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
