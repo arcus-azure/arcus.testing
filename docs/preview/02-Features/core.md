@@ -122,3 +122,57 @@ var config = TestConfig.Create(options =>
     options.AddOptionalJsonFile("configuration.Dev.json");
 });
 ```
+
+## Polling
+Writing integration tests interacts by definition with external resources. These resources might not always be available at the time the test needs them. Because of this, polling until the target resource is available is a common practice. An example is polling for a health endpoint until the application response 'healthy'.
+
+It's important to understand that polling is different from delaying/waiting. The fundamental difference is that polling will stop when the target resource is available, while delaying/waiting will always happen, regardless of the state of the resource.
+
+The `Poll` provides an easy way to describe these polling operations in a fluent manner. Different options are available for both polling until an interaction stops throwing exceptions or when a result is returning the expected value.
+
+```csharp
+using Arcus.Testing;
+
+// Poll until file is available - stops throwing `FileNotFoundException`:
+// When no exception is specified, all are considered failures.
+string txt = 
+    await Poll.UntilAvailableAsync<FileNotFoundException>(
+        () => File.ReadAllTextAsync("..."));
+
+// Poll until HTTP status code is `200 OK`:
+// When no 'until' filters are specified, all results are considered valid. 
+HttpResponseMessage response = 
+    await Poll.Target(() => HttpClient.GetAsync("..."))
+              .Until(resp => resp.StatusCode == HttpStatusCode.OK)
+              .StartAsync();
+```
+
+> 💡 The returned `Poll` model implements `GetAwaiter`, which means that the `StartAsync` is optional.
+
+### Customization
+The `Poll` model can be customized with several options to override existing functionality or to manipulate the polling operations to your needs.
+
+```csharp
+// Set options directly.
+await Poll.UntilAvailableAsync(..., options =>
+{
+    // Sets the interval between each poll operation (default: 1 second).
+    options.Interval = TimeSpan.FromMilliseconds(500);
+
+    // Sets the time frame in which the polling operation has to succeed (default: 30 seconds).
+    options.Timeout = TimeSpan.FromSeconds(5);
+
+    // Sets the message that describes the failure of the polling operation.
+    options.FailureMessage = "my polling operation description that gives the test failure more context";
+});
+
+// Set options fluently.
+await Poll.Target(...)
+          .Until(...)
+          .Every(TimeSpan.FromMilliseconds(500))
+          .Timeout(TimeSpan.FromSeconds(5))
+          .FailWith("my polling operation description that gives the test failure more context")
+          .StartAsync();
+```
+
+> 💡 Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
