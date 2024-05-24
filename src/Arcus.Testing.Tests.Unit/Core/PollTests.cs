@@ -8,12 +8,11 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Core
 {
-    public class PollTests : IAsyncLifetime
+    public class PollTests
     {
         private readonly TimeSpan _100ms = TimeSpan.FromMilliseconds(100), _10ms = TimeSpan.FromMilliseconds(10);
         private readonly object _expectedResult = Bogus.PickRandom((object) Bogus.Random.Int(), Bogus.Random.AlphaNumeric(10));
 
-        private static int Index;
         private static readonly Faker Bogus = new();
 
         [Fact]
@@ -122,13 +121,15 @@ namespace Arcus.Testing.Tests.Unit.Core
         private static Task AlwaysSucceedsAsync() => Task.CompletedTask;
         private Task<object> AlwaysSucceedsResultAsync() => Task.FromResult(_expectedResult);
 
-        private static async Task SometimesSucceedsAsync()
+        private int __index;
+        private async Task SometimesSucceedsAsync()
         {
-            if (++Index < 3)
+            if (++__index < 3)
             {
                 throw new TestPollException("Sabotage polling!");
             }
 
+            __index = 0;
             await Task.CompletedTask;
         }
 
@@ -167,21 +168,6 @@ namespace Arcus.Testing.Tests.Unit.Core
             Assert.Equal(typeof(TException), exception.InnerException.GetType());
 
             return exception;
-        }
-
-        /// <summary>
-        /// Called immediately after the class has been created, before it is used.
-        /// </summary>
-        public Task InitializeAsync() => Task.CompletedTask;
-
-        /// <summary>
-        /// Called when an object is no longer needed. Called just before <see cref="M:System.IDisposable.Dispose" />
-        /// if the class also implements that.
-        /// </summary>
-        public Task DisposeAsync()
-        {
-            Index = 0;
-            return Task.CompletedTask;
         }
 
         [Fact]
