@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Xml;
 using System.Xml.Xsl;
+using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using Xunit;
@@ -13,7 +14,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         private static readonly Faker Bogus = new();
 
         [Fact]
-        public void TransformXml_ToXml_Succeeds()
+        public void TransformToXml_ToXml_Succeeds()
         {
             // Arrange
             string sampleName = "xslt-transform.xml-xml.sample";
@@ -22,7 +23,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string input = ReadResourceFileByName($"{sampleName}.input.xml");
 
             // Act
-            string actual = TransformXml(xslt, input);
+            string actual = TransformToXml(xslt, input);
 
             // Assert
             string expected = ReadResourceFileByName($"{sampleName}.output.xml");
@@ -30,7 +31,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Fact]
-        public void TransformXml_ToJson_Succeeds()
+        public void TransformToXml_ToJson_Succeeds()
         {
             // Arrange
             string sampleName = "xslt-transform.xml-json.sample";
@@ -39,14 +40,30 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string expected = ReadResourceFileByName($"{sampleName}.output.json");
 
             // Act
-            string actual = TransformJson(xslt, input);
+            string actual = TransformToJson(xslt, input);
 
             // Assert
             AssertJson.Equal(expected, actual);
         }
 
         [Fact]
-        public void TransformJson_WithInvalidOutput_FailsWithDescription()
+        public void TransformToXml_ToCsv_Succeeds()
+        {
+            // Arrange
+            string sampleName = "xslt-transform.xml-csv.sample";
+            string xslt = ReadResourceFileByName($"{sampleName}.transformer.xslt");
+            string input = ReadResourceFileByName($"{sampleName}.input.xml");
+            string expected = ReadResourceFileByName($"{sampleName}.output.csv");
+
+            // Act
+            string actual = TransformToCsv(xslt, input);
+
+            // Assert
+            AssertCsv.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TransformToJson_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
             string xslt = 
@@ -56,13 +73,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string input = TestXml.Generate().ToString();
 
             // Act / Assert
-            var exception = Assert.ThrowsAny<JsonException>(() => TransformJson(xslt, input));
+            var exception = Assert.ThrowsAny<JsonException>(() => TransformToJson(xslt, input));
             Assert.Contains(nameof(AssertJson), exception.Message);
             Assert.Contains("deserialization failure", exception.Message);
         }
 
         [Fact]
-        public void TransformXml_WithInvalidOutput_FailsWithDescription()
+        public void TransformToXml_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
             string xslt = 
@@ -72,9 +89,26 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string input = TestXml.Generate().ToString();
 
             // Act / Assert
-            var exception = Assert.ThrowsAny<XmlException>(() => TransformXml(xslt, input));
+            var exception = Assert.ThrowsAny<XmlException>(() => TransformToXml(xslt, input));
             Assert.Contains(nameof(AssertXml), exception.Message);
             Assert.Contains("deserialization failure", exception.Message);
+        }
+
+        [Fact]
+        public void TransformToCsv_WithInvalidOutput_FailsWithDescription()
+        {
+            // Arrange
+            string xslt = 
+                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                "<xsl:template match=\"/\">a;b;c\n1;3</xsl:template></xsl:stylesheet>";
+
+            string input = TestXml.Generate().ToString();
+
+            // Act / Assert
+            var exception = Assert.ThrowsAny<CsvException>(() => TransformToCsv(xslt, input));
+            Assert.Contains(nameof(AssertCsv), exception.Message);
+            Assert.Contains("load", exception.Message);
+            Assert.Contains("CSV contents", exception.Message);
         }
 
         [Fact]
@@ -88,7 +122,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             string input = TestXml.Generate().ToString();
 
             // Act / Assert
-            Assert.All(new[] { TransformXml, TransformJson }, transform =>
+            Assert.All(new[] { TransformToXml, TransformToJson, TransformToCsv }, transform =>
             {
                 var exception = Assert.ThrowsAny<XsltException>(() => transform(xslt, input));
 
@@ -105,24 +139,34 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return File.ReadAllText(filePath);
         }
 
-        private static string TransformXml(string xslt, string xml)
+        private static string TransformToXml(string xslt, string xml)
         {
             if (Bogus.Random.Bool())
             {
-                return AssertXslt.TransformXml(xslt, xml);
+                return AssertXslt.TransformToXml(xslt, xml);
             }
 
-            return AssertXslt.TransformXml(AssertXslt.Load(xslt), AssertXml.Load(xml)).OuterXml;
+            return AssertXslt.TransformToXml(AssertXslt.Load(xslt), AssertXml.Load(xml)).OuterXml;
         }
 
-        private static string TransformJson(string xslt, string xml)
+        private static string TransformToJson(string xslt, string xml)
         {
             if (Bogus.Random.Bool())
             {
-                return AssertXslt.TransformJson(xslt, xml);
+                return AssertXslt.TransformToJson(xslt, xml);
             }
 
-            return AssertXslt.TransformJson(AssertXslt.Load(xslt), AssertXml.Load(xml)).ToString();
+            return AssertXslt.TransformToJson(AssertXslt.Load(xslt), AssertXml.Load(xml)).ToString();
+        }
+
+        private static string TransformToCsv(string xslt, string xml)
+        {
+            if (Bogus.Random.Bool())
+            {
+                return AssertXslt.TransformToCsv(xslt, xml);
+            }
+
+            return AssertXslt.TransformToCsv(AssertXslt.Load(xslt), AssertXml.Load(xml)).ToString();
         }
 
         [Fact]

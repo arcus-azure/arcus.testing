@@ -51,10 +51,19 @@
     <None Update="Assert_\Resources\xslt-transform.xml-json.sample.input.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.input.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assert_\Resources\xslt-transform.xml-json.sample.output.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.output.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assert_\Resources\xslt-transform.xml-json.sample.transformer.xslt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assert_\Resources\xslt-transform.xml-csv.sample.transformer.xslt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
