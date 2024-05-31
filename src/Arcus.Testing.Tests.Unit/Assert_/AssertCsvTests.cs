@@ -125,6 +125,46 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
+        public void CompareWithInteger_WithSameTrailingSpaces_StillSucceedsByHandlingLikeText()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+
+            (int row, int col) = expected.GetRandomCellIndex();
+            string value = Bogus.Random.Int().ToString();
+
+            string spaces = RandomSpaces();
+            expected.ChangeCellValue(row, col, value + spaces);
+            actual.ChangeCellValue(row, col, value + spaces);
+
+            // Act / Assert
+            EqualCsv(expected, actual, opt => opt.CultureInfo = CultureInfo.InvariantCulture);
+        }
+
+        [Property]
+        public void CompareWithInteger_WithDiffTrailingSpaces_FailsSinceHandledLikeText()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+
+            (int row, int col) = expected.GetRandomCellIndex();
+            string value = Bogus.Random.Int().ToString();
+
+            expected.ChangeCellValue(row, col, value + RandomSpaces(1, 5));
+            actual.ChangeCellValue(row, col, value + RandomSpaces(6, 10));
+
+            // Act / Assert
+            CompareShouldFailWithDescription(expected, actual, "different", "value", value);
+        }
+
+        private static string RandomSpaces(int min = 1, int max = 20)
+        {
+            return string.Concat(Bogus.Make(Bogus.Random.Int(min, max), () => " "));
+        }
+
+        [Property]
         public void CompareWithIgnoreRowOrder_WithDifferentCellValue_FailsWithDescription()
         {
             // Arrange

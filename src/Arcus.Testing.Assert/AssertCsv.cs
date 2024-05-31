@@ -507,9 +507,16 @@ namespace Arcus.Testing
         internal CsvDifference(CsvDifferenceKind kind, string expected, string actual, int rowNumber)
         {
             _kind = kind;
-            _expected = expected ?? throw new ArgumentNullException(nameof(expected));
-            _actual = actual ?? throw new ArgumentNullException(nameof(actual));
+            _expected = QuoteValueUponSpaces(expected ?? throw new ArgumentNullException(nameof(expected)));
+            _actual = QuoteValueUponSpaces(actual ?? throw new ArgumentNullException(nameof(actual)));
             _rowNumber = rowNumber;
+        }
+
+        private static string QuoteValueUponSpaces(string value)
+        {
+            return value.Contains(' ') 
+                   && !value.StartsWith('"')
+                   && !value.EndsWith('"') ? $"\"{value}\"" : value;
         }
 
         /// <summary>
@@ -845,20 +852,17 @@ namespace Arcus.Testing
             }
 
             const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
-            if (float.TryParse(Value, style, _culture, out float expectedValue)
+            const char blankSpace = ' ';
+            bool containsSpaces = Value.Contains(blankSpace) || other.Value.Contains(blankSpace);
+
+            if (!containsSpaces 
+                && float.TryParse(Value, style, _culture, out float expectedValue)
                 && float.TryParse(other.Value, style, _culture, out float actualValue))
             {
-                if (!expectedValue.Equals(actualValue))
-                {
-                    return false;
-                }
-            }
-            else if (Value != other.Value)
-            {
-                return false;
+                return expectedValue.Equals(actualValue);
             }
 
-            return true;
+            return Value == other.Value;
         }
 
         /// <summary>
