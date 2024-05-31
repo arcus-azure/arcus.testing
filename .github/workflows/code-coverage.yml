@@ -31,6 +31,7 @@ jobs:
     - name: Coverlet coverage unit test
       run: dotnet test --framework net8.0 -p:coverletOutput=coverage.json -p:CollectCoverage=true -p:CoverletOutputFormat=\"opencover,json\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\" src/Arcus.Testing.Tests.Unit/Arcus.Testing.Tests.Unit.csproj
 
-    - name: Codecov
-      uses: codecov/codecov-action@v3.1.1
-      if: always()
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
