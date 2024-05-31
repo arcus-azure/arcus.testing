@@ -10,6 +10,7 @@ PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
 🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the supported assertions.
+🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
 ### XML
 You can use `AssertXml` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference.
