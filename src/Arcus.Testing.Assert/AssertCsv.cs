@@ -514,7 +514,9 @@ namespace Arcus.Testing
 
         private static string QuoteValueUponSpaces(string value)
         {
-            return value.Contains(' ') ? $"\"{value}\"" : value;
+            return value.Contains(' ') 
+                   && !value.StartsWith('"')
+                   && !value.EndsWith('"') ? $"\"{value}\"" : value;
         }
 
         /// <summary>
@@ -851,8 +853,9 @@ namespace Arcus.Testing
 
             const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
             const char blankSpace = ' ';
-            
-            if (!Value.Contains(blankSpace) && !other.Value.Contains(blankSpace) 
+            bool containsSpaces = Value.Contains(blankSpace) || other.Value.Contains(blankSpace);
+
+            if (!containsSpaces 
                 && float.TryParse(Value, style, _culture, out float expectedValue)
                 && float.TryParse(other.Value, style, _culture, out float actualValue))
             {
