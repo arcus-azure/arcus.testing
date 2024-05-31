@@ -86,7 +86,7 @@ namespace Arcus.Testing
             configureOptions?.Invoke(options);
 
             IConfigurationBuilder builder = new ConfigurationBuilder()
-                .AddJsonFile(options.MainJsonPath, optional: false);
+                .AddJsonFile(options.MainJsonPath, optional: true);
 
             foreach (string path in options.OptionalJsonPaths)
             {

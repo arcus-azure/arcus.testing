@@ -26,21 +26,23 @@ namespace Arcus.Testing.Tests.Integration.Core
         {
             // Arrange
             string mainAppSettingsName = $"{Bogus.Lorem.Word()}.json";
-            string localAppSettingsName = $"{Bogus.Lorem.Word()}.local.json";
-            string key = Bogus.Lorem.Word(), expected = Bogus.Lorem.Word();
-            AddLocalValueToCustomMain(localAppSettingsName, key, expected, mainAppSettingsName);
+            string localAppSettingsName1 = $"{Bogus.Lorem.Word()}.local.json";
+            string localAppSettingsName2 = $"{Bogus.Lorem.Word()}.local.json";
+            string key1 = Bogus.Lorem.Word(), expected1 = Bogus.Lorem.Word();
+            string key2 = Bogus.Lorem.Word(), expected2 = Bogus.Lorem.Word();
+            AddLocalValueToCustomMain(localAppSettingsName1, key1, expected1, mainAppSettingsName);
+            AddLocalValueToCustomMain(localAppSettingsName2, key2, expected2, mainAppSettingsName);
 
             var config = TestConfig.Create(options =>
             {
                 options.UseMainJsonFile(mainAppSettingsName)
-                       .AddOptionalJsonFile(localAppSettingsName);
+                       .AddOptionalJsonFile(localAppSettingsName1)
+                       .AddOptionalJsonFile(localAppSettingsName2);
             });
 
-            // Act
-            string actual = config[key];
-
-            // Assert
-            Assert.Equal(expected, actual);
+            // Act / Assert
+            Assert.Equal(expected1, config[key1]);
+            Assert.Equal(expected2, config[key2]);
         }
 
         private void AddLocalValueToCustomMain(string fileName, string key, string value, string newMainFile)
@@ -194,10 +196,13 @@ namespace Arcus.Testing.Tests.Integration.Core
         }
 
         [Fact]
-        public void CreateCustom_WithoutMainAppSettingsFile_FailsWithNotFound()
+        public void CreateCustom_WithoutMainAppSettingsFile_StillSucceeds()
         {
-            Assert.Throws<FileNotFoundException>(
-                () => TestConfig.Create(opt => opt.UseMainJsonFile(Bogus.System.FileName("json"))));
+            // Arrange
+            var config = TestConfig.Create(opt => opt.UseMainJsonFile(Bogus.System.FileName("json")));
+
+            // Act / Assert
+            AssertNotFound(() => { string _ = config["ignored_key"]; });
         }
 
         [Fact]
