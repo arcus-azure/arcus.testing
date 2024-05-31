@@ -507,12 +507,12 @@ namespace Arcus.Testing
         internal CsvDifference(CsvDifferenceKind kind, string expected, string actual, int rowNumber)
         {
             _kind = kind;
-            _expected = QuoteValueWithSpaces(expected ?? throw new ArgumentNullException(nameof(expected)));
-            _actual = QuoteValueWithSpaces(actual ?? throw new ArgumentNullException(nameof(actual)));
+            _expected = QuoteValueUponSpaces(expected ?? throw new ArgumentNullException(nameof(expected)));
+            _actual = QuoteValueUponSpaces(actual ?? throw new ArgumentNullException(nameof(actual)));
             _rowNumber = rowNumber;
         }
 
-        private static string QuoteValueWithSpaces(string value)
+        private static string QuoteValueUponSpaces(string value)
         {
             return value.Contains(' ') ? $"\"{value}\"" : value;
         }
