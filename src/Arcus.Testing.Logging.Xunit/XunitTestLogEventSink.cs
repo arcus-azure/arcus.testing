@@ -3,7 +3,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Xunit.Abstractions;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// <see cref="ILogEventSink"/> representation of an <see cref="ITestOutputHelper"/> instance.

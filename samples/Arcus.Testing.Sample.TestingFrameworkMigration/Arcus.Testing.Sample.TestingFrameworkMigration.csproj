@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
     <ProjectReference Include="..\..\src\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
-    <ProjectReference Include="..\..\src\Arcus.Testing.Logging\Arcus.Testing.Logging.csproj" />
+    <ProjectReference Include="..\..\src\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

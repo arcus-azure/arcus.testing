@@ -1,5 +1,4 @@
-﻿using Arcus.Testing.Logging;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace Arcus.Testing.Sample.TestingFrameworkMigration

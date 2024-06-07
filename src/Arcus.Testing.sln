@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging", "Arcus.Testing.Logging\Arcus.Testing.Logging.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging.Core", "Arcus.Testing.Logging.Core\Arcus.Testing.Logging.Core.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Integration", "Arcus.Testing.Tests.Integration\Arcus.Testing.Tests.Integration.csproj", "{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}"
 EndProject
@@ -24,6 +24,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{057BBCFA-D72F-473E-AB38-5A628A47D56D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Sample.TestingFrameworkMigration", "..\samples\Arcus.Testing.Sample.TestingFrameworkMigration\Arcus.Testing.Sample.TestingFrameworkMigration.csproj", "{19A63ECA-029D-46B3-A252-445570AD7D82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Logging.MSTest", "Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj", "{50163460-A494-4C02-B6BC-30A0DE46BABE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Logging.Xunit", "Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj", "{122F9379-5FAD-4759-BFAB-5A437826682C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Logging.NUnit", "Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj", "{56AF4FFB-6D1D-4C11-834B-70920BA046BD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Logging", "Logging", "{45B1870D-C19A-4680-BDD8-2F670C793BC2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,14 +73,30 @@ Global
 		{014C45A4-1899-4486-88B0-7503AFE694EB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{19A63ECA-029D-46B3-A252-445570AD7D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{19A63ECA-029D-46B3-A252-445570AD7D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50163460-A494-4C02-B6BC-30A0DE46BABE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50163460-A494-4C02-B6BC-30A0DE46BABE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50163460-A494-4C02-B6BC-30A0DE46BABE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50163460-A494-4C02-B6BC-30A0DE46BABE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{122F9379-5FAD-4759-BFAB-5A437826682C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{122F9379-5FAD-4759-BFAB-5A437826682C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{122F9379-5FAD-4759-BFAB-5A437826682C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{122F9379-5FAD-4759-BFAB-5A437826682C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56AF4FFB-6D1D-4C11-834B-70920BA046BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56AF4FFB-6D1D-4C11-834B-70920BA046BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56AF4FFB-6D1D-4C11-834B-70920BA046BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56AF4FFB-6D1D-4C11-834B-70920BA046BD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
 		{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 		{3D66B14F-2CC7-44E6-A53F-1E45F9A6BCF6} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 		{19A63ECA-029D-46B3-A252-445570AD7D82} = {057BBCFA-D72F-473E-AB38-5A628A47D56D}
+		{50163460-A494-4C02-B6BC-30A0DE46BABE} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
+		{122F9379-5FAD-4759-BFAB-5A437826682C} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
+		{56AF4FFB-6D1D-4C11-834B-70920BA046BD} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E5382820-51FF-4B00-92BE-C78E80EA0841}

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Logging;
 using Arcus.Testing.Tests.Unit.Core.Fixture;
 using Bogus;
 using Microsoft.Extensions.Logging;

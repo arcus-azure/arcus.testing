@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Xunit.Abstractions;
 
 // ReSharper disable once CheckNamespace

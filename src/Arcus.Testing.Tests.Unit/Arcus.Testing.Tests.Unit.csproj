@@ -6,8 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
-    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="3.0.0" />
     <PackageReference Include="Bogus" Version="29.0.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.2">
       <PrivateAssets>all</PrivateAssets>
@@ -21,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="Moq" Version="4.14.5" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.4.3" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
   </ItemGroup>
@@ -28,7 +27,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
-    <ProjectReference Include="..\Arcus.Testing.Logging\Arcus.Testing.Logging.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.EventHubs\Arcus.Testing.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.ServiceBus\Arcus.Testing.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj" />
