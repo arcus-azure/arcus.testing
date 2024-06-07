@@ -1,6 +1,16 @@
 # Migrate your test suite from Testing Framework to Arcus.Testing v1.0
 This guide will walk you through the process of migrating your test suite from using the Testing Framework to `Arcus.Testing`.
 
+> ⚠️ **IMPORTANT** to note that the `Arcus.Testing` approach uses the files in the build output in any of its functionality (`TestConfig`, `ResourceDirectory`...). It uses this approach for more easily access to the actual files used (instead of hidden as an embedded resource). It is best to add your files needed in your test project either as links ([see how](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html)) or as actual files if only used for testing. **In both cases, they need to be copied to the output.**:
+> 
+> ```xml
+> <ItemGroup>
+>   <None Update="resource.xml">
+>     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+>   </None>
+> </ItemGroup>
+> ```
+
 ## Replace `Codit.Testing.OutputComparison/Xslt` with `Arcus.Testing.Assert`
 The `Codit.Testing.OutputComparison` library has some functionality to compare different kinds of file types. The new `Arcus.Testing.Assert` library handles these comparisons from now on.
 
@@ -10,6 +20,7 @@ PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
 🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the supported assertions.
+
 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
 ### XML
@@ -121,7 +132,9 @@ string actualCsv = ...;
 🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertCsv` and the available options.
 
 ### XSLT
-Transforming XML-XML to XML-JSON now also happens in a test asserted manner.
+Transforming XML-XML to XML-JSON now also happens in a test asserted manner. It does not use the file name anymore and a 'convention by configuration' file structure, but needs the actual contents. You can use the test-friendly `ResourceDirectory` in the `Arcus.Testing.Core` package to load the files.
+
+⚠️ **IMPORTANT** that you [add your XSLT files as links](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html) to the test project, that way any changes to the XSLT in the implementation project will be automatically copied to the XSLT transformation used in the tests. 
 
 Here's how XML-XML now works:
 
@@ -198,4 +211,20 @@ Here's how XML-CSV now works:
 
 > 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
+
 🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertXslt`.
+
+#### Sequential transformations
+The original Testing Framework had a `TestXsltSequential` exposed functionality to run multiple XSLT transformation in sequence (output of one transformation becomes input of another). This was using separate input types for file names. Since this is made explicit in the `Arcus.Testing` packages, you can load those files yourself using the `ResourceDirectory` type and do the sequential transformation in a more explicit manner:
+
+```diff
+- using Codit.Testing.Xslt;
++ using Arcus.Testing;
+
+- // XlstAndArgumentList[] xsltFileNames = ...
+- bool success = XsltHelper.TestXsltSequential(xsltFileNames, out string message);
+
++ string[] xsltFileContents = ...
++ string inputContent = ...
++ string output = xsltFileContents.Aggregate(inputContent, (xslt, xml) => AssertXslt.TransformToXml(xslt, xml));
+```
