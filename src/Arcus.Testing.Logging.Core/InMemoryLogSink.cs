@@ -5,7 +5,7 @@ using System.Linq;
 using Serilog.Core;
 using Serilog.Events;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// Represents a logging sink that collects the emitted log events in-memory.

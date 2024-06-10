@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Testing.Logging;
 using Bogus;
 using Serilog;
 using Serilog.Core;

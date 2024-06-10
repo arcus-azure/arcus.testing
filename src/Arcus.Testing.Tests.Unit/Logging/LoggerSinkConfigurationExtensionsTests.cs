@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Arcus.Testing.Tests.Unit.Logging.Fixture;
+using Bogus;
 using Serilog;
 using Serilog.Configuration;
 using Xunit;
@@ -11,6 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
     public class LoggerSinkConfigurationExtensionsTests : ITestOutputHelper
     {
         private readonly ICollection<string> _messages = new Collection<string>();
+        private static readonly Faker Bogus = new();
 
         [Fact]
         public void AddXunitTestLogging_WithXunitOutputWriter_Succeeds()
@@ -23,9 +26,43 @@ namespace Arcus.Testing.Tests.Unit.Logging
 
             // Assert
             ILogger logger = config.CreateLogger();
-            var expected = "This information message should be present in the xUnit test output writer";
+            string expected = Bogus.Lorem.Sentence();
             logger.Information(expected);
             Assert.Single(_messages, expected);
+        }
+
+        [Fact]
+        public void AddNUnitTestLogging_WithMessage_LogsMessage()
+        {
+            // Arrange
+            var mockWriter = new MockTestWriter();
+            var config = new LoggerConfiguration();
+
+            // Act
+            config.WriteTo.NUnitTestLogging(mockWriter);
+
+            // Assert
+            ILogger logger = config.CreateLogger();
+            string expected = Bogus.Lorem.Sentence();
+            logger.Information(expected);
+            mockWriter.VerifyWritten(expected);
+        }
+
+        [Fact]
+        public void AddMSTestLogging_WithMessage_LogsMessage()
+        {
+            // Arrange
+            var mockContext = new MockTestContext();
+            var config = new LoggerConfiguration();
+
+            // Act
+            config.WriteTo.MSTestLogging(mockContext);
+
+            // Assert
+            ILogger logger = config.CreateLogger();
+            string expected = Bogus.Lorem.Sentence();
+            logger.Information(expected);
+            mockContext.VerifyWritten(expected);
         }
 
         [Fact]

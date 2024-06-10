@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Arcus.Testing.Logging;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;

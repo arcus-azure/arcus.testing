@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// Custom <see cref="ILoggerProvider"/> that creates a custom <see cref="ILogger"/> provider.
@@ -39,6 +39,15 @@ namespace Arcus.Testing.Logging
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Performs specific application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
         {
         }
     }

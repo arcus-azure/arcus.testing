@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// Spy (stub) <see cref="ILogger{TCategoryName}"/> implementation to track the logged messages in-memory.

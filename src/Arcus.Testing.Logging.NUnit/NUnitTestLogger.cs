@@ -2,7 +2,7 @@
 using System.IO;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// <see cref="ILogger"/> representation of a NUnit logger.
@@ -65,20 +65,25 @@ namespace Arcus.Testing.Logging
             Func<TState, Exception, string> formatter)
         {
             string message = formatter(state, exception);
-            if (logLevel != LogLevel.Error)
+            void WriteToContext(TextWriter writer)
             {
-                _testContextOut.WriteLine("{0:s} {1} > {2}", DateTimeOffset.UtcNow, logLevel, message);
-            }
-            else
-            {
-                if (_testContextError != null)
+                if (exception is null)
                 {
-                    _testContextError.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
+                    writer.WriteLine("{0:s} {1} > {2}", DateTimeOffset.UtcNow, logLevel, message);
                 }
                 else
                 {
-                    _testContextOut.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
+                    writer.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
                 }
+            }
+
+            if (logLevel != LogLevel.Error)
+            {
+                WriteToContext(_testContextOut);
+            }
+            else
+            {
+                WriteToContext(_testContextError ?? _testContextOut);
             }
         }
 

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Arcus.Testing.Logging
+namespace Arcus.Testing
 {
     /// <summary>
     /// <see cref="ILogger"/> representation of a xUnit <see cref="ITestOutputHelper"/> logger.
@@ -33,14 +33,14 @@ namespace Arcus.Testing.Logging
         /// <param name="formatter">Function to create a <c>string</c> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            var message = formatter(state, exception);
+            string message = formatter(state, exception);
             if (exception is null)
             {
-                _testOutput.WriteLine($"{DateTimeOffset.UtcNow:s} {logLevel} > {message}");
+                _testOutput.WriteLine("{0:s} {1} > {2}", DateTimeOffset.UtcNow, logLevel, message);
             }
             else
             {
-                _testOutput.WriteLine($"{DateTimeOffset.UtcNow:s} {logLevel} > {message}: {exception}");
+                _testOutput.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
             }
         }
 
