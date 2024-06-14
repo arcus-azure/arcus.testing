@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -89,6 +90,24 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
+        /// </summary>
+        /// <param name="disposables">The disposable instances to add to the collection.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
+        public void AddRange(IEnumerable<IAsyncDisposable> disposables)
+        {
+            if (disposables is null)
+            {
+                throw new ArgumentNullException(nameof(disposables));
+            }
+
+            foreach (IAsyncDisposable disposable in disposables)
+            {
+                Add(disposable);
+            }
+        }
+
+        /// <summary>
         /// Adds a <paramref name="disposable"/> to this collection which will get disposed when this collection gets disposed.
         /// </summary>
         /// <param name="disposable">The disposable instance to add to the collection.</param>
@@ -101,6 +120,24 @@ namespace Arcus.Testing
             }
 
             Add(AsyncDisposable.Create(disposable));
+        }
+
+        /// <summary>
+        /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
+        /// </summary>
+        /// <param name="disposables">The disposable instances to add to the collection.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
+        public void AddRange(IEnumerable<IDisposable> disposables)
+        {
+            if (disposables is null)
+            {
+                throw new ArgumentNullException(nameof(disposables));
+            }
+
+            foreach (IDisposable disposable in disposables)
+            {
+                Add(disposable);
+            }
         }
 
         /// <summary>

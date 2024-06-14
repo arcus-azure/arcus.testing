@@ -59,7 +59,8 @@ byte[] img = root.ReadFileBytesByName("file.png");
 ResourceDirectory sub = root.WithSubDirectory("resources");
 
 string txt = sub.ReadFileTextByName("file.txt");
-byte[] img = sub.ReadFileBytesByName("file.png");
+byte[] img = sub.ReadFileBytesByPattern("*.png");
+
 
 // FileNotFoundException: 
 //    Cannot retrieve 'file.txt' file contents in test resource directory 'resources' because it does not exists,
@@ -122,6 +123,21 @@ var config = TestConfig.Create(options =>
     options.AddOptionalJsonFile("configuration.Dev.json");
 });
 ```
+
+It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:
+
+```csharp
+public class MyTestConfig : TestConfig
+{
+    // Uses default 'appsettings.json' and 'appsettings.local.json' as local alternative.
+    // Same as doing `TestConfig.Create()`
+    public MyTestConfig()
+
+    public MyTestConfig() : base(options => options.UseMainJsonFile("configuration.json")) { }
+}
+```
+
+💡 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, without exposing Arcus functionality directly to your tests.
 
 ## Polling
 Writing integration tests interacts by definition with external resources. These resources might not always be available at the time the test needs them. Because of this, polling until the target resource is available is a common practice. An example is polling for a health endpoint until the application response 'healthy'.

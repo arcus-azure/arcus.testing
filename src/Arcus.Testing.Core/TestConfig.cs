@@ -62,25 +62,18 @@ namespace Arcus.Testing
         private readonly IConfiguration _implementation;
         private readonly TestConfigOptions _options;
 
-        private TestConfig(IConfiguration implementation, TestConfigOptions options)
-        {
-            _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
-
         /// <summary>
-        /// Creates an <see cref="TestConfig"/> instance with default 'appsettings.json' and 'appsettings.local.json' variant as configuration sources.
+        /// Initializes a new instance of the <see cref="TestConfig"/> class with default 'appsettings.json' and 'appsettings.local.json' variant as configuration sources.
         /// </summary>
-        public static TestConfig Create()
+        protected TestConfig() : this(configureOptions: null)
         {
-            return Create(configureOptions: null);
         }
 
         /// <summary>
-        /// Creates an <see cref="TestConfig"/> instance with custom 'appsettings.json' files based on the configured options.
+        /// Initializes a new instance of the <see cref="TestConfig"/> class with custom 'appsettings.json' files based on the configured options.
         /// </summary>
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
-        public static TestConfig Create(Action<TestConfigOptions> configureOptions)
+        protected TestConfig(Action<TestConfigOptions> configureOptions)
         {
             var options = new TestConfigOptions();
             configureOptions?.Invoke(options);
@@ -93,8 +86,25 @@ namespace Arcus.Testing
                 builder.AddJsonFile(path, optional: true);
             }
 
-            IConfiguration config = builder.Build();
-            return new TestConfig(config, options);
+            _implementation = builder.Build();
+            _options = options;
+        }
+
+        /// <summary>
+        /// Creates an <see cref="TestConfig"/> instance with default 'appsettings.json' and 'appsettings.local.json' variant as configuration sources.
+        /// </summary>
+        public static TestConfig Create()
+        {
+            return new TestConfig();
+        }
+
+        /// <summary>
+        /// Creates an <see cref="TestConfig"/> instance with custom 'appsettings.json' files based on the configured options.
+        /// </summary>
+        /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
+        public static TestConfig Create(Action<TestConfigOptions> configureOptions)
+        {
+           return new TestConfig(configureOptions);
         }
 
         /// <summary>
@@ -139,11 +149,12 @@ namespace Arcus.Testing
         {
             get
             {
+                string mainFile = _options?.MainJsonPath ?? "app settings";
                 if (string.IsNullOrWhiteSpace(key))
                 {
                     throw new KeyNotFoundException(
                         $"Cannot find any test configuration value for the blank key: '{key}', " +
-                        $"please make sure that you use a non-blank key and that has a corresponding value specified in your (local or remote) '{_options.MainJsonPath}' file");
+                        $"please make sure that you use a non-blank key and that has a corresponding value specified in your (local or remote) '{mainFile}' file");
                 }
 
                 string value = _implementation[key];
@@ -151,7 +162,7 @@ namespace Arcus.Testing
                 {
                     throw new KeyNotFoundException(
                         $"Cannot find any non-blank test configuration value for the key: '{key}', " +
-                        $"please make sure that this key is specified in your (local or remote) '{_options.MainJsonPath}' file and it is copied to the build output in your .csproj/.fsproj project file: " +
+                        $"please make sure that this key is specified in your (local or remote) '{mainFile}' file and it is copied to the build output in your .csproj/.fsproj project file: " +
                         $"<CopyToOutputDirectory>Always/CopyToOutputDirectory>");
                 }
 
