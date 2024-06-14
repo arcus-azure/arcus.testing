@@ -86,7 +86,25 @@ namespace Arcus.Testing
         /// </exception>
         public string ReadFileTextByName(string fileName)
         {
-            FileInfo file = GetFileByName(fileName);
+            FileInfo file = GetFileByPattern(fileName);
+            return File.ReadAllText(file.FullName);
+        }
+
+        /// <summary>
+        /// Gets the file contents of a test resource file within the directory that matches the specified <paramref name="searchPattern"/>.
+        /// </summary>
+        /// <param name="searchPattern">
+        ///     The search string to match against the names of files in the directory.
+        ///     This parameter can contain a combination of valid literal path and wildcard (* and ?) characters, but it doesn't support regular expressions.
+        /// </param>
+        /// <returns>The raw contents of the test resource file.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="searchPattern"/> is blank.</exception>
+        /// <exception cref="FileNotFoundException">
+        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
+        /// </exception>
+        public string ReadFileTextByPattern(string searchPattern)
+        {
+            FileInfo file = GetFileByPattern(searchPattern);
             return File.ReadAllText(file.FullName);
         }
 
@@ -101,32 +119,59 @@ namespace Arcus.Testing
         /// </exception>
         public byte[] ReadFileBytesByName(string fileName)
         {
-            FileInfo file = GetFileByName(fileName);
+            FileInfo file = GetFileByPattern(fileName);
             return File.ReadAllBytes(file.FullName);
         }
 
-        private FileInfo GetFileByName(string fileName)
+        /// <summary>
+        /// Gets the file contents of a test resource file within the directory that matches the specified <paramref name="searchPattern"/>.
+        /// </summary>
+        /// <param name="searchPattern">
+        ///     The search string to match against the names of files in the directory.
+        ///     This parameter can contain a combination of valid literal path and wildcard (* and ?) characters, but it doesn't support regular expressions.
+        /// </param>
+        /// <returns>The raw contents of the test resource file.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="searchPattern"/> is blank.</exception>
+        /// <exception cref="FileNotFoundException">
+        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
+        /// </exception>
+        public byte[] ReadFileBytesByPattern(string searchPattern)
         {
-            if (string.IsNullOrWhiteSpace(fileName))
+            FileInfo file = GetFileByPattern(searchPattern);
+            return File.ReadAllBytes(file.FullName);
+        }
+
+        private FileInfo GetFileByPattern(string searchPattern)
+        {
+            if (string.IsNullOrWhiteSpace(searchPattern))
             {
-                throw new ArgumentException(
-                    $"Requires non-blank file name to retrieve the contents of a test resource file in test resource directory: '{_directory.FullName}'", nameof(fileName));
+                throw new ArgumentException("Requires a non-blank search pattern to retrieve the contents of a test resource file in the resource directory", nameof(searchPattern));
             }
 
-            string filePath = System.IO.Path.Combine(_directory.FullName, fileName);
-            if (!File.Exists(filePath))
+            FileInfo[] files = _directory.GetFiles(searchPattern);
+            if (files.Length == 0)
             {
                 throw new FileNotFoundException(
-                    $"Cannot retrieve '{fileName}' file contents in test resource directory '{Path.Name}' because it does not exists, " +
-                    $"make sure that the test resource files are always copied to the output before loading their contents. " +
+                    $"Cannot retrieve '{searchPattern}' file contents in the resource directory because it does not exists, " +
+                    "make sure that the test resource files are always copied to the output before loading their contents. " +
                     Environment.NewLine +
-                    $"File path: {filePath}" +
+                    $"Search pattern: {searchPattern}" +
                     Environment.NewLine +
-                    $"Resource directory: {Path.FullName}", 
-                    filePath);
+                    $"Resource directory: {CurrentDirectory.Path.FullName}");
             }
 
-            return new FileInfo(filePath);
+            if (files.Length > 1)
+            {
+                throw new FileNotFoundException(
+                    $"Cannot retrieve '{searchPattern}' file contents in the resource directory because there are multiple files found, " +
+                    "make sure that the test resource files are always copied to the output before loading their contents. " +
+                    Environment.NewLine +
+                    $"Search pattern: {searchPattern}" +
+                    Environment.NewLine +
+                    $"Resource directory: {CurrentDirectory.Path.FullName}");
+            }
+
+            return files[0];
         }
     }
 }

@@ -79,11 +79,25 @@ namespace Arcus.Testing.Tests.Unit.Core
             switch (disposable)
             {
                 case IAsyncDisposable d:
-                    collection.Add(d);
+                    if (Bogus.Random.Bool())
+                    {
+                        collection.Add(d); 
+                    }
+                    else
+                    {
+                        collection.AddRange(new[] { d });
+                    }
                     break;
 
                 case IDisposable d:
-                    collection.Add(d);
+                    if (Bogus.Random.Bool())
+                    {
+                        collection.Add(d); 
+                    }
+                    else
+                    {
+                        collection.AddRange(new[] { d });
+                    }
                     break;
             }
         }

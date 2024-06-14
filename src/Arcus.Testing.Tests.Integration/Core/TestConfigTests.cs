@@ -21,8 +21,15 @@ namespace Arcus.Testing.Tests.Integration.Core
         private static readonly Faker Bogus = new();
         private readonly DisposableCollection _disposables = new(NullLogger.Instance);
 
-        [Fact]
-        public void CreateCustom_WithLocalAppSettingsOnCustomMainFile_RetrievesValue()
+        public static IEnumerable<object[]> CustomConfigs => new[]
+        {
+            new object[] { (Func<Action<TestConfigOptions>, TestConfig>)(TestConfig.Create) },
+            new object[] { (Func<Action<TestConfigOptions>, TestConfig>)(configureOptions => new CustomTestConfig(configureOptions)) },
+        };
+
+        [Theory]
+        [MemberData(nameof(CustomConfigs))]
+        public void CreateCustom_WithLocalAppSettingsOnCustomMainFile_RetrievesValue(Func<Action<TestConfigOptions>, TestConfig> createConfig)
         {
             // Arrange
             string mainAppSettingsName = $"{Bogus.Lorem.Word()}.json";
@@ -33,7 +40,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             AddLocalValueToCustomMain(localAppSettingsName1, key1, expected1, mainAppSettingsName);
             AddLocalValueToCustomMain(localAppSettingsName2, key2, expected2, mainAppSettingsName);
 
-            var config = TestConfig.Create(options =>
+            var config = createConfig(options =>
             {
                 options.UseMainJsonFile(mainAppSettingsName)
                        .AddOptionalJsonFile(localAppSettingsName1)
@@ -55,15 +62,16 @@ namespace Arcus.Testing.Tests.Integration.Core
             AddTokenToCustomMain(key, newMainFile);
         }
 
-        [Fact]
-        public void CreateCustom_WithLocalAppSettingsFile_RetrievesValue()
+        [Theory]
+        [MemberData(nameof(CustomConfigs))]
+        public void CreateCustom_WithLocalAppSettingsFile_RetrievesValue(Func<Action<TestConfigOptions>, TestConfig> createConfig)
         {
             // Arrange
             string localAppSettingsName = $"{Bogus.Lorem.Word()}.json";
             string key = Bogus.Lorem.Word(), expected = Bogus.Lorem.Word();
             AddLocalValueToDefaultMain(localAppSettingsName, key, expected);
 
-            var config = TestConfig.Create(options => options.AddOptionalJsonFile(localAppSettingsName));
+            TestConfig config = createConfig(options => options.AddOptionalJsonFile(localAppSettingsName));
 
             // Act
             string actual = config[key];
@@ -72,14 +80,20 @@ namespace Arcus.Testing.Tests.Integration.Core
             Assert.Equal(expected, actual);
         }
 
-        [Fact]
-        public void CreateDefault_WithDefaultLocalValue_RetrievesValue()
+        public static IEnumerable<object[]> DefaultConfigs => new[]
+        {
+            new object[] { (Func<TestConfig>)(TestConfig.Create) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig()) }
+        };
+
+        [Theory]
+        [MemberData(nameof(DefaultConfigs))]
+        public void CreateDefault_WithDefaultLocalValue_RetrievesValue(Func<TestConfig> createConfig)
         {
             // Arrange
             string key = Bogus.Lorem.Word(), expected = Bogus.Lorem.Word();
             AddLocalValueToDefaultMain(DefaultLocalAppSettingsName, key, expected);
-
-            var config = TestConfig.Create();
+            TestConfig config = createConfig();
 
             // Act
             string actual = config[key];
@@ -176,7 +190,9 @@ namespace Arcus.Testing.Tests.Integration.Core
             var configs = new[]
             {
                 TestConfig.Create(),
-                TestConfig.Create(opt => opt.AddOptionalJsonFile(Bogus.Random.Word()))
+                TestConfig.Create(opt => opt.AddOptionalJsonFile(Bogus.Random.Word())),
+                new CustomTestConfig(),
+                new CustomTestConfig(opt => opt.AddOptionalJsonFile(Bogus.Random.Word()))
             };
 
             if (uponNewMainFile != null)

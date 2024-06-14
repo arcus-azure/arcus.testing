@@ -23,8 +23,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             ResourceDirectory subDir = WithSubDirectories(Root, tempSubDir);
 
             // Act / Assert
-            Assert.Equal(tempFile.Contents, subDir.ReadFileBytesByName(tempFile.Name));
-            Assert.Equal(tempFile.Text, subDir.ReadFileTextByName(tempFile.Name));
+            AssertContainsFile(tempFile, subDir);
         }
 
         [Fact]
@@ -35,8 +34,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             string unknownFileName = Bogus.Lorem.Word();
 
             // Act / Assert
-            AssertFileNotFound(() => Root.ReadFileTextByName(unknownFileName), unknownFileName);
-            AssertFileNotFound(() => Root.ReadFileBytesByName(unknownFileName), unknownFileName);
+            AssertFileNotFound(unknownFileName, Root);
         }
 
         [Fact]
@@ -46,8 +44,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             using var tempFile = TemporaryFile.GenerateAt(Root.Path);
 
             // Act / Assert
-            Assert.Equal(tempFile.Contents, Root.ReadFileBytesByName(tempFile.Name));
-            Assert.Equal(tempFile.Text, Root.ReadFileTextByName(tempFile.Name));
+            AssertContainsFile(tempFile, Root);
         }
 
         [Fact]
@@ -57,8 +54,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             string unknownFileName = Bogus.Lorem.Word();
 
             // Act / Assert
-            AssertFileNotFound(() => Root.ReadFileTextByName(unknownFileName), unknownFileName);
-            AssertFileNotFound(() => Root.ReadFileBytesByName(unknownFileName), unknownFileName);
+            AssertFileNotFound(unknownFileName, Root);
         }
 
         [Fact]
@@ -87,6 +83,22 @@ namespace Arcus.Testing.Tests.Integration.Core
 
             // Act / Assert
             AssertDirNotFound(() => Root.WithSubDirectory(unknownSubDirName), unknownSubDirName);
+        }
+
+        private static void AssertContainsFile(TemporaryFile expectedFile, ResourceDirectory directory)
+        {
+            Assert.Equal(expectedFile.Contents, directory.ReadFileBytesByName(expectedFile.Name));
+            Assert.Equal(expectedFile.Contents, directory.ReadFileBytesByPattern(expectedFile.Name[..^1] + "?"));
+            Assert.Equal(expectedFile.Text, directory.ReadFileTextByName(expectedFile.Name));
+            Assert.Equal(expectedFile.Text, directory.ReadFileTextByPattern(expectedFile.Name[..5] + "*"));
+        }
+
+        private static void AssertFileNotFound(string input, ResourceDirectory directory)
+        {
+            AssertFileNotFound(() => directory.ReadFileTextByName(input), input);
+            AssertFileNotFound(() => directory.ReadFileBytesByName(input), input);
+            AssertFileNotFound(() => directory.ReadFileTextByPattern(input), input);
+            AssertFileNotFound(() => directory.ReadFileBytesByPattern(input), input);
         }
 
         private static void AssertFileNotFound(Action dirAction, params string[] errorParts)
