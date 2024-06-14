@@ -10,7 +10,6 @@ namespace Arcus.Testing.Messaging.Pumps.ServiceBus
     /// </summary>
     public class TestServiceBusReceiver : ServiceBusReceiver
     {
-#if NET6_0
         /// <summary>
         /// The path of the Service Bus entity that the receiver is connected to, specific to the
         /// Service Bus namespace that contains it.
@@ -22,7 +21,6 @@ namespace Arcus.Testing.Messaging.Pumps.ServiceBus
         /// to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </summary>
         public override string FullyQualifiedNamespace { get; } = "Arcus.Testing.FullyQualifiedNamespace"; 
-#endif
 
         /// <summary>
         /// Completes a <see cref="T:Azure.Messaging.ServiceBus.ServiceBusReceivedMessage" />. This will delete the message from the service.
