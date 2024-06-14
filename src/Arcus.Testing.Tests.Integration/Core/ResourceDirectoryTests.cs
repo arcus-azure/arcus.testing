@@ -27,6 +27,20 @@ namespace Arcus.Testing.Tests.Integration.Core
         }
 
         [Fact]
+        public void FileContentsFromSubDirectory_FromManyMatchingFiles_FailsWithNotFound()
+        {
+            // Arrange
+            using var tempSubDir = TemporaryDirectory.GenerateAt(Root.Path);
+            using var tempFile1 = TemporaryFile.GenerateAt(tempSubDir.Path);
+            using var tempFile2 = TemporaryFile.GenerateAt(tempSubDir.Path);
+
+            ResourceDirectory subDir = WithSubDirectories(Root, tempSubDir);
+
+            // Act / Assert
+            AssertFileNotFound("*", subDir);
+        }
+
+        [Fact]
         public void FileContentsFromSubDirectory_FromUnknownFile_FailsWithNotFound()
         {
             // Arrange
