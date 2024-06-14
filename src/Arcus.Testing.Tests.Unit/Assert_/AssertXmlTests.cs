@@ -96,7 +96,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             var expected = TestXml.Generate();
             TestXml actual = expected.Copy();
 
-            string newValue = Bogus.Random.AlphaNumeric(Bogus.Random.Int(1, 10));
+            string newValue = Bogus.Random.AlphaNumeric(Bogus.Random.Int(10, 20));
             actual.ChangeRandomlyElementValue(newValue);
 
             // Act / Assert
