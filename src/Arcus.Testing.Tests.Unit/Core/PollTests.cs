@@ -121,15 +121,13 @@ namespace Arcus.Testing.Tests.Unit.Core
         private static Task AlwaysSucceedsAsync() => Task.CompletedTask;
         private Task<object> AlwaysSucceedsResultAsync() => Task.FromResult(_expectedResult);
 
-        private int __index;
         private async Task SometimesSucceedsAsync()
         {
-            if (++__index < 3)
+            if (Bogus.PickRandom(false, false, true))
             {
                 throw new TestPollException("Sabotage polling!");
             }
 
-            __index = 0;
             await Task.CompletedTask;
         }
 
