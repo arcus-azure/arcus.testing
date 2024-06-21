@@ -4,14 +4,14 @@ using Xunit.Abstractions;
 namespace Arcus.Testing.Sample.TestingFrameworkMigration
 {
     /// <summary>
-    /// Base template for providing common and much-needed functionality to integration tests.
+    /// Base template for providing common and much-needed functionality to integration tests for the xUnit testing framework.
     /// </summary>
-    public abstract class IntegrationTest
+    public abstract class XunitIntegrationTest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="IntegrationTest" /> class.
+        /// Initializes a new instance of the <see cref="XunitIntegrationTest" /> class.
         /// </summary>
-        protected IntegrationTest(ITestOutputHelper outputWriter)
+        protected XunitIntegrationTest(ITestOutputHelper outputWriter)
         {
             Config = TestConfig.Create();
             ScenarioFiles = ResourceDirectory.CurrentDirectory.WithSubDirectory("ScenarioFiles");
