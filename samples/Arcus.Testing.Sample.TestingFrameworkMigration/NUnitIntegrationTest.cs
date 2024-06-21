@@ -9,7 +9,7 @@ namespace Arcus.Testing.Sample.TestingFrameworkMigration
     public abstract class NUnitIntegrationTest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="XunitIntegrationTest" /> class.
+        /// Initializes a new instance of the <see cref="NUnitIntegrationTest" /> class.
         /// </summary>
         protected NUnitIntegrationTest()
         {
