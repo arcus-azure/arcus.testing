@@ -1,4 +1,4 @@
-# Test assertion
+# Test assertions
 The `Arcus.Testing.Assert` library is a highly reusable and independent library that contains dev-friendly test assertions on different types of output (XML, JSON...). The purpose of the library is to write readable and test-friendly assertions that show quickly what went wrong with the (XML, JSON...) output of a certain piece of functionality.
 
 ## Installation
