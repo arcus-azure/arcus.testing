@@ -4,7 +4,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Testing.Sample.TestingFrameworkMigration.OutputComparison
 {
-    public class XsltTests : IntegrationTest
+    public class XsltTests : XunitIntegrationTest
     {
         public XsltTests(ITestOutputHelper outputWriter) : base(outputWriter)
         {

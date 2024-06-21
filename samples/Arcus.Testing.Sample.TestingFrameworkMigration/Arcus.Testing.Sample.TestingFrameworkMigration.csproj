@@ -9,14 +9,20 @@
 
   <ItemGroup>
     <PackageReference Include="Codit.Testing.Xslt.Helper" Version="3.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.4.3" />
+    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageReference Include="xunit" Version="2.8.0" />
+    <PackageReference Include="MSTest" Version="3.4.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
     <ProjectReference Include="..\..\src\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
+    <ProjectReference Include="..\..\src\Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj" />
     <ProjectReference Include="..\..\src\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
+    <ProjectReference Include="..\..\src\Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,21 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Arcus.Testing.Sample.TestingFrameworkMigration
 {
     /// <summary>
-    /// Base template for providing common and much-needed functionality to integration tests.
+    /// Base template for providing common and much-needed functionality to integration tests in for the NUnit testing framework.
     /// </summary>
-    public abstract class IntegrationTest
+    public abstract class NUnitIntegrationTest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="IntegrationTest" /> class.
+        /// Initializes a new instance of the <see cref="XunitIntegrationTest" /> class.
         /// </summary>
-        protected IntegrationTest(ITestOutputHelper outputWriter)
+        protected NUnitIntegrationTest()
         {
             Config = TestConfig.Create();
             ScenarioFiles = ResourceDirectory.CurrentDirectory.WithSubDirectory("ScenarioFiles");
-            Logger = new XunitTestLogger(outputWriter);
+            Logger = new NUnitTestLogger(TestContext.Out, TestContext.Error);
         }
 
         /// <summary>
