@@ -16,7 +16,7 @@ PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.ServiceBus
 ## Test Azure Service Bus message pump
 
 As an addition on the [Arcus Azure Service Bus message pump](https://messaging.arcus-azure.net/Features/message-handling/service-bus), we have provided a test version of the message pump to verify your custom Azure Service Bus message handler implementations.
-These hander implementations can be tested separately, and could be tested by interacting with the message router directly, but simulating messages like it would be from Azure Service Bus itself is a bit trickier.
+These handler implementations can be tested separately, and could be tested by interacting with the message router directly, but simulating messages like it would be from Azure Service Bus itself is a bit trickier.
 This test message pump functionality allows you to verify certain cases without the need of an actual Azure resource.
 
 We provide an extension that acts as an Azure Service Bus message pump and lets you decide how messages should be produced.
@@ -36,7 +36,7 @@ public class OrderAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces order...
+        // Process order...
     }
 }
 
@@ -48,7 +48,7 @@ public class ShipmentAzureServiceBusMessageHandler : IAzureServiceBusMessageHand
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces shipment...
+        // Process shipment...
     }
 }
 ```
@@ -111,7 +111,7 @@ public class MessageHandlingTests
 Note that in this example, we use `Assert.True(handler.IsProcessed)` to determine if the `Order` message was correctly processed. In your application, you may want to inject your message handlers with test versions of dependencies and determine via those dependencies if the correct message handler was called.
 You can use one of the `.WithServiceBusMessageHandler<,>(...)` extensions to pass in your instance of the message handler so you can use it later in the test assertion, like it is shown in the example.
 
-> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging` package. See [this page on logging](./logging.md) for more information.
+> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging.Xunit` package. See [this page on logging](../03-logging.md) for more information.
 
 ## Message producer configuration
 

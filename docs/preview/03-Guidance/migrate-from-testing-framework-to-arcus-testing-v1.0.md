@@ -19,7 +19,7 @@ Start by installing this library:
 PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the supported assertions.
+🔗 See the [feature documentation](../02-Features/02-assertion.md) for more info on the supported assertions.
 
 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
@@ -54,7 +54,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertXml`.
+🔗 See the [feature documentation](../02-Features/02-assertion.md) for more info on the `AssertXml`.
 
 ### JSON
 You can use `AssertJson` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference.
@@ -87,7 +87,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertJson` and the available options.
+🔗 See the [feature documentation](../02-Features/02-assertion.md) for more info on the `AssertJson` and the available options.
 
 ### CSV
 You can use `AssertCsv` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference. The Arcus variant also allows for raw CSV to be compared, without the need for you to create a dedicated DTO serialization model before the comparison can happen. It is advised to use your custom domain comparison if you need custom comparison of rows.
@@ -129,7 +129,7 @@ string actualCsv = ...;
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertCsv` and the available options.
+🔗 See the [feature documentation](../02-Features/02-assertion.md) for more info on the `AssertCsv` and the available options.
 
 ### XSLT
 Transforming XML-XML to XML-JSON now also happens in a test asserted manner. It does not use the file name anymore and a 'convention by configuration' file structure, but needs the actual contents. You can use the test-friendly `ResourceDirectory` in the `Arcus.Testing.Core` package to load the files.
@@ -159,7 +159,7 @@ Here's how XML-XML now works:
 
 > 💡You can use the test-friendly `AssertXml/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 Here's how XML-JSON now works:
 
@@ -184,7 +184,7 @@ Here's how XML-JSON now works:
 
 > 💡You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/JSON document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 Here's how XML-CSV now works:
 
@@ -209,10 +209,10 @@ Here's how XML-CSV now works:
 
 > 💡You can use the test-friendly `AssertXml/Csv/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/CSV document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 
-🔗 See the [feature documentation](../02-Features/assertion.md) for more info on the `AssertXslt`.
+🔗 See the [feature documentation](../02-Features/02-assertion.md) for more info on the `AssertXslt`.
 
 #### Sequential transformations
 The original Testing Framework had a `TestXsltSequential` exposed functionality to run multiple XSLT transformation in sequence (output of one transformation becomes input of another). This was using separate input types for file names. Since this is made explicit in the `Arcus.Testing` packages, you can load those files yourself using the `ResourceDirectory` type and do the sequential transformation in a more explicit manner:
