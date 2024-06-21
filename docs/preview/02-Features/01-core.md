@@ -1,4 +1,4 @@
-# Core test infrastructure
+# Test core infrastructure
 
 The `Arcus.Testing.Core` package provides general testing infrastructure that is independent of technology, SUT (system-under-test) or testing framework.
 The features provided in this package are very often used and/or required for a functional integration/system test suite.
