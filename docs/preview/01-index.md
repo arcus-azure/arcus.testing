@@ -12,12 +12,6 @@ The Arcus Testing library provides test-friendly capabilities to kick-start your
 ## Guides
 * [Migrate from Testing Framework to Arcus.Testing v1.0](03-Guidance/migrate-from-testing-framework-to-arcus-testing-v1.0.md)
 
-# Installation
-The Arcus.Testing library can be installed via NuGet, for instance:
-
-```shell
-PM > Install-Package Arcus.Testing.Logging
-```
 # License
 
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.

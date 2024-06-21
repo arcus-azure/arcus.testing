@@ -1,6 +1,6 @@
 # Core testing functionality
 
-The `Arcus.Testing.Core` package provides general testing functionality that is independent of technology, SUT (system-under-test) testing framework.
+The `Arcus.Testing.Core` package provides general testing functionality that is independent of technology, SUT (system-under-test) or testing framework.
 The features provided in this package are very often used and/or required for a functional integration/system test suite.
 
 ## Installation
