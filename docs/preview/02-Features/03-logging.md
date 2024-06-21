@@ -1,4 +1,4 @@
-# Logging
+# Test framework logging
 This page describes functionality related to logging in tests.
 
 ## xUnit test logging

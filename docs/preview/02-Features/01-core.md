@@ -1,11 +1,11 @@
-# Core testing functionality
+# Test core infrastructure
 
-The `Arcus.Testing.Core` package provides general testing functionality that is independent of technology, SUT (system-under-test) testing framework.
+The `Arcus.Testing.Core` package provides general testing infrastructure that is independent of technology, SUT (system-under-test) or testing framework.
 The features provided in this package are very often used and/or required for a functional integration/system test suite.
 
 ## Installation
 
-The following functionality is available when installing this package:
+The following infrastructure is available when installing this package:
 
 ```shell
 PM> Install-Package -Name Arcus.Testing.Core
