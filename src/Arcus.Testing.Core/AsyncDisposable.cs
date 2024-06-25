@@ -18,6 +18,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates an <see cref="AsyncDisposable"/> instance based on an existing synchronous <paramref name="disposable"/>.
         /// </summary>
+        /// <param name="disposable">The synchronous disposable to create as an instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public static AsyncDisposable Create(IDisposable disposable)
         {
             if (disposable is null)
@@ -31,6 +33,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates an <see cref="AsyncDisposable"/> instance based on an existing synchronous <paramref name="dispose"/> operation.
         /// </summary>
+        /// <param name="dispose">The synchronous operation to create as an instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dispose"/> is <c>null</c>.</exception>
         public static AsyncDisposable Create(Action dispose)
         {
             if (dispose is null)
@@ -38,11 +42,26 @@ namespace Arcus.Testing
                 throw new ArgumentNullException(nameof(dispose));
             }
 
-            return new AsyncDisposable(() =>
+            return Create(() =>
             {
                 dispose();
-                return ValueTask.CompletedTask;
+                return Task.CompletedTask;
             });
+        }
+
+        /// <summary>
+        /// Creates an <see cref="AsyncDisposable"/> instance based on an existing asynchronous <paramref name="disposeAsync"/> operation.
+        /// </summary>
+        /// <param name="disposeAsync">The asynchronous operation to create as an instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposeAsync"/> is <c>null</c>.</exception>
+        public static AsyncDisposable Create(Func<Task> disposeAsync)
+        {
+            if (disposeAsync is null)
+            {
+                throw new ArgumentNullException(nameof(disposeAsync));
+            }
+
+            return new AsyncDisposable(async () => await disposeAsync());
         }
 
         /// <summary>
