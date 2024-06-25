@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Bogus;
@@ -61,6 +62,26 @@ namespace Arcus.Testing.Tests.Unit.Core
 
             await FailsByExceptionAsync(async () => await Poll.Target<AggregateException>(AlwaysFailsAsync).MinTimeFrame());
             await FailsByExceptionAsync(async () => await Poll.Target<object, ApplicationException>(AlwaysFailsResultAsync).MinTimeFrame());
+        }
+
+        [Fact]
+        public async Task Poll_WithUntilPredicate_SucceedsAfterThirdTime()
+        {
+            // Arrange
+            var stopwatch = Stopwatch.StartNew();
+
+            int index = 0;
+            TimeSpan timeout = TimeSpan.FromSeconds(1);
+            TimeSpan interval = TimeSpan.FromMilliseconds(200);
+            
+            // Act
+            await Poll.Target(() => Task.FromResult(++index))
+                      .Until(result => result >= 3)
+                      .Every(interval)
+                      .Timeout(timeout);
+
+            // Assert
+            Assert.True(interval + interval <= stopwatch.Elapsed, "stopwatch should at least run until two intervals");
         }
 
         [Fact]
