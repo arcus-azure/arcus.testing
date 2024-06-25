@@ -111,7 +111,7 @@ namespace Arcus.Testing
                 Policy.HandleResult((TResult r) =>
                       {
                           results.Add(r);
-                          return _untilTargets.Count > 0 && _untilTargets.Any(untilTarget => untilTarget(r));
+                          return !_untilTargets.All(untilTarget => untilTarget(r));
                       }).Or<TException>(ex =>
                       {
                           exceptions.Add(ex);
