@@ -58,10 +58,6 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets or sets the type of order which should be used when comparing JSON documents.
         /// </summary>
-        /// <remarks>
-        ///     Only JSON array values can be configured to ignore their order as they are unique by their name,
-        ///     JSON objects are unique by their contents and cannot be ordered without custom code.
-        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
         public AssertJsonOrder Order
         {
@@ -219,10 +215,26 @@ namespace Arcus.Testing
                 return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
             }
 
-            if (options.Order is AssertJsonOrder.Ignore && expectedChildren.OfType<JsonValue>().Any())
+            if (options.Order is AssertJsonOrder.Ignore)
             {
-                expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
-                actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
+                if (expectedChildren.OfType<JsonValue>().Any())
+                {
+                    expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
+                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray(); 
+                }
+                else if (expectedChildren.OfType<JsonObject>().Any())
+                {
+                    if (actualChildren.Any(ch => ch is not JsonObject))
+                    {
+                        return new(ActualOtherType, expected, actualArray);
+                    }
+
+                    Dictionary<string, JsonNode>[] expectedObjects = CreatedOrderedDictionaries(expectedChildren, options);
+                    Dictionary<string, JsonNode>[] actualObjects = CreatedOrderedDictionaries(actualChildren, options);
+
+                    return expectedObjects.Select((expectedObject, index) => CompareJsonObject(expectedObject, actualObjects[index], options))
+                                          .FirstOrDefault(firstDifference => firstDifference != null);
+                }
             }
 
             return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
@@ -239,6 +251,11 @@ namespace Arcus.Testing
             Dictionary<string, JsonNode> expectedDir = CreateDictionary(expectedObject, options);
             Dictionary<string, JsonNode> actualDir = CreateDictionary(actual, options);
 
+            return CompareJsonObject(expectedDir, actualDir, options);
+        }
+
+        private static JsonDifference CompareJsonObject(Dictionary<string, JsonNode> expectedDir, Dictionary<string, JsonNode> actualDir, AssertJsonOptions options)
+        {
             if (TryGetValue(expectedDir, key => !actualDir.ContainsKey(key), out JsonNode missingActualPair))
             {
                 return new(ActualMissesProperty, missingActualPair.GetPath());
@@ -263,12 +280,27 @@ namespace Arcus.Testing
             return null;
         }
 
+        private static Dictionary<string, JsonNode>[] CreatedOrderedDictionaries(JsonNode[] children, AssertJsonOptions options)
+        {
+            return children.Cast<JsonObject>()
+                           .Select(ch => CreateDictionary(ch, options))
+                           .OrderBy(ch => JsonSerializer.Serialize(ch))
+                           .ToArray();
+        }
+
         private static Dictionary<string, JsonNode> CreateDictionary(JsonObject node, AssertJsonOptions options)
         {
             try
             {
-                return node.Where(n => !options.IgnoredNodeNames.Contains(n.Key))
-                           .ToDictionary(n => n.Key, n => n.Value, StringComparer.InvariantCultureIgnoreCase);
+                var properties = node.Where(n => !options.IgnoredNodeNames.Contains(n.Key));
+
+                if (options.Order is AssertJsonOrder.Ignore)
+                {
+                    properties = properties.OrderByDescending(n => n.Value?.GetType().Name)
+                                           .ThenBy(p => p.Key);
+                }
+
+                return properties.ToDictionary(n => n.Key, n => n.Value, StringComparer.InvariantCultureIgnoreCase);
             }
             /* Context: Microsoft's System.Text.Json deserialization allows duplicate JSON keys upon deserialization, but not during navigation,
                 hence the need to catch this if it happens since we can't be sure upon loading the JSON contents. */
@@ -302,12 +334,12 @@ namespace Arcus.Testing
 
             bool identical = expectedValue.GetValueKind() switch
             {
-                JsonValueKind.String 
-                    or JsonValueKind.False 
+                JsonValueKind.String
+                    or JsonValueKind.False
                     or JsonValueKind.True => JsonNode.DeepEquals(expectedValue, actualValue),
-                
-                JsonValueKind.Number => expectedValue.TryGetValue(out float expectedValue1) 
-                                        && actualValue.TryGetValue(out float actualValue1) 
+
+                JsonValueKind.Number => expectedValue.TryGetValue(out float expectedValue1)
+                                        && actualValue.TryGetValue(out float actualValue1)
                                         && expectedValue1.Equals(actualValue1),
                 _ => false
             };
@@ -486,5 +518,5 @@ namespace Arcus.Testing
         ExpectedMissesProperty,
         ActualMissesElement,
         DifferentLength,
-     }
+    }
 }

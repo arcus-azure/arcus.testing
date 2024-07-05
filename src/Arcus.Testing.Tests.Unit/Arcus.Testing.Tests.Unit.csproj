@@ -40,6 +40,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Assert_\Resources\json.ignored.order.objects.in.array.sample.actual.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Assert_\Resources\json.ignored.order.objects.in.array.sample.expected.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Assert_\Resources\xslt-transform.xml-xml.sample.output.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

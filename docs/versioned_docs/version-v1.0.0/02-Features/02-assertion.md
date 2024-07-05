@@ -120,7 +120,6 @@ AssertJson.Equal(..., options =>
     options.IgnoreNode("node-name");
 
     // Sets the type of order which should be used when comparing JSON array values.
-    // REMARK: only the order of JSON values can be set, JSON objects within JSON arrays are still compared by their contents.
     // Default: Ignore.
     options.Order = AssertJsonOrder.Include;
 
