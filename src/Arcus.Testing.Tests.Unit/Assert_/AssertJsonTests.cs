@@ -253,6 +253,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("[ \"2\", \"3\", \"1\" ]", "[ \"1\", \"2\", \"3\" ]")]
         [InlineData("[ true, false, true ]", "[ false, true, true ]")]
         [InlineData("{\"Products\":[{\"id\":1},{\"id\":2},{\"id\":3}]}", "{\"Products\":[{\"id\":3},{\"id\":2},{\"id\":1}]}")]
+        [InlineData("{\"Products\":[{\"id\":[1]},{\"id\":[2]},{\"id\":[3]}]}", "{\"Products\":[{\"id\":[3]},{\"id\":[2]},{\"id\":[1]}]}")]
         [InlineData("[ { \"id\": 2 }, { \"id\": 1 } ]", "[ { \"id\": 1 }, { \"id\": 2 } ]")]
         [InlineData(
             "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]", 
