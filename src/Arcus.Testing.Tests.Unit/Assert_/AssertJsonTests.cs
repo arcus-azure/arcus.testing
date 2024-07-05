@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
@@ -240,6 +241,29 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("[ true, false, true ]", "[ false, true, true ]")]
         public void Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds(string expected, string actual)
         {
+            EqualJson(expected, actual);
+        }
+        
+
+        private static string ReadResourceFileByName(string fileName)
+        {
+            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), nameof(Assert_), "Resources");
+            string filePath = Path.Combine(directoryPath, fileName);
+
+            return File.ReadAllText(filePath);
+        }
+
+        [Fact]
+        public void Clement_Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds()
+        {
+            string actual = ReadResourceFileByName("json.sample.actual.json");
+            string expected = ReadResourceFileByName("json.sample.expected.json");
+
+            /*
+            string actual = "{\"Products\":[{\"id\":1},{\"id\":2},{\"id\":3}]}";
+            string expected = "{\"Products\":[{\"id\":3},{\"id\":2},{\"id\":1}]}";
+            */
+
             EqualJson(expected, actual);
         }
 

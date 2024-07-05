@@ -225,9 +225,101 @@ namespace Arcus.Testing
                 actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
             }
 
+            if (options.Order is AssertJsonOrder.Ignore && expectedChildren.OfType<JsonObject>().Any())
+            {
+                expected = OrderJsonNode(expected);
+                actualArray = OrderJsonNode(actualArray).AsArray();
+
+                actualChildren = actualArray.ToArray();
+                
+                if (expected is not JsonArray expectedArrayExpected)
+                {
+                    return new(ActualOtherType, expected, actualArray);
+                }
+
+                expectedChildren = expectedArrayExpected.ToArray();
+            }
+
             return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
                                  .FirstOrDefault(firstDifference => firstDifference != null);
         }
+
+        private static JsonNode OrderJsonNode(JsonNode node)
+        {
+            return OrderArraysItemsInJsonNode(OrderObjectsInJsonNode(node));
+        }
+
+        private static JsonNode OrderArraysItemsInJsonNode(JsonNode node)
+        {
+            if (node is JsonArray array)
+            {
+                // Order all elements in the array based on the string content of the element.
+                var orderedArray = new JsonArray();
+                foreach (var item in array.OrderBy(a => a.ToJsonString()))
+                {
+                    orderedArray.Add(OrderArraysItemsInJsonNode(item.CopyNode()));
+                }
+                return orderedArray;
+            }
+            else if (node is JsonObject obj)
+            {
+                // Recursively order child elements in the object.
+                foreach (var property in obj.ToList())
+                {
+                    obj[property.Key] = OrderArraysItemsInJsonNode(property.Value.CopyNode());
+                }
+                return obj;
+            }
+            else
+            {
+                return node;
+            }
+        }
+
+        private static JsonNode OrderObjectsInJsonNode(JsonNode node)
+        {
+            if (node is JsonObject obj)
+            {
+                // Reorder all children in the object on type (descending so that arrays end up last) and name.
+                var orderedObj = new JsonObject();
+                foreach (var property in obj.OrderByDescending(p => p.Value?.GetType().Name).ThenBy(p => p.Key))
+                {
+                    orderedObj[property.Key] = OrderObjectsInJsonNode(property.Value.CopyNode());
+                }
+                return orderedObj;
+            }
+            else if (node is JsonArray array)
+            {
+                // Recursively order elements in the array.
+                for (int i = 0; i < array.Count; i++)
+                {
+                    array[i] = OrderObjectsInJsonNode(array[i].CopyNode());
+                }
+                return array;
+            }
+            else
+            {
+                return node;
+            }
+        }
+
+        private static TNode CopyNode<TNode>(this TNode node) where TNode : JsonNode => node?.Deserialize<TNode>();
+
+        private static JsonNode MoveNode(this JsonArray array, int id, JsonObject newParent, string name)
+        {
+            var node = array[id];
+            array.RemoveAt(id);
+            return newParent[name] = node;
+        }
+
+        private static JsonNode MoveNode(this JsonObject parent, string oldName, JsonObject newParent, string name)
+        {
+            parent.Remove(oldName, out var node);
+            return newParent[name] = node;
+        }
+
+        private static TNode ThrowOnNull<TNode>(this TNode value) where TNode : JsonNode => value ?? throw new JsonException("Null JSON value");
+
 
         private static JsonDifference CompareJsonObject(JsonNode expected, JsonObject actual, AssertJsonOptions options)
         {
@@ -302,12 +394,12 @@ namespace Arcus.Testing
 
             bool identical = expectedValue.GetValueKind() switch
             {
-                JsonValueKind.String 
-                    or JsonValueKind.False 
+                JsonValueKind.String
+                    or JsonValueKind.False
                     or JsonValueKind.True => JsonNode.DeepEquals(expectedValue, actualValue),
-                
-                JsonValueKind.Number => expectedValue.TryGetValue(out float expectedValue1) 
-                                        && actualValue.TryGetValue(out float actualValue1) 
+
+                JsonValueKind.Number => expectedValue.TryGetValue(out float expectedValue1)
+                                        && actualValue.TryGetValue(out float actualValue1)
                                         && expectedValue1.Equals(actualValue1),
                 _ => false
             };
@@ -486,5 +578,5 @@ namespace Arcus.Testing
         ExpectedMissesProperty,
         ActualMissesElement,
         DifferentLength,
-     }
+    }
 }
