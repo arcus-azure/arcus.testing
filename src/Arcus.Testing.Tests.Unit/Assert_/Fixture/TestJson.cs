@@ -60,7 +60,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 var elements =
                     Bogus.PickRandom(
                         Bogus.Make(length, () => Bogus.Random.Int().ToString()),
-                        Bogus.Make(length, () => "\"" + Bogus.Lorem.Word() + "\""));
+                        Bogus.Make(length, () => "\"" + Bogus.Lorem.Word() + "\""),
+                        Bogus.Make(length, () => GenerateJsonObject(maxDepth: 0)));
 
                 builder.AppendLine(string.Join(",", elements));
             }
@@ -90,7 +91,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                     return acc;
                 }
 
-                string[] nodeNames = Bogus.Make(Bogus.Random.Int(1, 10), CreateNodeName).ToArray();
+                string[] nodeNames = Bogus.Make(Bogus.Random.Int(2, 10), CreateNodeName).ToArray();
                 for (var index = 0; index < nodeNames.Length; index++)
                 {
                     string name = nodeNames[index];
@@ -205,7 +206,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             {
                 IDictionary<string, JsonNode> items = 
                     Bogus.Random.Shuffle(obj)
-                         .ToDictionary(p => p.Key, p => p.Value);
+                         .ToDictionary(p => p.Key, p => Shuffle(p.Value));
 
                 var json = JsonNode.Parse(JsonSerializer.Serialize(items));
                 return json;

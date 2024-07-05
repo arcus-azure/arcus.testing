@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck;
 using FsCheck.Xunit;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -16,6 +14,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 {
     public class AssertJsonTests
     {
+        private readonly ResourceDirectory _resourceDir;
         private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
 
@@ -25,6 +24,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public AssertJsonTests(ITestOutputHelper outputWriter)
         {
             _outputWriter = outputWriter;
+            _resourceDir = ResourceDirectory.CurrentDirectory.WithSubDirectory(nameof(Assert_)).WithSubDirectory("Resources");
         }
 
         [Property]
@@ -201,6 +201,19 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     "has a different value at $.leaves[0]",
                     AssertJsonOrder.Include
                 };
+                yield return new object[]
+                {
+                    "{\"Products\":[{\"id\":3},{\"id\":3},{\"id\":1}]}",
+                    "{\"Products\":[{\"id\":1},{\"id\":2},{\"id\":3}]}",
+                    "has a different value at $.Products[0].id",
+                    AssertJsonOrder.Ignore
+                };
+                yield return new object[]
+                {
+                    "{\"Products\":[{\"id\":3},{\"id\":3},{\"id\":1}]}",
+                    "{\"Products\":[1,2,3]}",
+                    "has a different type at $.Products",
+                };
             }
         }
 
@@ -239,31 +252,25 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("[ 1, 2, 3]", "[ 2, 1, 3 ]")]
         [InlineData("[ \"2\", \"3\", \"1\" ]", "[ \"1\", \"2\", \"3\" ]")]
         [InlineData("[ true, false, true ]", "[ false, true, true ]")]
+        [InlineData("{\"Products\":[{\"id\":1},{\"id\":2},{\"id\":3}]}", "{\"Products\":[{\"id\":3},{\"id\":2},{\"id\":1}]}")]
+        [InlineData("[ { \"id\": 2 }, { \"id\": 1 } ]", "[ { \"id\": 1 }, { \"id\": 2 } ]")]
+        [InlineData(
+            "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]", 
+            "[ { \"name\": [ { \"project\": \"arcus\", \"name\": \"testing\" } ] }, { \"id\": 1 } ]")]
         public void Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds(string expected, string actual)
         {
             EqualJson(expected, actual);
         }
-        
-
-        private static string ReadResourceFileByName(string fileName)
-        {
-            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), nameof(Assert_), "Resources");
-            string filePath = Path.Combine(directoryPath, fileName);
-
-            return File.ReadAllText(filePath);
-        }
 
         [Fact]
-        public void Clement_Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds()
+        public void BugFixCompare_ArraysWithSameValuesInDifferentOrder_StillSucceeds()
         {
-            string actual = ReadResourceFileByName("json.sample.actual.json");
-            string expected = ReadResourceFileByName("json.sample.expected.json");
+            // Arrange
+            string fileNamePrefix = "json.ignored.order.objects.in.array.sample";
+            string actual = _resourceDir.ReadFileTextByName(fileNamePrefix + ".actual.json");
+            string expected = _resourceDir.ReadFileTextByName(fileNamePrefix + ".expected.json");
 
-            /*
-            string actual = "{\"Products\":[{\"id\":1},{\"id\":2},{\"id\":3}]}";
-            string expected = "{\"Products\":[{\"id\":3},{\"id\":2},{\"id\":1}]}";
-            */
-
+            // Act / Assert
             EqualJson(expected, actual);
         }
 
@@ -378,7 +385,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 };
                 yield return new object[]
                 {
-                    "{ \"child\": { \"grandchild\": { \"tag\": \"ooops\" } } }",
+                    "{ \"child\": { \"grandchild\": { \"tag\": \"ooops\" } }, \"bar\": \"bar\" }",
                     "{ \"foo\": \"foo\", \"bar\": \"bar\", \"child\": { \"x\": 1, \"y\": 2, \"grandchild\": { \"tag\": \"abrakadabra\" } } }",
                     "misses property at $.foo"
                 };

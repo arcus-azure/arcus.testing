@@ -58,10 +58,6 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets or sets the type of order which should be used when comparing JSON documents.
         /// </summary>
-        /// <remarks>
-        ///     Only JSON array values can be configured to ignore their order as they are unique by their name,
-        ///     JSON objects are unique by their contents and cannot be ordered without custom code.
-        /// </remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is outside the bounds of the enumeration.</exception>
         public AssertJsonOrder Order
         {
@@ -219,107 +215,31 @@ namespace Arcus.Testing
                 return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
             }
 
-            if (options.Order is AssertJsonOrder.Ignore && expectedChildren.OfType<JsonValue>().Any())
+            if (options.Order is AssertJsonOrder.Ignore)
             {
-                expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
-                actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
-            }
-
-            if (options.Order is AssertJsonOrder.Ignore && expectedChildren.OfType<JsonObject>().Any())
-            {
-                expected = OrderJsonNode(expected);
-                actualArray = OrderJsonNode(actualArray).AsArray();
-
-                actualChildren = actualArray.ToArray();
-                
-                if (expected is not JsonArray expectedArrayExpected)
+                if (expectedChildren.OfType<JsonValue>().Any())
                 {
-                    return new(ActualOtherType, expected, actualArray);
+                    expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
+                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray(); 
                 }
+                else if (expectedChildren.OfType<JsonObject>().Any())
+                {
+                    if (actualChildren.Any(ch => ch is not JsonObject))
+                    {
+                        return new(ActualOtherType, expected, actualArray);
+                    }
 
-                expectedChildren = expectedArrayExpected.ToArray();
+                    Dictionary<string, JsonNode>[] expectedObjects = CreatedOrderedDictionaries(expectedChildren, options);
+                    Dictionary<string, JsonNode>[] actualObjects = CreatedOrderedDictionaries(actualChildren, options);
+
+                    return expectedObjects.Select((expectedObject, index) => CompareJsonObject(expectedObject, actualObjects[index], options))
+                                          .FirstOrDefault(firstDifference => firstDifference != null);
+                }
             }
 
             return actualChildren.Select((actualChild, index) => CompareJsonNode(expectedChildren[index], actualChild, options))
                                  .FirstOrDefault(firstDifference => firstDifference != null);
         }
-
-        private static JsonNode OrderJsonNode(JsonNode node)
-        {
-            return OrderArraysItemsInJsonNode(OrderObjectsInJsonNode(node));
-        }
-
-        private static JsonNode OrderArraysItemsInJsonNode(JsonNode node)
-        {
-            if (node is JsonArray array)
-            {
-                // Order all elements in the array based on the string content of the element.
-                var orderedArray = new JsonArray();
-                foreach (var item in array.OrderBy(a => a.ToJsonString()))
-                {
-                    orderedArray.Add(OrderArraysItemsInJsonNode(item.CopyNode()));
-                }
-                return orderedArray;
-            }
-            else if (node is JsonObject obj)
-            {
-                // Recursively order child elements in the object.
-                foreach (var property in obj.ToList())
-                {
-                    obj[property.Key] = OrderArraysItemsInJsonNode(property.Value.CopyNode());
-                }
-                return obj;
-            }
-            else
-            {
-                return node;
-            }
-        }
-
-        private static JsonNode OrderObjectsInJsonNode(JsonNode node)
-        {
-            if (node is JsonObject obj)
-            {
-                // Reorder all children in the object on type (descending so that arrays end up last) and name.
-                var orderedObj = new JsonObject();
-                foreach (var property in obj.OrderByDescending(p => p.Value?.GetType().Name).ThenBy(p => p.Key))
-                {
-                    orderedObj[property.Key] = OrderObjectsInJsonNode(property.Value.CopyNode());
-                }
-                return orderedObj;
-            }
-            else if (node is JsonArray array)
-            {
-                // Recursively order elements in the array.
-                for (int i = 0; i < array.Count; i++)
-                {
-                    array[i] = OrderObjectsInJsonNode(array[i].CopyNode());
-                }
-                return array;
-            }
-            else
-            {
-                return node;
-            }
-        }
-
-        private static TNode CopyNode<TNode>(this TNode node) where TNode : JsonNode => node?.Deserialize<TNode>();
-
-        private static JsonNode MoveNode(this JsonArray array, int id, JsonObject newParent, string name)
-        {
-            var node = array[id];
-            array.RemoveAt(id);
-            return newParent[name] = node;
-        }
-
-        private static JsonNode MoveNode(this JsonObject parent, string oldName, JsonObject newParent, string name)
-        {
-            parent.Remove(oldName, out var node);
-            return newParent[name] = node;
-        }
-
-        private static TNode ThrowOnNull<TNode>(this TNode value) where TNode : JsonNode => value ?? throw new JsonException("Null JSON value");
-
 
         private static JsonDifference CompareJsonObject(JsonNode expected, JsonObject actual, AssertJsonOptions options)
         {
@@ -331,6 +251,11 @@ namespace Arcus.Testing
             Dictionary<string, JsonNode> expectedDir = CreateDictionary(expectedObject, options);
             Dictionary<string, JsonNode> actualDir = CreateDictionary(actual, options);
 
+            return CompareJsonObject(expectedDir, actualDir, options);
+        }
+
+        private static JsonDifference CompareJsonObject(Dictionary<string, JsonNode> expectedDir, Dictionary<string, JsonNode> actualDir, AssertJsonOptions options)
+        {
             if (TryGetValue(expectedDir, key => !actualDir.ContainsKey(key), out JsonNode missingActualPair))
             {
                 return new(ActualMissesProperty, missingActualPair.GetPath());
@@ -355,12 +280,27 @@ namespace Arcus.Testing
             return null;
         }
 
+        private static Dictionary<string, JsonNode>[] CreatedOrderedDictionaries(JsonNode[] children, AssertJsonOptions options)
+        {
+            return children.Cast<JsonObject>()
+                           .Select(ch => CreateDictionary(ch, options))
+                           .OrderBy(ch => JsonSerializer.Serialize(ch))
+                           .ToArray();
+        }
+
         private static Dictionary<string, JsonNode> CreateDictionary(JsonObject node, AssertJsonOptions options)
         {
             try
             {
-                return node.Where(n => !options.IgnoredNodeNames.Contains(n.Key))
-                           .ToDictionary(n => n.Key, n => n.Value, StringComparer.InvariantCultureIgnoreCase);
+                var properties = node.Where(n => !options.IgnoredNodeNames.Contains(n.Key));
+
+                if (options.Order is AssertJsonOrder.Ignore)
+                {
+                    properties = properties.OrderByDescending(n => n.Value?.GetType().Name)
+                                           .ThenBy(p => p.Key);
+                }
+
+                return properties.ToDictionary(n => n.Key, n => n.Value, StringComparer.InvariantCultureIgnoreCase);
             }
             /* Context: Microsoft's System.Text.Json deserialization allows duplicate JSON keys upon deserialization, but not during navigation,
                 hence the need to catch this if it happens since we can't be sure upon loading the JSON contents. */
