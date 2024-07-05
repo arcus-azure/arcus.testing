@@ -112,7 +112,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             (int row, int col) = expected.GetRandomCellIndex();
 
             string trailingZeros = string.Concat(Bogus.Make(Bogus.Random.Int(1, 10), () => "0"));
-            string value = Bogus.Random.Float().ToString(commaFloatCulture).Replace(",", "\\,");
+            string value = Bogus.Random.Float().ToString("F10", commaFloatCulture).Replace(",", "\\,");
             expected.ChangeCellValue(row, col, value);
             actual.ChangeCellValue(row, col, value + trailingZeros);
 
