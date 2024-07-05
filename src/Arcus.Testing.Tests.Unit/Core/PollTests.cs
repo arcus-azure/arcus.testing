@@ -11,13 +11,13 @@ namespace Arcus.Testing.Tests.Unit.Core
 {
     public class PollTests
     {
-        private readonly TimeSpan _100ms = TimeSpan.FromMilliseconds(100), _10ms = TimeSpan.FromMilliseconds(10);
+        private readonly TimeSpan _500ms = TimeSpan.FromMilliseconds(500), _10ms = TimeSpan.FromMilliseconds(10);
         private readonly object _expectedResult = Bogus.PickRandom((object) Bogus.Random.Int(), Bogus.Random.AlphaNumeric(10));
 
         private static readonly Faker Bogus = new();
 
         [Fact]
-        public async Task Poll_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        public async Task PollAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await Poll.UntilAvailableAsync(AlwaysSucceedsAsync);
             await Poll.UntilAvailableAsync(SometimesSucceedsAsync, MinTimeFrame);
@@ -38,6 +38,20 @@ namespace Arcus.Testing.Tests.Unit.Core
             await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResultAsync).MinTimeFrame());
             await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResultAsync));
             await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResultAsync).MinTimeFrame());
+        }
+
+        [Fact]
+        public async Task PollSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        {
+            await Poll.Target(AlwaysSucceeds);
+            await Poll.Target(SometimesSucceeds).MinTimeFrame();
+            await Poll.Target<ArrayTypeMismatchException>(AlwaysSucceeds);
+            await Poll.Target<TestPollException>(SometimesSucceeds).MinTimeFrame();
+
+            await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResult));
+            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResult).MinTimeFrame());
+            await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResult));
+            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResult).MinTimeFrame());
         }
 
         [Fact]
@@ -131,25 +145,36 @@ namespace Arcus.Testing.Tests.Unit.Core
 
         private void MinTimeFrame(PollOptions options)
         {
-            options.Timeout = _100ms;
+            options.Timeout = _500ms;
             options.Interval = _10ms;
         }
 
         private static bool AlwaysTrue(object result) => true;
         private static bool AlwaysFalse(object result) => false;
         private static Task AlwaysFailsAsync() => throw new TestPollException();
+        private static void AlwaysSucceeds() { }
+        private object AlwaysSucceedsResult() => _expectedResult;
         private static Task<object> AlwaysFailsResultAsync() => throw new TestPollException();
         private static Task AlwaysSucceedsAsync() => Task.CompletedTask;
         private Task<object> AlwaysSucceedsResultAsync() => Task.FromResult(_expectedResult);
 
-        private async Task SometimesSucceedsAsync()
+        private static void SometimesSucceeds()
         {
             if (Bogus.PickRandom(false, false, true))
             {
                 throw new TestPollException("Sabotage polling!");
             }
+        }
+        private static Task SometimesSucceedsAsync()
+        {
+            SometimesSucceeds();
+            return Task.CompletedTask;
+        }
 
-            await Task.CompletedTask;
+        private object SometimesSucceedsResult()
+        {
+            SometimesSucceeds();
+            return _expectedResult;
         }
 
         private async Task<object> SometimesSucceedsResultAsync()

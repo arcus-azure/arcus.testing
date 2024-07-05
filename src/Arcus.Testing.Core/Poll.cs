@@ -338,6 +338,26 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Creates a polling operation that will run the <paramref name="getTargetWithoutResultSync"/> until it stops throwing exceptions.
+        /// </summary>
+        /// <param name="getTargetWithoutResultSync">The custom function that interacts with the necessary unavailable target.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="getTargetWithoutResultSync"/> is <c>null</c>.</exception>
+        /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
+        public static Poll<Exception> Target(Action getTargetWithoutResultSync)
+        {
+            if (getTargetWithoutResultSync is null)
+            {
+                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
+            }
+
+            return Target<Exception>(() =>
+            {
+                getTargetWithoutResultSync();
+                return Task.CompletedTask;
+            });
+        }
+
+        /// <summary>
         /// Creates a polling operation that will run the <paramref name="getTargetWithoutResultAsync"/> until it stops throwing exceptions.
         /// </summary>
         /// <param name="getTargetWithoutResultAsync">The custom function that interacts with the necessary possible unavailable target.</param>
@@ -349,6 +369,23 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Creates a polling operation that will run the <paramref name="getTargetWithoutResultSync"/> until it stops throwing exceptions.
+        /// </summary>
+        /// <typeparam name="TResult">The type of result for which the target has to be polled.</typeparam>
+        /// <param name="getTargetWithoutResultSync">The custom function that interacts with the necessary possible unavailable target.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="getTargetWithoutResultSync"/> is <c>null</c>.</exception>
+        /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
+        public static Poll<TResult, Exception> Target<TResult>(Func<TResult> getTargetWithoutResultSync)
+        {
+            if (getTargetWithoutResultSync is null)
+            {
+                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
+            }
+
+            return Target<TResult, Exception>(() => Task.FromResult(getTargetWithoutResultSync()));
+        }
+
+        /// <summary>
         /// Creates a polling operation that will run the <paramref name="getTargetWithResultAsync"/> until it stops throwing exceptions.
         /// </summary>
         /// <typeparam name="TResult">The type of result for which the target has to be polled.</typeparam>
@@ -357,7 +394,33 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Poll<TResult, Exception> Target<TResult>(Func<Task<TResult>> getTargetWithResultAsync)
         {
+            if (getTargetWithResultAsync is null)
+            {
+                throw new ArgumentNullException(nameof(getTargetWithResultAsync));
+            }
+
             return Target<TResult, Exception>(getTargetWithResultAsync);
+        }
+
+        /// <summary>
+        /// Creates a polling operation that will run the <paramref name="getTargetWithoutResultSync"/> until it stops throwing exceptions.
+        /// </summary>
+        /// <typeparam name="TException">The type of exception the target can throw.</typeparam>
+        /// <param name="getTargetWithoutResultSync">The custom function that interacts with the necessary possible unavailable target.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="getTargetWithoutResultSync"/> is <c>null</c>.</exception>
+        /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
+        public static Poll<TException> Target<TException>(Action getTargetWithoutResultSync) where TException : Exception
+        {
+            if (getTargetWithoutResultSync is null)
+            {
+                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
+            }
+
+            return new Poll<TException>(() =>
+            {
+                getTargetWithoutResultSync();
+                return Task.CompletedTask;
+            }, PollOptions.Default);
         }
 
         /// <summary>
@@ -373,6 +436,27 @@ namespace Arcus.Testing
             return new Poll<TException>(
                 getTargetWithoutResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithoutResultAsync)),
                 PollOptions.Default);
+        }
+
+        /// <summary>
+        /// Creates a polling operation that will run the <paramref name="getTargetWithResultSync"/> until a given condition is met.
+        /// </summary>
+        /// <typeparam name="TResult">The type of result for which the target has to be polled.</typeparam>
+        /// <typeparam name="TException">The type of exceptions the target can throw.</typeparam>
+        /// <param name="getTargetWithResultSync">The custom function that interacts with the necessary possible unavailable target.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="getTargetWithResultSync"/> is <c>null</c>.</exception>
+        /// <exception cref="TimeoutException">
+        ///     Thrown when the target was not available (meaning: did not throw any exceptions and the configured condition is met) in the configured time frame.
+        /// </exception>
+        public static Poll<TResult, TException> Target<TResult, TException>(Func<TResult> getTargetWithResultSync)
+            where TException : Exception
+        {
+            if (getTargetWithResultSync is null)
+            {
+                throw new ArgumentNullException(nameof(getTargetWithResultSync));
+            }
+
+            return Target<TResult, TException>(() => Task.FromResult(getTargetWithResultSync()));
         }
 
         /// <summary>
