@@ -166,7 +166,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 
         private static void SometimesSucceeds()
         {
-            if (Bogus.PickRandom(false, false, true))
+            if (Bogus.PickRandom(false, false, false, true))
             {
                 throw new TestPollException("Sabotage polling!");
             }
