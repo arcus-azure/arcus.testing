@@ -14,9 +14,10 @@ namespace Arcus.Testing
     /// <typeparam name="TException">The type of exception that is expected to be thrown by the target.</typeparam>
     public class Poll<TException> : Poll<int, TException> where TException : Exception
     {
-        internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options) : base(() => getTargetWithoutResultAsync().ContinueWith(_ => 0), options)
-        {
-        }
+        internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options) 
+            : base(async () => { await getTargetWithoutResultAsync(); return 0; }, options)
+            {
+            }
     }
 
     /// <summary>
