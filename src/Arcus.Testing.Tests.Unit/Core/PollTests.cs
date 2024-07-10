@@ -81,7 +81,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         [Fact]
         public async Task PollFailure_WithoutResult_ShouldFail()
         {
-            await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(AlwaysFailsAsync, MinTimeFrame));
+            await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), MinTimeFrame));
         }
 
         [Fact]
