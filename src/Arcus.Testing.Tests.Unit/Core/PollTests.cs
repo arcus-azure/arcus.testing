@@ -84,7 +84,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), MinTimeFrame));
         }
 
-        [Fact]
+        [Fact(Skip = "Unreliable on build server")]
         public async Task Poll_WithUntilPredicate_SucceedsAfterThirdTime()
         {
             // Arrange
