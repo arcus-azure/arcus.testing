@@ -43,7 +43,7 @@ stages:
                 $deployOutput = az deployment sub create `
                   --location westeurope `
                   --template-file ./build/templates/test-resources.bicep `
-                  --parmeters location=westeurope `
+                  --parameters location=westeurope `
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }}
 
