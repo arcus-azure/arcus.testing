@@ -1,0 +1,2 @@
+variables:
+  Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
