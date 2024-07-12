@@ -69,3 +69,9 @@ stages:
                 Install-Module -Name Az -Force -AllowClobber -SkipPublisherCheck
                 Install-Module -Name Pester -Force -SkipPublisherCheck
                 Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '**/pester.test.results.xml'
+              failTaskOnFailedTests: true
