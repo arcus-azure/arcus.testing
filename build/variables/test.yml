@@ -1,0 +1,3 @@
+variables:
+  Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
+  Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'

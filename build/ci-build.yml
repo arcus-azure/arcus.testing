@@ -18,6 +18,10 @@ parameters:
   - name: 'Package.Version.ManualTrigger'
     type: string
     default: 'preview'
+  - name: azureServiceConnection
+    displayName: 'Azure service connection'
+    type: string
+    default: 'Azure Codit-Arcus Service Principal'
 
 resources:
   repositories:
@@ -67,54 +71,16 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - job: UnitTests
-        displayName: 'Run unit tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifacts'
-            inputs:
-              artifact: 'Build'
-              path: '$(Build.SourcesDirectory)'
-          - task: UseDotNet@2
-            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
-            inputs:
-              packageType: 'sdk'
-              version: '$(DotNet.Sdk.VersionBC)'
-          - template: test/run-unit-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Unit'
-              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+      - template: templates/unit-tests.yml
 
   - stage: IntegrationTests
     displayName: Integration Tests
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - job: IntegrationTests
-        displayName: 'Run integration tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifacts'
-            inputs:
-              artifact: 'Build'
-              path: '$(Build.SourcesDirectory)'
-          - task: UseDotNet@2
-            displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
-            inputs:
-              packageType: 'sdk'
-              version: '$(DotNet.Sdk.VersionBC)'
-          - template: test/run-integration-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Integration'
-              category: 'Integration'
-              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
-
+      - template: templates/integration-tests.yml
+        parameters:
+          azureServiceConnection: '${{ parameters.azureServiceConnection }}'
 
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'

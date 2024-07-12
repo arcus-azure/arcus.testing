@@ -1,0 +1,78 @@
+name: Arcus Testing - Deploy test resources
+
+trigger: none
+pr: none
+
+parameters:
+  - name: azureServiceConnection
+    displayName: 'Azure service connection'
+    type: string
+    default: 'Azure Codit-Arcus Service Principal'
+  - name: resourceGroupName
+    displayName: 'Resource group name'
+    default: arcus-testing-dev-we-rg
+
+variables:
+  - template: ./variables/build.yml
+  - template: ./variables/test.yml
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: arcus-azure/azure-devops-templates
+      endpoint: arcus-azure
+
+stages:
+  - stage: Deploy
+    jobs:
+      - job: DeployBicep
+        displayName: 'Deploy test resources'
+        pool:
+          vmImage: $(Vm.Image)
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '${{ parameters.azureServiceConnection }}'
+              addSpnToEnvironment: true
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
+                $deployOutput = az deployment sub create `
+                  --location westeurope `
+                  --template-file ./build/templates/test-resources.bicep `
+                  --parameters location=westeurope `
+                  --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
+                  --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
+                  --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
+                  --parameters servicePrincipal_objectId=$objectId
+
+  - stage: SmokeTests
+    dependsOn: Deploy
+    condition: succeeded()
+    jobs:
+      - job: RunSmokeTests
+        displayName: 'Run smoke tests'
+        pool:
+          vmImage: $(Vm.Image)
+        steps:
+          - task: AzureCLI@2
+            env:
+              resourceGroupName: ${{ parameters.resourceGroupName }}
+              storageAccountName: $(Arcus.Testing.StorageAccount.Name)
+            inputs:
+              azureSubscription: '${{ parameters.azureServiceConnection }}'
+              addSpnToEnvironment: true
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                Install-Module -Name Az -Force -AllowClobber -SkipPublisherCheck
+                Install-Module -Name Pester -Force -SkipPublisherCheck
+                Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '**/pester.test.results.xml'
+              failTaskOnFailedTests: true
