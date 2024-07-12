@@ -1,0 +1,44 @@
+parameters:
+  azureServiceConnection: ''
+
+jobs:
+  - job: IntegrationTests
+    displayName: 'Run integration tests'
+    pool:
+      vmImage: '$(Vm.Image)'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download build artifacts'
+        inputs:
+          artifact: 'Build'
+          path: '$(Build.SourcesDirectory)'
+
+      - task: UseDotNet@2
+        displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
+        inputs:
+          packageType: 'sdk'
+          version: '$(DotNet.Sdk.VersionBC)'
+
+      - task: AzureCLI@2
+        displayName: 'Import secrets from Azure Key Vault'
+        env:
+          ARCUS_KEYVAULT_NAME: $(Arcus.Testing.KeyVault.Name)
+        inputs:
+          azureSubscription: '${{ parameters.azureServiceConnection }}'
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          addSpnToEnvironment: true
+          inlineScript: |
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
+
+            # TODO: get Key Vault secret and set it as secret pipeline variable.
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.TenantId' -Value $env:tenantId
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientId' -Value $env:servicePrincipalId
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey
+
+      - template: test/run-integration-tests.yml@templates
+        parameters:
+          dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+          projectName: '$(Project).Tests.Integration'
+          includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)

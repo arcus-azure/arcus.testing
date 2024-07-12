@@ -46,4 +46,3 @@ stages:
                   --parameters location=westeurope `
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }}
-
