@@ -239,7 +239,7 @@ AssertCsv.Equal(..., options =>
 > ⚠️ **️IMPORTANT:** beware of combining ordering options:
 > * If you want to ignore the order of columns, but do not use headers in your CSV contents (`options.Header = Missing`), the order cannot be determined. Make sure to include headers in your CSV contents, or do not use `Ignore` for columns.
 > * If you want to ignore the order of columns, but do not use headers or use duplicate headers, the comparison cannot determine whether all the cells are there. Make sure to include headers and use `IgnoreColumn` to remove any duplicates, or do not use `Ignore` for columns. 
-> * If you want to ignore an column via its index, but also want to ignored the order of columns, the comparison cannot determine the column index to ignore. Either remove all calls to `options.IgnoreColumn(0);` or set `options.ColumnOrder` to `AssertCsvOrder.Include;`.
+> * If you want to ignore a column via its index, but also want to ignored the order of columns, the comparison cannot determine the column index to ignore. Either remove all calls to `options.IgnoreColumn(0);` or set `options.ColumnOrder` to `AssertCsvOrder.Include;`.
 
 ### Loading CSV tables yourself
 The CSV assertion equalization can be called directly with with raw contents - internally it parses the contents to a valid tabular structure: `CsvTable`. If it so happens that you want to compare two CSV tables each with different header, separators or other serialization settings, you can load the two tables separately and do the equalization on the loaded CSV tables.
