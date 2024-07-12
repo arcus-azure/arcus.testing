@@ -35,6 +35,12 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
     location: location
     allowBlobPublicAccess: true
     publicNetworkAccess: 'Enabled'
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
+      ipRules: []
+      virtualNetworkRules: []
+    }
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId
