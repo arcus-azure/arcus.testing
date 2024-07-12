@@ -198,7 +198,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             TestCsv actual = expected.Copy();
 
             actual.ShuffleColumns();
-            
+
             // Act / Assert
             EqualCsv(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore);
         }
@@ -241,6 +241,61 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
+        public void CompareWithIgnoredColumnOrderAndColumnIndexes_WithShuffledCsv_FailsWithDescription()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
+            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
+
+            actual.ShuffleColumns();
+
+            CompareShouldFailWithDescription(
+                expected,
+                actual,
+                options =>
+                {
+                    options.ColumnOrder = AssertCsvOrder.Ignore;
+                    options.IgnoreColumnIndex(ignoredIndex);
+                },
+                "cannot compare",
+                "column indexes can only be ignored when column order is included",
+                nameof(AssertCsvOptions.IgnoreColumnIndex), AssertCsvOrder.Ignore.ToString()
+            );
+        }
+
+        [Property]
+        public void CompareWithIgnoredColumnIndex_WithSameCsv_Succeeds()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
+            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
+
+            // Act / Assert
+            EqualCsv(expected, actual, options => options.IgnoreColumnIndex(ignoredIndex));
+        }
+
+        [Property]
+        public void CompareWithIgnoredColumnIndexAndMissingHeaders_WithSameCsv_StillSucceeds()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv actual = expected.Copy();
+            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
+            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
+
+            // Act / Assert
+            EqualCsv(expected, actual, options =>
+            {
+                options.IgnoreColumnIndex(ignoredIndex);
+                options.Header = AssertCsvHeader.Missing;
+            });
+        }
+
+        [Property]
         public void CompareWithIgnoredColumn_WithDuplicateColumn_StillSucceeds()
         {
             // Arrange
@@ -269,7 +324,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             actual.AddColumn(extraColumn);
             expected.AddColumn(extraColumn);
 
-            CompareShouldFailWithDescription(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore, 
+            CompareShouldFailWithDescription(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore,
                 "cannot compare", AssertCsvOrder.Ignore.ToString(), "duplicate", "columns", extraColumn);
         }
 
@@ -507,8 +562,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             {
                 yield return new object[]
                 {
-                    "id", 
-                    "ids", 
+                    "id",
+                    "ids",
                     "missing", "column", "id"
                 };
                 yield return new object[]
@@ -629,7 +684,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             TestCsv expected = TestCsv.Generate();
-            
+
             // Act
             CsvTable actual = LoadCsv(expected, opt =>
             {
@@ -756,12 +811,12 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             });
         }
 
-        private CsvTable LoadCsv(string csv, Action<AssertCsvOptions> configureOptions = null,  string tag = "Input")
+        private CsvTable LoadCsv(string csv, Action<AssertCsvOptions> configureOptions = null, string tag = "Input")
         {
             _outputWriter.WriteLine("{0}: {1}", NewLine + tag, csv + NewLine);
 
-            return configureOptions is null 
-                ? AssertCsv.Load(csv) 
+            return configureOptions is null
+                ? AssertCsv.Load(csv)
                 : AssertCsv.Load(csv, configureOptions);
         }
     }
