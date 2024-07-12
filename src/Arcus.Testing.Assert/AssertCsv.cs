@@ -356,7 +356,6 @@ namespace Arcus.Testing
 
         private static CsvDifference FindFirstDifference(CsvTable expected, CsvTable actual, AssertCsvOptions options)
         {
-            EnsureOnlyIgnoreColumnIndexesOnOrderedColumns(options);
             EnsureOnlyIgnoreColumnsOnPresentHeaders(expected, actual, options);
             EnsureOnlyIgnoreColumnsOnUniqueHeaders(expected, options);
 
@@ -371,18 +370,6 @@ namespace Arcus.Testing
             }
 
             return CompareHeaders(expected, actual, options) ?? CompareRows(expected, actual, options);
-        }
-
-        private static void EnsureOnlyIgnoreColumnIndexesOnOrderedColumns(AssertCsvOptions options)
-        {
-            if (options.IgnoredColumnIndexes.Count > 0 && options.ColumnOrder == AssertCsvOrder.Ignore)
-            {
-                throw new EqualAssertionException(
-                    ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
-                                 .AppendLine($"column indexes can only be ignored when column order is included in the expected and actual CSV tables, " +
-                                             $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
-                                 .ToString());
-            }
         }
 
         private static void EnsureOnlyIgnoreColumnsOnPresentHeaders(CsvTable expected, CsvTable actual, AssertCsvOptions options)
@@ -403,6 +390,15 @@ namespace Arcus.Testing
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
                                  .AppendLine($"specific column(s) can only be ignored when the header names are present in the expected and actual CSV tables, " +
                                              $"please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}' call(s)")
+                                 .ToString());
+            }
+            
+            if (options.IgnoredColumnIndexes.Count > 0 && options.ColumnOrder == AssertCsvOrder.Ignore)
+            {
+                throw new EqualAssertionException(
+                    ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
+                                 .AppendLine($"column indexes can only be ignored when column order is included in the expected and actual CSV tables, " +
+                                             $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
                                  .ToString());
             }
         }
