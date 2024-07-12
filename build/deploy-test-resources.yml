@@ -66,5 +66,6 @@ stages:
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 5.1.1
+                Install-Module -Name Az -Force -AllowClobber -SkipPublisherCheck
+                Install-Module -Name Pester -Force -SkipPublisherCheck
                 Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit

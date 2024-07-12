@@ -5,7 +5,15 @@ BeforeAll {
 }
 
 Describe 'Storage account' {
-  It 'Service principal has access to storage account' {
+  It 'Service principal can get blob container' {
     Get-AzStorageContainer -ResourceGroupName $env:resourceGroupName
+  }
+  It 'Service principal can create blob container' {
+    $containerName = 'test-container'
+    try {
+      New-AzStorageContainer -ResourceGroupName $env:resourceGroupName -Name $containerName
+    } finally {
+      Remove-AzStorageContainer -ResourceGroupName $env:resourceGroupName -Name $containerName -Force
+    }
   }
 }
