@@ -60,6 +60,7 @@ stages:
           - task: AzureCLI@2
             env:
               resourceGroupName: ${{ parameters.resourceGroupName }}
+              storageAccountName: $(Arcus.Testing.StorageAccount.Name)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true

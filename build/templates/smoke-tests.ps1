@@ -5,15 +5,18 @@ BeforeAll {
 }
 
 Describe 'Storage account' {
+  BeforeEach {
+    $storageContext = New-AzStorageContext -StorageAccountName $env:storageAccountName -UseConnectedAccount
+  }
   It 'Service principal can get blob container' {
-    Get-AzStorageContainer
+    Get-AzStorageContainer -Context $storageContext
   }
   It 'Service principal can create blob container' {
     $containerName = 'test-container'
     try {
-      New-AzStorageContainer -Name $containerName
+      New-AzStorageContainer -Name $containerName -Context $storageContext
     } finally {
-      Remove-AzStorageContainer -Name $containerName -Force
+      Remove-AzStorageContainer -Name $containerName -Context $storageContext -Force
     }
   }
 }
