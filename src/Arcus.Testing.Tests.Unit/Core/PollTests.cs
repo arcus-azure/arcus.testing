@@ -84,24 +84,23 @@ namespace Arcus.Testing.Tests.Unit.Core
             await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), MinTimeFrame));
         }
 
-        [Fact(Skip = "Unreliable on build server")]
-        public async Task Poll_WithUntilPredicate_SucceedsAfterThirdTime()
+        [Fact]
+        public async Task Poll_WithUntilPredicate_Succeeds()
         {
             // Arrange
             var stopwatch = Stopwatch.StartNew();
+            TimeSpan timeout = TimeSpan.FromMilliseconds(100);
+            TimeSpan interval = TimeSpan.FromMilliseconds(10);
 
-            int index = 0;
-            TimeSpan timeout = TimeSpan.FromSeconds(1);
-            TimeSpan interval = TimeSpan.FromMilliseconds(200);
-            
             // Act
-            await Poll.Target(() => Task.FromResult(++index))
-                      .Until(result => result >= 3)
-                      .Every(interval)
-                      .Timeout(timeout);
+            await FailsByResultAsync(async () =>
+                await Poll.Target(AlwaysSucceedsResult)
+                          .Until(_ => false)
+                          .Every(interval)
+                          .Timeout(timeout));
 
             // Assert
-            Assert.True(interval + interval <= stopwatch.Elapsed, "stopwatch should at least run until two intervals");
+            Assert.True(stopwatch.Elapsed >= timeout, "stopwatch should at least run until two intervals");
         }
 
         [Fact]
