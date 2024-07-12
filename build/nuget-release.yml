@@ -67,7 +67,7 @@ stages:
     condition: succeeded()
     jobs:
       - template: templates/integration-tests.yml
-        inputs:
+        parameters:
           azureServiceConnection: '${{ parameters.azureServiceConnection }}'
 
   - stage: Release
