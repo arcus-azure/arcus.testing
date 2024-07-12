@@ -397,7 +397,7 @@ namespace Arcus.Testing
             {
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
-                                 .AppendLine($"column indexes can only be ignored when column order is included in the expected and actual CSV tables, " +
+                                 .AppendLine($"columns can only be ignored by their indexes when column order is included in the expected and actual CSV tables, " +
                                              $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
                                  .ToString());
             }
