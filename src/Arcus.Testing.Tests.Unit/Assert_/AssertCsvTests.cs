@@ -257,7 +257,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     options.ColumnOrder = AssertCsvOrder.Ignore;
                     options.IgnoreColumn(expected.IgnoredIndex);
                 },
-                "cannot compare", "column indexes", "column order", "included",
+                "cannot compare", "indexes", "column order", "included",
                 nameof(AssertCsvOptions.IgnoreColumn), AssertCsvOrder.Ignore.ToString()
             );
         }
