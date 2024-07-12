@@ -1,7 +1,7 @@
 BeforeAll {
   $clientSecret = ConvertTo-SecureString $env:servicePrincipalKey -AsPlainText -Force
   $pscredential = New-Object -TypeName System.Management.Automation.PSCredential($env:servicePrincipalId, $clientSecret)
-  Connect-AzAccount -ServicePrincipal -Tenant $env:tenantId -Credential 
+  Connect-AzAccount -ServicePrincipal -Tenant $env:tenantId -Credential $pscredential
 }
 
 Describe 'Storage account' {
