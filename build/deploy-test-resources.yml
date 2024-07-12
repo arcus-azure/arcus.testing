@@ -40,9 +40,12 @@ stages:
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
                 $deployOutput = az deployment sub create `
                   --location westeurope `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
-                  --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }}
+                  --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
+                  --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
+                  --parameters servicePrincipal_objectId=$objectId `
