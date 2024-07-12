@@ -246,8 +246,6 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Arrange
             TestCsv expected = TestCsv.Generate();
             TestCsv actual = expected.Copy();
-            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
-            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
 
             actual.ShuffleColumns();
 
@@ -257,7 +255,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 options =>
                 {
                     options.ColumnOrder = AssertCsvOrder.Ignore;
-                    options.IgnoreColumn(ignoredIndex);
+                    options.IgnoreColumn(expected.IgnoredIndex);
                 },
                 "cannot compare", "column indexes", "column order", "included",
                 nameof(AssertCsvOptions.IgnoreColumn), AssertCsvOrder.Ignore.ToString()
@@ -270,11 +268,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Arrange
             TestCsv expected = TestCsv.Generate();
             TestCsv actual = expected.Copy();
-            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
-            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
 
             // Act / Assert
-            EqualCsv(expected, actual, options => options.IgnoreColumn(ignoredIndex));
+            EqualCsv(expected, actual, options => options.IgnoreColumn(expected.IgnoredIndex));
         }
 
         [Property]
@@ -283,13 +279,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Arrange
             TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
-            int[] possibleIndexes = Enumerable.Range(0, expected.ColumnCount).ToArray();
-            int ignoredIndex = Bogus.PickRandom(possibleIndexes);
 
             // Act / Assert
             EqualCsv(expected, actual, options =>
             {
-                options.IgnoreColumn(ignoredIndex);
+                options.IgnoreColumn(expected.IgnoredIndex);
                 options.Header = AssertCsvHeader.Missing;
             });
         }
