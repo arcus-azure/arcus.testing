@@ -32,8 +32,6 @@ stages:
           vmImage: $(Vm.Image)
         steps:
           - task: AzureCLI@2
-            env:
-              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
@@ -49,3 +47,24 @@ stages:
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
                   --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
                   --parameters servicePrincipal_objectId=$objectId
+
+  - stage: SmokeTests
+    dependsOn: Deploy
+    condition: succeeded()
+    jobs:
+      - job: RunSmokeTests
+        displayName: 'Run smoke tests'
+        pool:
+          vmImage: $(Vm.Image)
+        steps:
+          - task: AzureCLI@2
+            env:
+              resourceGroupName: ${{ parameters.resourceGroupName }}
+            inputs:
+              azureSubscription: '${{ parameters.azureServiceConnection }}'
+              addSpnToEnvironment: true
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                Install-Module -Name Pester -Force -SkipPublisherCheck -MaximumVersion 5.1.1
+                Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
