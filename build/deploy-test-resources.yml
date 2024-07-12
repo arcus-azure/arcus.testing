@@ -48,4 +48,4 @@ stages:
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
                   --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
-                  --parameters servicePrincipal_objectId=$objectId `
+                  --parameters servicePrincipal_objectId=$objectId
