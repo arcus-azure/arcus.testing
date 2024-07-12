@@ -71,7 +71,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             var expected = TestXml.Generate();
             TestXml actual = expected.Copy();
 
-            string newName = TestXml.GenNodeName();
+            string newName = TestXml.GenNodeName() + Guid.NewGuid().ToString("N");
             actual.ChangeElementName(newName);
 
             // Act / Assert
@@ -163,7 +163,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             var expected = TestXml.Generate();
             TestXml actual = expected.Copy();
             
-            actual.InsertAttribute(TestXml.GenNodeName());
+            actual.InsertAttribute(TestXml.GenNodeName() + Guid.NewGuid().ToString("N"));
             
             // Act / Assert
             CompareShouldFailWithDifference(expected, actual, "has", "attribute(s)", "instead of");

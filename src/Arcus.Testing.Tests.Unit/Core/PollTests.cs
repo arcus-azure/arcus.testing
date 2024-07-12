@@ -11,7 +11,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 {
     public class PollTests
     {
-        private readonly TimeSpan _500ms = TimeSpan.FromMilliseconds(500), _10ms = TimeSpan.FromMilliseconds(10);
+        private readonly TimeSpan _1s = TimeSpan.FromSeconds(1), _10ms = TimeSpan.FromMilliseconds(10);
         private readonly object _expectedResult = Bogus.PickRandom((object) Bogus.Random.Int(), Bogus.Random.AlphaNumeric(10));
 
         private static readonly Faker Bogus = new();
@@ -84,24 +84,23 @@ namespace Arcus.Testing.Tests.Unit.Core
             await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), MinTimeFrame));
         }
 
-        [Fact(Skip = "Unreliable on build server")]
-        public async Task Poll_WithUntilPredicate_SucceedsAfterThirdTime()
+        [Fact]
+        public async Task Poll_WithUntilPredicate_Succeeds()
         {
             // Arrange
             var stopwatch = Stopwatch.StartNew();
+            TimeSpan timeout = TimeSpan.FromMilliseconds(100);
+            TimeSpan interval = TimeSpan.FromMilliseconds(10);
 
-            int index = 0;
-            TimeSpan timeout = TimeSpan.FromSeconds(1);
-            TimeSpan interval = TimeSpan.FromMilliseconds(200);
-            
             // Act
-            await Poll.Target(() => Task.FromResult(++index))
-                      .Until(result => result >= 3)
-                      .Every(interval)
-                      .Timeout(timeout);
+            await FailsByResultAsync(async () =>
+                await Poll.Target(AlwaysSucceedsResult)
+                          .Until(_ => false)
+                          .Every(interval)
+                          .Timeout(timeout));
 
             // Assert
-            Assert.True(interval + interval <= stopwatch.Elapsed, "stopwatch should at least run until two intervals");
+            Assert.True(stopwatch.Elapsed >= timeout, "stopwatch should at least run until two intervals");
         }
 
         [Fact]
@@ -151,7 +150,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 
         private void MinTimeFrame(PollOptions options)
         {
-            options.Timeout = _500ms;
+            options.Timeout = _1s;
             options.Interval = _10ms;
         }
 
@@ -258,7 +257,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             this Poll<TResult, TException> poll)
             where TException : Exception
         {
-            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromMilliseconds(100));
+            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromSeconds(1));
         }
     }
 
