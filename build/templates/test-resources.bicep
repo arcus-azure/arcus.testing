@@ -34,6 +34,7 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
     name: storageAccountName
     location: location
     allowBlobPublicAccess: true
+    publicNetworkAccess: 'Enabled'
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId
