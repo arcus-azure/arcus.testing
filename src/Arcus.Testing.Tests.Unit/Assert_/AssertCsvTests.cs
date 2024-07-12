@@ -289,6 +289,24 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Property]
+        public void CompareWithIgnoredColumnIndexAndIgnoredColumnHeader_WithSameCsvAndIndexIsSameAsHeader_StillSucceeds()
+        {
+            // Arrange
+            TestCsv expected = TestCsv.Generate();
+            TestCsv actual = expected.Copy();
+
+            var ignoredIndex = expected.IgnoredIndex;
+            var headerName = expected.HeaderNames[ignoredIndex];
+
+            // Act / Assert
+            EqualCsv(expected, actual, options =>
+            {
+                options.IgnoreColumn(ignoredIndex);
+                options.IgnoreColumn(headerName);
+            });
+        }
+
+        [Property]
         public void CompareWithIgnoredColumn_WithDuplicateColumn_StillSucceeds()
         {
             // Arrange
