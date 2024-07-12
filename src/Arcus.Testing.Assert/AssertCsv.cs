@@ -76,6 +76,11 @@ namespace Arcus.Testing
         /// <param name="index">The zero-based index of the column that should be ignored.</param>
         public AssertCsvOptions IgnoreColumn(int index)
         {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"Requires a positive '{nameof(index)}' value when adding an ignored column of a CSV table");
+            }
+
             _ignoredColumnIndexes.Add(index);
             return this;
         }
@@ -392,7 +397,7 @@ namespace Arcus.Testing
                                              $"please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}' call(s)")
                                  .ToString());
             }
-            
+
             if (options.IgnoredColumnIndexes.Count > 0 && options.ColumnOrder == AssertCsvOrder.Ignore)
             {
                 throw new EqualAssertionException(
