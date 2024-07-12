@@ -71,19 +71,19 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the header names of the columns that should be ignored when comparing CSV tables.
-        /// </summary>
-        internal IReadOnlyCollection<string> IgnoredColumns => _ignoredColumns;
-
-        /// <summary>
         /// Adds a column via a zero-based index which will get ignored when comparing CSV tables.
         /// </summary>
         /// <param name="index">The zero-based index of the column that should be ignored.</param>
-        public AssertCsvOptions IgnoreColumnIndex(int index)
+        public AssertCsvOptions IgnoreColumn(int index)
         {
             _ignoredColumnIndexes.Add(index);
             return this;
         }
+
+        /// <summary>
+        /// Gets the header names of the columns that should be ignored when comparing CSV tables.
+        /// </summary>
+        internal IReadOnlyCollection<string> IgnoredColumns => _ignoredColumns;
 
         /// <summary>
         /// Gets the indexes of the columns that should be ignored when comparing CSV tables.
@@ -380,7 +380,7 @@ namespace Arcus.Testing
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
                                  .AppendLine($"column indexes can only be ignored when column order is included in the expected and actual CSV tables, " +
-                                             $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumnIndex)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
+                                             $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
                                  .ToString());
             }
         }

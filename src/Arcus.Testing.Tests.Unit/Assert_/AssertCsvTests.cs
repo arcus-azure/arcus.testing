@@ -257,11 +257,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 options =>
                 {
                     options.ColumnOrder = AssertCsvOrder.Ignore;
-                    options.IgnoreColumnIndex(ignoredIndex);
+                    options.IgnoreColumn(ignoredIndex);
                 },
                 "cannot compare",
                 "column indexes can only be ignored when column order is included",
-                nameof(AssertCsvOptions.IgnoreColumnIndex), AssertCsvOrder.Ignore.ToString()
+                nameof(AssertCsvOptions.IgnoreColumn), AssertCsvOrder.Ignore.ToString()
             );
         }
 
@@ -275,7 +275,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             int ignoredIndex = Bogus.PickRandom(possibleIndexes);
 
             // Act / Assert
-            EqualCsv(expected, actual, options => options.IgnoreColumnIndex(ignoredIndex));
+            EqualCsv(expected, actual, options => options.IgnoreColumn(ignoredIndex));
         }
 
         [Property]
@@ -290,7 +290,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Act / Assert
             EqualCsv(expected, actual, options =>
             {
-                options.IgnoreColumnIndex(ignoredIndex);
+                options.IgnoreColumn(ignoredIndex);
                 options.Header = AssertCsvHeader.Missing;
             });
         }
