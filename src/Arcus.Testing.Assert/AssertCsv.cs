@@ -15,7 +15,7 @@ namespace Arcus.Testing
     public enum AssertCsvHeader
     {
         /// <summary>
-        /// Indicate that the CSV table has an header present.
+        /// Indicate that the CSV table has a header present.
         /// </summary>
         Present = 0,
 
@@ -31,12 +31,12 @@ namespace Arcus.Testing
     public enum AssertCsvOrder
     {
         /// <summary>
-        /// Take the order of rows into account when comparing tables (default).
+        /// Take the order of rows or columns into account when comparing tables (default).
         /// </summary>
         Include = 0,
 
         /// <summary>
-        /// Ignore the order of rows when comparing tables.
+        /// Ignore the order of rows or columns when comparing tables.
         /// </summary>
         Ignore
     }
@@ -47,6 +47,7 @@ namespace Arcus.Testing
     public class AssertCsvOptions
     {
         private readonly Collection<string> _ignoredColumns = new();
+        private readonly Collection<int> _ignoredColumnIndexes = new();
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
         private string _newRow = Environment.NewLine;
         private AssertCsvHeader _header = AssertCsvHeader.Present;
@@ -70,9 +71,29 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Adds a column via a zero-based index which will get ignored when comparing CSV tables.
+        /// </summary>
+        /// <param name="index">The zero-based index of the column that should be ignored.</param>
+        public AssertCsvOptions IgnoreColumn(int index)
+        {
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"Requires a positive '{nameof(index)}' value when adding an ignored column of a CSV table");
+            }
+
+            _ignoredColumnIndexes.Add(index);
+            return this;
+        }
+
+        /// <summary>
         /// Gets the header names of the columns that should be ignored when comparing CSV tables.
         /// </summary>
         internal IReadOnlyCollection<string> IgnoredColumns => _ignoredColumns;
+
+        /// <summary>
+        /// Gets the indexes of the columns that should be ignored when comparing CSV tables.
+        /// </summary>
+        internal IReadOnlyCollection<int> IgnoredColumnIndexes => _ignoredColumnIndexes;
 
         /// <summary>
         /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default: ; (semicolon).
@@ -251,7 +272,7 @@ namespace Arcus.Testing
 
             var expected = CsvTable.Load(expectedCsv, options);
             var actual = CsvTable.Load(actualCsv, options);
-            
+
             Equal(expected, actual, configureOptions);
         }
 
@@ -266,8 +287,8 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(CsvTable expected, CsvTable actual)
         {
-            Equal(expected ?? throw new ArgumentNullException(nameof(expected)), 
-                  actual ?? throw new ArgumentNullException(nameof(actual)), 
+            Equal(expected ?? throw new ArgumentNullException(nameof(expected)),
+                  actual ?? throw new ArgumentNullException(nameof(actual)),
                   configureOptions: null);
         }
 
@@ -293,9 +314,10 @@ namespace Arcus.Testing
 
             if (diff != null)
             {
-                string optionsDescription = 
+                string optionsDescription =
                     $"Options: {Environment.NewLine}" +
                     $"\t- ignored columns: [{string.Join($"{options.Separator} ", options.IgnoredColumns)}]{Environment.NewLine}" +
+                    $"\t- ignored column indexes: [{string.Join($"{options.Separator} ", options.IgnoredColumnIndexes)}]{Environment.NewLine}" +
                     $"\t- column order: {options.ColumnOrder}{Environment.NewLine}" +
                     $"\t- row order: {options.RowOrder}";
 
@@ -375,6 +397,15 @@ namespace Arcus.Testing
                                              $"please provide such headers in the contents, or remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}' call(s)")
                                  .ToString());
             }
+
+            if (options.IgnoredColumnIndexes.Count > 0 && options.ColumnOrder == AssertCsvOrder.Ignore)
+            {
+                throw new EqualAssertionException(
+                    ReportBuilder.ForMethod(EqualMethodName, "cannot compare expected and actual CSV contents")
+                                 .AppendLine($"columns can only be ignored by their indexes when column order is included in the expected and actual CSV tables, " +
+                                             $"please remove the 'options.{nameof(AssertCsvOptions.IgnoreColumn)}', or remove the 'options.{nameof(AssertCsvOptions.ColumnOrder)}={AssertCsvOrder.Ignore}'")
+                                 .ToString());
+            }
         }
 
         private static void EnsureOnlyIgnoreColumnsOnUniqueHeaders(CsvTable expected, AssertCsvOptions options)
@@ -404,10 +435,10 @@ namespace Arcus.Testing
                 return new(DifferentHeaderConfig, expected.Header.ToString(), actual.Header.ToString(), rowNumber: 0);
             }
 
-            IReadOnlyCollection<string> 
+            IReadOnlyCollection<string>
                 expectedHeaders = expected.HeaderNames,
                 actualHeaders = actual.HeaderNames;
-            
+
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
                 expectedHeaders = expectedHeaders.OrderBy(h => h).ToArray();
@@ -418,7 +449,7 @@ namespace Arcus.Testing
             {
                 string expectedHeader = expectedHeaders.ElementAt(i),
                        actualHeader = actualHeaders.ElementAt(i);
-                
+
                 if (expectedHeader != actualHeader)
                 {
                     return new(ActualMissingColumn, expectedHeader, actualHeader, rowNumber: 0);
@@ -430,10 +461,10 @@ namespace Arcus.Testing
 
         private static CsvDifference CompareRows(CsvTable expectedCsv, CsvTable actualCsv, AssertCsvOptions options)
         {
-            IReadOnlyCollection<CsvRow> 
+            IReadOnlyCollection<CsvRow>
                 expectedRows = expectedCsv.Rows,
                 actualRows = actualCsv.Rows;
-            
+
             if (options.ColumnOrder is AssertCsvOrder.Ignore)
             {
                 expectedRows = CsvRow.WithOrderedCells(expectedRows);
@@ -451,8 +482,8 @@ namespace Arcus.Testing
             {
                 CsvRow expectedRow = expectedRows.ElementAt(row),
                        actualRow = actualRows.ElementAt(row);
-                
-                IReadOnlyCollection<CsvCell> 
+
+                IReadOnlyCollection<CsvCell>
                     expectedCells = expectedRow.Cells,
                     actualCells = actualRow.Cells;
 
@@ -461,7 +492,7 @@ namespace Arcus.Testing
                     CsvCell expectedCell = expectedCells.ElementAt(col),
                             actualCell = actualCells.ElementAt(col);
 
-                    if (options.IgnoredColumns.Contains(expectedCell.HeaderName))
+                    if (options.IgnoredColumnIndexes.Contains(col) || options.IgnoredColumns.Contains(expectedCell.HeaderName))
                     {
                         continue;
                     }
@@ -470,7 +501,7 @@ namespace Arcus.Testing
                     {
                         return shouldIgnoreOrder
                             ? new(ActualMissingRow, expectedRow, actualRow)
-                            : new(ActualOtherValue,  expectedCell, actualCell);
+                            : new(ActualOtherValue, expectedCell, actualCell);
                     }
                 }
             }
@@ -514,7 +545,7 @@ namespace Arcus.Testing
 
         private static string QuoteValueUponSpaces(string value)
         {
-            return value.Contains(' ') 
+            return value.Contains(' ')
                    && !value.StartsWith('"')
                    && !value.EndsWith('"') ? $"\"{value}\"" : value;
         }
@@ -704,7 +735,7 @@ namespace Arcus.Testing
                                       .Select(row => $"\t - {row.Count()} row(s) with {row.Key} columns")
                                       .Aggregate((x, y) => x + Environment.NewLine + y);
 
-                string optionsDescription = 
+                string optionsDescription =
                     $"Options: {Environment.NewLine}" +
                     $"\t- separator: {options.Separator}{Environment.NewLine}" +
                     $"\t- escape: {options.Escape}{Environment.NewLine}" +
@@ -781,7 +812,9 @@ namespace Arcus.Testing
 
             return rows.OrderBy(r =>
             {
-                string[] line = r.Cells.Where(c => !options.IgnoredColumns.Contains(c.HeaderName)).Select(c => c.Value).ToArray();
+                string[] line = r.Cells.Where(c => !options.IgnoredColumns.Contains(c.HeaderName) && !options.IgnoredColumnIndexes.Contains(c.ColumnNumber))
+                                       .Select(c => c.Value)
+                                       .ToArray();
                 return string.Join(options.Separator, line);
             }).ToArray();
         }
@@ -855,7 +888,7 @@ namespace Arcus.Testing
             const char blankSpace = ' ';
             bool containsSpaces = Value.Contains(blankSpace) || other.Value.Contains(blankSpace);
 
-            if (!containsSpaces 
+            if (!containsSpaces
                 && float.TryParse(Value, style, _culture, out float expectedValue)
                 && float.TryParse(other.Value, style, _culture, out float actualValue))
             {

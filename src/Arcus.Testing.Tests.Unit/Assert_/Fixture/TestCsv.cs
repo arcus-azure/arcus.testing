@@ -60,7 +60,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// Gets the amount of columns of the generated CSV table
         /// </summary>
         public int ColumnCount { get; private set; }
-        
+
         /// <summary>
         /// Gets the amount of rows of the generated CSV table (excluding the header).
         /// </summary>
@@ -75,6 +75,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// Gets the new-row character used for this generated CSV table.
         /// </summary>
         public string NewLine => _options.NewLine;
+
+        /// <summary>
+        /// Gets the index of a column that should be ignored during the assertion.
+        /// </summary>
+        public int IgnoredIndex => Bogus.PickRandom(Enumerable.Range(0, ColumnCount).ToArray());
 
         /// <summary>
         /// Generate a new <see cref="TestCsv"/> model.
@@ -99,7 +104,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 return col.ToArray();
             });
 
-            string[] headerNames = 
+            string[] headerNames =
                 options.Header is AssertCsvHeader.Present
                     ? columns.Select(col => col[0]).ToArray()
                     : columns.Select((_, index) => $"Col #{index}").ToArray();
@@ -178,7 +183,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             List<string> col = Bogus.PickRandom(_columns);
             int index = Bogus.Random.Int(1, col.Count - 1);
-            
+
             string changedValue = GenValue();
             col[index] = "diff-" + changedValue;
 
@@ -276,7 +281,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 }
             }
 
-            string csv = 
+            string csv =
                 rows.Select(row => string.Join(Separator, row))
                      .Aggregate((row1, row2) => row1 + NewLine + row2);
 
