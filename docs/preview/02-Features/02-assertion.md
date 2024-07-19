@@ -129,6 +129,8 @@ AssertJson.Equal(..., options =>
 });
 ```
 
+> 💡 `IgnoreNode` from a JSON path is currently unsupported by Arcus.Testing. As workaround you can use [Newtonsoft.Json](https://www.newtonsoft.com/json) library to parse the JSON string and remove the node before using the `AssertJson.Equal` method.
+
 ### Loading JSON nodes yourself
 The JSON assertion equalization can be called directly with raw contents - internally it parses to a valid JSON structure: `JsonNode`. If you want to compare two JSON nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
