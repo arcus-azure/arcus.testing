@@ -252,7 +252,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private static async Task<string> UploadBlobAsync(BlobStorageTestContext context, TemporaryBlobContainer container)
         {
-            BlobClient client = await container.UploadBlobAsync(context.CreateBlobContent());
+            string blobName = $"test-{Guid.NewGuid()}";
+            BlobClient client = await container.UploadBlobAsync(blobName, context.CreateBlobContent());
             return client.Name;
         }
 

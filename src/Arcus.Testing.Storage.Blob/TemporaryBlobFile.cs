@@ -13,14 +13,14 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupBlobFile
     {
-        internal bool Override { get; private set; }
+        internal bool OverrideBlob { get; private set; }
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryBlobFile"/> to override an existing Azure Blob file when it already exists.
         /// </summary>
         public OnSetupBlobFile OverrideExistingBlob()
         {
-            Override = true;
+            OverrideBlob = true;
             return this;
         }
 
@@ -29,26 +29,29 @@ namespace Arcus.Testing
         /// </summary>
         public OnSetupBlobFile UseExistingBlob()
         {
-            Override = false;
+            OverrideBlob = false;
             return this;
         }
     }
 
-    internal enum UponBlobDelete { DeleteIfCreated, DeleteIfExisted }
+    /// <summary>
+    /// Represents the available options when tearing down a <see cref="TemporaryBlobFile"/>.
+    /// </summary>
+    internal enum OnTeardownBlob { DeleteIfCreated, DeleteIfExisted }
 
     /// <summary>
     /// Represents the available options when deleting a <see cref="TemporaryBlobFile"/>.
     /// </summary>
     public class OnTeardownBlobFile
     {
-        internal UponBlobDelete Content { get; private set; }
+        internal OnTeardownBlob Content { get; private set; }
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryBlobFile"/> to delete the Azure Blob file upon disposal if the test fixture created the file.
         /// </summary>
         public OnTeardownBlobFile DeleteCreatedBlob()
         {
-            Content = UponBlobDelete.DeleteIfCreated;
+            Content = OnTeardownBlob.DeleteIfCreated;
             return this;
         }
 
@@ -58,7 +61,7 @@ namespace Arcus.Testing
         /// <returns></returns>
         public OnTeardownBlobFile DeleteExistingBlob()
         {
-            Content = UponBlobDelete.DeleteIfExisted;
+            Content = OnTeardownBlob.DeleteIfExisted;
             return this;
         }
     }
@@ -224,7 +227,7 @@ namespace Arcus.Testing
                 logger.LogDebug("Azure Blob '{BlobName}' already exists in container '{ContainerName}'", client.Name, client.BlobContainerName);
                 BlobDownloadResult originalContent = await client.DownloadContentAsync();
 
-                if (options.OnSetup.Override)
+                if (options.OnSetup.OverrideBlob)
                 {
                     logger.LogDebug("Override existing Azure Blob '{BlobName}' in container '{ContainerName}'", client.Name, client.BlobContainerName);
                     await client.UploadAsync(newContent, overwrite: true);
@@ -245,13 +248,13 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != UponBlobDelete.DeleteIfExisted)
+            if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != OnTeardownBlob.DeleteIfExisted)
             {
                 _logger.LogDebug("Reverting Azure Blob '{BlobName}' original content in container '{ContainerName}'", _blobClient.Name, _blobClient.BlobContainerName);
                 await _blobClient.UploadAsync(_originalData, overwrite: true); 
             }
 
-            if (_createdByUs || _options.OnTeardown.Content is UponBlobDelete.DeleteIfExisted)
+            if (_createdByUs || _options.OnTeardown.Content is OnTeardownBlob.DeleteIfExisted)
             {
                 _logger.LogDebug("Deleting Azure Blob '{BlobName}' from container '{ContainerName}'", _blobClient.Name, _blobClient.BlobContainerName);
                 await _blobClient.DeleteIfExistsAsync();
