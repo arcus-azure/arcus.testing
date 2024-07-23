@@ -8,6 +8,7 @@ using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -22,6 +23,8 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private readonly Collection<BlobContainerClient> _blobContainers = new();
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ILogger _logger;
+
+        private static readonly Faker Bogus = new();
 
         private BlobStorageTestContext(TemporaryManagedIdentityConnection connection, BlobServiceClient serviceClient, ILogger logger)
         {
@@ -59,6 +62,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return containerClient;
         }
 
+        /// <summary>
+        /// Provides a new Azure Blob container that is not yet created.
+        /// </summary>
         public BlobContainerClient WhenBlobContainerUnavailable()
         {
             var containerName = $"test{Guid.NewGuid():N}";
@@ -69,14 +75,42 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return containerClient;
         }
 
-        public async Task ShouldHaveCreatedBlobContainerAsync(BlobContainerClient containerClient)
+        /// <summary>
+        /// Provides a new Azure Blob file on the specified <paramref name="containerClient"/>.
+        /// </summary>
+        public async Task<BlobClient> WhenBlobAvailableAsync(BlobContainerClient containerClient, string blobName = null, BinaryData blobContent = null)
         {
-            Assert.True(await containerClient.ExistsAsync(), "temporary blob container should be available when the test fixture is not disposed");
+            blobName ??= $"blob{Guid.NewGuid():N}";
+            blobContent ??= CreateBlobContent();
+
+            BlobClient blobClient = containerClient.GetBlobClient(blobName);
+            await blobClient.UploadAsync(blobContent);
+
+            return blobClient;
         }
 
-        public async Task ShouldHaveDeletedBlobContainerAsync(BlobContainerClient containerClient)
+        /// <summary>
+        /// Creates a new blob content with random bytes.
+        /// </summary>
+        public BinaryData CreateBlobContent()
         {
-            Assert.False(await containerClient.ExistsAsync(), "temporary blob container should be unavailable when the test fixture is disposed");
+            return BinaryData.FromBytes(Bogus.Random.Bytes(100));
+        }
+
+        /// <summary>
+        /// Verifies that the blob container with the specified <paramref name="containerClient"/> is still available.
+        /// </summary>
+        public async Task ShouldStoreBlobContainerAsync(BlobContainerClient containerClient)
+        {
+            Assert.True(await containerClient.ExistsAsync(), $"temporary blob container '{containerClient.Name}' should remain available");
+        }
+
+        /// <summary>
+        /// Verifies that the blob container with the specified <paramref name="containerClient"/> is deleted.
+        /// </summary>
+        public async Task ShouldDeleteBlobContainerAsync(BlobContainerClient containerClient)
+        {
+            Assert.False(await containerClient.ExistsAsync(), $"temporary blob container '{containerClient.Name}' should be deleted");
         }
 
         /// <summary>
@@ -85,19 +119,27 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldStoreBlobFileAsync(BlobContainerClient containerClient, string blobName, BinaryData blobContent)
         {
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            Assert.True(await blobClient.ExistsAsync(), "temporary blob file should be available when the test fixture is not disposed");
+            Assert.True(await blobClient.ExistsAsync(), $"temporary blob file '{blobName}' should be available in container {containerClient.Name}");
 
             Response<BlobDownloadResult> getContent = await blobClient.DownloadContentAsync();
             Assert.Equal(blobContent.ToArray(), getContent.Value.Content.ToArray());
         }
 
         /// <summary>
+        /// Verifies that the blob file with the specified <paramref name="blobName"/> is stored in the <paramref name="containerClient"/>.
+        /// </summary>
+        public async Task ShouldStoreBlobFileAsync(BlobContainerClient containerClient, string blobName)
+        {
+            Assert.True(await containerClient.GetBlobClient(blobName).ExistsAsync(), $"temporary blob file '{blobName}' should be available in container '{containerClient.Name}'");
+        }
+
+        /// <summary>
         /// Verifies that the blob file with the specified <paramref name="blobName"/> is not stored in the <paramref name="containerClient"/>.
         /// </summary>
-        public async Task ShouldNotStoreBlobFileAsync(BlobContainerClient containerClient, string blobName)
+        public async Task ShouldDeleteBlobFileAsync(BlobContainerClient containerClient, string blobName)
         {
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            Assert.False(await blobClient.ExistsAsync(), "temporary blob file should be unavailable when the test fixture is disposed");
+            Assert.False(await blobClient.ExistsAsync(), $"temporary blob file '{blobName}' should be unavailable in container '{containerClient.Name}'");
         }
 
         /// <summary>

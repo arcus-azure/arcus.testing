@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
-using Azure;
 using Azure.Storage.Blobs;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,70 +18,160 @@ namespace Arcus.Testing.Tests.Integration.Storage
         }
 
         [Fact]
-        public async Task UploadTempBlobFile_WithAvailableBlobContainer_SucceedsByExistingDuringLifetimeFixture()
+        public async Task UploadTempBlobFileCreatedByUs_WithAvailableBlobContainer_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            BinaryData content = CreateBlobContent();
+            BinaryData content = context.CreateBlobContent();
 
-            TemporaryBlobFile file = await TemporaryBlobFile.UploadContentAsync(containerClient.Uri, content, Logger);
-            await context.ShouldStoreBlobFileAsync(containerClient, file.FileName, content);
+            TemporaryBlobFile file = await UploadBlobAsync(containerClient, blobContent: content, configureOptions: AnyOptions());
+            await context.ShouldStoreBlobFileAsync(containerClient, file.Name, content);
 
             // Act
             await file.DisposeAsync();
 
             // Assert
-            await context.ShouldNotStoreBlobFileAsync(containerClient, file.FileName);
+            await context.ShouldDeleteBlobFileAsync(containerClient, file.Name);
+        }
+
+        private static Action<TemporaryBlobFileOptions> AnyOptions()
+        {
+            if (Bogus.Random.Bool())
+            {
+                return null;
+            }
+
+            return options =>
+            {
+                if (Bogus.Random.Bool())
+                {
+                    options.OnSetup.OverrideExistingBlob();
+                }
+                else
+                {
+                    options.OnSetup.UseExistingBlob();
+                }
+
+                if (Bogus.Random.Bool())
+                {
+                    options.OnTeardown.DeleteCreatedBlob();
+                }
+                else
+                {
+                    options.OnTeardown.DeleteExistingBlob();
+                }
+            };
         }
 
         [Fact]
-        public async Task UploadTempBlobFile_WithAlreadyUploadedBlobWithOverride_SucceedsByOverridingExistingBlob()
+        public async Task UploadTempBlobFileDefault_WithAlreadyUploadedBlob_SucceedsByUsingExistingBlob()
         {
             // Arrange
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            BinaryData content1 = CreateBlobContent();
-            BinaryData content2 = CreateBlobContent();
+            BinaryData originalContent = context.CreateBlobContent();
+            BinaryData newContent = context.CreateBlobContent();
 
-            TemporaryBlobFile file1 = await TemporaryBlobFile.UploadContentAsync(containerClient, content1, Logger);
-            TemporaryBlobFile file2 = await TemporaryBlobFile.UploadContentAsync(containerClient.Uri, content2, Logger, 
-                options =>
-                {
-                    options.BlobName = file1.FileName;
-                    options.OverrideExistingBlob = true;
-                });
+            BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
+            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent);
 
             // Assert
-            await context.ShouldStoreBlobFileAsync(containerClient, file1.FileName, content2);
+            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
+            await sut.DisposeAsync();
+            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
         }
 
         [Fact]
-        public async Task UploadTempBlobFile_WithAlreadyUploadedBlobWithoutOverride_FailsWithConflict()
+        public async Task UploadTempBlobFile_WithAlreadyUploadedBlobWithoutOverride_SucceedsByUsingSameContent()
         {
             // Arrange
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            BinaryData content = CreateBlobContent();
+            
+            BinaryData originalContent = context.CreateBlobContent();
+            BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
+            BinaryData newContent = context.CreateBlobContent();
 
-            TemporaryBlobFile file1 = await TemporaryBlobFile.UploadContentAsync(containerClient.Uri, content, Logger);
-            var exception = await Assert.ThrowsAnyAsync<RequestFailedException>(
-                () => TemporaryBlobFile.UploadContentAsync(containerClient.Uri, content, Logger, options =>
-                {
-                    options.BlobName = file1.FileName;
-                    options.OverrideExistingBlob = false;
-                }));
+            // Act
+            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
+            {
+                options.OnSetup.UseExistingBlob();
+            });
 
-            Assert.Contains("already", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("exists", exception.Message, StringComparison.OrdinalIgnoreCase);
+            // Assert
+            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
+            await sut.DisposeAsync();
+            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
         }
 
-        private static BinaryData CreateBlobContent()
+        [Fact]
+        public async Task UploadTempBlobFileWithDeleteExisting_WithAlreadyUploadedBlob_SucceedsByRemovingUponDisposal()
         {
-            return BinaryData.FromBytes(Bogus.Random.Bytes(100));
+            // Arrange
+            await using var context = await GivenBlobStorageAsync();
+
+            BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
+            BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient);
+            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, configureOptions: options =>
+            {
+                options.OnTeardown.DeleteExistingBlob();
+            });
+
+            // Act
+            await sut.DisposeAsync();
+
+            // Assert
+            await context.ShouldDeleteBlobFileAsync(containerClient, sut.Name);
+        }
+
+        [Fact]
+        public async Task UploadTempBlobFileWithAllAvailableOutOfScopeOptions_OnExistingBlob_SucceedsByRemovingAll()
+        {
+            // Arrange
+            await using var context = await GivenBlobStorageAsync();
+
+            BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
+
+            BinaryData originalContent = context.CreateBlobContent();
+            BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
+
+            BinaryData newContent = context.CreateBlobContent();
+            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
+            {
+                options.OnSetup.UseExistingBlob();
+                options.OnTeardown.DeleteExistingBlob();
+            });
+            await context.ShouldStoreBlobFileAsync(containerClient, sut.Name, originalContent);
+
+            // Act
+            await sut.DisposeAsync();
+
+            // Assert
+            await context.ShouldDeleteBlobFileAsync(containerClient, existingBlob.Name);
+        }
+
+        private async Task<TemporaryBlobFile> UploadBlobAsync(
+            BlobContainerClient client,
+            string blobName = null,
+            BinaryData blobContent = null,
+            Action<TemporaryBlobFileOptions> configureOptions = null)
+        {
+            blobName ??= $"test-{Guid.NewGuid():N}";
+            blobContent ??= BinaryData.FromBytes(Bogus.Random.Bytes(100));
+
+            var temp = configureOptions is null
+                ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
+                : await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger, configureOptions);
+
+            Assert.Equal(blobName, temp.Name);
+            Assert.Equal(blobName, temp.Client.Name);
+            Assert.Equal(client.Name, temp.Client.BlobContainerName);
+
+            return temp;
         }
 
         private async Task<BlobStorageTestContext> GivenBlobStorageAsync()
