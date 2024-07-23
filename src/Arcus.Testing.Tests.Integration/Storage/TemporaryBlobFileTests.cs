@@ -26,7 +26,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
             BinaryData content = context.CreateBlobContent();
 
-            TemporaryBlobFile file = await UploadBlobAsync(containerClient, blobContent: content, configureOptions: AnyOptions());
+            TemporaryBlobFile file = await WhenBlobUploadedAsync(containerClient, blobContent: content, configureOptions: AnyOptions());
             await context.ShouldStoreBlobFileAsync(containerClient, file.Name, content);
 
             // Act
@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BinaryData newContent = context.CreateBlobContent();
 
             BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
-            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent);
+            TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, newContent);
 
             // Assert
             await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
@@ -97,7 +97,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BinaryData newContent = context.CreateBlobContent();
 
             // Act
-            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
+            TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
             {
                 options.OnSetup.UseExistingBlob();
             });
@@ -116,7 +116,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
             BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient);
-            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, configureOptions: options =>
+            TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, configureOptions: options =>
             {
                 options.OnTeardown.DeleteExistingBlob();
             });
@@ -140,7 +140,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
 
             BinaryData newContent = context.CreateBlobContent();
-            TemporaryBlobFile sut = await UploadBlobAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
+            TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
             {
                 options.OnSetup.UseExistingBlob();
                 options.OnTeardown.DeleteExistingBlob();
@@ -154,7 +154,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldDeleteBlobFileAsync(containerClient, existingBlob.Name);
         }
 
-        private async Task<TemporaryBlobFile> UploadBlobAsync(
+        private async Task<TemporaryBlobFile> WhenBlobUploadedAsync(
             BlobContainerClient client,
             string blobName = null,
             BinaryData blobContent = null,

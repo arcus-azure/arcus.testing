@@ -164,7 +164,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryBlobContainer"/>.
     /// </summary>
-    public class UponCreateBlobContainer
+    public class OnSetupBlobContainerOptions
     {
         private readonly List<BlobNameFilter> _filters = new();
 
@@ -174,7 +174,7 @@ namespace Arcus.Testing
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete all the Azure Blobs upon the test fixture creation.
         /// </summary>
         /// <returns></returns>
-        public UponCreateBlobContainer CleanAllBlobs()
+        public OnSetupBlobContainerOptions CleanAllBlobs()
         {
             Blobs = OnSetupContainer.CleanIfExisted;
             return this;
@@ -186,7 +186,7 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
-        public UponCreateBlobContainer CleanMatchingBlobs(params BlobNameFilter[] filters)
+        public OnSetupBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
         {
             if (filters is null)
             {
@@ -208,7 +208,7 @@ namespace Arcus.Testing
         /// (default) Configures the <see cref="TemporaryBlobContainer"/> to leave all Azure Blobs untouched
         /// that already existed upon the test fixture creation, when there was already an Azure Blob container available.
         /// </summary>
-        public UponCreateBlobContainer LeaveAllBlobs()
+        public OnSetupBlobContainerOptions LeaveAllBlobs()
         {
             Blobs = OnSetupContainer.LeaveExisted;
             return this;
@@ -234,7 +234,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when deleting a <see cref="TemporaryBlobContainer"/>.
     /// </summary>
-    public class UponDeleteBlobContainer
+    public class OnTeardownBlobContainerOptions
     {
         private readonly List<BlobNameFilter> _filters = new();
 
@@ -243,9 +243,9 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was uploaded by the test fixture (using <see cref="TemporaryBlobContainer.UploadBlobAsync(BinaryData)"/>).
+        /// if the blob was uploaded by the test fixture (using <see cref="TemporaryBlobContainer.UploadBlobAsync(string, BinaryData)"/>).
         /// </summary>
-        public UponDeleteBlobContainer CleanCreatedBlobs()
+        public OnTeardownBlobContainerOptions CleanCreatedBlobs()
         {
             Blobs = OnTeardownBlobs.CleanIfCreated;
             return this;
@@ -254,7 +254,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete all the blobs upon disposal - even if the test fixture didn't uploaded them.
         /// </summary>
-        public UponDeleteBlobContainer CleanAllBlobs()
+        public OnTeardownBlobContainerOptions CleanAllBlobs()
         {
             Blobs = OnTeardownBlobs.CleanAll;
             return this;
@@ -271,7 +271,7 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
-        public UponDeleteBlobContainer CleanMatchingBlobs(params BlobNameFilter[] filters)
+        public OnTeardownBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
         {
             if (filters is null)
             {
@@ -292,7 +292,7 @@ namespace Arcus.Testing
         /// <summary>
         /// (default for deleting container) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blob container upon disposal if the test fixture created the container.
         /// </summary>
-        public UponDeleteBlobContainer DeleteCreatedContainer()
+        public OnTeardownBlobContainerOptions DeleteCreatedContainer()
         {
             Container = OnTeardownContainer.DeleteIfCreated;
             return this;
@@ -301,7 +301,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete the Azure Blob container upon disposal, even if it already existed previously - outside the fixture's scope.
         /// </summary>
-        public UponDeleteBlobContainer DeleteExistingContainer()
+        public OnTeardownBlobContainerOptions DeleteExistingContainer()
         {
             Container = OnTeardownContainer.DeleteIfExists;
             return this;
@@ -334,12 +334,12 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the creation of the <see cref="TemporaryBlobContainer"/>.
         /// </summary>
-        public UponCreateBlobContainer OnSetup { get; } = new UponCreateBlobContainer().LeaveAllBlobs();
+        public OnSetupBlobContainerOptions OnSetup { get; } = new OnSetupBlobContainerOptions().LeaveAllBlobs();
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobContainer"/>.
         /// </summary>
-        public UponDeleteBlobContainer OnTeardown { get; } = new UponDeleteBlobContainer().CleanCreatedBlobs().DeleteCreatedContainer();
+        public OnTeardownBlobContainerOptions OnTeardown { get; } = new OnTeardownBlobContainerOptions().CleanCreatedBlobs().DeleteCreatedContainer();
     }
 
     /// <summary>

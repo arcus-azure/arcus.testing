@@ -11,14 +11,14 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryBlobFile"/>.
     /// </summary>
-    public class OnSetupBlobFile
+    public class OnSetupBlobFileOptions
     {
         internal bool OverrideBlob { get; private set; }
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryBlobFile"/> to override an existing Azure Blob file when it already exists.
         /// </summary>
-        public OnSetupBlobFile OverrideExistingBlob()
+        public OnSetupBlobFileOptions OverrideExistingBlob()
         {
             OverrideBlob = true;
             return this;
@@ -27,7 +27,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryBlobFile"/> to use the existing Azure Blob file's content instead when it already exists.
         /// </summary>
-        public OnSetupBlobFile UseExistingBlob()
+        public OnSetupBlobFileOptions UseExistingBlob()
         {
             OverrideBlob = false;
             return this;
@@ -42,14 +42,14 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when deleting a <see cref="TemporaryBlobFile"/>.
     /// </summary>
-    public class OnTeardownBlobFile
+    public class OnTeardownBlobFileOptions
     {
         internal OnTeardownBlob Content { get; private set; }
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryBlobFile"/> to delete the Azure Blob file upon disposal if the test fixture created the file.
         /// </summary>
-        public OnTeardownBlobFile DeleteCreatedBlob()
+        public OnTeardownBlobFileOptions DeleteCreatedBlob()
         {
             Content = OnTeardownBlob.DeleteIfCreated;
             return this;
@@ -59,7 +59,7 @@ namespace Arcus.Testing
         /// Configures the <see cref="TemporaryBlobFile"/> to delete the Azure Blob file upon disposal, even if it already existed - outside the fixture's scope.
         /// </summary>
         /// <returns></returns>
-        public OnTeardownBlobFile DeleteExistingBlob()
+        public OnTeardownBlobFileOptions DeleteExistingBlob()
         {
             Content = OnTeardownBlob.DeleteIfExisted;
             return this;
@@ -74,12 +74,12 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the creation of the <see cref="TemporaryBlobFile"/>.
         /// </summary>
-        public OnSetupBlobFile OnSetup { get; } = new OnSetupBlobFile().UseExistingBlob();
+        public OnSetupBlobFileOptions OnSetup { get; } = new OnSetupBlobFileOptions().UseExistingBlob();
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobFile"/>.
         /// </summary>
-        public OnTeardownBlobFile OnTeardown { get; } = new OnTeardownBlobFile().DeleteCreatedBlob();
+        public OnTeardownBlobFileOptions OnTeardown { get; } = new OnTeardownBlobFileOptions().DeleteCreatedBlob();
     }
 
     /// <summary>
