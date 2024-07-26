@@ -36,3 +36,4 @@ jobs:
       with:
         file: '/home/runner/work/arcus.testing/arcus.testing/src/Arcus.Testing.Tests.Unit/coverage.net8.0.json'
         format: lcov
+        debug: true
