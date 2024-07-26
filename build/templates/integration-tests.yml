@@ -50,6 +50,7 @@ jobs:
           rootDirectory: 'src/$(Project).Tests.Integration/'
           targetFiles: 'appsettings.json'
           encoding: 'auto'
+          missingVarLog: 'Error'
           verbosity: 'detailed'
           writeBOM: true
           actionOnMissing: 'fail'
