@@ -44,6 +44,16 @@ jobs:
           version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
+      - task: DotNetCoreCLI@2
+        displayName: 'Run unit tests'
+        inputs:
+          command: test
+          projects: 'src/**/$(Project).Tests.Unit.csproj'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
+          nobuild: true
+          publishTestResults: true
+          mergeTestResults: true
+
       - task: qetza.replacetokens.replacetokens-task.replacetokens@6
         displayName: 'Replace integration test tokens'
         inputs:
@@ -60,19 +70,14 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Integration.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$(Project).Tests.Integration\coverlet.runsettings'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
 
-      - task: CopyFiles@2
-        displayName: 'Copy build artifacts'
+      - task: reportgenerator@5
+        displayName: ReportGenerator
         inputs:
-          contents: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
-          targetFolder: '$(Pipeline.Workspace)/coverage-integration'
-
-      - task: PublishPipelineArtifact@0
-        displayName: 'Publish build artifacts'
-        inputs:
-          targetPath: '$(Pipeline.Workspace)/coverage-integration'
-          artifactName: Coverage-Integration
+          reports: )/**/coverage.cobertura.xml'
+          targetdir: coveragereport
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark
