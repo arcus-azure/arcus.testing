@@ -78,6 +78,6 @@ jobs:
       - task: reportgenerator@5
         displayName: ReportGenerator
         inputs:
-          reports: )/**/coverage.cobertura.xml'
+          reports: /**/coverage.cobertura.xml'
           targetdir: coveragereport
           reporttypes: Html;HtmlInline_AzurePipelines_Dark
