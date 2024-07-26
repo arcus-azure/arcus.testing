@@ -66,21 +66,16 @@ stages:
               targetPath: '$(Pipeline.Workspace)/build'
               artifactName: Build
 
-  - stage: UnitTests
-    displayName: Unit Tests
+  - stage: Tests
+    displayName: 'Run tests'
     dependsOn: Build
     condition: succeeded()
     jobs:
       - template: templates/unit-tests.yml
-
-  - stage: IntegrationTests
-    displayName: Integration Tests
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
       - template: templates/integration-tests.yml
         parameters:
           azureServiceConnection: '${{ parameters.azureServiceConnection }}'
+      - template: templates/publish-coverage.yml
 
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'

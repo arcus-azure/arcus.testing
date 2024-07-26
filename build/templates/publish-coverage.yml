@@ -1,0 +1,16 @@
+jobs:
+  - job: PublishCoverage
+    displayName: 'Publish code coverage'
+    pool:
+      vmImage: '$(Vm.Image)'
+    steps:
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download build artifacts'
+        inputs:
+          artifact: 'Build'
+      - task: PublishCodeCoverageResults@2
+        displayName: 'Publish code coverage report'
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+          failIfCoverageEmpty: true
