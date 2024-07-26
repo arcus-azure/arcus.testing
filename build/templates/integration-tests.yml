@@ -41,7 +41,7 @@ jobs:
         displayName: 'Import .NET Core SDK ($(DotNet.Sdk.IncludePreviewVersions))'
         inputs:
           packageType: 'sdk'
-          version: '$(DotNet.Sdk.IncludePreviewVersions)}'
+          version: '$(DotNet.Sdk.IncludePreviewVersions)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
       
       - task: qetza.replacetokens.replacetokens-task.replacetokens@6
