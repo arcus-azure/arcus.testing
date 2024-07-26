@@ -38,10 +38,10 @@ jobs:
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey
 
       - task: UseDotNet@2
-        displayName: 'Import .NET Core SDK ($(DotNet.Sdk.IncludePreviewVersions))'
+        displayName: 'Import .NET Core SDK ($(DotNet.Sdk.Version))'
         inputs:
           packageType: 'sdk'
-          version: '$(DotNet.Sdk.IncludePreviewVersions)'
+          version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
       
       - task: qetza.replacetokens.replacetokens-task.replacetokens@6
