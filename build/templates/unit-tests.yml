@@ -33,8 +33,14 @@ jobs:
           publishTestResults: true
           mergeTestResults: 
           
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: Coverage-Unit'
+      - task: CopyFiles@2
+        displayName: 'Copy build artifacts'
         inputs:
-          ArtifactName: 'Coverage-Unit'
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          contents: 'src/**/coverage.cobertura.xml'
+          targetFolder: '$(Pipeline.Workspace)/coverage-unit'
+
+      - task: PublishPipelineArtifact@0
+        displayName: 'Publish build artifacts'
+        inputs:
+          targetPath: '$(Pipeline.Workspace)/coverage-unit'
+          artifactName: Coverage-Unit

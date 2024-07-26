@@ -64,9 +64,14 @@ jobs:
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
-      
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: Coverage-Integration'
+
+      - task: CopyFiles@2
+        displayName: 'Copy build artifacts'
         inputs:
-          ArtifactName: 'Coverage-Integration'
-          PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+          contents: 'src/**/coverage.cobertura.xml'
+          targetFolder: '$(Pipeline.Workspace)/coverage-integration'
+      - task: PublishPipelineArtifact@0
+        displayName: 'Publish build artifacts'
+        inputs:
+          targetPath: '$(Pipeline.Workspace)/coverage-integration'
+          artifactName: Coverage-Integration

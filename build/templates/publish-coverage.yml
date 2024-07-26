@@ -8,13 +8,17 @@ jobs:
       - IntegrationTests
     steps:
       - task: DownloadPipelineArtifact@2
-        displayName: 'Download unit tests artifacts'
+        displayName: 'Download coverage unit artifacts'
         inputs:
           artifact: 'Coverage-Unit'
+          path: '$(Build.SourcesDirectory)/coverage-unit'
+
       - task: DownloadPipelineArtifact@2
-        displayName: 'Download integration artifacts'
+        displayName: 'Download coverage integration artifacts'
         inputs:
           artifact: 'Coverage-Integration'
+          path: '$(Build.SourcesDirectory)/coverage-integration'
+
       - task: PublishCodeCoverageResults@2
         displayName: 'Publish code coverage report'
         inputs:
