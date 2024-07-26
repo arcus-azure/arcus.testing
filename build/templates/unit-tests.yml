@@ -28,12 +28,14 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Unit.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect "Code coverage"'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$($Project).Tests.Unit\coverlet.runsettings'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
 
-      - task: PublishCodeCoverageResults@2
+      - task: PublishCodeCoverageResults@1
+        displayName: 'Publish code coverage report'
         inputs:
           codeCoverageTool: 'Cobertura'
-          summaryFileLocation: src/**/$(Project).Tests.Unit/TestResults/coverage.info
+          summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+          failIfCoverageEmpty: true
