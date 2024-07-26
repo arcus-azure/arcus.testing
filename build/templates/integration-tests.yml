@@ -68,7 +68,7 @@ jobs:
       - task: CopyFiles@2
         displayName: 'Copy build artifacts'
         inputs:
-          contents: 'src/**/coverage.cobertura.xml'
+          contents: 'src/**/TestResults/*'
           targetFolder: '$(Pipeline.Workspace)/coverage-integration'
       - task: PublishPipelineArtifact@0
         displayName: 'Publish build artifacts'
