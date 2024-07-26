@@ -168,6 +168,9 @@ namespace Arcus.Testing
     {
         private readonly List<BlobNameFilter> _filters = new();
 
+        /// <summary>
+        /// Gets the configurable setup option on what to do with existing Azure Blobs in the Azure Blob container upon the test fixture creation.
+        /// </summary>
         internal OnSetupContainer Blobs { get; private set; } = OnSetupContainer.LeaveExisted;
 
         /// <summary>
@@ -214,6 +217,11 @@ namespace Arcus.Testing
             return this;
         }
 
+        /// <summary>
+        /// Determines whether the given <paramref name="blob"/> matches the configured filter.
+        /// </summary>
+        /// <param name="blob">The blob to match the filter against.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blob"/> is <c>null</c>.</exception>
         internal bool IsMatched(BlobItem blob)
         {
             if (blob is null)
@@ -238,7 +246,14 @@ namespace Arcus.Testing
     {
         private readonly List<BlobNameFilter> _filters = new();
 
+        /// <summary>
+        /// Gets the configurable option on what to do with unlinked Azure Blobs in the Azure Blob container upon the disposal of the test fixture.
+        /// </summary>
         internal OnTeardownBlobs Blobs { get; private set; } = OnTeardownBlobs.CleanIfCreated;
+
+        /// <summary>
+        /// Gets the configurable option on what to do with the Azure Blob container upon the disposal of the test fixture.
+        /// </summary>
         internal OnTeardownContainer Container { get; private set; } = OnTeardownContainer.DeleteIfCreated;
 
         /// <summary>
@@ -310,6 +325,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Determines whether the given <paramref name="blob"/> should be deleted upon the disposal of the <see cref="TemporaryBlobContainer"/>.
         /// </summary>
+        /// <param name="blob">The blob to match the filter against.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blob"/> is <c>null</c>.</exception>
         internal bool IsMatched(BlobItem blob)
         {
             if (blob is null)
@@ -347,7 +364,6 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryBlobContainer : IAsyncDisposable
     {
-        private readonly BlobContainerClient _containerClient;
         private readonly Collection<TemporaryBlobFile> _blobs = new();
         private readonly bool _createdByUs;
         private readonly TemporaryBlobContainerOptions _options;
@@ -359,21 +375,22 @@ namespace Arcus.Testing
             TemporaryBlobContainerOptions options,
             ILogger logger)
         {
-            _containerClient = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
             _createdByUs = createdByUs;
             _options = options ?? new TemporaryBlobContainerOptions();
             _logger = logger ?? NullLogger.Instance;
+            
+            Client = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
         }
 
         /// <summary>
         /// Gets the name of the temporary Azure Blob container currently in storage.
         /// </summary>
-        public string Name => _containerClient.Name;
+        public string Name => Client.Name;
 
         /// <summary>
         /// Gets the <see cref="BlobContainerClient"/> instance that represents the temporary Azure Blob container.
         /// </summary>
-        public BlobContainerClient Client => _containerClient;
+        public BlobContainerClient Client { get; }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
@@ -440,9 +457,13 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="containerClient">The client to interact with the Azure Blob storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(containerClient, logger, configureOptions: null);
+            return await CreateIfNotExistsAsync(
+                containerClient ?? throw new ArgumentNullException(nameof(containerClient)),
+                logger,
+                configureOptions: null);
         }
 
         /// <summary>
@@ -523,7 +544,7 @@ namespace Arcus.Testing
                 throw new ArgumentNullException(nameof(blobContent));
             }
 
-            BlobClient blobClient = _containerClient.GetBlobClient(blobName);
+            BlobClient blobClient = Client.GetBlobClient(blobName);
             _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger, configureOptions));
 
             return blobClient;
@@ -540,15 +561,15 @@ namespace Arcus.Testing
             disposables.AddRange(_blobs);
             disposables.Add(AsyncDisposable.Create(async () =>
             {
-                await CleanBlobContainerUponDeletionAsync(_containerClient, _options, _logger);
+                await CleanBlobContainerUponDeletionAsync(Client, _options, _logger);
             }));
 
             if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Deleting Azure Blob container '{ContainerName}'", _containerClient.Name);
-                    await _containerClient.DeleteIfExistsAsync();
+                    _logger.LogTrace("Deleting Azure Blob container '{ContainerName}'", Client.Name);
+                    await Client.DeleteIfExistsAsync();
                 })); 
             }
         }
@@ -560,7 +581,7 @@ namespace Arcus.Testing
                 return;
             }
 
-            logger.LogDebug("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
+            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
             {
                 if (options.OnSetup.IsMatched(blob))
@@ -578,7 +599,7 @@ namespace Arcus.Testing
                 return;
             }
 
-            logger.LogDebug("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
+            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
             {
                 if (options.OnTeardown.IsMatched(blob))

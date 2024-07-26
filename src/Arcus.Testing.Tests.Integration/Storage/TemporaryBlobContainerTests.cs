@@ -263,8 +263,12 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Action<TemporaryBlobContainerOptions> configureOptions = null)
         {
             TemporaryBlobContainer temp = configureOptions is null
-                ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger)
-                : await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger, configureOptions);
+                ? Bogus.Random.Bool()
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, Logger)
+                : Bogus.Random.Bool()
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger, configureOptions)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, Logger, configureOptions);
 
             Assert.Equal(client.Name, temp.Name);
             Assert.Equal(client.Name, temp.Client.Name);

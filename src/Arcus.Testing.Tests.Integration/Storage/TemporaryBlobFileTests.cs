@@ -163,11 +163,16 @@ namespace Arcus.Testing.Tests.Integration.Storage
             blobName ??= $"test-{Guid.NewGuid():N}";
             blobContent ??= BinaryData.FromBytes(Bogus.Random.Bytes(100));
 
-            var temp = configureOptions is null
-                ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
-                : await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger, configureOptions);
+            TemporaryBlobFile temp = configureOptions is null
+                ? Bogus.Random.Bool() 
+                    ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
+                    : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger)
+                : Bogus.Random.Bool()
+                    ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger, configureOptions)
+                    : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger, configureOptions);
 
             Assert.Equal(blobName, temp.Name);
+            Assert.Equal(client.Name, temp.ContainerName);
             Assert.Equal(blobName, temp.Client.Name);
             Assert.Equal(client.Name, temp.Client.BlobContainerName);
 

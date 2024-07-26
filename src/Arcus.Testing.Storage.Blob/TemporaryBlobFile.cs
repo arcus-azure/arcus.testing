@@ -13,6 +13,13 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupBlobFileOptions
     {
+        /// <summary>
+        /// Gets the configured setup option on what to do with an existing Azure Blob file upon creation.
+        /// </summary>
+        /// <remarks>
+        ///     [true] overrides the existing Azure Blob file when it already exists;
+        ///     [false] uses the existing Azure Blob file's content instead.
+        /// </remarks>
         internal bool OverrideBlob { get; private set; }
 
         /// <summary>
@@ -44,6 +51,9 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownBlobFileOptions
     {
+        /// <summary>
+        /// Gets the configured teardown option on what to do with the Azure Blob content upon disposal.
+        /// </summary>
         internal OnTeardownBlob Content { get; private set; }
 
         /// <summary>
@@ -87,7 +97,6 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryBlobFile : IAsyncDisposable
     {
-        private readonly BlobClient _blobClient;
         private readonly bool _createdByUs;
         private readonly BinaryData _originalData;
         private readonly TemporaryBlobFileOptions _options;
@@ -100,22 +109,28 @@ namespace Arcus.Testing
             TemporaryBlobFileOptions options,
             ILogger logger)
         {
-            _blobClient = blobClient ?? throw new ArgumentNullException(nameof(blobClient));
             _createdByUs = createdByUs;
             _originalData = originalData;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            
+            Client = blobClient ?? throw new ArgumentNullException(nameof(blobClient));
         }
 
         /// <summary>
         /// Gets the name of the Azure Blob file currently in storage.
         /// </summary>
-        public string Name => _blobClient.Name;
+        public string Name => Client.Name;
+
+        /// <summary>
+        /// Gets the name of the Azure Blob container where the Azure Blob file is currently stored.
+        /// </summary>
+        public string ContainerName => Client.BlobContainerName;
 
         /// <summary>
         /// Gets the client to interact with the temporary stored Azure Blob file currently in storage.
         /// </summary>
-        public BlobClient Client => _blobClient;
+        public BlobClient Client { get; }
 
         /// <summary>
         /// Uploads a temporary blob to the Azure Blob container.
@@ -134,7 +149,17 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
-            return await UploadIfNotExistsAsync(blobContainerUri, blobName, blobContent, logger, configureOptions: null);
+            if (string.IsNullOrWhiteSpace(blobName))
+            {
+                throw new ArgumentException("Requires a non-blank name for the Azure Blob file name for it to be uploaded to Azure Blob storage", nameof(blobName));
+            }
+
+            return await UploadIfNotExistsAsync(
+                blobContainerUri ?? throw new ArgumentNullException(nameof(blobContainerUri)),
+                blobName,
+                blobContent ?? throw new ArgumentNullException(nameof(blobContent)),
+                logger,
+                configureOptions: null);
         }
 
         /// <summary>
@@ -165,8 +190,18 @@ namespace Arcus.Testing
                 throw new ArgumentNullException(nameof(blobContainerUri));
             }
 
+            if (string.IsNullOrWhiteSpace(blobName))
+            {
+                throw new ArgumentException("Requires a non-blank name for the Azure Blob file name for it to be uploaded to Azure Blob storage", nameof(blobName));
+            }
+
+            if (blobContent is null)
+            {
+                throw new ArgumentNullException(nameof(blobContent));
+            }
+
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
-            var blobClient = containerClient.GetBlobClient(blobName);
+            BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
             return await UploadIfNotExistsAsync(blobClient, blobContent, logger, configureOptions);
         }
@@ -180,7 +215,11 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
         {
-            return await UploadIfNotExistsAsync(blobClient, blobContent, logger, configureOptions: null);
+            return await UploadIfNotExistsAsync(
+                blobClient ?? throw new ArgumentNullException(nameof(blobClient)),
+                blobContent ?? throw new ArgumentNullException(nameof(blobContent)),
+                logger,
+                configureOptions: null);
         }
 
         /// <summary>
@@ -236,7 +275,7 @@ namespace Arcus.Testing
                 return (createdByUs: false, originalContent.Content);
             }
 
-            logger.LogDebug("Uploading Azure Blob '{BlobName}' to container '{ContainerName}'", client.Name, client.BlobContainerName);
+            logger.LogTrace("Uploading Azure Blob '{BlobName}' to container '{ContainerName}'", client.Name, client.BlobContainerName);
             await client.UploadAsync(newContent);
             
             return (createdByUs: true, originalData: null);
@@ -250,14 +289,14 @@ namespace Arcus.Testing
         {
             if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != OnTeardownBlob.DeleteIfExisted)
             {
-                _logger.LogDebug("Reverting Azure Blob '{BlobName}' original content in container '{ContainerName}'", _blobClient.Name, _blobClient.BlobContainerName);
-                await _blobClient.UploadAsync(_originalData, overwrite: true); 
+                _logger.LogDebug("Reverting Azure Blob '{BlobName}' original content in container '{ContainerName}'", Client.Name, Client.BlobContainerName);
+                await Client.UploadAsync(_originalData, overwrite: true); 
             }
 
             if (_createdByUs || _options.OnTeardown.Content is OnTeardownBlob.DeleteIfExisted)
             {
-                _logger.LogDebug("Deleting Azure Blob '{BlobName}' from container '{ContainerName}'", _blobClient.Name, _blobClient.BlobContainerName);
-                await _blobClient.DeleteIfExistsAsync();
+                _logger.LogTrace("Deleting Azure Blob '{BlobName}' from container '{ContainerName}'", Client.Name, Client.BlobContainerName);
+                await Client.DeleteIfExistsAsync();
             }
         }
     }
