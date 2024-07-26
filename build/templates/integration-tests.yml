@@ -81,3 +81,4 @@ jobs:
           reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
           reporttypes: Html;HtmlInline_AzurePipelines_Dark
+          publishCodeCoverageResults: true
