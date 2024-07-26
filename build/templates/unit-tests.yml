@@ -28,9 +28,10 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Unit.csproj'
-          arguments: '--configuration $(Build.Configuration) -p:coverletOutput=TestResults/ -p:CollectCoverage=true -p:CoverletOutputFormat=\"lcov\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\"'
+          arguments: '--configuration $(Build.Configuration) --collect "Code coverage"'
           nobuild: true
           publishTestResults: true
+          mergeTestResults: true
 
       - task: PublishCodeCoverageResults@2
         inputs:
