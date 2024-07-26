@@ -49,7 +49,7 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Unit.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
@@ -70,7 +70,7 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Integration.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
@@ -78,6 +78,6 @@ jobs:
       - task: reportgenerator@5
         displayName: ReportGenerator
         inputs:
-          reports: /**/coverage.cobertura.xml'
+          reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
           reporttypes: Html;HtmlInline_AzurePipelines_Dark
