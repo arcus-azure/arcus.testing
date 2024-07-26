@@ -34,5 +34,5 @@ jobs:
     - name: Coveralls
       uses: coverallsapp/github-action@v2
       with:
-        file: '*.coverage.json'
+        file: 'coverage.net8.0.json'
         format: cobertura
