@@ -3,6 +3,9 @@ jobs:
     displayName: 'Publish code coverage'
     pool:
       vmImage: '$(Vm.Image)'
+    dependsOn:
+      - UnitTests
+      - IntegrationTests
     steps:
       - task: DownloadPipelineArtifact@2
         displayName: 'Download build artifacts'
