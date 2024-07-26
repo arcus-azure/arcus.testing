@@ -47,14 +47,11 @@ jobs:
       - task: qetza.replacetokens.replacetokens-task.replacetokens@6
         displayName: 'Replace integration test tokens'
         inputs:
-          rootDirectory: 'src/$(Project).Tests.Integration/'
-          targetFiles: 'appsettings.json'
-          encoding: 'auto'
-          missingVarLog: 'Error'
-          verbosity: 'detailed'
-          writeBOM: true
-          actionOnMissing: 'fail'
-          keepToken: false
+          root: 'src/$(Project).Tests.Integration/'
+          sources: 'appsettings.json'
+          missingVarLog: 'error'
+          logLevel: 'debug'
+          addBOM: true
           tokenPrefix: '#{'
           tokenSuffix: '}#'
 
