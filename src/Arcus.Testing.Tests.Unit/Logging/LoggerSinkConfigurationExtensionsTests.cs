@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using Arcus.Testing.Tests.Unit.Logging.Fixture;
 using Bogus;
 using Serilog;
 using Serilog.Configuration;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
-    public class LoggerSinkConfigurationExtensionsTests : ITestOutputHelper
+    public class LoggerSinkConfigurationExtensionsTests
     {
-        private readonly ICollection<string> _messages = new Collection<string>();
         private static readonly Faker Bogus = new();
 
         [Fact]
@@ -20,15 +16,16 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var config = new LoggerConfiguration();
+            var testOutput = new InMemoryTestOutputWriter();
             
             // Act
-            config.WriteTo.XunitTestLogging(this);
+            config.WriteTo.XunitTestLogging(testOutput);
 
             // Assert
             ILogger logger = config.CreateLogger();
             string expected = Bogus.Lorem.Sentence();
             logger.Information(expected);
-            Assert.Single(_messages, expected);
+            Assert.Single(testOutput.Contents, expected);
         }
 
         [Fact]
@@ -74,16 +71,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => config.WriteTo.XunitTestLogging(outputWriter: null));
-        }
-
-        public void WriteLine(string message)
-        {
-            _messages.Add(message);
-        }
-
-        public void WriteLine(string format, params object[] args)
-        {
-            _messages.Add(string.Format(format, args));
         }
     }
 }

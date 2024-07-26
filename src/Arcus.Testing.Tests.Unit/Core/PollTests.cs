@@ -157,7 +157,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         private static bool AlwaysTrue(object result) => true;
         private static bool AlwaysFalse(object result) => false;
         private static Task AlwaysFailsAsync() => throw new TestPollException();
-        private static void AlwaysSucceeds() { }
+        private static void AlwaysSucceeds() { /*Nothing here: explicitly ignore*/ }
         private object AlwaysSucceedsResult() => _expectedResult;
         private static Task<object> AlwaysFailsResultAsync() => throw new TestPollException();
         private static Task AlwaysSucceedsAsync() => Task.CompletedTask;
