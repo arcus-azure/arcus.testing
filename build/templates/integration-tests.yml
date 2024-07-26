@@ -60,7 +60,7 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Integration.csproj'
-          arguments: '--configuration $(Build.Configuration)'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$(Project).Tests.Integration\coverlet.runsettings'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
