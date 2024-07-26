@@ -5,7 +5,7 @@
     <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides core capabilities during Arcus testing</Description>
+    <Description>Provides testing capabilities during testing of Azure DataFactory integrations</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
@@ -13,8 +13,8 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>Git</RepositoryType>
-    <PackageTags>Azure;Testing;Core</PackageTags>
-    <PackageId>Arcus.Testing.Core</PackageId>
+    <PackageTags>Azure;Testing;DataFactory</PackageTags>
+    <PackageId>Arcus.Testing.DataFactory</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -27,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[8.0.0,9.0.0)" />
+    <PackageReference Include="Azure.Identity" Version="[1.12.0,2.0.0)" />
+    <PackageReference Include="Azure.ResourceManager.DataFactory" Version="[1.2.0,2.0.0)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[8.0.0,9.0.0)" />
-    <PackageReference Include="Polly" Version="8.3.1" />
   </ItemGroup>
 
 </Project>
