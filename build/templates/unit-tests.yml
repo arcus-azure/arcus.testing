@@ -16,8 +16,23 @@ jobs:
           packageType: 'sdk'
           version: '$(DotNet.Sdk.VersionBC)'
 
-      - template: test/run-unit-tests.yml@templates
-        parameters:
-          dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-          projectName: '$(Project).Tests.Unit'
+      - task: UseDotNet@2
+        displayName: 'Import .NET Core SDK ($(DotNet.Sdk.Version))'
+        inputs:
+          packageType: 'sdk'
+          version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+
+      - task: DotNetCoreCLI@2
+        displayName: 'Run unit tests'
+        inputs:
+          command: test
+          projects: 'src/**/$(Project).Tests.Unit.csproj'
+          arguments: '--configuration $(Build.Configuration) -p:coverletOutput=TestResults/ -p:CollectCoverage=true -p:CoverletOutputFormat=\"lcov\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\"'
+          nobuild: true
+          publishTestResults: true
+
+      - task: PublishCodeCoverageResults@2
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: src/**/$(Project).Tests.Unit/TestResults/coverage.info
