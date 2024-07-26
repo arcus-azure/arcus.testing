@@ -28,7 +28,7 @@ jobs:
         inputs:
           command: test
           projects: 'src/**/$(Project).Tests.Unit.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$($Project).Tests.Unit\coverlet.runsettings'
+          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$(Project).Tests.Unit\coverlet.runsettings'
           nobuild: true
           publishTestResults: true
           mergeTestResults: true
