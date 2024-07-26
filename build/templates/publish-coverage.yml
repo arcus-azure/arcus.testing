@@ -8,12 +8,16 @@ jobs:
       - IntegrationTests
     steps:
       - task: DownloadPipelineArtifact@2
-        displayName: 'Download build artifacts'
+        displayName: 'Download unit tests artifacts'
         inputs:
-          artifact: 'Build'
+          artifact: 'Coverage-Unit'
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download integration artifacts'
+        inputs:
+          artifact: 'Coverage-Integration'
       - task: PublishCodeCoverageResults@2
         displayName: 'Publish code coverage report'
         inputs:
           codeCoverageTool: 'Cobertura'
-          summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+          summaryFileLocation: 'src/**/coverage.cobertura.xml'
           failIfCoverageEmpty: true

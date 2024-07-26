@@ -31,4 +31,10 @@ jobs:
           arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --settings .\src\$(Project).Tests.Unit\coverlet.runsettings'
           nobuild: true
           publishTestResults: true
-          mergeTestResults: true
+          mergeTestResults: 
+          
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: Coverage-Unit'
+        inputs:
+          ArtifactName: 'Coverage-Unit'
+          PathtoPublish: '$(Build.SourcesDirectory)/src/**/coverage.cobertura.xml'
