@@ -32,7 +32,7 @@ jobs:
       run: dotnet test --framework net8.0 -p:coverletOutput=TestResults/ -p:CollectCoverage=true -p:CoverletOutputFormat=\"lcov\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\" src/Arcus.Testing.Tests.Unit/Arcus.Testing.Tests.Unit.csproj
 
     - name: Coverlet coverage integration test
-      run: dotnet test --framework net8.0 -p:coverletOutput=TestResults/ -p:CollectCoverage=true -p:CoverletOutputFormat=\"lcov\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\" src/Arcus.Testing.Tests.Integration/Arcus.Testing.Tests.Integrtion.csproj
+      run: dotnet test --framework net8.0 -p:coverletOutput=TestResults/ -p:CollectCoverage=true -p:CoverletOutputFormat=\"lcov\" -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Testing.Tests.*]*\" src/Arcus.Testing.Tests.Integration/Arcus.Testing.Tests.Integration.csproj
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2
