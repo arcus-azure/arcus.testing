@@ -38,6 +38,6 @@ jobs:
       uses: coverallsapp/github-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }} 
-        files: /home/runner/work/arcus.testing/arcus.testing/src/Arcus.Testing.Tests.Unit/TestResults/coverage.net8.0.info /home/runner/work/arcus.testing/arcus.testing/src/Arcus.Testing.Tests.Integration/TestResults/coverage.net8.0.info
+        files: /home/runner/work/arcus.testing/arcus.testing/src/Arcus.Testing.Tests.Unit/TestResults/coverage.net8.0.info /home/runner/work/arcus.testing/arcus.testing/src/Arcus.Testing.Tests.Integration/TestResults/coverage.info
         format: lcov
         debug: true
