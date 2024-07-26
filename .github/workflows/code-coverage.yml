@@ -33,3 +33,6 @@ jobs:
 
     - name: Coveralls
       uses: coverallsapp/github-action@v2
+      with:
+        file: '*.coverage.json'
+        format: cobertura
