@@ -102,7 +102,7 @@ jobs:
           echo $env:GITHUB_TOKEN | gh auth login --with-token
           
           # Check for existing code coverage comment
-          $prNumber = ${{ github.event.pull_request.number }}
+          $prNumber = $env:System.PullRequest.PullRequestNumber
           $existingComment = gh pr view $prNumber --json comments --jq '.comments[].body' | Select-String -Pattern 'Delta Summary'
           
           $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/Summary.md" -Raw
@@ -117,4 +117,5 @@ jobs:
         displayName: 'Post Code Coverage Report on PR'
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
+          System.PullRequest.PullRequestNumber: $(System.PullRequest.PullRequestNumber)
     
