@@ -80,15 +80,28 @@ jobs:
         inputs:
           reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary;MarkdownSummaryGithub
           publishCodeCoverageResults: true
 
-      # - task: BuildQualityChecks@8
-      #   displayName: 'Check code quality'
-      #   inputs:
-      #     checkCoverage: true
-      #     coverageFailOption: fixed
-      #     coverageThreshold: 80
+      # - powershell: |
+      #     # Parse the coverage results
+      #     [xml]$coverageReport = Get-Content "$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml"
+      #     $lineCoverage = [math]::Round(($coverageReport.coverage.packages.package.classes.class.lines.line | Where-Object { $_.hits -gt 0 }).Count / $coverageReport.coverage.packages.package.classes.class.lines.line.Count * 100, 2)
+          
+      #     Write-Output "Line Coverage: $lineCoverage%"
+          
+      #     # Define the coverage threshold
+      #     $coverageThreshold = 80
+          
+      #     # Check if the coverage meets the threshold
+      #     if ($lineCoverage -lt $coverageThreshold) {
+      #         Write-Error "Code coverage ($lineCoverage%) is below the threshold ($coverageThreshold%). Failing the pipeline."
+      #         exit 1
+      #     } else {
+      #         Write-Output "Code coverage ($lineCoverage%) meets the threshold ($coverageThreshold%)."
+      #     }
+      #   displayName: 'Check code coverage threshold'
+
 
       - powershell: |
           # Check if GitHub CLI is installed
@@ -105,7 +118,12 @@ jobs:
           $prNumber = $env:System.PullRequest.PullRequestNumber
           $existingComment = gh pr view $prNumber --json comments --jq '.comments[].body' | Select-String -Pattern 'Delta Summary'
           
-          $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/Summary.md" -Raw
+          $coverage_report = ""
+          if (Test-Path "$(Build.SourcesDirectory)/coveragereport/DeltaSummary.md") {
+            $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/DeltaSummary.md" -Raw
+          } else {
+            $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/SummaryGitHub.md" -Raw
+          }
 
           # Post or update the comment with the code coverage report
           if (-not $existingComment) {
