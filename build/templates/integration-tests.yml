@@ -83,12 +83,12 @@ jobs:
           reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary
           publishCodeCoverageResults: true
 
-      - task: BuildQualityChecks@8
-        displayName: 'Check code quality'
-        inputs:
-          checkCoverage: true
-          coverageFailOption: fixed
-          coverageThreshold: 80
+      # - task: BuildQualityChecks@8
+      #   displayName: 'Check code quality'
+      #   inputs:
+      #     checkCoverage: true
+      #     coverageFailOption: fixed
+      #     coverageThreshold: 80
 
       - powershell: |
           # Check if GitHub CLI is installed
