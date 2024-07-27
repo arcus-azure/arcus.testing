@@ -11,24 +11,25 @@ jobs:
         displayName: 'Download coverage unit artifacts'
         inputs:
           artifact: 'Coverage-Unit'
-          path: '$(Build.SourcesDirectory)/coverage-unit'
+          path: '$(Build.SourcesDirectory)/TestResults'
 
       - task: DownloadPipelineArtifact@2
         displayName: 'Download coverage integration artifacts'
         inputs:
           artifact: 'Coverage-Integration'
-          path: '$(Build.SourcesDirectory)/coverage-integration'
+          path: '$(Build.SourcesDirectory)/TestResults'
 
-      - task: PublishCodeCoverageResults@2
-        displayName: 'Publish code coverage report'
+      - task: reportgenerator@5
+        displayName: ReportGenerator
         inputs:
-          codeCoverageTool: 'Cobertura'
-          summaryFileLocation: 'src/**/coverage.cobertura.xml'
-          failIfCoverageEmpty: true
+          reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
+          targetdir: coveragereport
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark
+          publishCodeCoverageResults: true
 
-     - task: BuildQualityChecks@8
-       displayName: 'Check code quality'
-       inputs:
-         checkCoverage: true
-         coverageFailOption: fixed
-         coverageThreshold: 70
+      - task: BuildQualityChecks@8
+        displayName: 'Check code quality'
+        inputs:
+          checkCoverage: true
+          coverageFailOption: fixed
+          coverageThreshold: 70
