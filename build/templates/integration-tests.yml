@@ -80,5 +80,42 @@ jobs:
         inputs:
           reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary
           publishCodeCoverageResults: true
+
+      - task: BuildQualityChecks@8
+        displayName: 'Check code quality'
+        inputs:
+          checkCoverage: true
+          coverageFailOption: fixed
+          coverageThreshold: 80
+
+      - powershell: |
+          # Check if GitHub CLI is installed
+          if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+              # Download and install GitHub CLI
+              Invoke-WebRequest -Uri "https://github.com/cli/cli/releases/latest/download/gh_2.0.0_windows_amd64.msi" -OutFile "$env:TEMP\gh.msi"
+              Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\gh.msi /quiet /norestart" -Wait
+          }
+          
+          # Authenticate with GitHub CLI
+          $env:GITHUB_TOKEN = "${{ secrets.GITHUB_TOKEN }}"
+          echo $env:GITHUB_TOKEN | gh auth login --with-token
+          
+          # Check for existing code coverage comment
+          $prNumber = ${{ github.event.pull_request.number }}
+          $existingComment = gh pr view $prNumber --json comments --jq '.comments[].body' | Select-String -Pattern 'Delta Summary'
+          
+          $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/Summary.md" -Raw
+
+          # Post or update the comment with the code coverage report
+          if (-not $existingComment) {
+              gh pr comment $prNumber --body $coverage_report
+          } else {
+              $commentId = gh pr view $prNumber --json comments --jq '.comments[] | select(.body | contains("Delta Summary")) | .id'
+              gh pr comment update $commentId --body $coverage_report
+          }
+        displayName: 'Post Code Coverage Report on PR'
+        env:
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+    
