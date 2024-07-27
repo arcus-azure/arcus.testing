@@ -25,3 +25,10 @@ jobs:
           codeCoverageTool: 'Cobertura'
           summaryFileLocation: 'src/**/coverage.cobertura.xml'
           failIfCoverageEmpty: true
+
+     - task: BuildQualityChecks@8
+       displayName: 'Check code quality'
+       inputs:
+         checkCoverage: true
+         coverageFailOption: fixed
+         coverageThreshold: 70
