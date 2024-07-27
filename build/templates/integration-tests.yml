@@ -99,7 +99,6 @@ jobs:
           }
           
           # Authenticate with GitHub CLI
-          $env:GITHUB_TOKEN = "${{ secrets.GITHUB_TOKEN }}"
           echo $env:GITHUB_TOKEN | gh auth login --with-token
           
           # Check for existing code coverage comment
