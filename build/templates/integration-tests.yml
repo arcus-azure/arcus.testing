@@ -86,7 +86,7 @@ jobs:
       - powershell: |
           Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
           Import-Module -Name Arcus.Scripting.DevOps
-          $content = Get-Content -Path 'coveragereport/SummaryGitHub.md' -Raw
+          $content = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
           Set-AzDevOpsVariable -Name 'SummaryGitHub' -Value $content
 
       - task: GitHubComment@0
