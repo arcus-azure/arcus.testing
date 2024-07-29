@@ -1,0 +1,35 @@
+name: Publish Azure DevOps code coverage on GitHub PR
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  publish:
+    name: Publish Azure DevOps code coverage
+    runs-on: ubuntu-latest
+    
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: write
+    
+    strategy:
+      fail-fast: true
+      matrix:
+        language: [ 'csharp' ]
+
+    steps:
+      - name: Download AzureDevOps code coverage summary
+        uses: git-for-windows/get-azure-pipelines-artifact@v0
+        with:
+          repository: 'codit/arcus'
+          definitionId: 804
+          artifact: 'CodeCoverageSummaryGitHub'
+
+      - name: Add coverage PR comment
+        uses: marocchina/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: coveragereport/SummaryGitHub.md

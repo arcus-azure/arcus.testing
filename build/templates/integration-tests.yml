@@ -83,57 +83,10 @@ jobs:
           reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary;MarkdownSummaryGithub
           publishCodeCoverageResults: true
 
-      # - powershell: |
-      #     # Parse the coverage results
-      #     [xml]$coverageReport = Get-Content "$(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml"
-      #     $lineCoverage = [math]::Round(($coverageReport.coverage.packages.package.classes.class.lines.line | Where-Object { $_.hits -gt 0 }).Count / $coverageReport.coverage.packages.package.classes.class.lines.line.Count * 100, 2)
-          
-      #     Write-Output "Line Coverage: $lineCoverage%"
-          
-      #     # Define the coverage threshold
-      #     $coverageThreshold = 80
-          
-      #     # Check if the coverage meets the threshold
-      #     if ($lineCoverage -lt $coverageThreshold) {
-      #         Write-Error "Code coverage ($lineCoverage%) is below the threshold ($coverageThreshold%). Failing the pipeline."
-      #         exit 1
-      #     } else {
-      #         Write-Output "Code coverage ($lineCoverage%) meets the threshold ($coverageThreshold%)."
-      #     }
-      #   displayName: 'Check code coverage threshold'
-
-
-      - powershell: |
-          # Check if GitHub CLI is installed
-          if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-              # Download and install GitHub CLI
-              Invoke-WebRequest -Uri "https://github.com/cli/cli/releases/latest/download/gh_2.0.0_windows_amd64.msi" -OutFile "$env:TEMP\gh.msi"
-              Start-Process msiexec.exe -ArgumentList "/i $env:TEMP\gh.msi /quiet /norestart" -Wait
-          }
-          
-          # Authenticate with GitHub CLI
-          echo $env:GITHUB_TOKEN | gh auth login --with-token
-          
-          # Check for existing code coverage comment
-          $prNumber = $env:System.PullRequest.PullRequestNumber
-          $existingComment = gh pr view $prNumber --json comments --jq '.comments[].body' | Select-String -Pattern 'Delta Summary'
-          
-          $coverage_report = ""
-          if (Test-Path "$(Build.SourcesDirectory)/coveragereport/DeltaSummary.md") {
-            $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/DeltaSummary.md" -Raw
-          } else {
-            $coverage_report = Get-Content "$(Build.SourcesDirectory)/coveragereport/SummaryGitHub.md" -Raw
-          }
-
-          # Post or update the comment with the code coverage report
-          if (-not $existingComment) {
-              gh pr comment $prNumber --body $coverage_report
-          } else {
-              $commentId = gh pr view $prNumber --json comments --jq '.comments[] | select(.body | contains("Delta Summary")) | .id'
-              gh pr comment update $commentId --body $coverage_report
-          }
-        displayName: 'Post Code Coverage Report on PR'
-        env:
-          GITHUB_TOKEN: $(GITHUB_TOKEN)
-          System.PullRequest.PullRequestNumber: $(System.PullRequest.PullRequestNumber)
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish coverage report'
+        inputs:
+          pathtoPublish: 'coveragereport/SummaryGitHub.md'
+          artifactName: 'CodeCoverageSummaryGitHub'
+          publishLocation: 'Container'
     
