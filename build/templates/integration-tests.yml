@@ -90,15 +90,17 @@ jobs:
           
           $content = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
 
-          # Verify installation
-          if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
-            Write-Error "GitHub CLI (gh) installation failed."
-            exit 1
-          }
-
           gh auth login --with-token $env:GITHUB_TOKEN
           gh repo view
-          gh pr comment $env:PR_NUMBER --body $content --edit-last
+
+          $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
+          $commentExists = $comments | Where-Object { $_ -like "*Cobertura*" }
+
+          if ($commentExists) {
+            gh pr comment $env:PR_NUMBER --body $content --edit-last
+          } else {
+            gh pr comment $env:PR_NUMBER --body $content
+          }
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
           PR_NUMBER: $(System.PullRequest.PullRequestNumber)
