@@ -28,7 +28,7 @@ jobs:
           artifact: 'CodeCoverageSummaryGitHub'
 
       - name: Add coverage PR comment
-        uses: marocchina/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v2
         if: github.event_name == 'pull_request'
         with:
           recreate: true
