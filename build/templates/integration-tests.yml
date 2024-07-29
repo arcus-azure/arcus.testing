@@ -83,10 +83,16 @@ jobs:
           reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary;MarkdownSummaryGithub
           publishCodeCoverageResults: true
 
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish coverage report'
+      - powershell: |
+          Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
+          Import-Module -Name Arcus.Scripting.DevOps
+          $content = Get-Content -Path 'coveragereport/SummaryGitHub.md' -Raw
+          Set-AzDevOpsVariable -Name 'SummaryGitHub' -Value $content
+
+      - task: GitHubComment@0
+        displayName: 'Add code coverage comment to PR'
         inputs:
-          pathtoPublish: 'coveragereport/SummaryGitHub.md'
-          artifactName: 'CodeCoverageSummaryGitHub'
-          publishLocation: 'Container'
-    
+          gitHubConnection: 'arcus-azure'
+          repository: '$(Build.Repository.Name)'
+          id: '$(System.PullRequest.PullRequestNumber)'
+          comment: '$(SummaryGitHub)'
