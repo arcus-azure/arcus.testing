@@ -89,7 +89,7 @@ jobs:
           Import-Module -Name Arcus.Scripting.DevOps
           
           $content = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
-          
+
           # Verify installation
           if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
             Write-Error "GitHub CLI (gh) installation failed."
@@ -101,4 +101,4 @@ jobs:
           gh pr comment $env:PR_NUMBER --body $content --edit-last
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
-          PR_NUMBER: $(System.PullRequest.PullRequestId)
+          PR_NUMBER: $(System.PullRequest.PullRequestNumber)
