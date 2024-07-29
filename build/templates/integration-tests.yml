@@ -80,22 +80,18 @@ jobs:
         inputs:
           reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownDeltaSummary;MarkdownSummaryGithub
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownAssembliesSummary
           publishCodeCoverageResults: true
 
       - script: sudo apt install gh
       - powershell: |
-          Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
-          Import-Module -Name Arcus.Scripting.DevOps
-          
-          $content = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
-
           gh auth login --with-token $env:GITHUB_TOKEN
           gh repo view
 
           $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
           $commentExists = $comments | Where-Object { $_ -like "*Cobertura*" }
 
+          $content = Get-Content -Path './coveragereport/Summary.md' -Raw
           if ($commentExists) {
             gh pr comment $env:PR_NUMBER --body $content --edit-last
           } else {
