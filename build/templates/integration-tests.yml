@@ -80,7 +80,7 @@ jobs:
         inputs:
           reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownAssembliesSummary
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownSummaryGithub
           publishCodeCoverageResults: true
 
       - script: sudo apt install gh
@@ -89,9 +89,11 @@ jobs:
           gh repo view
 
           $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
-          $commentExists = $comments | Where-Object { $_ -like "*Cobertura*" }
+          $commentExists = $comments | Where-Object { $_ -like "*Code coverage summary*" }
 
-          $content = Get-Content -Path './coveragereport/Summary.md' -Raw
+          $content = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
+          $content = $content[0..($content.IndexOf('## Coverage'))]
+
           if ($commentExists) {
             gh pr comment $env:PR_NUMBER --body $content --edit-last
           } else {
