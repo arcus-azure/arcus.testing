@@ -37,7 +37,7 @@ jobs:
 
       - task: PublishTestResults@2
         inputs:
-          testResultsFormat: 'XUnit'
+          testResultsFormat: 'VSTest'
           testResultsFiles: '$(Pipeline.Workspace)/*.trx'
 
       # - task: CopyFiles@2
