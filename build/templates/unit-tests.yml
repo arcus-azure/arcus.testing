@@ -34,6 +34,7 @@ jobs:
       #     mergeTestResults: true
       - script: |
           dotnet test src/**/$(Project).Tests.Unit.csproj --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
+        displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
         displayName: 'Publish unit test results'
@@ -48,7 +49,7 @@ jobs:
       #     targetFolder: '$(Pipeline.Workspace)/coverage-unit'
 
       - task: PublishPipelineArtifact@0
-        displayName: 'Publish integration test coverage artifacts'
+        displayName: 'Publish code coverage artifacts'
         inputs:
           targetPath: '$(Pipeline.Workspace)'
           artifactName: Coverage-Unit
