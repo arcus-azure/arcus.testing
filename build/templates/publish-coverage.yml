@@ -54,10 +54,21 @@ jobs:
             Write-Host "Branch coverage not found"
           }
 
-          $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
-          $commentExists = $comments | Where-Object { $_ -like "*Code coverage*" -and -like "*summary*" }
+          $lineCoverageValue = [double]($lineCoverage -replace '%', '')
+          $branchCoverageValue = [double]($branchCoverage -replace '%', '')
           $buildId = $env:BUILD_BUILDID
-          $content = @"## 🧪 [Code coverage](https://dev.azure.com/codit/Arcus/_build/results?buildId=$buildId&view=codecoverage-tab) summary
+          $reportUrl = "https://dev.azure.com/codit/Arcus/_build/results?buildId=$buildId&view=codecoverage-tab"
+          
+          if ($lineCoverageValue -gt 80 -and $branchCoverage -gt 80) {
+            $motivationalMessage = "Great job! Your code coverage is higher than my caffeine levels! ☕"
+          } else {
+            $motivationalMessage = "Your code coverage is not fully reaching 80% yet. Please inspect [the report]($reportUrl) to find possible improvements and before you know it, your code coverage will reach the stars! 🚀"
+          }
+
+          $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
+          $commentExists = $comments | Where-Object { $_ -like "*Code coverage*" -and $_ -like "*summary*" }
+          
+          $content = @"## 🧪 [Code coverage]($reportUrl) summary
           Line coverage: **$lineCoverage**
           Branch coverage: **$branchCoverage**"@
 
