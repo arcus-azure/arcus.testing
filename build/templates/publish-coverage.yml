@@ -66,7 +66,7 @@ jobs:
             $motivationalMessage = @"
             😟 Your code coverage is not fully reaching **80%** yet. 
             Please inspect [the report]($reportUrl) to find possible improvements and before you know it, your code coverage will reach the stars! 🚀
-            "@
+          "@
           }
 
           if ($lineCoverageValue -ge $minCoverage) { $lineCoverageBadge = "🟢" } else { $lineCoverageBadge = "🔴" }
