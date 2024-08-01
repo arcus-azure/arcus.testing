@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Arcus.Testing.Tests.Unit
@@ -18,6 +19,7 @@ namespace Arcus.Testing.Tests.Unit
             yield return new object[] {""};
             yield return new object[] {" "};
             yield return new object[] {"        "};
+            yield return new object[] { Environment.NewLine };
         }
 
         /// <summary>

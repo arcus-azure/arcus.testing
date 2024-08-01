@@ -221,6 +221,15 @@ namespace Arcus.Testing.Tests.Unit.Core
         }
 
         [Fact]
+        public async Task PollUntilAvailable_WithoutTarget_Fails()
+        {
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object>(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object, AccessViolationException>(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<InvalidCastException>(null));
+        }
+
+        [Fact]
         public void Set_NegativeInterval_Fails()
         {
             // Arrange

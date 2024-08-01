@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -38,6 +39,12 @@ namespace Arcus.Testing.Tests.Unit.Logging
 
             // Assert
             Assert.Contains(spyWriter.Messages, msg => msg.Contains(message));
+        }
+
+        [Fact]
+        public void Create_WithoutWriter_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new XunitTestLogger(testOutput: null));
         }
 
         private class SpyTestWriter : ITestOutputHelper
