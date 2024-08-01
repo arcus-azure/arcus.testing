@@ -69,8 +69,7 @@ jobs:
           dotnet test src/**/$(Project).Tests.Integration.csproj \
             --no-build --configuration $(Build.Configuration) \
             --collect:"XPlat Code Coverage" \
-            --logger trx --results-directory $(Pipeline.Workspace) \
-            /
+            --logger trx --results-directory $(Pipeline.Workspace)
         displayName: 'Run integration tests'
 
       - task: PublishTestResults@2
