@@ -68,9 +68,13 @@ jobs:
           $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
           $commentExists = $comments | Where-Object { $_ -like "*Code coverage*" -and $_ -like "*summary*" }
           
-          $content = @"## 🧪 [Code coverage]($reportUrl) summary
+          $content = @"
+          ## 🧪 [Code coverage]($reportUrl) summary
           Line coverage: **$lineCoverage**
-          Branch coverage: **$branchCoverage**"@
+          Branch coverage: **$branchCoverage**
+
+          $motivationalMessage
+          "@
 
           if ($commentExists) {
             gh pr comment $env:PR_NUMBER --body $content --edit-last
