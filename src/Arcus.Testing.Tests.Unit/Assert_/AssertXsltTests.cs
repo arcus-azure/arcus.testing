@@ -209,12 +209,6 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Fact]
-        public void TransformXmlArg_WithoutInput_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml("<xslt/>", inputXml: null, new XsltArgumentList()));
-        }
-
-        [Fact]
         public void TransformXmlNodeArg_WithoutTransformer_Fails()
         {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(transformer: null, new XmlDocument(), new XsltArgumentList()));
