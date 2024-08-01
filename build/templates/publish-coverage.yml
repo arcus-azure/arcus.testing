@@ -26,3 +26,43 @@ jobs:
           targetdir: coveragereport
           reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownSummaryGithub
           publishCodeCoverageResults: true
+
+      - script: sudo apt install gh
+        displayName: 'Install GitHub CLI'
+
+      - powershell: |
+          gh auth login --with-token $(GITHUB_TOKEN)
+          gh repo view
+          
+          $summary = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
+          $lineCoveragePattern = "\*\*Line coverage:\*\*\s*\|\s*(\d+\.\d+%)"
+          $branchCoveragePattern = "\*\*Branch coverage:\*\*\s*\|\s*(\d+\.\d+%)"
+
+          $lineCoverage = "N/A"
+          if ($summary -match $lineCoveragePattern) {
+            $lineCoverage = $matches[1]
+            Write-Host "Line coverage: $lineCoverage"
+          } else {
+            Write-Host "Line coverage not found"
+          }
+
+          $branchCoverage = "N/A"
+          if ($summary -match $branchCoveragePattern) {
+            $branchCoverage = $matches[1]
+            Write-Host "Branch coverage: $branchCoverage"
+          } else {
+            Write-Host "Branch coverage not found"
+          }
+
+          $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
+          $commentExists = $comments | Where-Object { $_ -like "*Code coverage summary*" }
+          $content = "## 🧪 Code coverage summary\n\nLine coverage: $lineCoverage\nBranch coverage: $branchCoverage"
+
+          if ($commentExists) {
+            gh pr comment $env:PR_NUMBER --body $content --edit-last
+          } else {
+            gh pr comment $env:PR_NUMBER --body $content
+          }
+        env:
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+          PR_NUMBER: $(System.PullRequest.PullRequestNumber)
