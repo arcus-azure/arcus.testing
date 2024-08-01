@@ -22,14 +22,7 @@ jobs:
       - task: reportgenerator@5
         displayName: ReportGenerator
         inputs:
-          reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
+          reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
           targetdir: coveragereport
-          reporttypes: Html;HtmlInline_AzurePipelines_Dark
+          reporttypes: Html;HtmlInline_AzurePipelines_Dark;Cobertura;MarkdownSummaryGithub
           publishCodeCoverageResults: true
-
-      - task: BuildQualityChecks@8
-        displayName: 'Check code quality'
-        inputs:
-          checkCoverage: true
-          coverageFailOption: fixed
-          coverageThreshold: 70

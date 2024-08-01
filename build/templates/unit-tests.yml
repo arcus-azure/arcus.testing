@@ -31,8 +31,8 @@ jobs:
           arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
           nobuild: true
           publishTestResults: true
-          mergeTestResults: 
-          
+          mergeTestResults: true
+
       - task: CopyFiles@2
         displayName: 'Copy build artifacts'
         inputs:
