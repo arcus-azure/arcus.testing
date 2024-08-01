@@ -55,8 +55,11 @@ jobs:
           }
 
           $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
-          $commentExists = $comments | Where-Object { $_ -like "*Code coverage summary*" }
-          $content = "## 🧪 Code coverage summary\n\nLine coverage: $lineCoverage\nBranch coverage: $branchCoverage"
+          $commentExists = $comments | Where-Object { $_ -like "*Code coverage*" -and -like "*summary*" }
+          $buildId = $env:BUILD_BUILDID
+          $content = @"## 🧪 [Code coverage](https://dev.azure.com/codit/Arcus/_build/results?buildId=$buildId&view=codecoverage-tab) summary
+          Line coverage: **$lineCoverage**
+          Branch coverage: **$branchCoverage**"@
 
           if ($commentExists) {
             gh pr comment $env:PR_NUMBER --body $content --edit-last
