@@ -128,7 +128,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
-        public void AddMSTestTestLogging_WithoutOutputWriter_Fails()
+        public void AddMSTestTestLogging_WithoutTestContext_Fails()
         {
             // Arrange
             var config = new LoggerConfiguration();
@@ -136,6 +136,12 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => config.WriteTo.MSTestLogging(testContext: null));
+        }
+
+        [Fact]
+        public void MsTestLogSink_WithoutTestContext_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new MSTestLogEventSink(context: null));
         }
 
         public void WriteLine(string message)

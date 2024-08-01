@@ -20,7 +20,7 @@ jobs:
           path: '$(Build.SourcesDirectory)/TestResults'
 
       - task: reportgenerator@5
-        displayName: ReportGenerator
+        displayName: 'Generate code coverage report'
         inputs:
           reports: '$(Build.SourcesDirectory)/TestResults/**/coverage.cobertura.xml'
           targetdir: coveragereport
@@ -95,3 +95,4 @@ jobs:
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
           PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        displayName: 'Publish code coverage summary on GitHub'
