@@ -57,6 +57,58 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
+        public void AddNUnitTestLogging_WithError_LogsMessage()
+        {
+            // Arrange
+            var mockWriter = new MockTestWriter();
+            var builder = new HostBuilder();
+
+            // Act
+            builder.ConfigureLogging(logging => logging.AddNUnitTestLogging(TextWriter.Null, mockWriter));
+
+            // Assert
+            using IHost host = builder.Build();
+            var logger = host.Services.GetRequiredService<ILogger<ILoggerBuilderExtensionsTests>>();
+
+            string expected = Bogus.Lorem.Sentence();
+            logger.LogError(expected);
+            mockWriter.VerifyWritten(expected);
+        }
+
+        [Fact]
+        public void AddNUnitTestLogging_WithoutOutputWriter_Fails()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            builder.ConfigureLogging(logging => logging.AddNUnitTestLogging(outputWriter: null));
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.Build());
+        }
+
+        [Fact]
+        public void AddNUnitTestLoggingWithError_WithoutOutputWriter_Fails()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            builder.ConfigureLogging(logging => logging.AddNUnitTestLogging(outputWriter: null, TextWriter.Null));
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.Build());
+        }
+
+        [Fact]
+        public void AddNUnitTestLoggingWithError_WithoutErrorWriter_Fails()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            builder.ConfigureLogging(logging => logging.AddNUnitTestLogging(TextWriter.Null, errorWriter: null));
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.Build());
+        }
+
+        [Fact]
         public void AddMSTestLogging_WithMessage_LogsMessage()
         {
             // Arrange
@@ -73,6 +125,17 @@ namespace Arcus.Testing.Tests.Unit.Logging
             string expected = Bogus.Lorem.Sentence();
             logger.LogInformation(expected);
             mockContext.VerifyWritten(expected);
+        }
+
+        [Fact]
+        public void AddMSTestLogging_WithoutContext_Fails()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            builder.ConfigureLogging(logging => logging.AddMSTestLogging(testContext: null));
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.Build());
         }
 
         [Fact]

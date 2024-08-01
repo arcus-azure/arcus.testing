@@ -35,8 +35,10 @@ jobs:
           gh repo view
           
           $summary = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
-          $lineCoveragePattern = "\*\*Line coverage:\*\*\s*\|\s*(\d+\.\d+%)"
-          $branchCoveragePattern = "\*\*Branch coverage:\*\*\s*\|\s*(\d+\.\d+%)"
+          Write-Host: "Summary: $summary"
+
+          $lineCoveragePattern = "\*\*Line coverage:\*\*\s*\|\s*(\d+(\.\d+)?%)"
+          $branchCoveragePattern = "\*\*Branch coverage:\*\*\s*\|\s*(\d+(\.\d)?+%)"
 
           $lineCoverage = "N/A"
           if ($summary -match $lineCoveragePattern) {
