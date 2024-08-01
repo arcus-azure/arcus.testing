@@ -35,7 +35,7 @@ jobs:
           gh repo view
           
           $summary = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
-          Write-Host: "Summary: $summary"
+          Write-Host "Summary: $summary"
 
           $lineCoveragePattern = "\*\*Line coverage:\*\*\s*\|\s*(\d+(\.\d+)?%)"
           $branchCoveragePattern = "\*\*Branch coverage:\*\*\s*\|\s*(\d+(\.\d)?+%)"
