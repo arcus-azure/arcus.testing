@@ -144,6 +144,12 @@ namespace Arcus.Testing.Tests.Unit.Logging
             Assert.ThrowsAny<ArgumentException>(() => new MSTestLogEventSink(context: null));
         }
 
+        [Fact]
+        public void XunitLogSink_WithoutOutputWriter_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new XunitLogEventSink(outputWriter: null));
+        }
+
         public void WriteLine(string message)
         {
             _messages.Add(message);

@@ -223,10 +223,13 @@ namespace Arcus.Testing.Tests.Unit.Core
         [Fact]
         public async Task PollUntilAvailable_WithoutTarget_Fails()
         {
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object>(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object>(getTargetWithResultAsync: null));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object, AccessViolationException>(null));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync(null));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<InvalidCastException>(null));
+
+            Assert.ThrowsAny<ArgumentException>(() => Poll.Target<object>(getTargetWithoutResultSync: null));
+            Assert.ThrowsAny<ArgumentException>(() => Poll.Target<object, AccessViolationException>(getTargetWithResultSync: null));
         }
 
         [Fact]

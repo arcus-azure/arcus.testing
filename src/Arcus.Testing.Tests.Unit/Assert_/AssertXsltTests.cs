@@ -177,47 +177,27 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Contains(nameof(AssertXslt), exception.Message);
             Assert.Contains("XSLT contents", exception.Message);
         }
-
+        
         [Fact]
-        public void TransformXml_WithoutTransformer_Fails()
+        public void TransformXml_WithoutArgs_Fails()
         {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(xsltTransformer: null, inputXml: "<xml/>"));
-        }
-
-        [Fact]
-        public void TransformXml_WithoutInput_Fails()
-        {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml("<xslt/>", inputXml: null));
-        }
-
-        [Fact]
-        public void TransformXmlNode_WithoutTransformer_Fails()
-        {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(transformer: null, new XmlDocument()));
-        }
-
-        [Fact]
-        public void TransformXmlNode_WithoutInput_Fails()
-        {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(new XslCompiledTransform(), input: null));
-        }
 
-        [Fact]
-        public void TransformXmlArg_WithoutTransformer_Fails()
-        {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(xsltTransformer: null, inputXml: "<xml/>", new XsltArgumentList()));
-        }
-
-        [Fact]
-        public void TransformXmlNodeArg_WithoutTransformer_Fails()
-        {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(transformer: null, new XmlDocument(), new XsltArgumentList()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(new XslCompiledTransform(), input: null, new XsltArgumentList()));
         }
 
         [Fact]
-        public void TransformXmlNodeArg_WithoutInput_Fails()
+        public void TransformJson_WithoutArgs_Fails()
         {
-            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToXml(new XslCompiledTransform(), input: null, new XsltArgumentList()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(xsltTransformer: null, inputXml: "<xml/>"));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(xsltTransformer: null, inputXml: "<xml/>", new XsltArgumentList()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: new XmlDocument()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: new XmlDocument(), new XsltArgumentList()));
         }
     }
 }

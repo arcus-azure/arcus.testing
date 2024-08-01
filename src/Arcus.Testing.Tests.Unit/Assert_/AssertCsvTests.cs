@@ -6,6 +6,7 @@ using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck.Xunit;
+using Microsoft.FSharp.Core;
 using Xunit;
 using Xunit.Abstractions;
 using static System.DateTimeOffset;
@@ -829,6 +830,92 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return configureOptions is null
                 ? AssertCsv.Load(csv)
                 : AssertCsv.Load(csv, configureOptions);
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void IgnoreColumn_WithoutName_Fails(string columnName)
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.IgnoreColumn(columnName));
+        }
+
+        [Fact]
+        public void IgnoreColumn_WithNegativeIndex_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.IgnoreColumn(Bogus.Random.Int(max: -1)));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void NewLine_WithoutValue_Fails(string newLine)
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.NewLine = newLine);
+        }
+
+        [Fact]
+        public void Header_WithOutsideValue_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+            var header = (AssertCsvHeader) Bogus.Random.Int(min: 10, max: 100);
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.Header = header);
+        }
+
+        [Fact]
+        public void RowOrder_WithOutsideValue_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+            var order = (AssertCsvOrder) Bogus.Random.Int(min: 10, max: 100);
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.RowOrder = order);
+        }
+
+        [Fact]
+        public void ColumnOrder_WithOutsideValue_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+            var order = (AssertCsvOrder) Bogus.Random.Int(min: 10, max: 100);
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.ColumnOrder = order);
+        }
+
+        [Fact]
+        public void CultureInfo_WithoutValue_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.CultureInfo = null);
+        }
+
+        [Fact]
+        public void MaxInputCharacters_WithNegativeValue_Fails()
+        {
+            // Arrange
+            var options = new AssertCsvOptions();
+            int max = Bogus.Random.Int(max: -1);
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.MaxInputCharacters = max);
         }
     }
 }
