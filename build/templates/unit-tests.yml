@@ -38,7 +38,7 @@ jobs:
       - task: PublishTestResults@2
         inputs:
           testResultsFormat: 'XUnit'
-          testResultsFiles: '**/TEST-*.trx'
+          testResultsFiles: '$(Pipeline.Workspace)/*.trx'
 
       # - task: CopyFiles@2
       #   displayName: 'Copy build artifacts'

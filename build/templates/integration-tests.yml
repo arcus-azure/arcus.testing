@@ -55,21 +55,30 @@ jobs:
           tokenPrefix: '#{'
           tokenSuffix: '}#'
 
-      - task: DotNetCoreCLI@2
-        displayName: 'Run integration tests'
-        inputs:
-          command: test
-          projects: 'src/**/$(Project).Tests.Integration.csproj'
-          arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
-          nobuild: true
-          publishTestResults: true
-          mergeTestResults: true
+      # - task: DotNetCoreCLI@2
+      #   displayName: 'Run integration tests'
+      #   inputs:
+      #     command: test
+      #     projects: 'src/**/$(Project).Tests.Integration.csproj'
+      #     arguments: '--configuration $(Build.Configuration) --collect:"XPlat Code Coverage"'
+      #     nobuild: true
+      #     publishTestResults: true
+      #     mergeTestResults: true
+
+      - script: |
+          dotnet test src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
 
       - task: CopyFiles@2
         displayName: 'Copy build artifacts'
         inputs:
           contents: '$(Agent.TempDirectory)/**'
           targetFolder: '$(Pipeline.Workspace)/coverage-integration'
+
+      # - task: CopyFiles@2
+      #   displayName: 'Copy build artifacts'
+      #   inputs:
+      #     contents: '$(Agent.TempDirectory)/**'
+      #     targetFolder: '$(Pipeline.Workspace)/coverage-integration'
 
       - task: PublishPipelineArtifact@0
         displayName: 'Publish build artifacts'
