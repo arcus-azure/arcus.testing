@@ -854,7 +854,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         }
 
         [Theory]
-        [ClassData(typeof(Blanks))]
+        [InlineData(null)]
+        [InlineData("")]
         public void NewLine_WithoutValue_Fails(string newLine)
         {
             // Arrange

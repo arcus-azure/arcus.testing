@@ -196,8 +196,10 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(xsltTransformer: null, inputXml: "<xml/>"));
             Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(xsltTransformer: null, inputXml: "<xml/>", new XsltArgumentList()));
-            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: new XmlDocument()));
-            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: new XmlDocument(), new XsltArgumentList()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: null, input: new XmlDocument()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: null, input: new XmlDocument(), new XsltArgumentList()));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: null));
+            Assert.ThrowsAny<ArgumentException>(() => AssertXslt.TransformToJson(transformer: new XslCompiledTransform(), input: null, new XsltArgumentList()));
         }
     }
 }
