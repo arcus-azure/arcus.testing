@@ -66,13 +66,11 @@ jobs:
       #     mergeTestResults: true
 
       - script: |
-          dotnet test src/**/$(Project).Tests.Integration.csproj \
-            --no-build --configuration $(Build.Configuration) \
-            --collect:"XPlat Code Coverage" \
-            --logger trx --results-directory $(Pipeline.Workspace)
+          dotnet test src/**/$(Project).Tests.Integration.csproj --no-build --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
         displayName: 'Run integration tests'
 
       - task: PublishTestResults@2
+        displayName: 'Publish integration test results'
         inputs:
           testResultsFormat: 'VSTest'
           testResultsFiles: '$(Pipeline.Workspace)/*.trx'
@@ -84,7 +82,7 @@ jobs:
       #     targetFolder: '$(Pipeline.Workspace)/coverage-integration'
 
       - task: PublishPipelineArtifact@0
-        displayName: 'Publish build artifacts'
+        displayName: 'Publish integration test coverage artifacts'
         inputs:
           targetPath: '$(Pipeline.Workspace)'
           artifactName: Coverage-Integration
