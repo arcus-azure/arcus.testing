@@ -28,6 +28,7 @@ jobs:
           publishCodeCoverageResults: true
 
       - script: sudo apt install gh
+        condition: eq(variables['Build.Reason'], 'PullRequest')
         displayName: 'Install GitHub CLI'
 
       - powershell: |
@@ -96,3 +97,4 @@ jobs:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
           PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         displayName: 'Publish code coverage summary on GitHub'
+        condition: eq(variables['Build.Reason'], 'PullRequest')
