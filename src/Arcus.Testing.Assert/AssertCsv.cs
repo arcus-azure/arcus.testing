@@ -739,7 +739,7 @@ namespace Arcus.Testing
                     $"Options: {Environment.NewLine}" +
                     $"\t- separator: {options.Separator}{Environment.NewLine}" +
                     $"\t- escape: {options.Escape}{Environment.NewLine}" +
-                    $"\t- quote: \"";
+                    $"\t- quote: {options.Quote}";
 
                 throw new CsvException(
                     ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all rows in the CSV table has the same amount of columns")

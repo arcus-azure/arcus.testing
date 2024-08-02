@@ -84,5 +84,15 @@ namespace Arcus.Testing.Tests.Unit.Logging
                 });
             });
         }
+
+        [Fact]
+        public void Log_WithoutFormatter_Fails()
+        {
+            // Arrange
+            var logger = new InMemoryLogger();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => logger.Log(LogLevel.Information, new EventId(), state: new object(), exception: new Exception(), formatter: null));
+        }
     }
 }

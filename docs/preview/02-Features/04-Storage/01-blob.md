@@ -1,0 +1,143 @@
+# Blob storage
+The `Arcus.Testing.Storage.Blob` package provides test fixtures related to Azure Blob storage. By using the common testing practice 'clean environment', it provides a temporary Blob container and Blob file.
+
+## Installation
+The following functionality is available when installing this package:
+
+```shell
+PM> Install-Package -Name Arcus.Testing.Storage.Blob
+```
+
+## Temporary Blob container
+The `TemporaryBlobContainer` provides a solution when the integration test requires a storage system (container) during the test run. An Azure Blob container is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ Whether or not the test fixture should use an existing container is configurable.
+
+```csharp
+using Arcus.Testing;
+
+await using var container = await TemporaryBlobContainer.CreateIfNotExistsAsync(
+    "<account-name", "<container-name>", logger);
+
+// Interact with the container during the lifetime of the fixture.
+BlobContainerClient client = container.Client;
+```
+
+Uploading blobs to the container can also be done via the test fixture. It always make sure that any uploaded blobs will be removed afterwards.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryBlobContainer container = ...
+
+BlobClient client = await container.UploadBlobAsync(
+    "<blob-name>", BinaryData.FromString("<blob-content>"));
+```
+
+### Customization
+The setup and teardown process of the temporary container is configurable. **By default, it always removes any resources that it was responsible for creating.**
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Leaves all Azure Blobs untouched that already existed,
+    // upon the test fixture creation, when there was already an Azure Blob container available.
+    options.OnSetup.LeaveAllBlobs();
+
+    // Delete all Azure Blobs upon the test fixture creation, 
+    // when there was already an Azure Blob container available.
+    options.OnSetup.CleanAllBlobs();
+
+    // Delete Azure Blobs that matches any of the configured filters, 
+    // upon the test fixture creation, when there was already an Azure Blob container available.
+    options.OnSetup.CleanMatchingBlobs(
+      BlobNameFilter.NameEqual("test-blob-1"),
+      BlobNameFilter.NameStartsWith("test-"),
+      BlobNameFilter.NameEndsWith("-123"),
+      BlobNameFilter.NameContains("test"));
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default for cleaning blobs)
+    // Delete Azure Blobs upon the test fixture disposal that were uploaded by the fixture.
+    options.OnTeardown.CleanCreatedBlobs();
+
+    // Delete all Azure Blobs upon the test fixture disposal, 
+    // even if the test fixture didn't uploaded them.
+    options.OnTeardown.CleanAllBlobs();
+
+    // Delete additional Azure Blobs that matches any of the configured filters, 
+    // upon the test fixture disposal.
+    // ⚠️ Blobs uploaded by the test fixture itself will always be deleted.
+    options.OnTeardown.CleanMatchingBlobs(
+      BlobNameFilter.NameEqual("test-blob-1"),
+      BlobNameFilter.NameStartsWith("test-"),
+      BlobNameFilter.NameEndsWith("-123"),
+      BlobNameFilter.NameContains("test"));
+
+    // (Default for deleting container)
+    // Delete Azure Blob container if the test fixture created the container.
+    options.OnTeardown.DeleteCreatedContainer();
+
+    // Delete Azure Blob container regardless if the test fixture created the container or not.
+    options.OnTeardown.DeleteExistingContainer();
+})
+```
+
+> 🎖️ The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UploadBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+
+## Temporary Blob file
+The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ Whether or not the test fixture should use an existing file is configurable.
+
+```csharp
+using Arcus.Testing;
+
+await using var file = await TemporaryBlobFile.UploadIfNotExistsAsync(
+    blobContainerUri: new Uri("<blob-container-uri">),
+    blobName: "<blob-name>",
+    blobContent: BinaryData.FromString("<blob-content">),
+    logger: logger);
+
+// Interact with the blob during the lifetime of the fixture.
+BlobClient client = file.Client;
+```
+
+### Customization
+The setup and teardown process of the temporary file is configurable. **By default, any setup that was changed by the test fixture, is always teared down.**
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryBlobFile.UploadIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Use the existing Azure Blob's content when it already exists.
+    // Nothing is being uploaded, only a link to the existing file is made.
+    options.OnSetup.UseExistingBlob();
+
+    // Override any existing Azure Blob's content when it already exists.
+    // ⚡ The original content will be reverted upon disposal, if the blob already existed upon setup.
+    options.OnSetup.OverrideExistingBlob();
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default) Delete the Azure Blob file upon disposal,
+    // if the test fixture created the blob.
+    options.OnTeardown.DeleteCreatedBlob();
+
+    // Delete the Azure Blob file upon disposal,
+    // regardless if the test fixture created the blob.
+    options.OnTeardown.DeleteExistingBlob();
+});
+```
