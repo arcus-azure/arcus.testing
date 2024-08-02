@@ -162,7 +162,7 @@ namespace Arcus.Testing.Tests.Unit.Messaging.EventHubs
         {
             IHostBuilder builder =
                 Host.CreateDefaultBuilder()
-                    .ConfigureLogging(logging => logging.AddXunitTestLogging(_outputWriter))
+                    .ConfigureLogging(logging => logging.ClearProviders().AddXunitTestLogging(_outputWriter))
                     .ConfigureServices(configureServices);
 
             using (IHost host = builder.Build())

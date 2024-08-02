@@ -100,7 +100,8 @@ namespace Arcus.Testing.Tests.Unit.Core
                           .Timeout(timeout));
 
             // Assert
-            Assert.True(stopwatch.Elapsed >= timeout, "stopwatch should at least run until two intervals");
+            stopwatch.Stop();
+            Assert.True(stopwatch.Elapsed >= interval + interval, $"stopwatch should at least run until two intervals: {stopwatch.Elapsed} >= {timeout}");
         }
 
         [Fact]
@@ -217,6 +218,18 @@ namespace Arcus.Testing.Tests.Unit.Core
             Assert.Equal(typeof(TException), exception.InnerException.GetType());
 
             return exception;
+        }
+
+        [Fact]
+        public async Task PollUntilAvailable_WithoutTarget_Fails()
+        {
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object>(getTargetWithResultAsync: null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<object, AccessViolationException>(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync(null));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => Poll.UntilAvailableAsync<InvalidCastException>(null));
+
+            Assert.ThrowsAny<ArgumentException>(() => Poll.Target<object>(getTargetWithoutResultSync: null));
+            Assert.ThrowsAny<ArgumentException>(() => Poll.Target<object, AccessViolationException>(getTargetWithResultSync: null));
         }
 
         [Fact]

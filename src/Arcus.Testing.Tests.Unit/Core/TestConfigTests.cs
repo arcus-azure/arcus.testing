@@ -9,14 +9,22 @@ namespace Arcus.Testing.Tests.Unit.Core
         [ClassData(typeof(Blanks))]
         public void Configure_WithoutNewMainFile_Fails(string newMainFile)
         {
-            Assert.ThrowsAny<ArgumentException>(() => TestConfig.Create(opt => opt.UseMainJsonFile(newMainFile)));
+            // Arrange
+            var options = new TestConfigOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.UseMainJsonFile(newMainFile));
         }
 
         [Theory]
         [ClassData(typeof(Blanks))]
         public void Configure_WithoutNewOptionalFile_Fails(string newOptionalFile)
         {
-            Assert.ThrowsAny<ArgumentException>(() => TestConfig.Create(opt => opt.AddOptionalJsonFile(newOptionalFile)));
+            // Arrange
+            var options = new TestConfigOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddOptionalJsonFile(newOptionalFile));
         }
     }
 }

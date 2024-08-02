@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using Arcus.Testing.Tests.Unit.Logging.Fixture;
 using Bogus;
 using Serilog;
@@ -49,6 +50,23 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
+        public void AddNUnitTestLogging_WithError_LogsMessage()
+        {
+            // Arrange
+            var mockWriter = new MockTestWriter();
+            var config = new LoggerConfiguration();
+
+            // Act
+            config.WriteTo.NUnitTestLogging(TextWriter.Null, mockWriter);
+
+            // Assert
+            ILogger logger = config.CreateLogger();
+            string expected = Bogus.Lorem.Sentence();
+            logger.Error(expected);
+            mockWriter.VerifyWritten(expected);
+        }
+
+        [Fact]
         public void AddMSTestLogging_WithMessage_LogsMessage()
         {
             // Arrange
@@ -74,6 +92,62 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => config.WriteTo.XunitTestLogging(outputWriter: null));
+        }
+
+        [Fact]
+        public void AddNUnitTestLogging_WithoutOutputWriter_Fails()
+        {
+            // Arrange
+            var config = new LoggerConfiguration();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => config.WriteTo.NUnitTestLogging(outputWriter: null));
+        }
+
+        [Fact]
+        public void AddNUnitTestLoggingWithError_WithoutOutputWriter_Fails()
+        {
+            // Arrange
+            var config = new LoggerConfiguration();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => config.WriteTo.NUnitTestLogging(outputWriter: null, TextWriter.Null));
+        }
+
+        [Fact]
+        public void AddNUnitTestLoggingWithError_WithoutErrorWriter_Fails()
+        {
+            // Arrange
+            var config = new LoggerConfiguration();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => config.WriteTo.NUnitTestLogging(TextWriter.Null, errorWriter: null));
+        }
+
+        [Fact]
+        public void AddMSTestTestLogging_WithoutTestContext_Fails()
+        {
+            // Arrange
+            var config = new LoggerConfiguration();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => config.WriteTo.MSTestLogging(testContext: null));
+        }
+
+        [Fact]
+        public void MsTestLogSink_WithoutTestContext_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new MSTestLogEventSink(context: null));
+        }
+
+        [Fact]
+        public void XunitLogSink_WithoutOutputWriter_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new XunitLogEventSink(outputWriter: null));
         }
 
         public void WriteLine(string message)
