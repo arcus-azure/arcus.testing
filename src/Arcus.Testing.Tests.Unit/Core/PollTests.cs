@@ -35,9 +35,9 @@ namespace Arcus.Testing.Tests.Unit.Core
             await GetsResultAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(SometimesSucceedsResultAsync, ReasonableTimeFrame));
 
             await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResultAsync).LowestTimeFrame());
+            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResultAsync).ReasonableTimeFrame());
             await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResultAsync).LowestTimeFrame());
+            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResultAsync).ReasonableTimeFrame());
         }
 
         [Fact]
