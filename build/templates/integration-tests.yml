@@ -43,7 +43,7 @@ jobs:
           packageType: 'sdk'
           version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
-      
+
       - task: qetza.replacetokens.replacetokens-task.replacetokens@6
         displayName: 'Replace integration test tokens'
         inputs:
@@ -55,11 +55,18 @@ jobs:
           tokenPrefix: '#{'
           tokenSuffix: '}#'
 
-      - task: DotNetCoreCLI@2
+      - script: |
+          dotnet test src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
         displayName: 'Run integration tests'
+
+      - task: PublishTestResults@2
+        displayName: 'Publish integration test results'
         inputs:
-          command: test
-          projects: 'src/**/$(Project).Tests.Integration.csproj'
-          arguments: '--configuration $(Build.Configuration)'
-          nobuild: true
-          publishTestResults: true
+          testResultsFormat: 'VSTest'
+          testResultsFiles: '$(Pipeline.Workspace)/*.trx'
+
+      - task: PublishPipelineArtifact@0
+        displayName: 'Publish code coverage artifacts'
+        inputs:
+          targetPath: '$(Pipeline.Workspace)'
+          artifactName: Coverage-Integration
