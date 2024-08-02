@@ -160,9 +160,16 @@ namespace Arcus.Testing
                 string expectedJson = expected?.ToString() ?? "null";
                 string actualJson = actual?.ToString() ?? "null";
 
+                string optionsDescription =
+                    $"Options: {Environment.NewLine}" +
+                    $"\t- node order {options.Order}" +
+                    $"\t- ignored node names: [{string.Join(", ", options.IgnoredNodeNames)}]{Environment.NewLine}";
+
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "expected and actual JSON contents do not match")
                                  .AppendLine(diff.ToString())
+                                 .AppendLine()
+                                 .AppendLine(optionsDescription)
                                  .AppendDiff(expectedJson, actualJson, options.MaxInputCharacters)
                                  .ToString());
             }
