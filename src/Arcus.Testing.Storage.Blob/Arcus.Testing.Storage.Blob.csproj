@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
+    <RootNamespace>Arcus.Testing</RootNamespace>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Description>Provides capabilities during testing of Azure Blob storage interactions</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Testing;Storage</PackageTags>
+    <PackageId>Arcus.Testing.Storage.Blob</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="[1.12.0,2.0.0)" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="[12.20.0,13.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
+  </ItemGroup>
+  
+</Project>

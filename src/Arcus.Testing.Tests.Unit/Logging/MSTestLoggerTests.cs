@@ -1,4 +1,5 @@
-﻿using Arcus.Testing.Tests.Unit.Logging.Fixture;
+﻿using System;
+using Arcus.Testing.Tests.Unit.Logging.Fixture;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -22,6 +23,28 @@ namespace Arcus.Testing.Tests.Unit.Logging
 
             // Assert
             mockContext.VerifyWritten(message);
+        }
+
+        [Fact]
+        public void Log_WithError_Succeeds()
+        {
+            // Arrange
+            var mockContext = new MockTestContext();
+            var logger = new MSTestLogger(mockContext);
+            Exception exception = Bogus.System.Exception();
+            string message = Bogus.Lorem.Sentence();
+
+            // Act
+            logger.LogError(exception, message);
+
+            // Assert
+            mockContext.VerifyWritten(message);
+        }
+
+        [Fact]
+        public void Create_WithoutContext_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => new MSTestLogger(testContext: null));
         }
     }
 }

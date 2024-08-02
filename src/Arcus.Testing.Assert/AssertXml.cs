@@ -174,9 +174,16 @@ namespace Arcus.Testing
                 string expectedXml = ReadXml(expected);
                 string actualXml = ReadXml(actual);
 
+                string optionsDescription =
+                    $"Options: {Environment.NewLine}" +
+                    $"\t- attribute order: {options.Order}{Environment.NewLine}" +
+                    $"\t- ignored node (local) names: [{string.Join(", ", options.IgnoredNodeNames)}]{Environment.NewLine}";
+
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "expected and actual XML documents do not match")
                                  .AppendLine(diff.ToString())
+                                 .AppendLine()
+                                 .AppendLine(optionsDescription)
                                  .AppendDiff(expectedXml, actualXml, options.MaxInputCharacters)
                                  .ToString());
             }
