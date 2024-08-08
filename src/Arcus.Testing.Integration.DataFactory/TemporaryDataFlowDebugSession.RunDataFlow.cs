@@ -13,6 +13,8 @@ namespace Arcus.Testing
     /// </summary>
     public class RunDataFlowOptions
     {
+        private int _maxRows = 100;
+
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
@@ -28,6 +30,25 @@ namespace Arcus.Testing
 
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
             return this;
+        }
+
+        /// <summary>
+        /// Gets or sets the limit of rows for the preview response of the DataFlow run (default: 100 rows).
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
+        public int MaxRows
+        {
+            get => _maxRows;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(value), value, "Requires a maximum row limit greater than zero for the preview response of the DataFlow run");
+                }
+
+                _maxRows = value;
+            }
         }
     }
 
@@ -137,7 +158,7 @@ namespace Arcus.Testing
 
             await StartDataFlowAsync(session, dataFlowName, options);
             
-            return await GetDataFlowResultAsync(session, dataFlowName, targetSinkName);
+            return await GetDataFlowResultAsync(session, dataFlowName, targetSinkName, options);
         }
 
         private static async Task StartDataFlowAsync(TemporaryDataFlowDebugSession session, string dataFlowName, RunDataFlowOptions options)
@@ -215,7 +236,7 @@ namespace Arcus.Testing
             debug.LinkedServices.Add(new DataFactoryLinkedServiceDebugInfo(linkedService.Data.Properties) { Name = linkedService.Data.Name });
         }
 
-        private static async Task<DataFlowRunResult> GetDataFlowResultAsync(TemporaryDataFlowDebugSession session, string dataFlowName, string targetSinkName)
+        private static async Task<DataFlowRunResult> GetDataFlowResultAsync(TemporaryDataFlowDebugSession session, string dataFlowName, string targetSinkName, RunDataFlowOptions options)
         {
             ArmOperation<DataFactoryDataFlowDebugCommandResult> result = 
                 await session.DataFactory.ExecuteDataFlowDebugSessionCommandAsync(WaitUntil.Completed, new DataFlowDebugCommandContent
@@ -223,7 +244,7 @@ namespace Arcus.Testing
                     Command = "executePreviewQuery",
                     CommandPayload = new DataFlowDebugCommandPayload(targetSinkName)
                     {
-                        RowLimits = 100
+                        RowLimits = options.MaxRows
                     },
                     SessionId = session.SessionId
                 });

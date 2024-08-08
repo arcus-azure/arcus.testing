@@ -14,7 +14,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Testing;DataFactory</PackageTags>
-    <PackageId>Arcus.Testing.DataFactory</PackageId>
+    <PackageId>Arcus.Testing.Integration.DataFactory</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

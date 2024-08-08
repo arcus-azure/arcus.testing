@@ -35,7 +35,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Logging", "Logging", "{45B1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Storage.Blob", "Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj", "{1E771531-C584-474E-A338-A29D6493D600}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Storage.Blob", "Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj", "{1E771531-C584-474E-A338-A29D6493D600}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Messaging", "Messaging", "{D5AF4FD4-A4AF-43FF-8400-63B4A05498F6}"
 EndProject
@@ -43,7 +43,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Security", "Security", "{81
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integration", "Integration", "{0848C446-1D7E-43E1-83A8-5C1A981E3C6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.DataFactory", "Arcus.Testing.DataFactory\Arcus.Testing.DataFactory.csproj", "{2321112D-0971-4465-AF85-42BAFF265C1B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Integration.DataFactory", "Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj", "{2321112D-0971-4465-AF85-42BAFF265C1B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

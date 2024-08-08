@@ -1,0 +1,130 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Data Factory
+The `Arcus.Testing.Integration.DataFactory` package provides test fixtures related to [Azure DataFactory](https://learn.microsoft.com/en-us/azure/data-factory/introduction). By using the common test practice 'clean environment', it provides things like an automatic temporary DataFlow debug session to help with testing DataFlow pipelines.
+
+## Installation
+The following functionality is available when installing this package:
+
+```shell
+PM> Install-Package -Name Arcus.Testing.Integration.DataFactory
+```
+
+## Temporary DataFlow debug session
+The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatically tracking the process of a DataFactory DataFlow under test. More information on DataFlow debugging can be found on [Mapping data flow Debug Mode](https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-debug-mode?tabs=data-factory).
+
+The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
+
+> 💡 Several testing framework provides the concept of 'singleton test fixtures':
+> * NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
+> * xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
+> * MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
+> * Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+
+```csharp
+using Arcus.Testing;
+
+var dataFactoryResourceId = new ResourceIdentifier(
+    ".../Microsoft.DataFactory/factories/<dataFactoryName>")
+
+await using var session = 
+  await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactoryResourceId, logger);
+```
+
+> ⚡ Uses by default the `DefaultAzureCredential` but other type of authentication mechanisms are supported with overloads that take in the `DataFactoryResource` directly.
+
+### Customization
+The setup of the `TemporaryDataFlowDebugSession` test fixture can be customized with the following options: 
+
+```csharp
+await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
+{
+    // The time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
+    options.TimeToLiveInMinutes = 60;
+});
+```
+
+### Full example
+The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.
+
+<Tabs>
+  <TabItem value="xunit" label="xUnit" default>
+    ```csharp
+    using Arcus.Testing;
+    using Xunit;
+    
+     public class DataFactoryFixture : IAsyncLifetime
+     {
+         public TemporaryDataFlowDebugSession Session { get; private set; }
+    
+         public async Task InitializeAsync()
+         {
+             Session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+         }
+    
+         public async Task DisposeAsync()
+         {
+             await Session.DisposeAsync();
+         }
+     }
+    
+     [CollectionDefinition("DataFactory")]
+     public class DataFactoryFixtureCollection : ICollectionFixture<DataFactoryFixture>
+     {
+     }
+    
+    [Collection("DataFactory")]
+    public class MyDataFactoryTests
+    {
+        public MyDataFactoryTests(DataFactoryFixture fixture)
+        {
+        }
+    }
+    
+    [Collection("DataFactory")]
+    public class OtherDataFactoryTests
+    {
+        public OtherDataFactoryTests(DataFactoryFixture fixture)
+        {
+        }
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+## Run DataFlow within Debug Session
+To run a specific DataFlow separately within a DataFactory resource, the manual process would be to start the debug session yourself, start the flow and wait for the result in the preview window.
+
+The `TemporaryDataFlowDebugSession` provides an automated approach on activating and reusing debug sessions across tests. Running DataFlows on this automated debug session requires you to provide the name of the DataFlow and the target sink where the result of the DataFlow will be send to.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryDataFlowDebugSession session = ...
+
+DataFlowRunResult result = 
+    await session.RunDataFlowAsync("<dataflow-name>", "<target-sink-name>");
+
+// The run status of data preview, statistics or expression preview.
+string status = result.Status;
+
+// The result data of data preview, statistics or expression preview.
+BinaryData data = result.Data;
+```
+
+### Customization
+The process of running a DataFlow can be manipulated with several options described here:
+
+```csharp
+using Arcus.Testing;
+
+await session.RunDataFlowAsync(..., options =>
+{
+    // Adds a parameter to the data flow upon starting.
+    options.AddDataFlowParameter("<name>", "<value>");
+
+    // The maximum amount of rows to include in the preview response (default: 100 rows).
+    options.MaxRows = 100;
+});
+```

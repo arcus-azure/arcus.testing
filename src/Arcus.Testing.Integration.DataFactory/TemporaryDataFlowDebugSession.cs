@@ -46,9 +46,9 @@ namespace Arcus.Testing
 
         private TemporaryDataFlowDebugSession(Guid? sessionId, DataFactoryResource resource, ILogger logger)
         {
-            DataFactory = resource ?? throw new ArgumentNullException(nameof(resource));
             _logger = logger ?? NullLogger.Instance;
 
+            DataFactory = resource ?? throw new ArgumentNullException(nameof(resource));
             SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
         }
 
