@@ -91,6 +91,72 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
     }
     ```
   </TabItem>
+  <TabItem value="nunit" label="NUnit">
+    ```csharp
+    using Arcus.Testing;
+    using NUnit.Framework;
+  
+    [TestFixture]
+    public class MyDataFactoryTests
+    {
+        private TemporaryDataFlowDebugSession _session;
+  
+        [OneTimeSetUp]
+        public async Task InitAsync()
+        {
+            _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+        }
+  
+        [OneTimeTearDown]
+        public async Task CleanupAsync()
+        {
+            await _session.DisposeAsync();
+        }
+    }
+    ```
+  </TabItem>
+  <TabItem value="mstest" label="MSTest">
+    ```csharp
+    using Arcus.Testing;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    [TestClass]
+    public class MyDataFactoryTests
+    {
+        private static TemporaryDataFlowDebugSession _session;
+
+        [ClassInitialize]
+        public static async Task InitializeAsync(TestContext context)
+        {
+            _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+        }
+
+        [ClassCleanup]
+        public static async Task CleanupAsync()
+        {
+            await _session.DisposeAsync();
+        }
+    } 
+    ```
+  </TabItem>
+  <TabItem value="expecto" label="Expecto">
+    ```fsharp
+    open Arcus.Testing
+    open Expecto
+
+    let myDataFactoryTests session = testList "datafactory tests" []
+
+    [<EntryPoint>]
+    let main args = async {
+        let! session = TemporaryDataFlowDebugSession.StartDebugSessionAsync(...) |> Async.AwaitTask
+        let tests = TestList ([
+            myDataFactoryTests session
+        ])
+
+        return runTestsWithCLIArgs [] args tests } | |> Async.RunSynchronously
+    }
+    ```
+  </TabItem>
 </Tabs>
 
 ## Run DataFlow within Debug Session
