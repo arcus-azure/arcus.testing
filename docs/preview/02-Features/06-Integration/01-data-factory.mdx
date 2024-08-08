@@ -81,14 +81,6 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
         {
         }
     }
-    
-    [Collection("DataFactory")]
-    public class OtherDataFactoryTests
-    {
-        public OtherDataFactoryTests(DataFactoryFixture fixture)
-        {
-        }
-    }
     ```
   </TabItem>
   <TabItem value="nunit" label="NUnit">
@@ -148,11 +140,11 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
 
     [<EntryPoint>]
     let main args = async {
-        let! session = TemporaryDataFlowDebugSession.StartDebugSessionAsync(...) |> Async.AwaitTask
-        let tests = TestList ([
-            myDataFactoryTests session
-        ])
-
+        let! session =
+          TemporaryDataFlowDebugSession.StartDebugSessionAsync(...)
+          |> Async.AwaitTask
+        
+        let tests = TestList ([ myDataFactoryTests session ])
         return runTestsWithCLIArgs [] args tests } | |> Async.RunSynchronously
     }
     ```
