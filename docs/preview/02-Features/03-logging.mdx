@@ -6,18 +6,17 @@ This page describes functionality related to logging in tests.
 
 <Tabs groupId="testing-frameworks">
   <TabItem value="xunit" label="xUnit" default>
-    ## xUnit test logging
     The `Arcus.Testing.Logging.Xunit` library provides a `XunitTestLogger` type that's an implementation of the abstracted Microsoft [`Ilogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging)
     inside the [xUnit](https://xunit.net/) test framework.
     
-    ### Installation
+    **Installation**
     The following functionality is available when installing this package:
     
     ```shell
     PM> Install-Package -Name Arcus.Testing.Logging.Xunit
     ```
     
-    ### Example
+    **Example**
     Log messages written to the `ILogger` instance will be written to the xUnit test output.
     
     ```csharp
@@ -41,18 +40,17 @@ This page describes functionality related to logging in tests.
     * [`AddXunitTestLogging`] extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) setup.
   </TabItem>
   <TabItem value="nunit" label="NUnit">
-    ## NUnit test logging
     The `Arcus.Testing.Logging.NUnit` library provides a `NUnitTestLogger` type that's an implementation of the abstracted Microsoft [`Ilogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging)
     inside the [NUnit](https://nunit.org/) test framework.
 
-    ### Installation
+    **Installation**
     The following functionality is available when installing this package:
     
     ```shell
     PM> Install-Package -Name Arcus.Testing.Logging.NUnit
     ```
 
-    ### Example
+    **Example**
     Log messages written to the `ILogger` instance will be written to the `TestContext.Out/Error` in the NUnit test output.
     
     ```csharp
@@ -76,18 +74,17 @@ This page describes functionality related to logging in tests.
     * [`AddNUnitTestLogging`] extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) setup.
   </TabItem>
   <TabItem value="mstest" label="MSTest">
-    ## MSTest test logging
     The `Arcus.Testing.Logging.MSTest` library provides a `MSTestLogger` type that's an implementation of the abstracted Microsoft [`Ilogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging)
     inside the [MSTest](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-mstest) test framework.
     
-    ### Installation
+    **Installation**
     The following functionality is available when installing this package:
     
     ```shell
     PM> Install-Package -Name Arcus.Testing.Logging.MSTest
     ```
     
-    ### Example
+    **Example**
     Log messages written to the `ILogger` instance will be written to the `TestContext` in the MSTest test output.
     
     ```csharp
