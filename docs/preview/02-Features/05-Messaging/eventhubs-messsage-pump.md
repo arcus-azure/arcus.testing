@@ -111,7 +111,7 @@ public class MessageHandlingTests
 Note that in this example, we use `Assert.True(handler.IsProcessed)` to determine if the `SensorReading` message was correctly processed. In your application, you may want to inject your message handlers with test versions of dependencies and determine via those dependencies if the correct message handler was called.
 You can use one of the `.WithEventHubsMessageHandler<,>(...)` extensions to pass in your instance of the message handler so you can use it later in the test assertion, like it is shown in the example.
 
-> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging.Xunit` package. See [this page on logging](../03-logging.md) for more information.
+> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging.Xunit` package. See [this page on logging](../03-logging.mdx) for more information.
 
 ## Message producer configuration
 
