@@ -139,14 +139,11 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
     let myDataFactoryTests session = testList "datafactory tests" []
 
     [<EntryPoint>]
-    let main args = async {
-        let! session =
-          TemporaryDataFlowDebugSession.StartDebugSessionAsync(...)
-          |> Async.AwaitTask
-        
-        let tests = TestList ([ myDataFactoryTests session ])
-        return runTestsWithCLIArgs [] args tests } | |> Async.RunSynchronously
-    }
+    let main args = task {
+        use! session = TemporaryDataFlowDebugSession.StartDebugSessionAsync(...)
+
+        let tests = TestList ([ myDataFactoryTests session ], Normal)
+        return runTestsWithCLIArgs [] args tests } |> Async.AwaitTask |> Async.RunSynchronously
     ```
   </TabItem>
 </Tabs>
