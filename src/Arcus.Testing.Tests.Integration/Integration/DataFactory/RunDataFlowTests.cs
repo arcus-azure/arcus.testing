@@ -39,7 +39,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             DataFlowConfig dataFlow = DataFactory.DataFlowCsv;
             await using var source = await TemporaryBlobContainer.CreateIfNotExistsAsync(StorageAccount.Name, dataFlow.Source.ContainerName, Logger);
 
-            var expectedCsv = TestCsv.Generate().ToString();
+            var input = TestCsv.Generate();
+            var expectedCsv = input.ToString();
             await source.UploadBlobAsync(dataFlow.Source.FileName, BinaryData.FromString(expectedCsv));
 
             await using TemporaryDataFlowDebugSession session = await StartDebugSessionAsync(DataFactory.ResourceId, Logger);
@@ -48,7 +49,16 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
            DataFlowRunResult result = await session.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
 
             // Assert
-            AssertCsv.Equal(AssertCsv.Load(expectedCsv), result.GetDataAsCsv());
+            CsvTable csvTable = AssertCsv.Load(expectedCsv, opt =>
+            {
+                opt.NewLine = input.NewLine;
+                opt.Separator = input.Separator;
+            });
+            AssertCsv.Equal(csvTable, result.GetDataAsCsv(opt =>
+            {
+                opt.NewLine = input.NewLine;
+                opt.Separator = input.Separator;
+            }));
         }
 
         [Fact(Skip = "[BUG] in Microsoft's JSON parsing")]
