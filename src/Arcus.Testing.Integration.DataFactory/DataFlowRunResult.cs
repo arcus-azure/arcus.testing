@@ -67,13 +67,6 @@ namespace Arcus.Testing
                     rows.Prepend(headers.ToArray())
                         .Select(row => string.Join(options.Separator, row)));
 
-                if (string.IsNullOrWhiteSpace(csv))
-                {
-                    throw new CsvException(
-                        "Cannot load the content of the DataFactory preview expression as CSV as there were no headers and rows available, resulting in a blank value, " +
-                        $"consider parsing the raw run data yourself as this parsing only supports limited structures");
-                }
-
                 return AssertCsv.Load(csv, configureOptions);
             }
             catch (JsonException exception)

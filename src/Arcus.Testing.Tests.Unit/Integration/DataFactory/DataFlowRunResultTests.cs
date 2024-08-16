@@ -64,18 +64,10 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         }
 
         [Theory]
-        [InlineData("{ \"output\": { \"schema\": \"\", \"data\": [] } }", "blank")]
-        public void GetDataAsCsv_WithoutEndResult_Fails(string json, params string[] expectedParts)
-        {
-            CsvException exception = ShouldFailToGetDataAsCsv(json);
-            ShouldContain(exception.Message, expectedParts);
-        }
-
-        [Theory]
-        [InlineData("{ \"output\": { \"schema\": \"\", \"data\": null } }")]
-        [InlineData("{ \"output\": { \"schema\": \"\", \"data\": { } } }")]
-        [InlineData("{ \"output\": { \"schema\": \"\", \"data\": \"\" } }")]
-        [InlineData("{ \"output\": { \"schema\": \"\", \"data\": 1 } }")]
+        [InlineData("{ \"output\": { \"schema\": \"output(id as string)\", \"data\": null } }")]
+        [InlineData("{ \"output\": { \"schema\": \"output(id as string)\", \"data\": { } } }")]
+        [InlineData("{ \"output\": { \"schema\": \"output(id as string)\", \"data\": \"\" } }")]
+        [InlineData("{ \"output\": { \"schema\": \"output(id as string)\", \"data\": 1 } }")]
         public void GetDataAsCsv_WithoutData_Fails(string json)
         {
             CsvException exception = ShouldFailToGetDataAsCsv(json);
