@@ -116,14 +116,23 @@ namespace Arcus.Testing
 
         private static string[] ParseSchemeAsHeaders(JsonObject outputObj)
         {
-            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) || headersNode is null)
+            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
+                || headersNode is not JsonValue headersValue 
+                || !headersValue.ToString().StartsWith("output"))
             {
                 throw new CsvException(
                     $"Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            string headersTxt = Regex.Replace(headersNode.GetValue<string>(), "^output\\(", string.Empty).TrimEnd(')');
+            string headersTxt = Regex.Replace(headersValue.GetValue<string>(), "^output\\(", string.Empty).TrimEnd(')');
+            if (string.IsNullOrWhiteSpace(headersTxt))
+            {
+                throw new CsvException(
+                    $"Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            }
+
             headersTxt = Regex.Replace(headersTxt, " as string, ", ", ");
             headersTxt = Regex.Replace(headersTxt, " as string$", "");
             headersTxt = Regex.Replace(headersTxt, " as \\(", " (");

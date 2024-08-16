@@ -15,7 +15,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
     {
         public bool IsActive { get; private set; }
         public Guid SessionId { get; } = Guid.NewGuid();
-
+        public override ResourceIdentifier Id { get; } = ResourceIdentifier.Parse($"/subscriptions/{Guid.NewGuid()}/resourceGroups/{Guid.NewGuid()}/providers/Microsoft.DataFactory/factories/{Guid.NewGuid()}");
         public override DataFactoryData Data { get; } = new(AzureLocation.WestEurope);
 
         public override Task<ArmOperation<DataFactoryDataFlowCreateDebugSessionResult>> CreateDataFlowDebugSessionAsync(

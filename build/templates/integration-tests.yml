@@ -33,6 +33,9 @@ jobs:
             Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
 
             # TODO: get Key Vault secret and set it as secret pipeline variable.
+
+            $subscriptionId = (az account show | ConvertFrom-Json).id
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.SubscriptionId' -Value $subscriptionId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.TenantId' -Value $env:tenantId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientId' -Value $env:servicePrincipalId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey
