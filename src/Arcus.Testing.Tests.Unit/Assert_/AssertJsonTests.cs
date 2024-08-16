@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Arcus.Testing.Tests.Unit.Assert_.Fixture;
+using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Bogus;
 using FsCheck;
 using FsCheck.Xunit;

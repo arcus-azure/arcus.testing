@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integration", "Integration"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Integration.DataFactory", "Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj", "{2321112D-0971-4465-AF85-42BAFF265C1B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Tests.Core", "Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj", "{2434BA10-0D39-4A86-9025-8E2439E08A8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,6 +107,10 @@ Global
 		{2321112D-0971-4465-AF85-42BAFF265C1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2321112D-0971-4465-AF85-42BAFF265C1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2321112D-0971-4465-AF85-42BAFF265C1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2434BA10-0D39-4A86-9025-8E2439E08A8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2434BA10-0D39-4A86-9025-8E2439E08A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2434BA10-0D39-4A86-9025-8E2439E08A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2434BA10-0D39-4A86-9025-8E2439E08A8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +128,7 @@ Global
 		{56AF4FFB-6D1D-4C11-834B-70920BA046BD} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
 		{1E771531-C584-474E-A338-A29D6493D600} = {FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}
 		{2321112D-0971-4465-AF85-42BAFF265C1B} = {0848C446-1D7E-43E1-83A8-5C1A981E3C6F}
+		{2434BA10-0D39-4A86-9025-8E2439E08A8B} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E5382820-51FF-4B00-92BE-C78E80EA0841}

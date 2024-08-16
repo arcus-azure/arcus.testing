@@ -32,4 +32,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[8.0.0,9.0.0)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
+  </ItemGroup>
+
 </Project>
