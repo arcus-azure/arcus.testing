@@ -39,7 +39,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             DataFlowConfig dataFlow = DataFactory.DataFlowCsv;
             await using var source = await TemporaryBlobContainer.CreateIfNotExistsAsync(StorageAccount.Name, dataFlow.Source.ContainerName, Logger);
 
-            var input = TestCsv.Generate();
+            var input = TestCsv.Generate(opt =>
+            {
+                opt.Separator = ';';
+                opt.NewLine = "\n\r";
+            });
             var expectedCsv = input.ToString();
             await source.UploadBlobAsync(dataFlow.Source.FileName, BinaryData.FromString(expectedCsv));
 

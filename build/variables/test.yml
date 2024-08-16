@@ -1,4 +1,5 @@
 variables:
   Arcus.Testing.ResourceGroup.Name: 'arcus-testing-dev-we-rg'
+  Arcus.Testing.DataFactory.Name: 'arcus-testing-adf'
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'

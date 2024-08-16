@@ -44,6 +44,7 @@ stages:
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
+                  --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
                   --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
                   --parameters servicePrincipal_objectId=$objectId
