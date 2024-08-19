@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -61,13 +63,9 @@ namespace Arcus.Testing
             {
                 JsonObject outputObj = ParseOutputNode(previewCsvAsJson);
                 string[] headers = ParseSchemeAsHeaders(outputObj);
-                string[][] rows = ParseDataAsRows(outputObj);
+                string[][] rows = ParseDataAsRows(outputObj, options);
 
-                string csv = string.Join(options.NewLine, 
-                    rows.Prepend(headers.ToArray())
-                        .Select(row => string.Join(options.Separator, row)));
-
-                return AssertCsv.Load(csv, configureOptions);
+                return CsvTable.Load(headers, rows, options);
             }
             catch (JsonException exception)
             {
@@ -131,7 +129,7 @@ namespace Arcus.Testing
             headersTxt = Regex.Replace(headersTxt, " as \\(", " (");
 
             var headers = new List<string>();
-            string header = "";
+            var header = new StringBuilder();
             bool ignoreAsWithinParentheses = false;
             int depth = 0;
 
@@ -156,22 +154,23 @@ namespace Arcus.Testing
 
                 if (char.IsLetterOrDigit(ch) || ch == '_' || ch == ' ')
                 {
-                    header += ch;
+                    header.Append(ch);
                 }
 
-                bool leftover = !string.IsNullOrWhiteSpace(header);
+                string h = header.ToString();
+                bool leftover = h.Length > 0 && h.Any(x => x != ' ');
                 bool eof = i == headersTxt.Length - 1;
                 if (ch == ',' || (eof && leftover))
                 {
-                    headers.Add(header.Trim());
-                    header = "";
+                    headers.Add(h.Trim());
+                    header.Clear();
                 }
             }
 
             return headers.ToArray();
         }
 
-        private static string[][] ParseDataAsRows(JsonObject outputObj)
+        private static string[][] ParseDataAsRows(JsonObject outputObj, AssertCsvOptions options)
         {
             JsonNode dataNode = outputObj["data"];
             if (dataNode is not JsonArray dataArr)
@@ -181,13 +180,24 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
+            string AsCsvCell(string value)
+            {
+                const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
+                if (float.TryParse(value, style, options.CultureInfo, out _))
+                {
+                    return value;
+                }
+
+                return $"\"{value}\"";
+            }
+
             if (dataArr.All(n => n is JsonArray arr && arr.All(elem => elem is JsonValue)))
             {
-                return dataArr.Select(n => n.AsArray().Select(x => x.GetValue<string>()).ToArray())
+                return dataArr.Select(n => n.AsArray().Select(x => AsCsvCell(x.GetValue<string>())).ToArray())
                               .ToArray();
             }
 
-            return new[] { dataArr.Select(n => n.ToString()).ToArray() };
+            return new[] { dataArr.Select(n => AsCsvCell(n.ToString())).ToArray() };
         }
     }
 }

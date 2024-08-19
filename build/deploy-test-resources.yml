@@ -11,6 +11,9 @@ parameters:
   - name: resourceGroupName
     displayName: 'Resource group name'
     default: arcus-testing-dev-we-rg
+  - name: keyVaultName
+    displayName: 'Key vault name'
+    value: 'arcus-testing-kv'
 
 variables:
   - template: ./variables/build.yml
@@ -46,8 +49,11 @@ stages:
                   --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
-                  --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
+                  --parameters keyVaultName=${{ parameters.keyVaultName }} `
                   --parameters servicePrincipal_objectId=$objectId
+
+                $accountKey = (az storage account keys list --account-name ${{ variables['Arcus.Testing.StorageAccount.Name'] }} | ConvertFrom-Json)[0].value
+                az keyvault set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
 
   - stage: SmokeTests
     dependsOn: Deploy

@@ -20,7 +20,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData(
             "{ \"output\": { \"schema\": \"output(product as string, price as (value as string, unit as string)[])\", \"data\": [ [ \"pc\", \"1000,euro\" ], [ \"printer\", \"500,euro\" ] ] } }",
             "product;price\npc;1000,euro\nprinter;500,euro", "\n", ';')]
-        public void GetDataAsCsv_WithDat_SucceedsByParsing(string json, string expectedCsv, string newLine, char separator)
+        public void GetDataAsCsv_WithData_SucceedsByParsing(string json, string expectedCsv, string newLine, char separator)
         {
             // Act
             CsvTable actual = GetDataAsCsv(json, newLine, separator);
@@ -79,6 +79,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData("{ \"output\": { \"schema\": null } }")]
         [InlineData("{ \"output\": { \"schema\": \"\" } }")]
         [InlineData("{ \"output\": { \"schema\": \"  \" } }")]
+        [InlineData("{ \"output\": { \"schema\": \"output()\" } }")]
         [InlineData("{ \"output\": { \"schema\": 2 } }")]
         public void GetDataAsCsv_WithoutSchema_Fails(string json)
         {
@@ -130,6 +131,17 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         private void ShouldContain(string actual, params string[] expected)
         {
             Assert.All(expected, str => Assert.Contains(str, actual, StringComparison.OrdinalIgnoreCase));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void Create_WithoutStatus_Fails(string status)
+        {
+            // Arrange
+            BinaryData data = BinaryData.FromString("{ \"output\": { \"schema\": \"output()\", \"data\": [] } }");
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => new DataFlowRunResult(status, data));
         }
 
         private static DataFlowRunResult CreateRunResult(string input)

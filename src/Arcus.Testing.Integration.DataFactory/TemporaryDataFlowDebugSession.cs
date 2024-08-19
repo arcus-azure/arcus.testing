@@ -252,7 +252,6 @@ namespace Arcus.Testing
                     debug.DebugSettings.SourceSettings.Add(new DataFlowSourceSetting { SourceName = source.Name, RowLimit = 100 });
                     if (source.Dataset != null)
                     {
-                        
                         DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, source.Dataset.ReferenceName);
                         await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName);
                     }
@@ -312,7 +311,7 @@ namespace Arcus.Testing
             if (result.Value.Status != "Succeeded")
             {
                 throw new InvalidOperationException(
-                    $"Executing DataFlow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in DataFactory '{DataFactory.Data.Name}' " +
+                    $"Executing DataFlow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in DataFactory '{DataFactory.Id.Name}' " +
                     $"did not result in a successful status: '{result.Value.Status}', please check whether the DataFlow is correctly set up and can be run within a debug session");
             }
 

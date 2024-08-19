@@ -661,6 +661,33 @@ namespace Arcus.Testing
                 headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
             }
 
+            CsvRow[] rows = ParseCsvRows(rawLines, headerNames, options);
+            return new CsvTable(headerNames, rows, csv, options);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static CsvTable Load(
+            IEnumerable<string> headerNames,
+            IEnumerable<IEnumerable<string>> rows,
+            AssertCsvOptions options)
+        {
+            string[] headerNamesArr = headerNames.ToArray();
+            string[][] rowsArr = rows.Select(r => r.ToArray()).ToArray();
+
+            string csv = string.Join(options.NewLine,
+                rowsArr.Prepend(headerNamesArr.ToArray())
+                       .Select(row => string.Join(options.Separator, row)));
+
+            EnsureAllRowsSameLength(csv, rowsArr.Prepend(headerNamesArr).ToArray(), options);
+
+            CsvRow[] parsed = ParseCsvRows(rowsArr, headerNamesArr, options);
+            return new CsvTable(headerNamesArr, parsed, csv, options);
+        }
+
+        private static CsvRow[] ParseCsvRows(string[][] rawLines, string[] headerNames, AssertCsvOptions options)
+        {
             CsvRow[] rows = rawLines.Select((rawRow, rowNumber) =>
             {
                 CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
@@ -671,8 +698,8 @@ namespace Arcus.Testing
 
                 return new CsvRow(cells, rowNumber, options);
             }).ToArray();
-
-            return new CsvTable(headerNames, rows, csv, options);
+            
+            return rows;
         }
 
         private static string[][] SplitCsv(string csv, AssertCsvOptions options)
@@ -895,7 +922,7 @@ namespace Arcus.Testing
                 return expectedValue.Equals(actualValue);
             }
 
-            return Value == other.Value;
+            return Value.Trim('\"') == other.Value.Trim('\"');
         }
 
         /// <summary>
