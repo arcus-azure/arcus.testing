@@ -214,6 +214,18 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     "{\"Products\":[1,2,3]}",
                     "has a different type at $.Products",
                 };
+                yield return new object[]
+                {
+                    "{\"Products\": null }",
+                    "{\"Products\":{\"id\":3}}",
+                    "has a different type at $.Products"
+                };
+                yield return new object[]
+                {
+                    "null",
+                    "{ \"Products\": [] }",
+                    "expected JSON is null"
+                };
             }
         }
 

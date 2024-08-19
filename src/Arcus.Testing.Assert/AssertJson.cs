@@ -430,7 +430,7 @@ namespace Arcus.Testing
         private readonly object _actual, _expected;
 
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
-            : this(kind, expected.GetPath(), expected: Describe(expected), actual: Describe(actual))
+            : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))
         {
         }
 
@@ -449,6 +449,11 @@ namespace Arcus.Testing
 
         private static string Describe(JsonNode node)
         {
+            if (node is null)
+            {
+                return "type null";
+            }
+
             string nodeTxt = node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
 #if NET8_0
 
