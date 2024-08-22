@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using Arcus.Testing.Failure;
 
@@ -40,6 +41,206 @@ namespace Arcus.Testing
         public BinaryData Data { get; }
 
         /// <summary>
+        /// Tries to load the raw <see cref="Data"/> as a valid JSON node.
+        /// </summary>
+        public JsonNode GetDataAsJson()
+        {
+            var previewAsJson = Data.ToString();
+            try
+            {
+                JsonObject outputObj = ParseOutputNode(previewAsJson);
+                PreviewHeader[] headers = ParseSchemeAsPreviewHeaders(outputObj);
+
+                JsonNode data = ParseDataAsNode(headers, outputObj);
+                return data;
+            }
+            catch (JsonException exception)
+            {
+                throw new JsonException(
+                    $"Cannot load the content of the DataFactory preview expression as JSON as the run result data could not be parsed to JSON: '{exception.Message}', for data: {previewAsJson}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures",
+                    exception);
+            }
+        }
+
+        private PreviewHeader[] ParseSchemeAsPreviewHeaders(JsonObject outputObj)
+        {
+            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
+                || headersNode is not JsonValue headersValue 
+                || !headersValue.ToString().StartsWith("output"))
+            {
+                throw new JsonException(
+                    $"Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            }
+
+            string headersWithoutOutput = Regex.Replace(headersValue.GetValue<string>(), "^output\\(", string.Empty);
+            string headersWithoutTrailingParentheses = headersWithoutOutput.Remove(headersWithoutOutput.Length - 1, 1);
+            string headersTxt = 
+                headersWithoutTrailingParentheses
+                     .Replace("\\n", "")
+                     .Replace(", ", ",")
+                     .Replace(" as string[]", " as string")
+                     .Replace("{", "")
+                     .Replace("}", "");
+
+            (int _, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(startIndex: 0, headersTxt);
+            return parsed;
+        }
+
+        private (int index, PreviewHeader[] parsed) ParseSchemeAsPreviewHeaders(int startIndex, string headersTxt)
+        {
+            var headers = new Collection<PreviewHeader>();
+
+            var headerName = new StringBuilder();
+            for (int i = startIndex; i < headersTxt.Length; i++)
+            {
+                char ch = headersTxt[i];
+
+                if (ch == ')')
+                {
+                    if (headerName.Length > 0)
+                    {
+                        headers.Add(PreviewHeader.CreateAsValue(headerName.ToString()));
+                    }
+
+                    return (i, headers.ToArray());
+                }
+
+                if (ch == '(')
+                {
+                    (int currentIndex, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(i + 1, headersTxt);
+                    if (currentIndex == headersTxt.Length - 1 || headersTxt[currentIndex + 1] is ',')
+                    {
+                        headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
+                        headerName.Clear();
+                        i = currentIndex + 1;
+                    }
+                    else if (headersTxt[currentIndex + 1] is ')')
+                    {
+                        headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
+                        return (currentIndex + 1, headers.ToArray());
+                    }
+                    else if (headersTxt[(currentIndex + 1)..(currentIndex + 3)] == "[]")
+                    {
+                        headers.Add(PreviewHeader.CreateAsArray(headerName.ToString(), parsed));
+                        headerName.Clear();
+                        i = currentIndex + 3;
+                    }
+                }
+
+                if (char.IsLetterOrDigit(ch) || ch == ' ' || ch == '-')
+                {
+                    headerName.Append(ch);
+                }
+
+                if (ch == ',' || i == headersTxt.Length - 1)
+                {
+                    var asString = " as string";
+                    int min = i - asString.Length + 1;
+                    int max = i + 1;
+                    string part = headersTxt[min..max];
+                    if (part == asString || part == "as string,")
+                    {
+                        headers.Add(PreviewHeader.CreateAsValue(headerName.ToString()));
+                        headerName.Clear();
+                    }
+                }
+            }
+
+            return (-1, headers.ToArray());
+        }
+
+         private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj)
+         {
+             JsonArray dataArray = ParseDataAsArray(outputObj);
+             JsonNode[] results =
+                dataArray.Where(elem => elem is JsonArray)
+                         .Cast<JsonArray>()
+                         .Select(arr => FillJsonDataFromHeaders(headers, arr))
+                         .ToArray();
+
+            return results.Length == 1 
+                ? results[0] 
+                : JsonSerializer.SerializeToNode(results);
+        }
+
+        private static JsonNode FillJsonDataFromHeaders(PreviewHeader[] headers, JsonArray dataArray)
+        {
+            //if (headers.Length != dataArray.Count)
+            //{
+            //    throw new JsonException(
+            //        $"Cannot load the content of the DataFactory preview expression as the header count does not match the data count: {dataArray}, " +
+            //        $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            //}
+
+            var result = new Dictionary<string, JsonNode>();
+            for (var i = 0; i < dataArray.Count; i++)
+            {
+                JsonNode headerValue = dataArray[i];
+                PreviewHeader headerName = headers[i];
+
+                switch (headerName.Type)
+                {
+                    case PreviewDataType.DirectValue:
+                        result[headerName.Name] = 
+                            float.TryParse(headerValue.ToString(), out float numeric) 
+                                ? numeric 
+                                : bool.TryParse(headerValue.ToString(), out bool flag)
+                                    ? flag:
+                                    headerValue;
+                        break;
+                    
+                    case PreviewDataType.Array when headerValue is JsonArray arr:
+                        JsonNode[] elements = arr.Cast<JsonArray>().Select(elem => FillJsonDataFromHeaders(headerName.Children, elem)).ToArray();
+                        result[headerName.Name] = JsonSerializer.SerializeToNode(elements);
+                        break;
+                    
+                    case PreviewDataType.Object when headerValue is JsonArray inner:
+                        JsonNode children = FillJsonDataFromHeaders(headerName.Children, inner);
+                        result[headerName.Name] = JsonSerializer.SerializeToNode(children);
+                        break;
+                    
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(headers), headerName, "Unknown preview data type");
+                }
+            }
+
+            return JsonSerializer.SerializeToNode(result);
+        }
+
+        private enum PreviewDataType { DirectValue, Array, Object }
+
+        private class PreviewHeader
+        {
+            public string Name { get; set; }
+
+            public PreviewDataType Type { get; set; }
+
+            public PreviewHeader[] Children { get; set; }
+
+            public static PreviewHeader CreateAsValue(string headerName)
+            {
+                return new PreviewHeader { Name = Regex.Replace(headerName, " as string$", ""), Type = PreviewDataType.DirectValue, Children = Array.Empty<PreviewHeader>() };
+            }
+
+            public static PreviewHeader CreateAsArray(string headerName, PreviewHeader[] parsed)
+            {
+                return new PreviewHeader { Name = Regex.Replace(headerName, " as $", ""), Type = PreviewDataType.Array, Children = parsed };
+            }
+
+            public static PreviewHeader CreateAsObject(string headerName, PreviewHeader[] parsed)
+            {
+                return new PreviewHeader { Name = Regex.Replace(headerName, " as $", ""), Type = PreviewDataType.Object, Children = parsed };
+            }
+
+            public override string ToString()
+            {
+                return $"{Name}:{Type}";
+            }
+        }
+
+        /// <summary>
         /// Tries to load the raw <see cref="Data"/> as a valid CSV table.
         /// </summary>
         /// <exception cref="CsvException">Thrown when the raw data could not be loaded as a valid CSV table.</exception>
@@ -62,10 +263,10 @@ namespace Arcus.Testing
             try
             {
                 JsonObject outputObj = ParseOutputNode(previewCsvAsJson);
-                string[] headers = ParseSchemeAsHeaders(outputObj);
-                string[][] rows = ParseDataAsRows(outputObj, options);
+                string[] headers = ParseSchemeAsCsvHeaders(outputObj);
+                string[][] rows = ParseDataAsRows(outputObj);
 
-                return CsvTable.Load(headers, rows, options);
+                return DataFlowPreviewCsvTable.Load(headers, rows, options);
             }
             catch (JsonException exception)
             {
@@ -76,13 +277,13 @@ namespace Arcus.Testing
             }
         }
 
-        private static JsonObject ParseOutputNode(string previewCsvAsJson)
+        private static JsonObject ParseOutputNode(string previewAsJson)
         {
-            JsonNode json = JsonNode.Parse(previewCsvAsJson);
+            JsonNode json = JsonNode.Parse(previewAsJson);
             if (json is not JsonObject)
             {
                 throw new CsvException(
-                    $"Cannot load the content of the DataFactory preview expression as the content is loaded as 'null': {previewCsvAsJson}, " +
+                    $"Cannot load the content of the DataFactory preview expression as the content is loaded as 'null': {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -90,22 +291,22 @@ namespace Arcus.Testing
             if (string.IsNullOrWhiteSpace(outputJson))
             {
                 throw new CsvException(
-                    $"Cannot load the content of the DataFactory preview expression as the output is not available in the 'output' node: {previewCsvAsJson}, " +
+                    $"Cannot load the content of the DataFactory preview expression as the output is not available in the 'output' node: {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            JsonNode outputNode = JsonNode.Parse(outputJson);
+            JsonNode outputNode = JsonNode.Parse(outputJson.Replace("\n", ""));
             if (outputNode is not JsonObject outputObj)
             {
                 throw new CsvException(
-                    $"Cannot load the content of the DataFactory preview expression as the 'output' node value is not considered valid JSON: {previewCsvAsJson}, " +
+                    $"Cannot load the content of the DataFactory preview expression as the 'output' node value is not considered valid JSON: {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
             return outputObj;
         }
 
-        private static string[] ParseSchemeAsHeaders(JsonObject outputObj)
+        private static string[] ParseSchemeAsCsvHeaders(JsonObject outputObj)
         {
             if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
                 || headersNode is not JsonValue headersValue 
@@ -124,8 +325,8 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            headersTxt = Regex.Replace(headersTxt, " as string, ", ", ");
-            headersTxt = Regex.Replace(headersTxt, " as string$", "");
+            headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?, ", ", ");
+            headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?$", "");
             headersTxt = Regex.Replace(headersTxt, " as \\(", " (");
 
             var headers = new List<string>();
@@ -170,25 +371,13 @@ namespace Arcus.Testing
             return headers.ToArray();
         }
 
-        private static string[][] ParseDataAsRows(JsonObject outputObj, AssertCsvOptions options)
+        private static string[][] ParseDataAsRows(JsonObject outputObj)
         {
-            JsonNode dataNode = outputObj["data"];
-            if (dataNode is not JsonArray dataArr)
-            {
-                throw new CsvException(
-                    $"Cannot load the content of the DataFactory preview expression as CSV as the rows are not available in the 'output.data' node: {outputObj}, " +
-                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
-            }
+            JsonArray dataArr = ParseDataAsArray(outputObj);
 
             string AsCsvCell(string value)
             {
-                const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
-                if (float.TryParse(value, style, options.CultureInfo, out _))
-                {
-                    return value;
-                }
-
-                return $"\"{value}\"";
+                return value;
             }
 
             if (dataArr.All(n => n is JsonArray arr && arr.All(elem => elem is JsonValue)))
@@ -198,6 +387,55 @@ namespace Arcus.Testing
             }
 
             return new[] { dataArr.Select(n => AsCsvCell(n.ToString())).ToArray() };
+        }
+
+        private static JsonArray ParseDataAsArray(JsonObject outputObj)
+        {
+            JsonNode dataNode = outputObj["data"];
+            if (dataNode is not JsonArray dataArr)
+            {
+                throw new CsvException(
+                    $"Cannot load the content of the DataFactory preview expression as CSV as the rows are not available in the 'output.data' node: {outputObj}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            }
+
+            return dataArr;
+        }
+
+        /// <summary>
+        /// Represents a specific DataFactory-version implementation of the <see cref="CsvTable"/>.
+        /// </summary>
+        private class DataFlowPreviewCsvTable : CsvTable
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="DataFlowPreviewCsvTable" /> class.
+            /// </summary>
+            private DataFlowPreviewCsvTable(
+                string[] headerNames,
+                CsvRow[] rows,
+                string originalCsv,
+                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options) 
+            {
+            }
+
+            /// <summary>
+            /// Loads the raw <paramref name="headerNames"/> and <paramref name="rows"/> to a validly parsed <see cref="CsvTable"/>.
+            /// </summary>
+            internal static CsvTable Load(
+                IEnumerable<string> headerNames,
+                IEnumerable<IEnumerable<string>> rows,
+                AssertCsvOptions options)
+            {
+                string[] headerNamesArr = headerNames.ToArray();
+                string[][] rowsArr = rows.Select(r => r.ToArray()).ToArray();
+
+                string csv = string.Join(options.NewLine,
+                    rowsArr.Prepend(headerNamesArr.ToArray())
+                           .Select(row => string.Join(options.Separator, row)));
+
+                CsvRow[] parsed = ParseCsvRows(rowsArr, headerNamesArr, options);
+                return new DataFlowPreviewCsvTable(headerNamesArr, parsed, csv, options);
+            }
         }
     }
 }

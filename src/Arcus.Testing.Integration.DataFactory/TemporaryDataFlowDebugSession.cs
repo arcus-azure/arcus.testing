@@ -315,6 +315,8 @@ namespace Arcus.Testing
                     $"did not result in a successful status: '{result.Value.Status}', please check whether the DataFlow is correctly set up and can be run within a debug session");
             }
 
+            
+
             _logger.LogInformation("DataFlow '{DataFlowName}' successfully ran, result available at sink '{SinkName}': {RawOutput}", dataFlowName, targetSinkName, result.Value.Data);
             return new DataFlowRunResult(result.Value.Status, BinaryData.FromString(result.Value.Data));
         }

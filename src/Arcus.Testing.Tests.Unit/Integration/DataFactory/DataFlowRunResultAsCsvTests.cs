@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 {
-    public class DataFlowRunResultTests
+    public class DataFlowRunResultAsCsvTests
     {
         private static readonly Faker Bogus = new();
 

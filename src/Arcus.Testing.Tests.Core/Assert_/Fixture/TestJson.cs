@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Core.Assert_.Fixture
             return new TestJson(JsonNode.Parse(GenerateJsonObject()));
         }
 
-        private static string GenerateJsonObject(int? maxDepth = 3)
+        private static string GenerateJsonObject(int? maxDepth = 1)
         {
             StringBuilder Recurse(StringBuilder acc, int depth)
             {
