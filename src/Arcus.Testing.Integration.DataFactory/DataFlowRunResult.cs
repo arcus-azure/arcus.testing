@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using Arcus.Testing.Failure;
 
@@ -63,31 +62,31 @@ namespace Arcus.Testing
             }
         }
 
-        private PreviewHeader[] ParseSchemeAsPreviewHeaders(JsonObject outputObj)
+        private static PreviewHeader[] ParseSchemeAsPreviewHeaders(JsonObject outputObj)
         {
             if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
-                || headersNode is not JsonValue headersValue 
-                || !headersValue.ToString().StartsWith("output"))
+                || headersNode is not JsonValue header 
+                || !header.ToString().StartsWith("output"))
             {
                 throw new JsonException(
                     $"Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            string headersWithoutOutput = Regex.Replace(headersValue.GetValue<string>(), "^output\\(", string.Empty);
-            string headersWithoutTrailingParentheses = headersWithoutOutput.Remove(headersWithoutOutput.Length - 1, 1);
-            string headersTxt = 
-                headersWithoutTrailingParentheses
-                     .Replace("\\n", "")
-                     .Replace(", ", ",")
-                     .Replace(" as string[]", " as string")
-                     .Replace("{", "")
-                     .Replace("}", "");
+            var headersTxt = header.GetValue<string>();
+            headersTxt = Regex.Replace(headersTxt, "^output\\(", string.Empty);
+            headersTxt = headersTxt.Remove(headersTxt.Length - 1, 1);
+            headersTxt = 
+                headersTxt.Replace("\\n", "")
+                          .Replace(", ", ",")
+                          .Replace(" as string[]", " as string")
+                          .Replace("{", "")
+                          .Replace("}", "");
 
             if (Regex.IsMatch(headersTxt, ",( )*,"))
             {
                 throw new JsonException(
-                    $"Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersValue.GetValue<string>()}, " +
+                    $"Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersTxt}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
                 
@@ -95,7 +94,7 @@ namespace Arcus.Testing
             return parsed;
         }
 
-        private (int index, PreviewHeader[] parsed) ParseSchemeAsPreviewHeaders(int startIndex, string headersTxt)
+        private static (int index, PreviewHeader[] parsed) ParseSchemeAsPreviewHeaders(int startIndex, string headersTxt)
         {
             var headers = new Collection<PreviewHeader>();
 
@@ -103,7 +102,6 @@ namespace Arcus.Testing
             for (int i = startIndex; i < headersTxt.Length; i++)
             {
                 char ch = headersTxt[i];
-
                 if (ch == ')')
                 {
                     if (headerName.Length > 0)
@@ -117,20 +115,22 @@ namespace Arcus.Testing
                 if (ch == '(')
                 {
                     (int currentIndex, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(i + 1, headersTxt);
-                    if (currentIndex == headersTxt.Length)
+                    bool endOfLine = currentIndex == headersTxt.Length;
+                    if (endOfLine)
                     {
                         headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
                         return (currentIndex, headers.ToArray());
                     }
 
-                    if (headersTxt[currentIndex] is ')')
+                    bool markedAsInnerObject = headersTxt[currentIndex] is ')';
+                    if (markedAsInnerObject)
                     {
                         headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
                         return (currentIndex + 1, headers.ToArray());
                     }
 
-                    if (currentIndex + 2 <= headersTxt.Length
-                        && headersTxt[currentIndex..(currentIndex + 2)] == "[]")
+                    bool markedAsArray = currentIndex + 2 <= headersTxt.Length && headersTxt[currentIndex..(currentIndex + 2)] == "[]";
+                    if (markedAsArray)
                     {
                         headers.Add(PreviewHeader.CreateAsArray(headerName.ToString(), parsed));
                         headerName.Clear();
@@ -245,31 +245,49 @@ namespace Arcus.Testing
             return headerValue;
         }
 
+        /// <summary>
+        /// Represents the available types the DataFactory data preview can handle.
+        /// </summary>
         private enum PreviewDataType { DirectValue, Array, Object }
 
+        /// <summary>
+        /// Represents a single DataFactor data preview header, could be recursively contain other preview headers.
+        /// </summary>
         private class PreviewHeader
         {
-            public string Name { get; set; }
+            private static readonly Regex DirectValueTrail = new(" as string$", RegexOptions.Compiled),
+                                          ArrayOrObjectTrail = new(" as $", RegexOptions.Compiled);
 
-            public PreviewDataType Type { get; set; }
+            private PreviewHeader(string name, PreviewDataType type, PreviewHeader[] children)
+            {
+                Name = name;
+                Type = type;
+                Children = children;
+            }
 
-            public PreviewHeader[] Children { get; set; }
+            public string Name { get; }
+            public PreviewDataType Type { get; }
+            public PreviewHeader[] Children { get; }
 
             public static PreviewHeader CreateAsValue(string headerName)
             {
-                return new PreviewHeader { Name = Regex.Replace(headerName, " as string$", ""), Type = PreviewDataType.DirectValue, Children = Array.Empty<PreviewHeader>() };
+                return new PreviewHeader(DirectValueTrail.Replace(headerName, ""), PreviewDataType.DirectValue, Array.Empty<PreviewHeader>());
             }
 
             public static PreviewHeader CreateAsArray(string headerName, PreviewHeader[] parsed)
             {
-                return new PreviewHeader { Name = Regex.Replace(headerName, " as $", ""), Type = PreviewDataType.Array, Children = parsed };
+                return new PreviewHeader(ArrayOrObjectTrail.Replace(headerName, ""), PreviewDataType.Array, parsed);
             }
 
             public static PreviewHeader CreateAsObject(string headerName, PreviewHeader[] parsed)
             {
-                return new PreviewHeader { Name = Regex.Replace(headerName, " as $", ""), Type = PreviewDataType.Object, Children = parsed };
+                return new PreviewHeader(ArrayOrObjectTrail.Replace(headerName, ""), PreviewDataType.Object, parsed);
             }
 
+            /// <summary>
+            /// Returns a string that represents the current object.
+            /// </summary>
+            /// <returns>A string that represents the current object.</returns>
             public override string ToString()
             {
                 return $"{Name}:{Type}";

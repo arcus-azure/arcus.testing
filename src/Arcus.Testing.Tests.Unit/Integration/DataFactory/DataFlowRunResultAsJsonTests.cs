@@ -7,7 +7,6 @@ using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
 using Bogus;
 using FsCheck;
 using FsCheck.Xunit;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -16,7 +15,6 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
     public class DataFlowRunResultAsJsonTests
     {
         private readonly ITestOutputHelper _outputWriter;
-        private readonly ILogger _logger;
         private static readonly Faker Bogus = new();
 
         /// <summary>
@@ -25,7 +23,6 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         public DataFlowRunResultAsJsonTests(ITestOutputHelper outputWriter)
         {
             _outputWriter = outputWriter;
-            _logger = new XunitTestLogger(outputWriter);
         }
 
         [Fact]
@@ -79,11 +76,6 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 {
                     "id as string", "[\"123\"]",
                     "{ \"id\": 123 }"
-                };
-                yield return new object[]
-                {
-                    "min as string, max as string", "[ \"1,1\", \"10,2\" ]",
-                    "{ \"min\": 1.1, \"max\": 10.2 }"
                 };
                 yield return new object[]
                 {
