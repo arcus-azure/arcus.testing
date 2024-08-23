@@ -258,6 +258,11 @@ namespace Arcus.Testing
 
         private static JsonNode ParseDirectValue(JsonNode headerValue, DataPreviewJsonOptions options)
         {
+            if (headerValue is null)
+            {
+                return null;
+            }
+
             const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
             if (float.TryParse(headerValue.ToString(), style, options.CultureInfo, out float numeric))
             {

@@ -46,7 +46,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         }
 
         [Fact]
-        public void GetDataAsJson_WithJsonArray_SucceedsByParsing2()
+        public void GetDataAsJson_WithJsonArray_SucceedsByParsing()
         {
             // Arrange
             Arbitrary<string> arb = Arb.From(Gen.Fresh(() => DataPreviewJson.GenerateJsonArrayOfObjects(min: 2, max: 3).ToString()));
@@ -80,8 +80,18 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 };
                 yield return new object[]
                 {
+                    "id as string", "[ null ]",
+                    "{ \"id\": null }"
+                };
+                yield return new object[]
+                {
                     "numbers as string[]", "[ [ \"1\", \"2\", \"3\" ] ]",
                     "{ \"numbers\": [ 1, 2, 3 ] }"
+                };
+                yield return new object[]
+                {
+                    "numbers as string[]", "[ null ]",
+                    "{ \"numbers\": null }"
                 };
                 yield return new object[]
                 {
