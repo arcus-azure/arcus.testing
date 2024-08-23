@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Bogus;
 
-namespace Arcus.Testing.Tests.Core.Assert_.Fixture
+namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 {
     /// <summary>
     /// Represents a test fixture that generates random JSON contents.
@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Core.Assert_.Fixture
             return new TestJson(JsonNode.Parse(GenerateJsonObject()));
         }
 
-        private static string GenerateJsonObject(int? maxDepth = 1)
+        private static string GenerateJsonObject(int? maxDepth = 3)
         {
             StringBuilder Recurse(StringBuilder acc, int depth)
             {

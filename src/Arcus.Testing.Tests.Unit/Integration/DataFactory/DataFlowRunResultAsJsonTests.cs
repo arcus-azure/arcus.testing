@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
@@ -84,6 +85,18 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 };
                 yield return new object[]
                 {
+                    "min as string, max as string", "[ \"1.1\", \"10.2\" ]",
+                    "{ \"min\": 1.1, \"max\": 10.2 }",
+                    void (DataPreviewJsonOptions options) => options.CultureInfo = CultureInfo.GetCultureInfo("en-US")
+                };
+                yield return new object[]
+                {
+                    "min as string, max as string", "[ \"1,1\", \"10,2\" ]",
+                    "{ \"min\": 1.1, \"max\": 10.2 }",
+                    void (DataPreviewJsonOptions options) => options.CultureInfo = CultureInfo.GetCultureInfo("fr-FR")
+                };
+                yield return new object[]
+                {
                     "{street-name} as string", "[ \"Baker street\" ]",
                     "{ \"street-name\": \"Baker street\" }"
                 };
@@ -121,14 +134,18 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 
         [Theory]
         [MemberData(nameof(SucceededSampleDataForSingleDocument))]
-        public void GetDataAsJson_WithSampleDataForSingleDocument_SucceedsByParsing(string headersTxt, string dataTxt, string expectedJson)
+        public void GetDataAsJson_WithSampleDataForSingleDocument_SucceedsByParsing(
+            string headersTxt,
+            string dataTxt,
+            string expectedJson,
+            Action<DataPreviewJsonOptions> configureOptions = null)
         {
             // Arrange
             var preview = DataPreview.Create(headersTxt, $"[{dataTxt}]");
             DataFlowRunResult result = CreateRunResult(preview);
 
             // Act
-            JsonNode actual = result.GetDataAsJson();
+            JsonNode actual = result.GetDataAsJson(configureOptions);
 
             // Assert
             AssertJson.Equal(AssertJson.Load(expectedJson), actual);
