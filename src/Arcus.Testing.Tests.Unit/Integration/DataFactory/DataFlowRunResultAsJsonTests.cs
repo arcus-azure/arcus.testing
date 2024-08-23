@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
 using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
@@ -83,6 +84,11 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 {
                     "min as string, max as string", "[ \"1,1\", \"10,2\" ]",
                     "{ \"min\": 1.1, \"max\": 10.2 }"
+                };
+                yield return new object[]
+                {
+                    "numbers as string[]", "[ [ \"1\", \"2\", \"3\" ] ]",
+                    "{ \"numbers\": [ 1, 2, 3 ] }"
                 };
                 yield return new object[]
                 {
@@ -180,6 +186,47 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 
             // Assert
             AssertJson.Equal(AssertJson.Load(expectedJson), actual);
+        }
+
+        public static IEnumerable<object[]> FailingInvalidInput
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "color , , as string",
+                    "[ [ \"Green\" ], [ \"Pink\" ], [ \"Yellow\" ] ]"
+                };
+                yield return new object[]
+                {
+                    "book as ((title as string)",
+                    "[ [ [ \"Ubik\" ] ], [ [ \"Authority\" ] ] ]"
+                };
+                yield return new object[]
+                {
+                    "{classic-reads} as (title as string, author as string)[[]]",
+                    "[ [ [ [ \"Nineteen Eighty-Four\", \"George Orwell\" ] ] ], [ [ [ \"Lord of the Flies\", \"William Golding\" ] ] ] ]"
+                };
+                yield return new object[]
+                {
+                    "movie as (name as string, director as string, genre as string)", 
+                    "[ [ { \"this\": \"that\" }, \"Tim Burton\", \"horror-comedy\" ] ]",
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingInvalidInput))]
+        public void GetDataAsJson_WithInvalidSample_FailsWithDescription(string headersTxt, string dataTxt)
+        {
+            // Arrange
+            var preview = DataPreview.Create(headersTxt, dataTxt);
+            DataFlowRunResult result = CreateRunResult(preview);
+
+            // Act / Assert
+            var exception = Assert.ThrowsAny<JsonException>(() => result.GetDataAsJson());
+            Assert.StartsWith("Cannot load", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("only supports limited", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         private static DataFlowRunResult CreateRunResult(DataPreview preview)

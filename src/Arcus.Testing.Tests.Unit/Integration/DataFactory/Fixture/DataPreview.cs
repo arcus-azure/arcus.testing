@@ -33,6 +33,15 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             return new DataPreview(headersTxt, data);
         }
 
+        public static DataPreview Create(CsvTable csv)
+        {
+            string headersTxt = $"output({string.Join(", ", csv.HeaderNames.Select(h => $"{CreateHeaderName(h)} as string"))})";
+            var data = JsonSerializer.SerializeToNode(csv.Rows.Select(r => JsonSerializer.SerializeToNode(r.Cells.Select(c => c.Value))));
+            var arr = Assert.IsType<JsonArray>(data);
+
+            return new DataPreview(headersTxt, arr);
+        }
+
         public static DataPreview Create(JsonObject obj)
         {
             string[] headers = SerializeHeaders(obj);

@@ -1,14 +1,53 @@
 ﻿using System;
 using System.Linq;
 using Arcus.Testing.Failure;
+using Arcus.Testing.Tests.Core.Assert_.Fixture;
+using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
 using Bogus;
+using FsCheck;
+using FsCheck.Xunit;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 {
     public class DataFlowRunResultAsCsvTests
     {
+        private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataFlowRunResultAsCsvTests" /> class.
+        /// </summary>
+        public DataFlowRunResultAsCsvTests(ITestOutputHelper outputWriter)
+        {
+            _outputWriter = outputWriter;
+        }
+
+        [Fact]
+        public void GetDataAsCsv_WithData_SucceedsByParsing()
+        {
+            // Arrange
+            var arb = Arb.From(Gen.Fresh(() => TestCsv.Generate(opt =>
+            {
+                opt.Header = AssertCsvHeader.Present;
+                opt.Separator = ';';
+                opt.NewLine = Environment.NewLine;
+                opt.Quote = '\'';
+            }).ToString()));
+            Prop.ForAll(arb, csv =>
+            {
+                var expected = AssertCsv.Load(csv);
+                var preview = DataPreview.Create(expected);
+                DataFlowRunResult result = CreateRunResult(preview.ToString());
+
+                // Act
+                CsvTable actual = result.GetDataAsCsv();
+
+                // Assert
+                AssertCsv.Equal(expected, actual);
+            }).QuickCheckThrowOnFailure(_outputWriter);
+        }
 
         [Theory]
         [InlineData(
@@ -20,7 +59,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData(
             "{ \"output\": { \"schema\": \"output(product as string, price as (value as string, unit as string)[])\", \"data\": [ [ \"pc\", \"1000,euro\" ], [ \"printer\", \"500,euro\" ] ] } }",
             "product;price\npc;1000,euro\nprinter;500,euro", "\n", ';')]
-        public void GetDataAsCsv_WithData_SucceedsByParsing(string json, string expectedCsv, string newLine, char separator)
+        public void GetDataAsCsv_WithSampleData_SucceedsByParsing(string json, string expectedCsv, string newLine, char separator)
         {
             // Act
             CsvTable actual = GetDataAsCsv(json, newLine, separator);
@@ -41,7 +80,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData(
             "{ \"output\": { \"schema\": \"output(id as string, LegalEntityId as string, CustomerNumber as string, LastName as string, Prefix as string, FirstName as string, Gender as string, LanguageCode as string, Emails as (Address as string, Type as string)[], TelephoneNumbers as (Number as string, Type as string)[], Addresses as (Type as string, Street as string, HouseNumber as string, HouseNumberAddition as string, ZipCode as string, City as string, CountryCode as string)[])\", \"data\": [] } }",
             "\"id\",\"LegalEntityId\",\"CustomerNumber\",\"LastName\",\"Prefix\",\"FirstName\",\"Gender\",\"LanguageCode\",\"Emails\",\"TelephoneNumbers\",\"Addresses\"")]
-        public void GetDataAsCsv_WithSchema_SucceedsByParsing(string json, string expectedTxt)
+        public void GetDataAsCsv_WithSampleSchema_SucceedsByParsing(string json, string expectedTxt)
         {
             // Act
             CsvTable csv = GetDataAsCsv(json);
@@ -50,7 +89,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             Assert.Equal(expectedTxt, string.Join(",", csv.HeaderNames.Select(h => $"\"{h}\"")));
         }
 
-        private CsvTable GetDataAsCsv(string json, string newLine = "\n", char separator = ';')
+        private static CsvTable GetDataAsCsv(string json, string newLine = "\n", char separator = ';')
         {
             string status = Bogus.Lorem.Word();
             var result = new DataFlowRunResult(status, BinaryData.FromString(json));

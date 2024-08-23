@@ -84,6 +84,13 @@ namespace Arcus.Testing
                      .Replace("{", "")
                      .Replace("}", "");
 
+            if (Regex.IsMatch(headersTxt, ",( )*,"))
+            {
+                throw new JsonException(
+                    $"Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersValue.GetValue<string>()}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            }
+                
             (int _, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(startIndex: 0, headersTxt);
             return parsed;
         }
@@ -150,6 +157,7 @@ namespace Arcus.Testing
                     var asString = " as string";
                     int min = i - asString.Length + 1;
                     int max = i + 1;
+
                     string part = headersTxt[min..max];
                     if (part == asString || part == "as string,")
                     {
@@ -194,12 +202,7 @@ namespace Arcus.Testing
                 switch (headerName.Type)
                 {
                     case PreviewDataType.DirectValue:
-                        result[headerName.Name] = 
-                            float.TryParse(headerValue.ToString(), out float numeric)
-                                ? numeric 
-                                : bool.TryParse(headerValue.ToString(), out bool flag)
-                                    ? flag:
-                                    headerValue;
+                        result[headerName.Name] = ParseDirectValue(headerValue);
                         break;
                     
                     case PreviewDataType.Array when headerValue is JsonArray arr:
@@ -213,11 +216,33 @@ namespace Arcus.Testing
                         break;
                     
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(headers), headerName.Type, "Unknown preview data type");
+                        throw new JsonException(
+                            $"Cannot load the content of the DataFactory preview expression as the header and data is not representing the same types: {dataArray}, " +
+                            $"consider parsing the raw run data yourself as this parsing only supports limited structures");
                 }
             }
 
             return JsonSerializer.SerializeToNode(result);
+        }
+
+        private static JsonNode ParseDirectValue(JsonNode headerValue)
+        {
+            if (float.TryParse(headerValue.ToString(), out float numeric))
+            {
+                return numeric;
+            }
+
+            if (bool.TryParse(headerValue.ToString(), out bool flag))
+            {
+                return flag;
+            }
+
+            if (headerValue is JsonArray arr && arr.All(elem => elem is JsonValue))
+            {
+                return JsonSerializer.SerializeToNode(arr.Select(ParseDirectValue).ToArray());
+            }
+
+            return headerValue;
         }
 
         private enum PreviewDataType { DirectValue, Array, Object }
@@ -339,6 +364,7 @@ namespace Arcus.Testing
             headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?, ", ", ");
             headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?$", "");
             headersTxt = Regex.Replace(headersTxt, " as \\(", " (");
+            headersTxt = Regex.Replace(headersTxt, "\\,", ",");
 
             var headers = new List<string>();
             var header = new StringBuilder();
