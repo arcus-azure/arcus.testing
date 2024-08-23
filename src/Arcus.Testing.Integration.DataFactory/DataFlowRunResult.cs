@@ -104,28 +104,39 @@ namespace Arcus.Testing
                         headers.Add(PreviewHeader.CreateAsValue(headerName.ToString()));
                     }
 
-                    return (i, headers.ToArray());
+                    return (i + 1, headers.ToArray());
                 }
 
                 if (ch == '(')
                 {
                     (int currentIndex, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(i + 1, headersTxt);
-                    if (currentIndex == headersTxt.Length - 1 || headersTxt[currentIndex + 1] is ',')
+                    if (currentIndex == headersTxt.Length)
                     {
                         headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
-                        headerName.Clear();
-                        i = currentIndex + 1;
+                        return (currentIndex, headers.ToArray());
                     }
-                    else if (headersTxt[currentIndex + 1] is ')')
+
+                    if (headersTxt[currentIndex] is ')')
                     {
                         headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
                         return (currentIndex + 1, headers.ToArray());
                     }
-                    else if (headersTxt[(currentIndex + 1)..(currentIndex + 3)] == "[]")
+
+                    if (currentIndex + 2 <= headersTxt.Length
+                        && headersTxt[currentIndex..(currentIndex + 2)] == "[]")
                     {
                         headers.Add(PreviewHeader.CreateAsArray(headerName.ToString(), parsed));
                         headerName.Clear();
-                        i = currentIndex + 3;
+                        i = currentIndex + 1;
+                        continue;
+                    }
+
+                    if (headersTxt[currentIndex] is ',')
+                    {
+                        headers.Add(PreviewHeader.CreateAsObject(headerName.ToString(), parsed));
+                        headerName.Clear();
+                        i = currentIndex;
+                        continue;
                     }
                 }
 
@@ -167,12 +178,12 @@ namespace Arcus.Testing
 
         private static JsonNode FillJsonDataFromHeaders(PreviewHeader[] headers, JsonArray dataArray)
         {
-            //if (headers.Length != dataArray.Count)
-            //{
-            //    throw new JsonException(
-            //        $"Cannot load the content of the DataFactory preview expression as the header count does not match the data count: {dataArray}, " +
-            //        $"consider parsing the raw run data yourself as this parsing only supports limited structures");
-            //}
+            if (headers.Length != dataArray.Count)
+            {
+                throw new JsonException(
+                    $"Cannot load the content of the DataFactory preview expression as the header count does not match the data count: {dataArray}, " +
+                    $"consider parsing the raw run data yourself as this parsing only supports limited structures");
+            }
 
             var result = new Dictionary<string, JsonNode>();
             for (var i = 0; i < dataArray.Count; i++)
@@ -184,7 +195,7 @@ namespace Arcus.Testing
                 {
                     case PreviewDataType.DirectValue:
                         result[headerName.Name] = 
-                            float.TryParse(headerValue.ToString(), out float numeric) 
+                            float.TryParse(headerValue.ToString(), out float numeric)
                                 ? numeric 
                                 : bool.TryParse(headerValue.ToString(), out bool flag)
                                     ? flag:
@@ -202,7 +213,7 @@ namespace Arcus.Testing
                         break;
                     
                     default:
-                        throw new ArgumentOutOfRangeException(nameof(headers), headerName, "Unknown preview data type");
+                        throw new ArgumentOutOfRangeException(nameof(headers), headerName.Type, "Unknown preview data type");
                 }
             }
 

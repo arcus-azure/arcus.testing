@@ -16,13 +16,21 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
 {
     public class DataPreview
     {
-        private readonly string[] _headers;
+        private readonly string _headersTxt;
         private readonly JsonArray _data;
 
-        private DataPreview(string[] headers, JsonArray data)
+        private DataPreview(string headersTxt, JsonArray data)
         {
-            _headers = headers;
+            _headersTxt = headersTxt;
             _data = data;
+        }
+
+        public static DataPreview Create(string headersTxt, string dataTxt)
+        {
+            headersTxt = headersTxt.StartsWith("output(") ? headersTxt : $"output({headersTxt})";
+            var data = Assert.IsType<JsonArray>(JsonNode.Parse(dataTxt));
+            
+            return new DataPreview(headersTxt, data);
         }
 
         public static DataPreview Create(JsonObject obj)
@@ -30,7 +38,16 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             string[] headers = SerializeHeaders(obj);
             JsonArray data = Assert.IsType<JsonArray>(JsonSerializer.SerializeToNode(new[] { SerializeData(obj) }));
 
-            return new DataPreview(headers, data);
+            return new DataPreview("output(" + string.Join(", ", headers) + ")", data);
+        }
+
+        public static DataPreview Create(JsonArray arr)
+        {
+            var obj = arr.First().AsObject();
+            string[] inner = SerializeHeaders(obj).ToArray();
+            JsonArray data = Assert.IsType<JsonArray>(JsonSerializer.SerializeToNode(arr.Cast<JsonObject>().Select(SerializeData).ToArray()));
+
+            return new DataPreview("output(" + string.Join(", ", inner) + ")", data);
         }
 
         private static string[] SerializeHeaders(JsonObject obj)
@@ -43,7 +60,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
                 {
                     headers.Add(headerName + " as string");
                 }
-                else if (node.Value is JsonArray arrOfDirectValues && arrOfDirectValues.All(elem => elem is JsonValue))
+                else if (node.Value is JsonArray arrOfDirectValues && (arrOfDirectValues.Count == 0 || arrOfDirectValues.All(elem => elem is JsonValue)))
                 {
                     headers.Add(headerName + " as string[]");
                 }
@@ -101,8 +118,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
         /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
-            string headersTxt = "output(" + string.Join(", ", _headers) + ")";
-            var json = $"{{ \"schema\": \"{headersTxt}\", \"data\": {_data.ToJsonString(new JsonSerializerOptions(new JsonSerializerOptions { WriteIndented = false }))} }}";
+            var json = $"{{ \"schema\": \"{_headersTxt}\", \"data\": {_data.ToJsonString(new JsonSerializerOptions(new JsonSerializerOptions { WriteIndented = false }))} }}";
             var node = JsonNode.Parse(json);
 
             var x = node.ToString();

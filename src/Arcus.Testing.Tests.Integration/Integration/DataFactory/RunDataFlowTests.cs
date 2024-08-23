@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Linq;
-using System.Text.Json;
+using System.Collections.Generic;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
+using Arcus.Testing.Tests.Core.Integration.DataFactory;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
-using Bogus;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -25,30 +23,18 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             _connection = TemporaryManagedIdentityConnection.Create(ServicePrincipal);
         }
 
-        [Fact]
-        public async Task RunDataFlow_WithJsonFileOnSource_SucceedsByGettingJsonFileOnSink()
+        public static IEnumerable<object[]> DataFlowJsonFormats => new[]
+        {
+            new object[] { JsonDocForm.SingleDoc, DataPreviewJson.GenerateJsonObject() },
+            new object[] { JsonDocForm.ArrayOfDocs, DataPreviewJson.GenerateJsonArrayOfObjects(min: 2, max: 3) }
+        };
+
+        [Theory]
+        [MemberData(nameof(DataFlowJsonFormats))]
+        public async Task RunDataFlow_WithJsonFileOnSource_SucceedsByGettingJsonFileOnSink(JsonDocForm docForm, JsonNode expected)
         {
             // Arrange
-//            var expected = JsonNode.Parse(
-//@"[{
-//    ""productId"": 123,
-//    ""description"": ""this is a description"",
-//    ""tags"": [ ""tag1"", ""tag2"" ],
-//    ""related"": [ { ""productId"": 456, ""tags"": [ ""tag3"", ""tag4"" ] } ],
-//    ""category"": { ""name"": ""these products"" }
-//},
-//{
-//    ""productId"": 123,
-//    ""description"": ""this is a description"",
-//    ""tags"": [ ""tag1"", ""tag2"" ],
-//    ""related"": [ { ""productId"": 456, ""tags"": [ ""tag3"", ""tag4"" ] } ],
-//    ""category"": { ""name"": ""these products"" }
-//}]");
-
             await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithJsonSinkSourceAsync(JsonDocForm.ArrayOfDocs, Configuration, Logger);
-
-            JsonNode expected = GenerateJson();
-
             await dataFlow.UploadToSourceAsync(expected!.ToString());
 
             await using TemporaryDataFlowDebugSession session = await StartDebugSessionAsync();
@@ -58,13 +44,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             // Assert
             AssertJson.Equal(expected, result.GetDataAsJson());
-        }
-
-        private static JsonNode GenerateJson()
-        {
-            return Bogus.Random.Bool()
-                ? JsonNode.Parse(TestJson.GenerateObject().ToString())
-                : JsonSerializer.SerializeToNode(Bogus.Make(Bogus.Random.Int(2, 5), TestJson.GenerateObject));
         }
 
         [Fact]
