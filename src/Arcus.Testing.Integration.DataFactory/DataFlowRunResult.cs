@@ -432,7 +432,7 @@ namespace Arcus.Testing
 
             string AsCsvCell(string value)
             {
-                return value;
+                return value.Replace("\\,", ",");
             }
 
             if (dataArr.All(n => n is JsonArray arr && arr.All(elem => elem is JsonValue)))
