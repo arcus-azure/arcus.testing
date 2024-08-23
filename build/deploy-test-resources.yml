@@ -50,6 +50,8 @@ stages:
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
+                  --parameters cosmosDbName=${{ variables['Arcus.Testing.CosmosDb.Name'] }} `
+                  --parameters cosmosDb_mongoDb_databaseName=${{ variables['Arcus.Testing.CosmosDb.MongoDb.DatabaseName'] }} `
                   --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
                   --parameters servicePrincipal_objectId=$objectId
 

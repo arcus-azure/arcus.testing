@@ -4,6 +4,12 @@ param location string
 // Define the name of the storage account that will be created.
 param storageAccountName string
 
+// Define the name of the Cosmos DB database account that will be created.
+param cosmosDbName string
+
+// Define the nme of the Cosmos DB database that will be created.
+param cosmosDb_mongoDb_databaseName string
+
 // Define the name of the key vault where the necessary secrets will be stored to access the deployed test resources.
 param keyVaultName string
 
@@ -31,6 +37,30 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
       {
         principalId: servicePrincipal_objectId
         roleDefinitionIdOrName: 'Storage Table Data Contributor'
+      }
+    ]
+  }
+}
+
+module cosmosDb 'br/public:avm/res/document-db/database-account:0.6.0' = {
+  name: 'cosmosDeployment'
+  params: {
+    name: cosmosDbName
+    location: location
+    enableFreeTier: true
+    capabilitiesToAdd: [
+      'EnableMongo'
+      'EnableServerless'
+    ]
+    mongodbDatabases: [
+      {
+        name: cosmosDb_mongoDb_databaseName
+      }
+    ]
+    roleAssignments: [
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'DocumentDB Account Contributor'
       }
     ]
   }
