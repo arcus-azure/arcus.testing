@@ -10,7 +10,6 @@ using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualBasic;
 
 namespace Arcus.Testing
 {
@@ -58,7 +57,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the DataFactory resource where the active DataFlow debug session is started.
         /// </summary>
-        internal DataFactoryResource DataFactory { get; }
+        private DataFactoryResource DataFactory { get; }
 
         /// <summary>
         /// Gets the session ID of the active data flow debug session.

@@ -195,3 +195,26 @@ await session.RunDataFlowAsync(..., options =>
     options.MaxRows = 100;
 });
 ```
+
+## Run a Data pipeline
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../01-core.md) packages:
+
+```csharp
+using Arcus.Testing;
+using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager.DataFactory.Models;
+
+DataFactoryResource resource = ...
+
+DataFactoryPipelineResource pipeline = 
+    await resource.GetDataFactoryPipelineAsync(pipelineName);
+
+PipelineCreateRunResult run = await pipeline.CreateRunAsync();
+
+DataFactoryPipelineRunInfo finalStatus =
+    await Poll.Target(async () => await resource.GetPipelineRunAsync(run.RunId.ToString()))
+              .Until(current => current.Status == "Succeeded")
+              .Every(TimeSpan.FromSeconds(5))
+              .Timeout(TimeSpan.FromMinutes(1))
+              .FailWith("DataFactory pipeline did not succeeded within the expected time frame");
+```
