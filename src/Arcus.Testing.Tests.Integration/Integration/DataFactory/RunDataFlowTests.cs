@@ -8,14 +8,13 @@ using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
 using Bogus;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
-    public class RunDataFlowTests : IntegrationTest, IClassFixture<DataFactoryDebugSession>, IAsyncLifetime
+    public class RunDataFlowTests : IntegrationTest, IClassFixture<DataFactoryDebugSession>
     {
         private readonly DataFactoryDebugSession _session;
 
@@ -24,7 +23,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public RunDataFlowTests(DataFactoryDebugSession session, ITestOutputHelper outputWriter) : base(outputWriter)
         {
-            session.Logger = Logger;
             _session = session;
         }
 
@@ -78,16 +76,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
         }
-
-        public async Task InitializeAsync()
-        {
-            await _session.EnsureDebugSessionStartedAsync();
-        }
-
-        public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
     }
 
     public class DataFactoryDebugSession : IAsyncLifetime
@@ -110,28 +98,16 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public TemporaryDataFlowDebugSession Value { get; private set; }
 
         /// <summary>
-        /// Gets or sets the logger used in this fixture.
-        /// </summary>
-        public ILogger Logger { get; set; } = NullLogger.Instance;
-
-        /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
             _connection = TemporaryManagedIdentityConnection.Create(_config.GetServicePrincipal());
-            return Task.CompletedTask;
-        }
 
-        public async Task EnsureDebugSessionStartedAsync()
-        {
             DataFactoryConfig dataFactory = _config.GetDataFactory();
-
-            Value ??= Bogus.Random.Bool()
-                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, Logger)
-                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId,
-                    Logger,
-                    opt => opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15));
+            Value = Bogus.Random.Bool()
+                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance)
+                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt => opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15));
         }
 
         /// <summary>
