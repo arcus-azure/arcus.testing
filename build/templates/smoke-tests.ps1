@@ -19,4 +19,22 @@ Describe 'Storage account' {
       Remove-AzStorageContainer -Name $containerName -Context $storageContext -Force
     }
   }
+  It 'Service principal can create CosmosDb MongoDb collection' {
+    $collectionName = 'test-collection'
+    try {
+      New-AzCosmosDBMongoDBCollection `
+        -ResourceGroupName $env:resourceGroupName `
+        -AccountName $env:cosmosDbName `
+        -DatabaseName $env:cosmosDb_mongoDb_databaseName `
+        -Name $collectionName
+    }
+    catch {
+      Remove-AzCosmosDBMongoDBCollection `
+        -ResourceGroupName $env:resourceGroupName `
+        -AccountName $env:cosmosDbName `
+        -DatabaseName $env:cosmosDb_mongoDb_databaseName `
+        -Name $collectionName
+        -Force
+    }
+  }
 }

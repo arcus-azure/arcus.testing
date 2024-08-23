@@ -68,6 +68,8 @@ stages:
             env:
               resourceGroupName: ${{ parameters.resourceGroupName }}
               storageAccountName: $(Arcus.Testing.StorageAccount.Name)
+              cosmosDbName: $(Arcus.Testing.CosmosDb.Name)
+              cosmosDb_mongoDb_databaseName: $(Arcus.Testing.CosmosDb.MongoDb.DatabaseName)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
