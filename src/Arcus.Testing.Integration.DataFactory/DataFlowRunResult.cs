@@ -285,7 +285,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Represents a single DataFactor data preview header, could be recursively contain other preview headers.
         /// </summary>
-        private class PreviewHeader
+        private sealed class PreviewHeader
         {
             private static readonly Regex DirectValueTrail = new(" as string$", RegexOptions.Compiled),
                                           ArrayOrObjectTrail = new(" as $", RegexOptions.Compiled);
@@ -492,7 +492,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Represents a specific DataFactory-version implementation of the <see cref="CsvTable"/>.
         /// </summary>
-        private class DataFlowPreviewCsvTable : CsvTable
+        private sealed class DataFlowPreviewCsvTable : CsvTable
         {
             /// <summary>
             /// Initializes a new instance of the <see cref="DataFlowPreviewCsvTable" /> class.

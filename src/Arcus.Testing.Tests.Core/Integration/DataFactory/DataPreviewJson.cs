@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Text.Json;
@@ -7,10 +8,16 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Core.Integration.DataFactory
 {
+    /// <summary>
+    /// Represents the data preview JSON of a run DataFlow.
+    /// </summary>
     public static class DataPreviewJson
     {
         private static readonly Faker Bogus = new();
 
+        /// <summary>
+        /// Generates a run result of a DataFlow that represents a JSON object.
+        /// </summary>
         public static JsonObject GenerateJsonObject()
         {
             string[] nodeNames = GenerateJsonNodeNames();
@@ -28,7 +35,8 @@ namespace Arcus.Testing.Tests.Core.Integration.DataFactory
                     1 => GenerateJsonValue(),
                     2 => GenerateJsonArrayOfValues(),
                     3 => GenerateJsonObjectOfValues(GenerateJsonNodeNames()),
-                    4 => GenerateJsonArrayOfObjects()
+                    4 => GenerateJsonArrayOfObjects(),
+                    _ => throw new ArgumentOutOfRangeException(nameof(nodeName), nodeName, "Unknown node value type")
                 };
 
                 return new KeyValuePair<string, JsonNode>(nodeName, nodeValue);
@@ -44,12 +52,16 @@ namespace Arcus.Testing.Tests.Core.Integration.DataFactory
             {
                 1 => (JsonValue) Bogus.Lorem.Word(),
                 2 => (JsonValue) Bogus.Random.Int(1, 100),
-                3 => (JsonValue) Bogus.Random.Bool()
+                3 => (JsonValue) Bogus.Random.Bool(),
+                _ => throw new ArgumentOutOfRangeException()
             });
 
             return Assert.IsType<JsonArray>(JsonSerializer.SerializeToNode(values));
         } 
 
+        /// <summary>
+        /// Generates a run result of a DataFlow that represents a JSON array.
+        /// </summary>
         public static JsonArray GenerateJsonArrayOfObjects(int min = 1, int max = 2)
         {
             string[] nodeNames = GenerateJsonNodeNames();
@@ -77,7 +89,8 @@ namespace Arcus.Testing.Tests.Core.Integration.DataFactory
             {
                 1 => (JsonValue) Bogus.Lorem.Word(),
                 2 => (JsonValue) Bogus.Random.Int(1, 100),
-                3 => (JsonValue) Bogus.Random.Bool()
+                3 => (JsonValue) Bogus.Random.Bool(),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
     }

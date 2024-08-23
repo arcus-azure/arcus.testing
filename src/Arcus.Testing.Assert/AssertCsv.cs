@@ -699,8 +699,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
         protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
         {
-            ArgumentNullException.ThrowIfNull(rowLines, nameof(rowLines));
-            ArgumentNullException.ThrowIfNull(headerNames, nameof(headerNames));
+            ArgumentNullException.ThrowIfNull(rowLines);
+            ArgumentNullException.ThrowIfNull(headerNames);
             options ??= new AssertCsvOptions();
 
             CsvRow[] rows = rowLines.Select((rawRow, rowNumber) =>

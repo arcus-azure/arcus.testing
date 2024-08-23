@@ -247,5 +247,15 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         {
             return new DataFlowRunResult(status: Bogus.Lorem.Word(), BinaryData.FromString(input));
         }
+
+        [Fact]
+        public void SetCulture_WithoutValue_Fails()
+        {
+            // Arrange
+            var options = new DataPreviewJsonOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.CultureInfo = null);
+        }
     }
 }

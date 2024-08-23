@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using Bogus;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Assert = Xunit.Assert;
+using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
 {
+    /// <summary>
+    /// Represents the data preview serialized output of a run DataFlow.
+    /// </summary>
     public class DataPreview
     {
         private readonly string _headersTxt;
@@ -25,6 +20,9 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             _data = data;
         }
 
+        /// <summary>
+        /// Creates a data preview based on the raw headers and data array.
+        /// </summary>
         public static DataPreview Create(string headersTxt, string dataTxt)
         {
             headersTxt = headersTxt.StartsWith("output(") ? headersTxt : $"output({headersTxt})";
@@ -33,6 +31,9 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             return new DataPreview(headersTxt, data);
         }
 
+        /// <summary>
+        /// Creates a data preview based on the rows of a CSV table.
+        /// </summary>
         public static DataPreview Create(CsvTable csv)
         {
             string headersTxt = $"output({string.Join(", ", csv.HeaderNames.Select(h => $"{CreateHeaderName(h)} as string"))})";
@@ -42,6 +43,9 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             return new DataPreview(headersTxt, arr);
         }
 
+        /// <summary>
+        /// Creates a data preview based on the property names of a JSON object.
+        /// </summary>
         public static DataPreview Create(JsonObject obj)
         {
             string[] headers = SerializeHeaders(obj);
@@ -50,9 +54,12 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
             return new DataPreview("output(" + string.Join(", ", headers) + ")", data);
         }
 
+        /// <summary>
+        /// Creates a data preview based on the elements of a JSON array.
+        /// </summary>
         public static DataPreview Create(JsonArray arr)
         {
-            var obj = arr.First().AsObject();
+            var obj = arr[0].AsObject();
             string[] inner = SerializeHeaders(obj).ToArray();
             JsonArray data = Assert.IsType<JsonArray>(JsonSerializer.SerializeToNode(arr.Cast<JsonObject>().Select(SerializeData).ToArray()));
 
@@ -79,7 +86,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
                 }
                 else if (node.Value is JsonArray arr && arr.All(elem => elem is JsonObject))
                 {
-                    string[] inner = SerializeHeaders(arr.First().AsObject()).ToArray();
+                    string[] inner = SerializeHeaders(arr[0].AsObject()).ToArray();
                     headers.Add(headerName + " as (" + string.Join(", ", inner) + ")[]");
                 }
             }
@@ -98,7 +105,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
 
             for (var index = 0; index < obj.Count; index++)
             {
-                (string key, JsonNode node) = obj.ElementAt(index);
+                (_, JsonNode node) = obj.ElementAt(index);
                 if (node is JsonValue value)
                 {
                     arr.Add(value.ToString());

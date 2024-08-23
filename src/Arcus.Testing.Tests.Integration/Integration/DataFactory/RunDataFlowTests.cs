@@ -4,23 +4,28 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
+using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
+using Bogus;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
-    public class RunDataFlowTests : IntegrationTest, IDisposable
+    public class RunDataFlowTests : IntegrationTest, IClassFixture<DataFactoryDebugSession>, IAsyncLifetime
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
+        private readonly DataFactoryDebugSession _session;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RunDataFlowTests" /> class.
         /// </summary>
-        public RunDataFlowTests(ITestOutputHelper outputWriter) : base(outputWriter)
+        public RunDataFlowTests(DataFactoryDebugSession session, ITestOutputHelper outputWriter) : base(outputWriter)
         {
-            _connection = TemporaryManagedIdentityConnection.Create(ServicePrincipal);
+            session.Logger = Logger;
+            _session = session;
         }
 
         public static IEnumerable<object[]> DataFlowJsonFormats => new[]
@@ -34,13 +39,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task RunDataFlow_WithJsonFileOnSource_SucceedsByGettingJsonFileOnSink(JsonDocForm docForm, JsonNode expected)
         {
             // Arrange
-            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithJsonSinkSourceAsync(JsonDocForm.ArrayOfDocs, Configuration, Logger);
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithJsonSinkSourceAsync(docForm, Configuration, Logger);
             await dataFlow.UploadToSourceAsync(expected!.ToString());
 
-            await using TemporaryDataFlowDebugSession session = await StartDebugSessionAsync();
-
             // Act
-            DataFlowRunResult result = await session.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
 
             // Assert
             AssertJson.Equal(expected, result.GetDataAsJson());
@@ -55,10 +58,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             string expectedCsv = GenerateCsv();
             await dataFlow.UploadToSourceAsync(expectedCsv);
 
-            await using TemporaryDataFlowDebugSession session = await StartDebugSessionAsync();
-
             // Act
-            DataFlowRunResult result = await session.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
@@ -78,19 +79,72 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.NewLine = Environment.NewLine;
         }
 
-        private async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync()
+        public async Task InitializeAsync()
         {
-            DataFactoryConfig dataFactory = Configuration.GetDataFactory();
-            return Bogus.Random.Bool()
-                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, Logger)
-                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, Logger, opt => opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15));
+            await _session.EnsureDebugSessionStartedAsync();
+        }
+
+        public Task DisposeAsync()
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public class DataFactoryDebugSession : IAsyncLifetime
+    {
+        private readonly TestConfig _config;
+        private TemporaryManagedIdentityConnection _connection;
+        private static readonly Faker Bogus = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataFactoryDebugSession" /> class.
+        /// </summary>
+        public DataFactoryDebugSession()
+        {
+            _config = TestConfig.Create();
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Gets the current value state of the debug session.
         /// </summary>
-        public void Dispose()
+        public TemporaryDataFlowDebugSession Value { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the logger used in this fixture.
+        /// </summary>
+        public ILogger Logger { get; set; } = NullLogger.Instance;
+
+        /// <summary>
+        /// Called immediately after the class has been created, before it is used.
+        /// </summary>
+        public Task InitializeAsync()
         {
+            _connection = TemporaryManagedIdentityConnection.Create(_config.GetServicePrincipal());
+            return Task.CompletedTask;
+        }
+
+        public async Task EnsureDebugSessionStartedAsync()
+        {
+            DataFactoryConfig dataFactory = _config.GetDataFactory();
+
+            Value ??= Bogus.Random.Bool()
+                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, Logger)
+                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId,
+                    Logger,
+                    opt => opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15));
+        }
+
+        /// <summary>
+        /// Called when an object is no longer needed. Called just before <see cref="M:System.IDisposable.Dispose" />
+        /// if the class also implements that.
+        /// </summary>
+        public async Task DisposeAsync()
+        {
+            if (Value != null)
+            {
+                await Value.DisposeAsync();
+            }
+
             _connection?.Dispose();
         }
     }

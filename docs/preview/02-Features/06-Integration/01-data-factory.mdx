@@ -177,7 +177,7 @@ JsonNode json = result.GetDataAsJson();
 > * For **JSON**:
 >   * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
 >   * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
->   * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON but is not supported in the data preview. 
+>   * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
 
 ### Customization
 The process of running a DataFlow can be manipulated with several options described here:

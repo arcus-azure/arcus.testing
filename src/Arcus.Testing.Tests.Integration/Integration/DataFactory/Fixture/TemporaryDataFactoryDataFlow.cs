@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,11 +11,17 @@ using Azure.ResourceManager.DataFactory.Models;
 using Azure.ResourceManager.DataFactory;
 using Microsoft.Extensions.Logging;
 using Azure.Core.Expressions.DataFactory;
-using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 {
+    /// <summary>
+    /// Represents the available data types the DataFlow supports in Azure DataFactory.
+    /// </summary>
     public enum DataFlowDataType { Csv, Json }
+
+    /// <summary>
+    /// Represents the available JSON settings in the source of the DataFlow.
+    /// </summary>
     public enum JsonDocForm { SingleDoc, ArrayOfDocs }
 
     /// <summary>
@@ -53,10 +58,17 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         private string ResourceGroupName => _config["Arcus:ResourceGroup:Name"];
         private DataFactoryConfig DataFactory => _config.GetDataFactory();
         private StorageAccount StorageAccount => _config.GetStorageAccount();
-
-        public string Name { get; }
-        public string SinkName { get; } = "dataflowsink";
         private string SourceName { get; }
+
+        /// <summary>
+        /// Gets the unique name of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// Gets the unique name of the sink of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string SinkName { get; } = "dataflowsink";
 
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
@@ -160,30 +172,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
             _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceName));
-            BinaryData schema = BinaryData.FromString(@"{
-                ""type"": ""object"",
-                ""properties"": {
-                    ""productId"": {
-                        ""type"": ""integer""
-                    },
-                    ""productName"": {
-                        ""type"": ""string""
-                    },
-                    ""price"": {
-                        ""type"": ""number""
-                    },
-                    ""tags"": {
-                        ""type"": ""array"",
-                        ""items"": {
-                            ""type"": ""string""
-                        }
-                    }
-                }
-            }");
 
             var sourceProperties = new JsonDataset(blobStorageLinkedService)
             {
-                //Schema = schema,
                 DataLocation = new AzureBlobStorageLocation()
                 {
                     Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
@@ -295,7 +286,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             string documentForm = docForm switch
             {
                 JsonDocForm.SingleDoc => "singleDocument",
-                JsonDocForm.ArrayOfDocs => "arrayOfDocuments"
+                JsonDocForm.ArrayOfDocs => "arrayOfDocuments",
+                _ => throw new ArgumentOutOfRangeException(nameof(docForm), docForm, null)
             };
 
             return new[]
