@@ -5,7 +5,7 @@ Describe 'Azure policies' {
   foreach ($item in $items) {
     It $item.policyDefinitionReferenceId {
       $definition = $definitions | where { $_.id -eq $item.policyDefinitionId }
-      $item.complianceState | Should -Be 'Compliant' -Because $definition.description
+      $item.complianceState | Should -Be 'Compliant' -Because $definition.description + $items
     }
   }
 }
