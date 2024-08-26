@@ -35,6 +35,7 @@ jobs:
             Disable-AzContextAutosave -Scope Process
             Connect-AzAccount -Credential $pscredential -TenantId $env:tenantId -ServicePrincipal
             
+            Install-Module -Name 'PSRule.Rules.Azure' -Force -Scope CurrentUser
             Export-AzRuleData -OutputPath 'out/templates/'
             Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath 'out/templates/'
 
