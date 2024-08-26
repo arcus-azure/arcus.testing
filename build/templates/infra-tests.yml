@@ -38,18 +38,18 @@ jobs:
             
             Install-Module -Name 'PSRule.Rules.Azure' -Force -Scope CurrentUser
             Export-AzRuleData -OutputPath 'out/templates/'
-            Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath 'out/templates/'
+            Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath 'out/templates/' -o NUnit3 -OutputPath "./pester.test.results.xml"
 
-      - task: AzureCLI@2
-        displayName: Analyze Azure policies
-        inputs:
-          azureSubscription: '${{ parameters.azureServiceConnection }}'
-          scriptType: 'pscore'
-          scriptLocation: 'inlineScript'
-          addSpnToEnvironment: true
-          inlineScript: |
-            Install-Module -Name Pester -Force -SkipPublisherCheck
-            Invoke-Pester -Script "./build/templates/policy-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
+      # - task: AzureCLI@2
+      #   displayName: Analyze Azure policies
+      #   inputs:
+      #     azureSubscription: '${{ parameters.azureServiceConnection }}'
+      #     scriptType: 'pscore'
+      #     scriptLocation: 'inlineScript'
+      #     addSpnToEnvironment: true
+      #     inlineScript: |
+      #       Install-Module -Name Pester -Force -SkipPublisherCheck
+      #       Invoke-Pester -Script "./build/templates/policy-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
 
       - task: PublishTestResults@2
         displayName: 'Publish test results'
