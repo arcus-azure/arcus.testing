@@ -37,7 +37,7 @@ jobs:
             Connect-AzAccount -Credential $pscredential -TenantId $env:tenantId -ServicePrincipal
             
             Install-Module -Name 'PSRule.Rules.Azure' -Force -Scope CurrentUser
-            Export-AzRuleData -OutputPath 'out/templates/'
+            Export-AzRuleData -ResourceGroupName 'arcus-testing-dev-we-rg' -OutputPath 'out/templates/'
             Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath 'out/templates/' -o NUnit3 -OutputPath "./pester.test.results.xml"
 
       # - task: AzureCLI@2
