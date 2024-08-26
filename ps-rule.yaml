@@ -1,0 +1,15 @@
+#
+# PSRule for Azure configuration
+#
+
+# Please see the documentation for all configuration options:
+# https://aka.ms/ps-rule/options
+# https://aka.ms/ps-rule-azure/options
+
+configuration:
+  # Enable automatic expansion of Azure parameter files.
+  AZURE_PARAMETER_FILE_EXPANSION: true
+
+  # Enable automatic expansion of Azure Bicep source files.
+  AZURE_BICEP_FILE_EXPANSION: true
+  AZURE_BICEP_PARAMS_FILE_EXPANSION: true
