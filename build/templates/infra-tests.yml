@@ -23,6 +23,22 @@ jobs:
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey -AsSecret
 
       - task: AzureCLI@2
+        displayName: Analyze PSRule
+        inputs:
+          azureSubscription: '${{ parameters.azureServiceConnection }}'
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          addSpnToEnvironment: true
+          inlineScript: |
+            $clientSecret = ConvertTo-SecureString $env:servicePrincipalKey -AsPlainText -Force
+            $pscredential = New-Object -TypeName System.Management.Automation.PSCredential($env:servicePrincipalId, $clientSecret)
+            Disable-AzContextAutosave -Scope Process
+            Connect-AzAccount -Credential $pscredential -TenantId $env:tenantId -ServicePrincipal
+            
+            Export-AzRuleData -OutputPath 'out/templates/'
+            Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath 'out/templates/'
+
+      - task: AzureCLI@2
         displayName: Analyze Azure policies
         inputs:
           azureSubscription: '${{ parameters.azureServiceConnection }}'
