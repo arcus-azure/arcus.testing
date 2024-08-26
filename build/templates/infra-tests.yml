@@ -2,8 +2,8 @@ parameters:
   azureServiceConnection: ''
 
 jobs:
-  - job: ValidateBicep
-    displayName: 'Validate Bicep file(s)'
+  - job: InfraTests
+    displayName: 'Run infrastructure tests'
     pool:
       vmImage: $(Vm.Image)
     steps:

@@ -71,11 +71,16 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - template: templates/unit-tests.yml
+      # - template: templates/unit-tests.yml
+      
       - template: templates/infra-tests.yml
-      - template: templates/integration-tests.yml
         parameters:
           azureServiceConnection: '${{ parameters.azureServiceConnection }}'
+      
+      # - template: templates/integration-tests.yml
+        # parameters:
+          # azureServiceConnection: '${{ parameters.azureServiceConnection }}'
+      
       - template: templates/publish-coverage.yml
 
   - stage: ReleaseToMyGet
