@@ -81,7 +81,7 @@ stages:
         # parameters:
           # azureServiceConnection: '${{ parameters.azureServiceConnection }}'
       
-      - template: templates/publish-coverage.yml
+      # - template: templates/publish-coverage.yml
 
   - stage: ReleaseToMyGet
     displayName: 'Release to MyGet'
