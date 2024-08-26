@@ -1,3 +1,6 @@
+az policy definition list | ConvertFrom-Json
+az policy state list -g 'arcus-testing-dev-we-rg' | ConvertFrom-Json
+
 $definitions = az policy definition list | ConvertFrom-Json
 $items = az policy state list -g 'arcus-testing-dev-we-rg' | ConvertFrom-Json
 
