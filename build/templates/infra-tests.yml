@@ -23,18 +23,19 @@ jobs:
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey -AsSecret
 
       - task: AzureCLI@2
-        displayName: Analyze Azure template files
+        displayName: Analyze Azure policies
         inputs:
           azureSubscription: '${{ parameters.azureServiceConnection }}'
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           addSpnToEnvironment: true
           inlineScript: |
-            Install-Module -Name PSRule.Rules.Azure -Scope CurrentUser -Force
-            Assert-PSRule -Module 'PSRule.Rules.Azure' -InputPath './build/templates/' -o NUnit3 -OutputPath ./psrule-reports/results.xml
+            Install-Module -Name Pester -Force -SkipPublisherCheck
+            Invoke-Pester -Script "./build/templates/policy-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
 
       - task: PublishTestResults@2
-        condition: always()
+        displayName: 'Publish test results'
         inputs:
           testResultsFormat: 'NUnit'
-          testResultsFiles: './psrule-reports/results.xml'
+          testResultsFiles: '**/pester.test.results.xml'
+          failTaskOnFailedTests: true
