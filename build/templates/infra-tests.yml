@@ -30,6 +30,7 @@ jobs:
           scriptLocation: 'inlineScript'
           addSpnToEnvironment: true
           inlineScript: |
+            Install-Module -Name 'Az' -Force -Scope -CurrentUser
             $clientSecret = ConvertTo-SecureString $env:servicePrincipalKey -AsPlainText -Force
             $pscredential = New-Object -TypeName System.Management.Automation.PSCredential($env:servicePrincipalId, $clientSecret)
             Disable-AzContextAutosave -Scope Process
