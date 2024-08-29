@@ -29,6 +29,7 @@
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.EventHubs\Arcus.Testing.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.ServiceBus\Arcus.Testing.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj" />
   </ItemGroup>
 
   <ItemGroup>
