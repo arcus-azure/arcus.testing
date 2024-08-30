@@ -55,7 +55,6 @@ module cosmosDb 'br/public:avm/res/document-db/database-account:0.6.0' = {
     capabilitiesToAdd: [
       'EnableMongo'
       'EnableServerless'
-      'EnableTable'
     ]
     mongodbDatabases: [
       {
