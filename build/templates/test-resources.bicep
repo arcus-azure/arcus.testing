@@ -96,13 +96,13 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
     sqlRoleAssignmentsPrincipalIds: [
       servicePrincipal_objectId
     ]
-    
     sqlRoleDefinitions: [
       {
         name: 'MetadataRole'
         roleType: 'CustomRole'
         dataAction: [
           'Microsoft.DocumentDB/databaseAccounts/readMetadata'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*'
         ]
       }
     ]
