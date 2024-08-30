@@ -96,10 +96,14 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
     sqlRoleAssignmentsPrincipalIds: [
       servicePrincipal_objectId
     ]
+    
     sqlRoleDefinitions: [
       {
-        name: 'Cosmos DB Built-in Data Reader'
-        roleType: 'BuiltInRole'
+        name: 'MetadataRole'
+        roleType: 'CustomRole'
+        dataAction: [
+          'Microsoft.DocumentDB/databaseAccounts/readMetadata'
+        ]
       }
     ]
     backupPolicyContinuousTier: null
