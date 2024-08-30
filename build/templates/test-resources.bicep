@@ -82,7 +82,7 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
     capabilitiesToAdd: [
       'EnableServerless'
     ]
-    mongodbDatabases: [
+    sqlDatabases: [
       {
         name: cosmosDb_noSql_databaseName
       }
