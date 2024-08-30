@@ -102,7 +102,8 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
         roleType: 'CustomRole'
         dataAction: [
           'Microsoft.DocumentDB/databaseAccounts/readMetadata'
-          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/delete'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*'
         ]
       }
     ]
