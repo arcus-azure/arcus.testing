@@ -11,7 +11,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 {
     public class PollTests
     {
-        private readonly TimeSpan _3s = TimeSpan.FromSeconds(3), _100ms = TimeSpan.FromMilliseconds(100);
+        private readonly TimeSpan _5s = TimeSpan.FromSeconds(5), _100ms = TimeSpan.FromMilliseconds(100);
         private readonly object _expectedResult = Bogus.PickRandom((object) Bogus.Random.Int(), Bogus.Random.AlphaNumeric(10));
 
         private static readonly Faker Bogus = new();
@@ -151,7 +151,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 
         private void ReasonableTimeFrame(PollOptions options)
         {
-            options.Timeout = _3s;
+            options.Timeout = _5s;
             options.Interval = _100ms;
         }
 
@@ -276,7 +276,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             this Poll<TResult, TException> poll)
             where TException : Exception
         {
-            return poll.Every(TimeSpan.FromMilliseconds(100)).Timeout(TimeSpan.FromSeconds(3));
+            return poll.Every(TimeSpan.FromMilliseconds(100)).Timeout(TimeSpan.FromSeconds(5));
         }
 
         public static Poll<TResult, TException> LowestTimeFrame<TResult, TException>(

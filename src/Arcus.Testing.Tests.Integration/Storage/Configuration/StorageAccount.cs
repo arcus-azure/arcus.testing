@@ -11,21 +11,33 @@ namespace Arcus.Testing.Tests.Integration.Storage.Configuration
         /// Initializes a new instance of the <see cref="StorageAccount" /> class.
         /// </summary>
         /// <param name="name">The name of the Azure Storage account.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
-        public StorageAccount(string name)
+        /// <param name="key">The account key of Azure Storage account.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> or the <paramref name="key"/> is blank.</exception>
+        public StorageAccount(string name, string key)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Storage account name cannot be blank", nameof(name));
             }
 
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new ArgumentException("Storage account key cannot be blank", nameof(name));
+            }
+
             Name = name;
+            ConnectionString = $"DefaultEndpointsProtocol=https;AccountName={name};AccountKey={key};EndpointSuffix=core.windows.net";
         }
 
         /// <summary>
         /// Gets the name of the Azure Storage account.
         /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// Gets the connection string to the Azure Storage account.
+        /// </summary>
+        public string ConnectionString { get; }
     }
 
     /// <summary>
@@ -43,7 +55,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Configuration
                 throw new ArgumentNullException(nameof(config));
             }
 
-            return new StorageAccount(config["Arcus:StorageAccount:Name"]);
+            return new StorageAccount(
+                config["Arcus:StorageAccount:Name"],
+                config["Arcus:StorageAccount:Key"]);
         }
     }
 }

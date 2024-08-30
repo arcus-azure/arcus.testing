@@ -23,12 +23,14 @@
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.EventHubs\Arcus.Testing.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.Pumps.ServiceBus\Arcus.Testing.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -29,6 +29,7 @@ jobs:
 
       - task: PublishTestResults@2
         displayName: 'Publish unit test results'
+        condition: always()
         inputs:
           testResultsFormat: 'VSTest'
           testResultsFiles: '$(Pipeline.Workspace)/*.trx'

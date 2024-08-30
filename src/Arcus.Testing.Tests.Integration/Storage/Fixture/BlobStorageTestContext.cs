@@ -26,17 +26,19 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
         private static readonly Faker Bogus = new();
 
-        private BlobStorageTestContext(TemporaryManagedIdentityConnection connection, BlobServiceClient serviceClient, ILogger logger)
+        private BlobStorageTestContext(TemporaryManagedIdentityConnection connection, BlobServiceClient serviceClient, StorageAccount storageAccount, ILogger logger)
         {
             _connection = connection;
             _serviceClient = serviceClient;
             _logger = logger;
+
+            StorageAccount = storageAccount;
         }
 
         /// <summary>
         /// Gets the Azure Storage account that is used in the Azure Blob storage context.
         /// </summary>
-        public StorageAccount StorageAccount => new(_serviceClient.AccountName);
+        public StorageAccount StorageAccount { get; }
 
         /// <summary>
         /// Creates a new <see cref="BlobStorageTestContext"/> that interacts with Azure Blob Storage.
@@ -44,11 +46,13 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public static Task<BlobStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(configuration.GetServicePrincipal());
+            
+            StorageAccount storageAccount = configuration.GetStorageAccount();
             var serviceClient = new BlobServiceClient(
-                new Uri($"https://{configuration.GetStorageAccount().Name}.blob.core.windows.net"),
+                new Uri($"https://{storageAccount.Name}.blob.core.windows.net"),
                 new DefaultAzureCredential());
 
-            return Task.FromResult(new BlobStorageTestContext(connection, serviceClient, logger));
+            return Task.FromResult(new BlobStorageTestContext(connection, serviceClient, storageAccount, logger));
         }
 
         /// <summary>
