@@ -2,4 +2,5 @@ variables:
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
   Arcus.Testing.CosmosDb.Name: 'arcus-testing-cosmos'
   Arcus.Testing.CosmosDb.MongoDb.DatabaseName: 'arcus-testing-cosmos-mongo'
+  Arcus.Testing.CosmosDb.NoSql.DatabaseName: 'arcus-testing-cosmos-nosql'
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'

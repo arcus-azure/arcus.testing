@@ -6,7 +6,7 @@ BeforeAll {
 
 Describe 'Storage account' {
   BeforeEach {
-    $storageContext = New-AzStorageContext -StorageAccountName $env:storageAccountName -UseConnectedAccount
+    $storageContext = New-AzStorageContext -StorageAccountName $env:ARCUS_TESTING_STORAGEACCOUNT_NAME -UseConnectedAccount
   }
   It 'Service principal can get blob container' {
     Get-AzStorageContainer -Context $storageContext
@@ -24,15 +24,15 @@ Describe 'Storage account' {
     try {
       New-AzCosmosDBMongoDBCollection `
         -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:cosmosDbName `
-        -DatabaseName $env:cosmosDb_mongoDb_databaseName `
+        -AccountName $env:ARCUS_TESTING_COSMOSDB_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
         -Name $collectionName
     }
     catch {
       Remove-AzCosmosDBMongoDBCollection `
         -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:cosmosDbName `
-        -DatabaseName $env:cosmosDb_mongoDb_databaseName `
+        -AccountName $env:ARCUS_TESTING_COSMOSDB_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
         -Name $collectionName
         -Force
     }

@@ -52,6 +52,7 @@ stages:
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
                   --parameters cosmosDbName=${{ variables['Arcus.Testing.CosmosDb.Name'] }} `
                   --parameters cosmosDb_mongoDb_databaseName=${{ variables['Arcus.Testing.CosmosDb.MongoDb.DatabaseName'] }} `
+                  --parameters cosmosDb_noSql_databaseName=${{ variables['Arcus.Testing.CosmosDb.NoSql.DatabaseName'] }} `
                   --parameters keyVaultName=${{ variables['Arcus.Testing.KeyVault.Name'] }} `
                   --parameters servicePrincipal_objectId=$objectId
 
@@ -67,9 +68,6 @@ stages:
           - task: AzureCLI@2
             env:
               resourceGroupName: ${{ parameters.resourceGroupName }}
-              storageAccountName: $(Arcus.Testing.StorageAccount.Name)
-              cosmosDbName: $(Arcus.Testing.CosmosDb.Name)
-              cosmosDb_mongoDb_databaseName: $(Arcus.Testing.CosmosDb.MongoDb.DatabaseName)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
@@ -81,6 +79,7 @@ stages:
                 Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
           - task: PublishTestResults@2
             displayName: 'Publish test results'
+            condition: always()
             inputs:
               testResultsFormat: 'NUnit'
               testResultsFiles: '**/pester.test.results.xml'
