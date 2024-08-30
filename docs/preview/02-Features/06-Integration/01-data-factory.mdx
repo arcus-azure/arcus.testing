@@ -172,7 +172,7 @@ CsvTable csv = result.GetDataAsCsv();
 JsonNode json = result.GetDataAsJson();
 ```
 
-> ⚠️ **IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefor, take these warnings in consideration.
+> ⚠️ **IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
 > * For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
 > * For **JSON**:
 >   * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
