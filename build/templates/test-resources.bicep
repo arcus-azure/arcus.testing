@@ -92,9 +92,14 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
         principalId: servicePrincipal_objectId
         roleDefinitionIdOrName: 'DocumentDB Account Contributor'
       }
+    ]
+    sqlRoleAssignmentsPrincipalIds: [
+      servicePrincipal_objectId
+    ]
+    sqlRoleDefinitions: [
       {
-        principalId: servicePrincipal_objectId
-        roleDefinitionIdOrName: 'Cosmos DB Built-in Data Reader'
+        name: 'Cosmos DB Built-in Data Reader'
+        roleType: 'BuiltInRole'
       }
     ]
     backupPolicyContinuousTier: null
