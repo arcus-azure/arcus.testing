@@ -78,7 +78,6 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
   params: {
     name: cosmosDb_noSql_name
     location: location
-    enableFreeTier: true
     disableLocalAuth: false
     capabilitiesToAdd: [
       'EnableServerless'
