@@ -24,14 +24,14 @@ Describe 'Storage account' {
     try {
       New-AzCosmosDBMongoDBCollection `
         -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:ARCUS_TESTING_COSMOSDB_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOSDB_MONGODB_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
         -Name $collectionName
     }
     catch {
       Remove-AzCosmosDBMongoDBCollection `
         -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:ARCUS_TESTING_COSMOSDB_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOSDB_MONGODB_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
         -Name $collectionName
         -Force

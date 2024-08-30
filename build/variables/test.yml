@@ -1,6 +1,7 @@
 variables:
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
-  Arcus.Testing.CosmosDb.Name: 'arcus-testing-cosmos'
-  Arcus.Testing.CosmosDb.MongoDb.DatabaseName: 'arcus-testing-cosmos-mongo'
-  Arcus.Testing.CosmosDb.NoSql.DatabaseName: 'arcus-testing-cosmos-nosql'
+  Arcus.Testing.CosmosDb.MongoDb.Name: 'arcus-testing-cosmos-mongo'
+  Arcus.Testing.CosmosDb.MongoDb.DatabaseName: 'arcus-testing-cosmos-mongo-db'
+  Arcus.Testing.CosmosDb.NoSql.Name: 'arcus-testing-cosmos-nosql'
+  Arcus.Testing.CosmosDb.NoSql.DatabaseName: 'arcus-testing-cosmos-nosql-db'
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'
