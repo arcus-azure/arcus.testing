@@ -1,6 +1,6 @@
 # Arcus - Testing
 [![Build Status](https://dev.azure.com/codit/Arcus/_apis/build/status/Commit%20builds/CI%20-%20Arcus.Testing?branchName=main)](https://dev.azure.com/codit/Arcus/_build/latest?definitionId=804&branchName=main)
-[![NuGet Version](https://img.shields.io/nuget/vpre/Arcus.Testing.Logging.Xunit)](https://www.nuget.org/packages/Arcus.Testing.Logging.Xunit/)
+[![NuGet Version](https://img.shields.io/nuget/v/Arcus.Testing.Logging.Xunit)](https://www.nuget.org/packages/Arcus.Testing.Logging.Xunit/)
 ![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/codit/Arcus/804)
 
 Reusable testing components for Arcus repo's.
