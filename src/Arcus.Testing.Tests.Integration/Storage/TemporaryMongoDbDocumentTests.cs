@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.CosmosDb)]
+    [Collection(TestCollections.MongoDb)]
     public class TemporaryMongoDbDocumentTests : IntegrationTest
     {
         /// <summary>
@@ -19,13 +19,13 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
         }
 
-        private CosmosDbConfig CosmosDb => Configuration.GetCosmosDb();
+        private MongoDbConfig MongoDb => Configuration.GetMongoDb();
 
         [Fact]
         public async Task CreateTempMongoDbDocument_OnNonExistingDocumentId_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Product product = CreateProduct();
@@ -45,7 +45,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbDocument_OnExistingDocumentId_SucceedsByRevertingAfterFixtureLifetime()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Product original = CreateProduct();
@@ -68,8 +68,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             where TDoc : class
         {
             return await TemporaryMongoDbDocument.InsertIfNotExistsAsync(
-                CosmosDb.ResourceId,
-                CosmosDb.MongoDb.DatabaseName,
+                MongoDb.ResourceId,
+                MongoDb.DatabaseName,
                 collectionName,
                 doc,
                 Logger);
@@ -96,9 +96,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Assert.Equal(expected.Amount, actual.Amount);
         }
 
-        private async Task<CosmosDbTestContext> GivenMongoDbAsync()
+        private async Task<MongoDbTestContext> GivenMongoDbAsync()
         {
-            return await CosmosDbTestContext.GivenMongoDbAsync(Configuration, Logger);
+            return await MongoDbTestContext.GivenAsync(Configuration, Logger);
         }
 
         [Fact]

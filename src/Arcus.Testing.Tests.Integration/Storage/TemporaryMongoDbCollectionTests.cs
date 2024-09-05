@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.CosmosDb)]
+    [Collection(TestCollections.MongoDb)]
     public class TemporaryMongoDbCollectionTests : IntegrationTest
     {
         /// <summary>
@@ -19,13 +19,13 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
         }
 
-        private CosmosDbConfig CosmosDb => Configuration.GetCosmosDb();
+        private MongoDbConfig MongoDb => Configuration.GetMongoDb();
 
         [Fact]
         public async Task CreateTempMongoDbCollection_OnNonExistingCollection_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = context.WhenCollectionNameUnavailable();
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
@@ -43,7 +43,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollection_OnExistingCollection_SucceedsByLeavingAfterLifetimeFixture()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Shipment shipment = CreateShipment();
@@ -70,7 +70,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollectionWithCleanAllOnSetup_OnExistingCollectionWithExistingDocument_SucceedsByRemovingDocument()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
 
@@ -95,7 +95,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollectionWithCleanMatchingOnSetup_OnExistingCollectionWithMatchingDocument_SucceedsByRemovingDocument()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
 
@@ -123,7 +123,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollectionWithCleanAllOnTeardown_OnExistingCollectionWithNewDocument_SucceedsByRemovingDocument()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
@@ -145,7 +145,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollectionWithCleanMatchingOnTeardown_OnExistingCollectionWithNewMatchingDocument_SucceedsByRemovingDocument()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
 
@@ -172,7 +172,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbCollectionWithSetupTeardown_OnExistingCollection_SucceedsByPartiallyDeletingDocuments()
         {
             // Arrange
-            await using CosmosDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
 
@@ -203,8 +203,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static Shipment CreateShipment()
         {
             return new Faker<Shipment>()
-                .RuleFor(s => s.BoatId, s => ObjectId.GenerateNewId())
-                .RuleFor(s => s.BoatName, s => s.Person.FirstName)
+                .RuleFor(s => s.BoatId, _ => ObjectId.GenerateNewId())
+                .RuleFor(s => s.BoatName, f => f.Person.FirstName)
                 .Generate();
         }
 
@@ -219,13 +219,13 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
             return configureOptions is null
-                ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(CosmosDb.ResourceId, CosmosDb.MongoDb.DatabaseName, collectionName, Logger)
-                : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(CosmosDb.ResourceId, CosmosDb.MongoDb.DatabaseName, collectionName, Logger, configureOptions);
+                ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger)
+                : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
         }
 
-        private async Task<CosmosDbTestContext> GivenMongoDbAsync()
+        private async Task<MongoDbTestContext> GivenMongoDbAsync()
         {
-            return await CosmosDbTestContext.GivenMongoDbAsync(Configuration, Logger);
+            return await MongoDbTestContext.GivenAsync(Configuration, Logger);
         }
     }
 }

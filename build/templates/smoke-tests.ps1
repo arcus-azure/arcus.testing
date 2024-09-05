@@ -34,7 +34,6 @@ Describe 'Storage account' {
         -AccountName $env:ARCUS_TESTING_COSMOSDB_MONGODB_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
         -Name $collectionName
-        -Force
     }
   }
 }

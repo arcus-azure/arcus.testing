@@ -21,7 +21,7 @@ using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
-    public class CosmosDbTestContext : IAsyncDisposable
+    public class MongoDbTestContext : IAsyncDisposable
     {
         private readonly MongoClient _client;
         private readonly TemporaryManagedIdentityConnection _connection;
@@ -33,9 +33,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private static readonly Faker Bogus = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CosmosDbTestContext" /> class.
+        /// Initializes a new instance of the <see cref="MongoDbTestContext" /> class.
         /// </summary>
-        private CosmosDbTestContext(
+        private MongoDbTestContext(
             TemporaryManagedIdentityConnection connection,
             IMongoDatabase database,
             TestConfig config,
@@ -47,13 +47,13 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             _logger = logger;
         }
 
-        public static async Task<CosmosDbTestContext> GivenMongoDbAsync(TestConfig config, ILogger logger)
+        public static async Task<MongoDbTestContext> GivenAsync(TestConfig config, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
             MongoClient mongoDbClient = await AuthenticateMongoDbClientAsync(config);
             IMongoDatabase database = mongoDbClient.GetDatabase(config["Arcus:CosmosDb:MongoDb:DatabaseName"]);
 
-            return new CosmosDbTestContext(connection, database, config, logger);
+            return new MongoDbTestContext(connection, database, config, logger);
         }
 
         private static async Task<MongoClient> AuthenticateMongoDbClientAsync(TestConfig config)
