@@ -13,7 +13,7 @@ parameters:
     default: arcus-testing-dev-we-rg
   - name: keyVaultName
     displayName: 'Key vault name'
-    value: 'arcus-testing-kv'
+    default: 'arcus-testing-kv'
 
 variables:
   - template: ./variables/build.yml
@@ -75,8 +75,6 @@ stages:
           vmImage: $(Vm.Image)
         steps:
           - task: AzureCLI@2
-            env:
-              resourceGroupName: ${{ parameters.resourceGroupName }}
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true

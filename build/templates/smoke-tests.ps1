@@ -23,16 +23,16 @@ Describe 'Storage account' {
     $collectionName = 'test-collection'
     try {
       New-AzCosmosDBMongoDBCollection `
-        -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:ARCUS_TESTING_COSMOSDB_MONGODB_NAME `
-        -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOS_MONGODB_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME `
         -Name $collectionName
     }
     catch {
       Remove-AzCosmosDBMongoDBCollection `
-        -ResourceGroupName $env:resourceGroupName `
-        -AccountName $env:ARCUS_TESTING_COSMOSDB_MONGODB_NAME `
-        -DatabaseName $env:ARCUS_TESTING_COSMOSDB_MONGODB_DATABASENAME `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOS_MONGODB_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME `
         -Name $collectionName
     }
   }
