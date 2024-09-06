@@ -98,12 +98,6 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
         name: cosmosDb_noSql_databaseName
       }
     ]
-    roleAssignments: [
-      {
-        principalId: servicePrincipal_objectId
-        roleDefinitionIdOrName: 'DocumentDB Account Contributor'
-      }
-    ]
     sqlRoleAssignmentsPrincipalIds: [
       servicePrincipal_objectId
     ]
