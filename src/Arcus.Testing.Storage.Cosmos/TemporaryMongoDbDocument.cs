@@ -23,7 +23,7 @@ namespace Arcus.Testing
         private readonly ILogger _logger;
 
         private TemporaryMongoDbDocument(
-            ObjectId id,
+            BsonValue id,
             Type documentType,
             FilterDefinition<BsonDocument> filter,
             BsonDocument originalDoc,
@@ -36,13 +36,13 @@ namespace Arcus.Testing
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             _logger = logger ?? NullLogger.Instance;
 
-            Id = id.ToString();
+            Id = id;
         }
 
         /// <summary>
         /// Gets the current ID of the document.
         /// </summary>
-        public string Id { get; }
+        public BsonValue Id { get; }
 
         /// <summary>
         /// Inserts a temporary document to a MongoDb collection.
@@ -98,11 +98,11 @@ namespace Arcus.Testing
             IMongoCollection<BsonDocument> collectionBson =
                 collection.Database.GetCollection<BsonDocument>(collection.CollectionNamespace.CollectionName);
 
-            string elementName = DetermineIdElementName(collection);
+            BsonMemberMap idMemberMap = DetermineIdMemberMap(collection);
             var bson = document.ToBsonDocument();
-            ObjectId id = DetermineId(collection, bson, elementName);
+            BsonValue id = DetermineId(collection, bson, idMemberMap);
 
-            FilterDefinition<BsonDocument> findOneDocument = Builders<BsonDocument>.Filter.Eq(elementName, id);
+            FilterDefinition<BsonDocument> findOneDocument = Builders<BsonDocument>.Filter.Eq(idMemberMap.ElementName, id);
             using IAsyncCursor<BsonDocument> existingDocs = await collectionBson.FindAsync(findOneDocument);
 
             List<BsonDocument> matchingDocs = await existingDocs.ToListAsync();
@@ -130,7 +130,7 @@ namespace Arcus.Testing
             return new TemporaryMongoDbDocument(id, typeof(TDocument), findOneDocument, originalDoc, collectionBson, logger);
         }
 
-        private static string DetermineIdElementName<TDocument>(IMongoCollection<TDocument> collection)
+        private static BsonMemberMap DetermineIdMemberMap<TDocument>(IMongoCollection<TDocument> collection)
         {
             BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(TDocument));
             if (classMap.IdMemberMap is null)
@@ -140,27 +140,23 @@ namespace Arcus.Testing
                     $"as the passed document type '{typeof(TDocument).Name}' has no member map defined for the '_id' property, " +
                     $"please see the MongoDb documentation for more information on this required property: https://www.mongodb.com/docs/drivers/csharp/current/fundamentals/crud/write-operations/insert/#the-_id-field");
             }
-
-            return classMap.IdMemberMap.ElementName;
+            
+            return classMap.IdMemberMap;
         }
 
-        private static ObjectId DetermineId<TDocument>(IMongoCollection<TDocument> collection, BsonDocument bson, string elementName)
+        private static BsonValue DetermineId<TDocument>(IMongoCollection<TDocument> collection, BsonDocument bson, BsonMemberMap idMemberMap)
         {
-            BsonValue idMember = bson[elementName];
-            if (idMember.BsonType != BsonType.ObjectId)
+            BsonValue id = bson[idMemberMap.ElementName];
+            object idValue = BsonTypeMapper.MapToDotNetValue(id);
+         
+            if (idMemberMap.IdGenerator.IsEmpty(idValue))
             {
-                throw new NotSupportedException(
-                    $"Cannot temporary insert a document in the MongoDb collection '{collection.CollectionNamespace.FullName}' " +
-                    $"as the passed document type '{typeof(TDocument).Name}' has an '_id' of type '{idMember.BsonType}' property that differs from the type '{nameof(ObjectId)}', " +
-                    $"currently the test fixture follows the MongoDb best-practice of using the '{nameof(ObjectId)}': https://www.mongodb.com/docs/drivers/csharp/current/fundamentals/crud/write-operations/insert/#the-_id-field");
+                object newId = idMemberMap.IdGenerator.GenerateId(collection, bson);
+                id = BsonTypeMapper.MapToBsonValue(newId);
+
+                bson[idMemberMap.ElementName] = id;
             }
 
-            if (idMember.AsObjectId == ObjectId.Empty)
-            {
-                bson[elementName] = ObjectId.GenerateNewId();
-            }
-
-            ObjectId id = bson[elementName].AsObjectId;
             return id;
         }
 

@@ -386,17 +386,19 @@ namespace Arcus.Testing
             await using var disposables = new DisposableCollection(_logger);
             disposables.AddRange(_documents);
 
-            disposables.Add(AsyncDisposable.Create(async () =>
-            {
-                await CleanCollectionOnTeardownAsync();
-            }));
-
             if (_createdByUs)
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("Drop Azure Cosmos MongoDb '{CollectionName}' collection from database '{DatabaseName}'", _collectionName, _database.DatabaseNamespace.DatabaseName);
                     await _database.DropCollectionAsync(_collectionName); 
+                }));
+            }
+            else
+            {
+                disposables.Add(AsyncDisposable.Create(async () =>
+                {
+                    await CleanCollectionOnTeardownAsync();
                 }));
             }
         }

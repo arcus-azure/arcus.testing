@@ -47,7 +47,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Shipment shipment = CreateShipment();
-            ObjectId existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
+            BsonValue existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
 
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
             Shipment createdByUs = CreateShipment();
@@ -75,7 +75,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             string collectionName = await context.WhenCollectionNameAvailableAsync();
 
             Shipment shipment = CreateShipment();
-            ObjectId existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
+            BsonValue existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
 
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
             {
@@ -101,8 +101,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             Shipment matched = CreateShipment();
             Shipment unmatched = CreateShipment();
-            ObjectId matchedId = await context.WhenDocumentAvailableAsync(collectionName, matched);
-            ObjectId unmatchedId = await context.WhenDocumentAvailableAsync(collectionName, unmatched);
+            BsonValue matchedId = await context.WhenDocumentAvailableAsync(collectionName, matched);
+            BsonValue unmatchedId = await context.WhenDocumentAvailableAsync(collectionName, unmatched);
 
             // Act
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
@@ -132,7 +132,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             });
 
             Shipment afterwards = CreateShipment();
-            ObjectId afterwardsId = await context.WhenDocumentAvailableAsync(collectionName, afterwards);
+            BsonValue afterwardsId = await context.WhenDocumentAvailableAsync(collectionName, afterwards);
 
             // Act
             await collection.DisposeAsync();
@@ -157,8 +157,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
                                   .CleanMatchingDocuments((Shipment s) => s.BoatName == matched.BoatName);
             });
 
-            ObjectId matchedId = await context.WhenDocumentAvailableAsync(collectionName, matched);
-            ObjectId unmatchedId = await context.WhenDocumentAvailableAsync(collectionName, unmatched);
+            BsonValue matchedId = await context.WhenDocumentAvailableAsync(collectionName, matched);
+            BsonValue unmatchedId = await context.WhenDocumentAvailableAsync(collectionName, unmatched);
 
             // Act
             await collection.DisposeAsync();
@@ -179,8 +179,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Shipment matchedOnSetup = CreateShipment();
             Shipment unmatchedOnSetup = CreateShipment();
             Shipment createdByUs = CreateShipment();
-            ObjectId matchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, matchedOnSetup);
-            ObjectId unmatchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, unmatchedOnSetup);
+            BsonValue matchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, matchedOnSetup);
+            BsonValue unmatchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, unmatchedOnSetup);
 
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
             {

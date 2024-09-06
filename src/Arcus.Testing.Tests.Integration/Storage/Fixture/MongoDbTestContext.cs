@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
@@ -17,17 +14,17 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
+    /// <summary>
+    /// Provides test-friendly interactions with Azure MongoDb resources.
+    /// </summary>
     public class MongoDbTestContext : IAsyncDisposable
     {
-        private readonly MongoClient _client;
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly IMongoDatabase _database;
         private readonly Collection<string> _collectionNames = new();
-        private readonly TestConfig _config;
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
@@ -38,22 +35,23 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private MongoDbTestContext(
             TemporaryManagedIdentityConnection connection,
             IMongoDatabase database,
-            TestConfig config,
             ILogger logger)
         {
             _connection = connection;
             _database = database;
-            _config = config;
             _logger = logger;
         }
 
+        /// <summary>
+        /// Creates an authenticated <see cref="MongoDbTestContext"/>.
+        /// </summary>
         public static async Task<MongoDbTestContext> GivenAsync(TestConfig config, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
             MongoClient mongoDbClient = await AuthenticateMongoDbClientAsync(config);
-            IMongoDatabase database = mongoDbClient.GetDatabase(config["Arcus:CosmosDb:MongoDb:DatabaseName"]);
+            IMongoDatabase database = mongoDbClient.GetDatabase(config["Arcus:Cosmos:MongoDb:DatabaseName"]);
 
-            return new MongoDbTestContext(connection, database, config, logger);
+            return new MongoDbTestContext(connection, database, logger);
         }
 
         private static async Task<MongoClient> AuthenticateMongoDbClientAsync(TestConfig config)
@@ -67,7 +65,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
             string subscriptionId = config["Arcus:SubscriptionId"];
             string resourceGroupName = config["Arcus:ResourceGroup:Name"];
-            string cosmosDbName = config["Arcus:CosmosDb:Name"];
+            string cosmosDbName = config["Arcus:Cosmos:MongoDb:Name"];
 
             string listConnectionStringUrl = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{cosmosDbName}/listConnectionStrings?api-version=2021-04-15";
             var response = await httpClient.PostAsync(listConnectionStringUrl, new StringContent(""));
@@ -78,6 +76,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return new MongoClient(connectionString);
         }
 
+        /// <summary>
+        /// Provides a collection name that does not exists in the MongoDb database.
+        /// </summary>
         public string WhenCollectionNameUnavailable()
         {
             string collectionName = $"test-{Bogus.Random.Guid()}";
@@ -86,6 +87,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return collectionName;
         }
 
+        /// <summary>
+        /// Provides a collection name that does exists in the MongoDb database.
+        /// </summary>
         public async Task<string> WhenCollectionNameAvailableAsync()
         {
             string collectionName = WhenCollectionNameUnavailable();
@@ -94,18 +98,29 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return collectionName;
         }
 
-        public async Task<ObjectId> WhenDocumentAvailableAsync<T>(string collectionName, T document)
+        /// <summary>
+        /// Provides an existing document in a MongoDb collection.
+        /// </summary>
+        public async Task<BsonValue> WhenDocumentAvailableAsync<T>(string collectionName, T document)
         {
-            var bson = document.ToBsonDocument();
-            var id = ObjectId.GenerateNewId();
-            bson["_id"] = id;
-
             IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(collectionName);
-            await collection.InsertOneAsync(bson);
+            
+            var bson = document.ToBsonDocument();
+            
+            BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
+            string elementName = classMap.IdMemberMap.ElementName;
 
+            object newId = classMap.IdMemberMap.IdGenerator.GenerateId(collection, document);
+            BsonValue id = BsonTypeMapper.MapToBsonValue(newId);
+            bson[elementName] = id;
+
+            await collection.InsertOneAsync(bson);
             return id;
         }
 
+        /// <summary>
+        /// Verifies that a collection exists in the MongoDb database.
+        /// </summary>
         public async Task ShouldStoreCollectionAsync(string collectionName)
         {
             Assert.True(
@@ -113,6 +128,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                 $"temporary mongo db collection '{collectionName}' should be available");
         }
 
+        /// <summary>
+        /// Verifies that a collection exists in the MongoDb database.
+        /// </summary>
         public async Task ShouldNotStoreCollectionAsync(string collectionName)
         {
             Assert.False(
@@ -130,7 +148,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return await collectionNames.AnyAsync();
         }
 
-        public async Task ShouldStoreDocumentAsync<T>(string collectionName, ObjectId id, Action<T> assertion = null)
+        /// <summary>
+        /// Verifies that a document exists in the MongoDb collection.
+        /// </summary>
+        public async Task ShouldStoreDocumentAsync<T>(string collectionName, BsonValue id, Action<T> assertion = null)
         {
             IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
             
@@ -144,7 +165,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             assertion?.Invoke(matchingDocs[0]);
         }
 
-        public async Task ShouldNotStoreDocumentAsync<T>(string collectionName, ObjectId id)
+        /// <summary>
+        /// Verifies that a document does not exists in the MongoDb collection.
+        /// </summary>
+        public async Task ShouldNotStoreDocumentAsync<T>(string collectionName, BsonValue id)
         {
             IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
             BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
@@ -153,18 +177,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
             List<T> matchingDocs = await collection.Find(filter).ToListAsync();
             Assert.Empty(matchingDocs);
-        }
-
-        private static FilterDefinition<T> CreateMatchingFilter<T>(T doc)
-        {
-            BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
-            string elementName = classMap.IdMemberMap.ElementName;
-            var bson = doc.ToBsonDocument();
-            BsonValue id = bson[elementName];
-
-            FilterDefinition<T> filter = Builders<T>.Filter.Eq(elementName, id);
-            
-            return filter;
         }
 
         /// <summary>

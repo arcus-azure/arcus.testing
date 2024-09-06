@@ -31,7 +31,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Product product = CreateProduct();
 
             TemporaryMongoDbDocument temp = await WhenTempDocumentCreatedAsync(collectionName, product);
-            var id = ObjectId.Parse(temp.Id);
+            BsonValue id = temp.Id;
             await context.ShouldStoreDocumentAsync<Product>(collectionName, id, stored => AssertProduct(product, stored));
 
             // Act
@@ -49,10 +49,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Product original = CreateProduct();
-            ObjectId id = await context.WhenDocumentAvailableAsync(collectionName, original);
+            BsonValue id = await context.WhenDocumentAvailableAsync(collectionName, original);
 
             Product replacement = CreateProduct();
-            replacement.Id = id;
+            replacement.Id = (ObjectId) id;
 
             TemporaryMongoDbDocument temp = await WhenTempDocumentCreatedAsync(collectionName, replacement);
             await context.ShouldStoreDocumentAsync<Product>(collectionName, id, stored => AssertProduct(replacement, stored));
@@ -102,16 +102,39 @@ namespace Arcus.Testing.Tests.Integration.Storage
         }
 
         [Fact]
-        public async Task CreateTempMongoDbDocument_WithUnsupportedIdPropertyType_Fails()
+        public async Task CreateTempMongoDbDocument_WithOtherThanObjectIdPropertyType_SucceedsByUsingBuiltInIdGenerator()
         {
-            await Assert.ThrowsAnyAsync<NotSupportedException>(() => WhenTempDocumentCreatedAsync("<collection-name>", new DocWithUnsupportedId()));
+            // Arrange
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
+
+            string collectionName = await context.WhenCollectionNameAvailableAsync();
+            var original = DocWithIntId.Generate();
+            BsonValue id = await context.WhenDocumentAvailableAsync(collectionName, original);
+
+            var replacement = DocWithIntId.Generate();
+            replacement.Id = (Guid) id;
+
+            TemporaryMongoDbDocument temp = await WhenTempDocumentCreatedAsync(collectionName, replacement);
+            await context.ShouldStoreDocumentAsync<DocWithIntId>(collectionName, id, stored => Assert.Equal(replacement.Name, stored.Name));
+
+            // Act
+            await temp.DisposeAsync();
+
+            // Assert
+            await context.ShouldStoreDocumentAsync<DocWithIntId>(collectionName, id, stored => Assert.Equal(original.Name, stored.Name));
         }
 
-        public class DocWithUnsupportedId
+        public class DocWithIntId
         {
             [BsonId]
-            [BsonRepresentation(BsonType.Int32)]
-            public int Id { get; set; }
+            public Guid Id { get; set; }
+
+            public string Name { get; set; }
+
+            public static DocWithIntId Generate()
+            {
+                return new DocWithIntId { Name = Bogus.Random.Word() };
+            }
         }
 
         [Fact]

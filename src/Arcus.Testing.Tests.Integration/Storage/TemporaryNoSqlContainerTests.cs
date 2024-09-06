@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
-using Azure.Core;
-using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
 using Bogus;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
@@ -35,7 +31,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WithNonExistingContainer_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = await GivenNoSqlAsync();
+            await using NoSqlTestContext context = GivenNoSql();
 
             string containerId = context.WhenContainerNameUnavailable();
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerId);
@@ -55,7 +51,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WithExistingContainer_SucceedsByLeavingAfterLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = await GivenNoSqlAsync();
+            await using NoSqlTestContext context = GivenNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip());
@@ -79,7 +75,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WhenContainerWasDeletedOutsideFixture_SucceedsByIgnoringDeletion()
         {
             // Arrange
-            await using NoSqlTestContext context = await GivenNoSqlAsync();
+            await using NoSqlTestContext context = GivenNoSql();
 
             string containerName = context.WhenContainerNameUnavailable();
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName);
@@ -96,36 +92,88 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainerWithCleanAllOnSetup_WhenExistingItem_SucceedsByCleaningAllItems()
         {
             // Arrange
-            await using NoSqlTestContext context = await GivenNoSqlAsync();
+            await using NoSqlTestContext context = GivenNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip());
 
-            TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
+            // Act
+            await WhenTempContainerCreatedAsync(containerName, options =>
             {
                 options.OnSetup.CleanAllItems();
             });
+
+            // Assert
             await context.ShouldNotStoreItemAsync(containerName, createdBefore);
+        }
+
+        [Fact]
+        public async Task CreateTempNoSqlContainerWithCleanMatchingOnSetup_WhenExistingItem_SucceedsByCleaningSubset()
+        {
+            // Arrange
+            await using NoSqlTestContext context = GivenNoSql();
+
+            string containerName = await WhenContainerAlreadyAvailableAsync(context);
+            Ship createdMatched = await context.WhenItemAvailableAsync(containerName, CreateShip());
+            Ship createdNotMatched = await context.WhenItemAvailableAsync(containerName, CreateShip());
+
+            // Act
+            await WhenTempContainerCreatedAsync(containerName, options =>
+            {
+                options.OnSetup.CleanMatchingItems(CreateMatchingFilter(createdMatched));
+            });
+
+            // Assert
+            await context.ShouldStoreItemAsync(containerName, createdNotMatched);
+            await context.ShouldNotStoreItemAsync(containerName, createdMatched);
+        }
+
+        [Fact]
+        public async Task CreateTempNoSqlContainerWithCleanMatchingOnTeardown_WhenExistingItem_SucceedsByCleaningSubset()
+        {
+            // Arrange
+            await using NoSqlTestContext context = GivenNoSql();
+
+            string containerName = await WhenContainerAlreadyAvailableAsync(context);
+            Ship createdMatched = CreateShip();
+            Ship createdNotMatched = CreateShip();
+
+            TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
+            {
+                options.OnTeardown.CleanMatchingItems(CreateMatchingFilter(createdMatched));
+            });
 
             Ship createdByUs = await AddItemAsync(container);
-            Ship createdAfter = await context.WhenItemAvailableAsync(containerName, CreateShip());
+            await context.WhenItemAvailableAsync(containerName, createdMatched);
+            await context.WhenItemAvailableAsync(containerName, createdNotMatched);
 
             // Act
             await container.DisposeAsync();
 
             // Assert
             await context.ShouldStoreContainerAsync(containerName);
-            await context.ShouldStoreItemAsync(containerName, createdAfter);
-
             await context.ShouldNotStoreItemAsync(containerName, createdByUs);
-            await context.ShouldNotStoreItemAsync(containerName, createdBefore);
+            await context.ShouldNotStoreItemAsync(containerName, createdMatched);
+            await context.ShouldStoreItemAsync(containerName, createdNotMatched);
+        }
+
+        private static NoSqlItemFilter CreateMatchingFilter(Ship item)
+        {
+            return Bogus.Random.Int(1, 4) switch
+            {
+                1 => NoSqlItemFilter.ItemIdEqual(item.Id),
+                2 => NoSqlItemFilter.ItemIdEqual(item.Id, StringComparison.OrdinalIgnoreCase),
+                3 => NoSqlItemFilter.PartitionKeyEqual(item.GetPartitionKey()),
+                4 => NoSqlItemFilter.ItemEqual<Ship>(x => x.BoatName == item.BoatName),
+                _ => throw new ArgumentOutOfRangeException(nameof(item), "Unknown filter type")
+            };
         }
 
         [Fact]
         public async Task CreateTempNoSqlContainerWithCleanAllOnTeardown_WhenExistingItem_SucceedsByCleaningAllItems()
         {
             // Arrange
-            await using NoSqlTestContext context = await GivenNoSqlAsync();
+            await using NoSqlTestContext context = GivenNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip("before"));
@@ -150,9 +198,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldNotStoreItemAsync(containerName, createdAfter);
         }
 
-        private async Task<NoSqlTestContext> GivenNoSqlAsync()
+        private NoSqlTestContext GivenNoSql()
         {
-            return await NoSqlTestContext.GivenAsync(Configuration, Logger);
+            return NoSqlTestContext.Given(Configuration, Logger);
         }
 
         private async Task<string> WhenContainerAlreadyAvailableAsync(NoSqlTestContext context)
@@ -178,7 +226,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static async Task<Ship> AddItemAsync(TemporaryNoSqlContainer container)
         {
             Ship item = CreateShip("own");
-            await container.AddItemAsync(item.Id, item.GetPartitionKey(), item);
+            await container.AddItemAsync(item);
 
             return item;
         }
@@ -193,7 +241,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 .Generate();
         }
 
-        public class Ship : INoSqlItem
+        public class Ship : INoSqlItem<Ship>
         {
             [JsonProperty(PropertyName = "id")]
             public string Id { get; set; }
@@ -201,7 +249,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             public int CrewMembers { get; set; }
             public Destination Destination { get; set; }
             public string GetId() => Id;
+            public void SetId(Ship item) => Id = item.Id;
             public PartitionKey GetPartitionKey() => new PartitionKeyBuilder().Add(Destination.Country).Build();
+            public void SetPartitionKey(Ship item) => Destination.Country = item.Destination.Country;
         }
 
         public class Destination

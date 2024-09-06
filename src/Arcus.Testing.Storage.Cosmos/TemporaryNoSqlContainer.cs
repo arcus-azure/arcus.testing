@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -17,8 +14,9 @@ using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using CompositePathSortOrder = Microsoft.Azure.Cosmos.CompositePathSortOrder;
-using ConflictResolutionMode = Microsoft.Azure.Cosmos.ConflictResolutionMode;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using static Arcus.Testing.NoSqlExtraction;
 
 namespace Arcus.Testing
 {
@@ -37,19 +35,19 @@ namespace Arcus.Testing
     /// </summary>
     public class NoSqlItemFilter
     {
-        private readonly Func<string, PartitionKey, Stream, CosmosClient, bool> _filter;
+        private readonly Func<string, PartitionKey, JObject, CosmosClient, bool> _filter;
 
-        private NoSqlItemFilter(Func<string, PartitionKey, Stream, CosmosClient, bool> filter)
+        private NoSqlItemFilter(Func<string, PartitionKey, JObject, CosmosClient, bool> filter)
         {
             ArgumentNullException.ThrowIfNull(filter);
             _filter = filter;
         }
 
         /// <summary>
-        /// 
+        /// Creates a filter to match a NoSql item by its unique item ID.
         /// </summary>
-        /// <param name="itemId"></param>
-        /// <returns></returns>
+        /// <param name="itemId">The unique required 'id' value.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="itemId"/> is blank.</exception>
         public static NoSqlItemFilter ItemIdEqual(string itemId)
         {
             if (string.IsNullOrWhiteSpace(itemId))
@@ -57,39 +55,72 @@ namespace Arcus.Testing
                 throw new ArgumentException("Requires non-blank NoSql item ID to match against stored items", nameof(itemId));
             }
 
-            return new NoSqlItemFilter((id, _, _, _) => itemId == id);
+            return new NoSqlItemFilter((id, _, _, _) => itemId.Equals(id));
         }
 
         /// <summary>
-        /// 
+        /// Creates a filter to match a NoSql item by its unique item ID.
         /// </summary>
-        /// <param name="partitionKey"></param>
-        /// <returns></returns>
+        /// <param name="itemId">The unique required 'id' value.</param>
+        /// <param name="comparisonType">The value that specifies how the strings will be compared.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="itemId"/> is blank.</exception>
+        public static NoSqlItemFilter ItemIdEqual(string itemId, StringComparison comparisonType)
+        {
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                throw new ArgumentException("Requires non-blank NoSql item ID to match against stored items", nameof(itemId));
+            }
+
+            return new NoSqlItemFilter((id, _, _, _) => itemId.Equals(id, comparisonType));
+        }
+
+        /// <summary>
+        /// Creates a filter to match a NoSql item by its partition key.
+        /// </summary>
+        /// <param name="partitionKey">The key in which the item is partitioned.</param>
         public static NoSqlItemFilter PartitionKeyEqual(PartitionKey partitionKey)
         {
             return new NoSqlItemFilter((_, key, _, _) => key.Equals(partitionKey));
         }
 
         /// <summary>
-        /// 
+        /// Creates a filter to match a NoSql item based on its contents.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="itemFilter"></param>
-        /// <returns></returns>
-        public static NoSqlItemFilter ItemEqual<T>(Func<T, bool> itemFilter)
+        /// <typeparam name="TItem">The custom custom type </typeparam>
+        /// <param name="itemFilter">The custom filter to match against the contents of the NoSql item.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="itemFilter"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the used client has no serializer configured.</exception>
+        public static NoSqlItemFilter ItemEqual<TItem>(Func<TItem, bool> itemFilter)
         {
             ArgumentNullException.ThrowIfNull(itemFilter);
 
-            return new NoSqlItemFilter((_, _, body, client) =>
+            return new NoSqlItemFilter((_, _, json, client) =>
             {
-                var item = client.ClientOptions.Serializer.FromStream<T>(body);
+                if (client.ClientOptions.Serializer is null)
+                {
+                    throw new InvalidOperationException(
+                        "Cannot match the NoSql item because the Cosmos client used has no JSON item serializer configured");
+                }
+
+                using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
+                
+                var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
+                if (item is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot match the NoSql item because the configured JSON item serializer returned 'null' when deserializing '{typeof(TItem).Name}'");
+                }
+
                 return itemFilter(item);
             });
         }
 
-        internal bool IsMatch(string itemId, PartitionKey partitionKey, Stream itemStream, CosmosClient client)
+        /// <summary>
+        /// Match the current NoSql item with the user configured filter.
+        /// </summary>
+        internal bool IsMatch(string itemId, PartitionKey partitionKey, JObject item, CosmosClient client)
         {
-            return _filter(itemId, partitionKey, itemStream, client);
+            return _filter(itemId, partitionKey, item, client);
         }
     }
 
@@ -98,6 +129,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupNoSqlContainerOptions
     {
+        private readonly List<NoSqlItemFilter> _filters = new();
+
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture creation.
         /// </summary>
@@ -121,6 +154,39 @@ namespace Arcus.Testing
             Items = OnSetupNoSqlContainer.CleanIfExisted;
             return this;
         }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Multiple calls will aggregated together in an OR expression.
+        /// </remarks>
+        /// <param name="filters">The filters to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        public OnSetupNoSqlContainerOptions CleanMatchingItems(params NoSqlItemFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnSetupNoSqlContainer.CleanIfMatched;
+            _filters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Determine if any of the user configured filters matches with the current NoSql item.
+        /// </summary>
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        {
+            return _filters.Any(filter => filter.IsMatch(itemId, partitionKey, itemStream, client));
+        }
     }
 
     /// <summary>
@@ -128,6 +194,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownNoSqlContainerOptions
     {
+        private readonly List<NoSqlItemFilter> _filters = new();
+
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture deletion.
         /// </summary>
@@ -150,6 +218,41 @@ namespace Arcus.Testing
         {
             Items = OnTeardownNoSqlContainer.CleanAll;
             return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     The matching of documents only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        /// </remarks>
+        /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        public OnTeardownNoSqlContainerOptions CleanMatchingItems(params NoSqlItemFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnTeardownNoSqlContainer.CleanIfMatched;
+            _filters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Determine if any of the user configured filters matches with the current NoSql item.
+        /// </summary>
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        {
+            return _filters.Any(filter => filter.IsMatch(itemId, partitionKey, itemStream, client));
         }
     }
 
@@ -334,10 +437,14 @@ namespace Arcus.Testing
             {
                 return;
             }
-
+            
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
-                await CleanAllItemsAsync(container, logger);
+                await CleanItemsAsync(container, logger, MatchAll);
+            }
+            else if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
+            {
+                await CleanItemsAsync(container, logger, options.OnSetup.IsMatched);
             }
         }
 
@@ -345,13 +452,10 @@ namespace Arcus.Testing
         /// Adds a temporary NoSql item to the current container instance.
         /// </summary>
         /// <typeparam name="T">The custom NoSql model.</typeparam>
-        /// <param name="itemId">The unique ID to identify the item in the NoSql container.</param>
-        /// <param name="partitionKey">The partition key of the temporary item.</param>
         /// <param name="item">The item to temporary create in the NoSql container.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="itemId"/> is blank.</exception>
-        public async Task AddItemAsync<T>(string itemId, PartitionKey partitionKey, T item)
+        public async Task AddItemAsync<T>(T item)
         {
-            _items.Add(await TemporaryNoSqlItem.CreateIfNotExistsAsync(Client, itemId, partitionKey, item, _logger));
+            _items.Add(await TemporaryNoSqlItem.InsertIfNotExistsAsync(Client, item, _logger));
         }
 
         /// <summary>
@@ -391,95 +495,58 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanAll)
             {
-                await CleanAllItemsAsync(Client, _logger);
+                await CleanItemsAsync(Client, _logger, MatchAll);
+            }
+            else if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfMatched)
+            {
+                await CleanItemsAsync(Client, _logger, _options.OnTeardown.IsMatched);
             }
         }
 
-        private static async Task CleanAllItemsAsync(Container container, ILogger logger)
+        private static bool MatchAll(string id, PartitionKey key, JObject itemStream, CosmosClient client) => true;
+
+        private static async Task CleanItemsAsync(Container container, ILogger logger, Func<string, PartitionKey, JObject, CosmosClient, bool> itemFilter)
         {
             ContainerResponse resp = await container.ReadContainerAsync();
             ContainerProperties properties = resp.Resource;
 
-            string[][] partitionKeyTokens =
-                properties.PartitionKeyPaths.Select(path => path.Split('/', StringSplitOptions.RemoveEmptyEntries)).ToArray();
-
             using FeedIterator iterator = container.GetItemQueryStreamIterator();
             while (iterator.HasMoreResults)
             {
-                ResponseMessage message = await iterator.ReadNextAsync();
+                using ResponseMessage message = await iterator.ReadNextAsync();
                 if (!message.IsSuccessStatusCode)
                 {
                     continue;
                 }
 
-                JsonNode json = await JsonNode.ParseAsync(message.Content);
-                if (json is not JsonObject root
-                    || !root.TryGetPropertyValue("Documents", out JsonNode docs)
-                    || docs is not JsonArray docsArr)
+                using var content = new StreamReader(message.Content);
+                using var reader = new JsonTextReader(content);
+
+                JToken json = await JToken.ReadFromAsync(reader);
+                if (json is not JObject root
+                    || !root.TryGetValue("Documents", out JToken docs)
+                    || docs is not JArray docsArr)
                 {
                     continue;
                 }
 
-                foreach (JsonNode doc in docsArr.Where(d => d is JsonObject).ToArray())
+                foreach (JObject doc in docsArr.Where(d => d is JObject).Cast<JObject>().ToArray())
                 {
-                    var id = doc["id"]?.GetValue<string>();
+                    string id = ExtractIdFromItem(doc);
                     if (string.IsNullOrWhiteSpace(id))
                     {
                         continue;
                     }
 
-                    List<(bool isNone, JsonNode node)> nodeTree = new(partitionKeyTokens.Length);
-                    foreach (string[] token in partitionKeyTokens)
+                    PartitionKey partitionKey = ExtractPartitionKeyFromItem(properties, doc);
+
+                    if (itemFilter(id, partitionKey, doc, container.Database.Client))
                     {
-                        bool foundNode = TryParseNodeByToken(doc, token, out JsonNode result);
-                        nodeTree.Add((isNone: !foundNode, node: result));
+                        logger.LogTrace("Delete NoSql item '{ItemId}' {PartitionKey} in NoSql container '{ContainerName}'", id, partitionKey.ToString(), container.Id);
+                        await container.DeleteItemStreamAsync(id, partitionKey);
                     }
-
-                    PartitionKey partitionKey = CreatePartitionKeyForNodeTree(nodeTree);
-
-                    logger.LogTrace("Delete NoSql item '{ItemId}' {PartitionKey} in NoSql container '{ContainerName}'", id, partitionKey.ToString(), container.Id);
-                    await container.DeleteItemStreamAsync(id, partitionKey);
                 }
             }
-        }
-
-        private static bool TryParseNodeByToken(JsonNode pathTraversal, IReadOnlyList<string> tokens, out JsonNode result)
-        {
-            result = null;
-            for (var i = 0; i < tokens.Count - 1; i++)
-            {
-                if (pathTraversal is not JsonObject next || !next.TryGetPropertyValue(tokens[i], out pathTraversal))
-                {
-                    return false;
-                }
-            }
-
-            return pathTraversal is JsonObject last && last.TryGetPropertyValue(tokens[^1], out result);
-        }
-
-        private static PartitionKey CreatePartitionKeyForNodeTree(IEnumerable<(bool isNone, JsonNode node)> cosmosElementList)
-        {
-            var builder = new PartitionKeyBuilder();
-            foreach ((bool isNone, JsonNode node) in cosmosElementList)
-            {
-                if (isNone)
-                {
-                    builder.AddNoneType();
-                }
-                else
-                {
-                    _ = node?.GetValueKind() switch
-                    {
-                        JsonValueKind.String => builder.Add(node.GetValue<string>()),
-                        JsonValueKind.Number => builder.Add(float.Parse(node.GetValue<string>())),
-                        JsonValueKind.True or JsonValueKind.False => builder.Add(node.GetValue<bool>()),
-                        null or JsonValueKind.Null => builder.AddNullValue(),
-                        _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), node?.GetValueKind(), "Unsupported partition key value"),
-                    };
-                }
-            }
-
-            return builder.Build();
         }
     }
 }

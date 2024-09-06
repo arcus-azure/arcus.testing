@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
@@ -18,18 +15,22 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
-    public interface INoSqlItem
+    public interface INoSqlItem<in T>
     {
         string GetId();
+        void SetId(T item);
         PartitionKey GetPartitionKey();
+        void SetPartitionKey(T item);
     }
 
+    /// <summary>
+    /// Represents test-friendly interactions with Azure NoSql resources.
+    /// </summary>
     public class NoSqlTestContext : IAsyncDisposable
     {
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly NoSqlConfig _config;
         private readonly CosmosClient _client;
-        public readonly Database _database;
         private readonly Collection<string> _containerNames = new();
         private readonly ILogger _logger;
 
@@ -43,11 +44,19 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             _connection = connection;
             _config = config;
             _client = client;
-            _database = database;
+            Database = database;
             _logger = logger;
         }
 
-        public static async Task<NoSqlTestContext> GivenAsync(TestConfig config, ILogger logger)
+        /// <summary>
+        /// Gets the database in which the interactions will take place.
+        /// </summary>
+        public Database Database { get; }
+
+        /// <summary>
+        /// Creates a new authenticated <see cref="NoSqlTestContext"/>.
+        /// </summary>
+        public static NoSqlTestContext Given(TestConfig config, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
             NoSqlConfig noSql = config.GetNoSql();
@@ -58,6 +67,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return new NoSqlTestContext(connection, client, database, noSql, logger);
         }
 
+        /// <summary>
+        /// Provides a new container name that does not exists in the NoSql database.
+        /// </summary>
         public string WhenContainerNameUnavailable()
         {
             string containerNames = $"test-{Guid.NewGuid()}";
@@ -66,6 +78,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return containerNames;
         }
 
+        /// <summary>
+        /// Provides a new container name that does exists in the NoSql database.
+        /// </summary>
         public async Task<string> WhenContainerNameAvailableAsync(string partitionKeyPath = "/pk")
         {
             string containerName = WhenContainerNameUnavailable();
@@ -87,6 +102,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return containerName;
         }
 
+        /// <summary>
+        /// Deletes an existing container in the NoSql database.
+        /// </summary>
         public async Task WhenContainerDeletedAsync(string containerName)
         {
             _logger.LogTrace("[Test] delete NoSql container '{ContainerName}' outside test fixture's scope", containerName);
@@ -99,34 +117,46 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             await container.DeleteAsync(WaitUntil.Completed);
         }
 
-        public async Task<T> WhenItemAvailableAsync<T>(string containerName, T item) where T : INoSqlItem
+        /// <summary>
+        /// Provides an existing item in a NoSql container.
+        /// </summary>
+        public async Task<T> WhenItemAvailableAsync<T>(string containerName, T item) where T : INoSqlItem<T>
         {
             _logger.LogTrace("[Test] add '{ItemType}' item '{ItemId}' to NoSql container '{ContainerName}'", typeof(T).Name, item.GetId(), containerName);
 
-            Container container = _database.GetContainer(containerName);
+            Container container = Database.GetContainer(containerName);
             await using var stream = _client.ClientOptions.Serializer.ToStream(item);
             await container.CreateItemStreamAsync(stream, item.GetPartitionKey());
 
             return item;
         }
 
+        /// <summary>
+        /// Verifies that a container exists in a NoSql database.
+        /// </summary>
         public async Task ShouldStoreContainerAsync(string containerId)
         {
-            Container cont = _database.GetContainer(containerId);
+            Container cont = Database.GetContainer(containerId);
             ContainerProperties properties = await cont.ReadContainerAsync();
             Assert.NotNull(properties);
         }
 
+        /// <summary>
+        /// Verifies that a container does not exists in a NoSql database.
+        /// </summary>
         public async Task ShouldNotStoreContainerAsync(string containerId)
         {
-            Container cont = _database.GetContainer(containerId);
+            Container cont = Database.GetContainer(containerId);
             var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
             Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
         }
 
-        public async Task ShouldStoreItemAsync<T>(string containerName, T expected, Action<T> assertion = null) where T : INoSqlItem
+        /// <summary>
+        /// Verifies that an item exists in a NoSql container.
+        /// </summary>
+        public async Task ShouldStoreItemAsync<T>(string containerName, T expected, Action<T> assertion = null) where T : INoSqlItem<T>
         {
-            Container container = _database.GetContainer(containerName);
+            Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>
             {
                 ItemResponse<T> response = await container.ReadItemAsync<T>(expected.GetId(), expected.GetPartitionKey());
@@ -135,9 +165,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             });
         }
 
-        public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem
+        /// <summary>
+        /// Verifies that n item does not exists in a NoSql container.
+        /// </summary>
+        public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem<T>
         {
-            Container container = _database.GetContainer(containerName);
+            Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>
             {
                 using ResponseMessage response = await container.ReadItemStreamAsync(expected.GetId(), expected.GetPartitionKey());
@@ -145,6 +178,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             });
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(_logger);
