@@ -107,7 +107,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
             {
-                options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatId == matchedId)
+                options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatId == (ObjectId) matchedId)
                                .CleanMatchingDocuments((Shipment s) => s.BoatName == matched.BoatName);
             });
 

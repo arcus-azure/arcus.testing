@@ -62,6 +62,10 @@ namespace Arcus.Testing
             ILogger logger)
             where TDocument : class
         {
+            ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
+            ArgumentNullException.ThrowIfNull(document);
+            logger ??= NullLogger.Instance;
+
             if (string.IsNullOrWhiteSpace(databaseName))
             {
                 throw new ArgumentException(
