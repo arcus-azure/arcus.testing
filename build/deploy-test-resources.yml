@@ -52,7 +52,6 @@ stages:
                   --resource-group ${{ parameters.resourceGroupName }} `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
-                  --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
                   --parameters cosmosDb_mongoDb_name=${{ variables['Arcus.Testing.Cosmos.MongoDb.Name'] }} `
