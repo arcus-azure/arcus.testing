@@ -430,7 +430,7 @@ namespace Arcus.Testing
         private readonly object _actual, _expected;
 
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
-            : this(kind, expected.GetPath(), expected: Describe(expected), actual: Describe(actual))
+            : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))
         {
         }
 
@@ -449,6 +449,11 @@ namespace Arcus.Testing
 
         private static string Describe(JsonNode node)
         {
+            if (node is null)
+            {
+                return "type null";
+            }
+
             string nodeTxt = node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
 #if NET8_0
 
@@ -499,8 +504,8 @@ namespace Arcus.Testing
         {
             return _kind switch
             {
-                ActualIsNull => "actual JSON is null",
-                ExpectedIsNull => "expected JSON is null",
+                ActualIsNull => $"actual JSON is null at {_path}",
+                ExpectedIsNull => $"expected JSON is null at {_path}",
                 ActualOtherType => $"actual JSON has a different type at {_path}, expected {_expected} while actual {_actual}",
                 ActualOtherValue => $"actual JSON has a different value at {_path}, expected {_expected} while actual {_actual}",
                 DifferentLength => $"actual JSON has {_actual} elements instead of {_expected} at {_path}",

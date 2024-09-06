@@ -1,6 +1,9 @@
 // Define the location for the deployment of the components.
 param location string
 
+// Define the name of the DataFactory resource that will be created.
+param dataFactoryName string
+
 // Define the name of the storage account that will be created.
 param storageAccountName string
 
@@ -21,6 +24,14 @@ param keyVaultName string
 
 // Define the Service Principal ID that needs access full access to the deployed resource group.
 param servicePrincipal_objectId string
+
+module factory 'br/public:avm/res/data-factory/factory:0.4.0' = {
+  name: 'dataFactoryDeployment'
+  params: {
+    name: dataFactoryName
+    location: location
+  }
+}
 
 module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
   name: 'storageAccountDeployment'
