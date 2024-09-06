@@ -120,7 +120,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                options.OnSetup.CleanMatchingItems(CreateMatchingFilter(createdMatched));
+                options.OnSetup.CleanMatchingItems(CreateMatchingFilter(createdMatched))
+                               .CleanMatchingItems(CreateMatchingFilter(createdMatched))
+                               .CleanMatchingItems(CreateMatchingFilter(CreateShip()));
             });
 
             // Assert
@@ -140,7 +142,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                options.OnTeardown.CleanMatchingItems(CreateMatchingFilter(createdMatched));
+                options.OnTeardown.CleanMatchingItems(CreateMatchingFilter(createdMatched))
+                                  .CleanMatchingItems(CreateMatchingFilter(createdMatched))
+                                  .CleanMatchingItems(CreateMatchingFilter(CreateShip()));
             });
 
             Ship createdByUs = await AddItemAsync(container);
@@ -251,6 +255,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             public string GetId() => Id;
             public void SetId(Ship item) => Id = item.Id;
             public PartitionKey GetPartitionKey() => new PartitionKeyBuilder().Add(Destination.Country).Build();
+            public string PartitionKeyPath => "/" + nameof(Destination) + "/" + nameof(Destination.Country);
             public void SetPartitionKey(Ship item) => Destination.Country = item.Destination.Country;
         }
 

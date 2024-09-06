@@ -10,15 +10,26 @@ namespace Arcus.Testing
     {
         internal static string ExtractIdFromItem(JObject item, Type itemType = null)
         {
+            string typeDescription = itemType is null ? "type" : $"'{itemType.Name }' type";
             if (!item.TryGetValue("id", out JToken idNode) || idNode is not JValue id)
             {
-                string typeDescription = itemType is null ? "type" : $"'{itemType.Name }' type";
                 throw new NotSupportedException(
                     $"Cannot temporary insert/delete NoSql items in NoSql container as no required 'id' JSON property was found for the {typeDescription}, " +
                     $"please make sure that there exists such a property in the type (Microsoft uses Newtonsoft.Json behind the scenes)");
             }
 
-            return id.Value<string>();
+            var itemId = id.Value<string>();
+            if (string.IsNullOrWhiteSpace(itemId))
+            {
+                if (string.IsNullOrWhiteSpace(itemId))
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
+                        $"please provide an unique identifier to your item model");
+                }
+            }
+
+            return itemId;
         }
 
         internal static PartitionKey ExtractPartitionKeyFromItem(ContainerProperties properties, JObject item)

@@ -15,11 +15,16 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
-    public interface INoSqlItem<in T>
+    public interface INoSqlItem
     {
         string GetId();
-        void SetId(T item);
         PartitionKey GetPartitionKey();
+        string PartitionKeyPath { get; }
+    }
+
+    public interface INoSqlItem<in T> : INoSqlItem
+    {
+        void SetId(T item);
         void SetPartitionKey(T item);
     }
 
@@ -120,7 +125,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// <summary>
         /// Provides an existing item in a NoSql container.
         /// </summary>
-        public async Task<T> WhenItemAvailableAsync<T>(string containerName, T item) where T : INoSqlItem<T>
+        public async Task<T> WhenItemAvailableAsync<T>(string containerName, T item) where T : INoSqlItem
         {
             _logger.LogTrace("[Test] add '{ItemType}' item '{ItemId}' to NoSql container '{ContainerName}'", typeof(T).Name, item.GetId(), containerName);
 
@@ -154,7 +159,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// <summary>
         /// Verifies that an item exists in a NoSql container.
         /// </summary>
-        public async Task ShouldStoreItemAsync<T>(string containerName, T expected, Action<T> assertion = null) where T : INoSqlItem<T>
+        public async Task ShouldStoreItemAsync<T>(string containerName, T expected, Action<T> assertion = null) where T : INoSqlItem
         {
             Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>
@@ -168,7 +173,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// <summary>
         /// Verifies that n item does not exists in a NoSql container.
         /// </summary>
-        public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem<T>
+        public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem
         {
             Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>

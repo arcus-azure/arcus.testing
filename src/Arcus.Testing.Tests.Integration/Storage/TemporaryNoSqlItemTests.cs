@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Bogus;
 using Microsoft.Azure.Cosmos;
@@ -25,7 +27,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using NoSqlTestContext context = GivenNoSql();
 
             Product expected = CreateProduct();
-            string containerName = await context.WhenContainerNameAvailableAsync(expected.GetPartitionKeyPath());
+            string containerName = await context.WhenContainerNameAvailableAsync(expected.PartitionKeyPath);
 
             TemporaryNoSqlItem item = await WhenTempItemCreatedAsync(context, containerName, expected);
             await context.ShouldStoreItemAsync(containerName, expected, actual => AssertProduct(expected, actual));
@@ -48,7 +50,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             newProduct.SetId(original);
             newProduct.SetPartitionKey(original);
 
-            string containerName = await context.WhenContainerNameAvailableAsync(original.GetPartitionKeyPath());
+            string containerName = await context.WhenContainerNameAvailableAsync(original.PartitionKeyPath);
             await context.WhenItemAvailableAsync(containerName, original);
 
             TemporaryNoSqlItem item = await WhenTempItemCreatedAsync(context, containerName, newProduct);
@@ -59,6 +61,93 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             // Assert
             await context.ShouldStoreItemAsync(containerName, original, actual => AssertProduct(original, actual));
+        }
+
+        public static IEnumerable<object[]> ItemsWithOtherPartitionKeyTypes => new[]
+        {
+            //new object[] { ItemWithIntPartitionKey.Generate() },
+            //new object[] { ItemWithBoolPartitionKey.Generate() },
+            //new object[] { ItemWithNullPartitionKey.Generate() }
+            new object[] { ItemWithNonePartitionKey.Generate() }
+        };
+
+        [Theory]
+        [MemberData(nameof(ItemsWithOtherPartitionKeyTypes))]
+        public async Task CreateTempNoSqlItem_WithOtherPartitionKeyType_SucceedsByFollowingSameStandard<T>(T item) where T : INoSqlItem
+        {
+            // Arrange
+            await using NoSqlTestContext context = GivenNoSql();
+
+            string containerName = await context.WhenContainerNameAvailableAsync(item.PartitionKeyPath);
+            TemporaryNoSqlItem temp = await WhenTempItemCreatedAsync(context, containerName, item);
+
+            await context.ShouldStoreItemAsync(containerName, item);
+
+            // Act
+            await temp.DisposeAsync();
+
+            // Assert
+            await context.ShouldNotStoreItemAsync(containerName, item);
+        }
+
+        [Fact]
+        public async Task CreateTempNoSqlItem_WithoutId_FailsWithInvalidOperation()
+        {
+            // Arrange
+            await using NoSqlTestContext context = GivenNoSql();
+
+            Product item = CreateProduct();
+            item.Id = null;
+
+            string containerName = await context.WhenContainerNameAvailableAsync(item.PartitionKeyPath);
+            
+            // Act / Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => WhenTempItemCreatedAsync(context, containerName, item));
+        }
+
+        public class ItemWithIntPartitionKey : INoSqlItem
+        {
+            [JsonProperty(PropertyName = "id")]
+            public string Id { get; set; }
+            public int PartitionKey { get; set; }
+            public static ItemWithIntPartitionKey Generate() => new() { Id = Bogus.Random.Guid().ToString(), PartitionKey = Bogus.Random.Int(1, 100) };
+            public string GetId() => Id;
+            public PartitionKey GetPartitionKey() => new(PartitionKey);
+            public string PartitionKeyPath => "/" + nameof(PartitionKey);
+        }
+
+        public class ItemWithBoolPartitionKey : INoSqlItem
+        {
+            [JsonProperty(PropertyName = "id")]
+            public string Id { get; set; }
+            public bool PartitionKey { get; set; }
+            public static ItemWithBoolPartitionKey Generate() => new() { Id = Bogus.Random.Guid().ToString(), PartitionKey = Bogus.Random.Bool() };
+            public string GetId() => Id;
+            public PartitionKey GetPartitionKey() => new(PartitionKey);
+            public string PartitionKeyPath => "/" + nameof(PartitionKey);
+        }
+
+        public class ItemWithNullPartitionKey : INoSqlItem
+        {
+            [JsonProperty(PropertyName = "id")]
+            public string Id { get; set; }
+            public string PartitionKey { get; set; }
+            public static ItemWithNullPartitionKey Generate() => new() { Id = Bogus.Random.Guid().ToString(), PartitionKey = null };
+            public string GetId() => Id;
+            public PartitionKey GetPartitionKey() => new(null);
+            public string PartitionKeyPath => "/" + nameof(PartitionKey);
+        }
+
+        public class ItemWithNonePartitionKey : INoSqlItem
+        {
+            [JsonProperty(PropertyName = "id")]
+            public string Id { get; set; }
+            public string PartitionKey { get; set; }
+            public static ItemWithNonePartitionKey Generate() => new() { Id = Bogus.Random.Guid().ToString() };
+            public string GetId() => Id;
+            public PartitionKey GetPartitionKey() => Microsoft.Azure.Cosmos.PartitionKey.None;
+            public string PartitionKeyPath => "/some";
         }
 
         private NoSqlTestContext GivenNoSql()
@@ -88,7 +177,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             public void SetId(Product p) { Id = p.Id; }
             public void SetPartitionKey(Product p) { Category = p.Category; }
             public PartitionKey GetPartitionKey() => new(Category);
-            public string GetPartitionKeyPath() => "/" + nameof(Category);
+            public string PartitionKeyPath => "/" + nameof(Category);
         }
 
         private static Product CreateProduct()
@@ -103,7 +192,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         }
 
         private async Task<TemporaryNoSqlItem> WhenTempItemCreatedAsync<T>(NoSqlTestContext context, string containerName, T item)
-            where T : INoSqlItem<T>
+            where T : INoSqlItem
         {
             Container container = context.Database.GetContainer(containerName);
             return await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);

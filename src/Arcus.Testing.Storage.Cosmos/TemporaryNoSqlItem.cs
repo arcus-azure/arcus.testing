@@ -70,11 +70,6 @@ namespace Arcus.Testing
             ContainerResponse resp = await container.ReadContainerAsync();
             PartitionKey partitionKey = ExtractPartitionKeyFromItem(resp.Resource, json);
 
-            if (string.IsNullOrWhiteSpace(itemId))
-            {
-                return await InsertNewItemAsync(container, itemId, partitionKey, item, logger);
-            }
-
             try
             {
                 return await ReplaceExistingItemAsync(container, itemId, partitionKey, item, logger);
