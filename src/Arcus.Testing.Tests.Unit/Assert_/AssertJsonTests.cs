@@ -129,6 +129,30 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 };
                 yield return new object[]
                 {
+                    "{ \"items\": 2 }",
+                    "{ \"items\": null }",
+                    "actual JSON is null at $.items"
+                };
+                yield return new object[]
+                {
+                    "{ \"items\": null }",
+                    "{ \"items\": [] }",
+                    "actual JSON has a different type at $.items, expected type null while actual an array: []"
+                };
+                yield return new object[]
+                {
+                    "{ \"items\": [null] }",
+                    "{ \"items\": [] }",
+                    "actual JSON has 0 elements instead of 1 at $.items"
+                };
+                yield return new object[]
+                {
+                    "{ \"items\": [] }",
+                    "{ \"items\": [null] }",
+                    "actual JSON has 1 elements instead of 0 at $.items"
+                };
+                yield return new object[]
+                {
                     "{ \"items\": [ \"fork\", \"knife\" ] }",
                     "{ \"items\": [ \"fork\", \"knife\" , \"spoon\" ] }",
                     "has 3 elements instead of 2 at $.items"
@@ -150,6 +174,24 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     "{ \"tree\": \"oak\" }",
                     "{ \"tree\": { } }",
                     "different type at $.tree, expected a string: oak while actual an object: {}"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": { \"name\": \"oak\" } }",
+                    "{ \"tree\": null }",
+                    "actual JSON is null at $.tree"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": null }",
+                    "{ \"tree\": { \"name\": \"oak\" } }",
+                    "actual JSON has a different type at $.tree, expected type null while actual an object: {\"name\":\"oak\"}"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": { \"name\": null } }",
+                    "{ \"tree\": { \"name\": \"oak\" } }",
+                    "actual JSON has a different type at $.tree.name, expected type null while actual a string: oak"
                 };
                 yield return new object[]
                 {

@@ -590,13 +590,21 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a CSV tabular data structure with named columns.
     /// </summary>
-    public sealed class CsvTable
+    public class CsvTable
     {
         private readonly string _originalCsv;
         private readonly AssertCsvOptions _options;
         private const string LoadMethodName = $"{nameof(AssertCsv)}.{nameof(Load)}";
 
-        private CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CsvTable"/> class.
+        /// </summary>
+        /// <param name="headerNames">The sequence of each title of a CSV column.</param>
+        /// <param name="rows">The data rows of the CSV table.</param>
+        /// <param name="originalCsv">The original CSV that was parsed as a table.</param>
+        /// <param name="options">The additional set of options to control the parsing of the CSV table.</param>
+        /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
+        protected CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
         {
             _originalCsv = originalCsv ?? throw new ArgumentNullException(nameof(originalCsv));
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -605,6 +613,24 @@ namespace Arcus.Testing
             Rows = rows ?? throw new ArgumentNullException(nameof(rows));
             RowCount = rows.Length;
             ColumnCount = headerNames.Length;
+
+            if (headerNames.Any(h => h is null))
+            {
+                throw new CsvException(
+                    "Cannot parse the incoming header names as one or more header names is 'null'");
+            }
+
+            if (Rows.Any(r => r is null))
+            {
+                throw new CsvException(
+                    "Cannot parse the incoming rows as one or more rows is 'null'");
+            }
+
+            if (Rows.Any(r => r.Cells.Count != headerNames.Length))
+            {
+                throw new CsvException(
+                    $"Cannot parse the incoming header names and rows to a valid CSV table as not all rows matches the header count of {headerNames.Length}");
+            }
         }
 
         internal AssertCsvHeader Header => _options.Header;
@@ -661,7 +687,23 @@ namespace Arcus.Testing
                 headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
             }
 
-            CsvRow[] rows = rawLines.Select((rawRow, rowNumber) =>
+            CsvRow[] rows = ParseCsvRows(rawLines, headerNames, options);
+            return new CsvTable(headerNames, rows, csv, options);
+        }
+
+        
+        /// <summary>
+        /// Parse the incoming <paramref name="rowLines"/> into <see cref="CsvRow"/>s.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="rowLines"/> or the <paramref name="headerNames"/> is <c>null</c></exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
+        protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(rowLines);
+            ArgumentNullException.ThrowIfNull(headerNames);
+            options ??= new AssertCsvOptions();
+
+            CsvRow[] rows = rowLines.Select((rawRow, rowNumber) =>
             {
                 CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
                 {
@@ -671,8 +713,8 @@ namespace Arcus.Testing
 
                 return new CsvRow(cells, rowNumber, options);
             }).ToArray();
-
-            return new CsvTable(headerNames, rows, csv, options);
+            
+            return rows;
         }
 
         private static string[][] SplitCsv(string csv, AssertCsvOptions options)
@@ -895,7 +937,7 @@ namespace Arcus.Testing
                 return expectedValue.Equals(actualValue);
             }
 
-            return Value == other.Value;
+            return Value.Trim('\"') == other.Value.Trim('\"');
         }
 
         /// <summary>

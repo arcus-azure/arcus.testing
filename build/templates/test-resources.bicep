@@ -4,6 +4,9 @@ param location string
 // Define the name of the resource group where the components will be deployed.
 param resourceGroupName string
 
+// Define the name of the DataFactory resource that will be created.
+param dataFactoryName string
+
 // Define the name of the storage account that will be created.
 param storageAccountName string
 
@@ -25,6 +28,15 @@ module resourceGroup 'br/public:avm/res/resources/resource-group:0.2.3' = {
 
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
   name: resourceGroupName
+}
+
+module factory 'br/public:avm/res/data-factory/factory:0.4.0' = {
+  name: 'dataFactoryDeployment'
+  scope: rg
+  params: {
+    name: dataFactoryName
+    location: location
+  }
 }
 
 module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {

@@ -33,9 +33,15 @@ jobs:
             Install-Module -Name Arcus.Scripting.DevOps -AllowClobber
 
             # TODO: get Key Vault secret and set it as secret pipeline variable.
+
+            $subscriptionId = (az account show | ConvertFrom-Json).id
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.SubscriptionId' -Value $subscriptionId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.TenantId' -Value $env:tenantId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientId' -Value $env:servicePrincipalId
             Set-AzDevOpsVariable -Name 'Arcus.Testing.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey
+
+            $accountKey = az keyvault secret show --name $env:ARCUS_TESTING_STORAGEACCOUNT_KEY_SECRETNAME --vault-name $env:ARCUS_TESTING_KEYVAULT_NAME | ConvertFrom-Json
+            Set-AzDevOpsVariable -Name 'Arcus.Testing.StorageAccount.Key' -Value $accountKey.value -AsSecret
 
       - task: UseDotNet@2
         displayName: 'Import .NET Core SDK ($(DotNet.Sdk.Version))'
@@ -61,6 +67,7 @@ jobs:
 
       - task: PublishTestResults@2
         displayName: 'Publish integration test results'
+        condition: always()
         inputs:
           testResultsFormat: 'VSTest'
           testResultsFiles: '$(Pipeline.Workspace)/*.trx'

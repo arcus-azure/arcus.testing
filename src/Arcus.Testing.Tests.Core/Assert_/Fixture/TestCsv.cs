@@ -5,7 +5,7 @@ using System.Linq;
 using Bogus;
 using Xunit;
 
-namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
+namespace Arcus.Testing.Tests.Core.Assert_.Fixture
 {
     /// <summary>
     /// Represents additional options to control how the generated <see cref="TestCsv"/> will look like.
