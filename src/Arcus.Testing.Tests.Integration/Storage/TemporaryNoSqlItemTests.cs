@@ -65,9 +65,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         public static IEnumerable<object[]> ItemsWithOtherPartitionKeyTypes => new[]
         {
-            //new object[] { ItemWithIntPartitionKey.Generate() },
-            //new object[] { ItemWithBoolPartitionKey.Generate() },
-            //new object[] { ItemWithNullPartitionKey.Generate() }
+            new object[] { ItemWithIntPartitionKey.Generate() },
+            new object[] { ItemWithBoolPartitionKey.Generate() },
+            new object[] { ItemWithNullPartitionKey.Generate() },
             new object[] { ItemWithNonePartitionKey.Generate() }
         };
 
