@@ -62,7 +62,7 @@ stages:
                   --parameters servicePrincipal_objectId=$objectId
 
                 $accountKey = (az storage account keys list --account-name ${{ variables['Arcus.Testing.StorageAccount.Name'] }} | ConvertFrom-Json)[0].value
-                az keyvault set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
+                az keyvault secret set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
 
   - stage: SmokeTests
     dependsOn: Deploy
