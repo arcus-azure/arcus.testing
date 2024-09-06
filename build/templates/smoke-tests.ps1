@@ -19,7 +19,7 @@ Describe 'Storage account' {
       Remove-AzStorageContainer -Name $containerName -Context $storageContext -Force
     }
   }
-  It 'Service principal can create CosmosDb MongoDb collection' {
+  It 'Service principal can create Cosmos MongoDb collection' {
     $collectionName = 'test-collection'
     try {
       New-AzCosmosDBMongoDBCollection `
@@ -34,6 +34,24 @@ Describe 'Storage account' {
         -AccountName $env:ARCUS_TESTING_COSMOS_MONGODB_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME `
         -Name $collectionName
+    }
+  }
+  It "Service principal can create Cosmos NoSql container" {
+    $containerName = 'test-container'
+    try {
+      New-AzCosmosDBSqlContainer `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
+        -Name $containerName `
+        -PartitionKeyPath '/pk'
+    }
+    catch {
+      Remove-AzCosmosDBSqlContainer `
+      -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+      -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
+      -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
+      -Name $containerName
     }
   }
 }
