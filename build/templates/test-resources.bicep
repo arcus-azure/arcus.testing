@@ -119,9 +119,6 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
         ]
       }
     ]
-    backupPolicyContinuousTier: null
-    backupPolicyType: null
-    backupStorageRedundancy: null
   }
 }
 
