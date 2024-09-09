@@ -214,6 +214,11 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryMongoDbCollection"/>.
+        /// </summary>
+        public OnTeardownMongoDbCollectionOptions OnTeardown => _options.OnTeardown;
+
+        /// <summary>
         /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbResourceId">The resource ID pointing towards the Azure Cosmos account.</param>

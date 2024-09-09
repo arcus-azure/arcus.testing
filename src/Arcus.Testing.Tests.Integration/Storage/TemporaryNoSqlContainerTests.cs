@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Bogus;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -182,10 +183,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip("before"));
             
-            TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
-            {
-                options.OnTeardown.CleanAllItems();
-            });
+            TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName);
+            container.OnTeardown.CleanAllItems();
             await context.ShouldStoreItemAsync(containerName, createdBefore);
 
             Ship createdByUs = await AddItemAsync(container);

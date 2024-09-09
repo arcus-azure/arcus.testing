@@ -88,6 +88,11 @@ await TemporaryMongoDbCollection.CreateIfNotExistsAsync(..., options =>
 
     options.OnTeardown.CleanMatchingDocuments((Shipment s) => s.BoatName == "The Alice");
 });
+
+// `OnTeardown` is also still available after the temporary collection is created:
+await using TemporaryMongoDbCollection collection = ...
+
+collection.OnTeardown.CleanAllDocuments();
 ```
 
 > 🎖️ The `TemporaryMongoDbCollection` will always remove any MongoDb documents that were inserted via the temporary collection itself with the `collection.InsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
@@ -190,6 +195,11 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
         NoSqlItemFilter.ItemEqual((Shipment s) => s.BoatName == "The Alice"),
         NoSqlItemFilter.ItemIdEqual("123"));
 });
+
+// `OnTeardown` is also still available after the temporary container is created:
+await using TemporaryNoSqlContainer container = ...
+
+container.OnTeardown.CleanAllItems();
 ```
 
 > 🎖️ The `TemporaryNoSqlContainer` will always remove any NoSql items that were inserted via the temporary container itself with the `container.AddItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.

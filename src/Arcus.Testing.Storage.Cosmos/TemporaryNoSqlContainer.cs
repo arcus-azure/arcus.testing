@@ -307,6 +307,11 @@ namespace Arcus.Testing
         public Container Client { get; }
 
         /// <summary>
+        /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryNoSqlContainer"/>.
+        /// </summary>
+        public OnTeardownNoSqlContainerOptions OnTeardown => _options.OnTeardown;
+
+        /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
