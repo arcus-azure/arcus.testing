@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
@@ -28,6 +29,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
+        private static readonly HttpClient HttpClient = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MongoDbTestContext" /> class.
@@ -56,22 +58,32 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
         private static async Task<MongoClient> AuthenticateMongoDbClientAsync(TestConfig config)
         {
-            string scope = "https://management.azure.com/.default";
+            const string scope = "https://management.azure.com/.default";
             var tokenProvider = new DefaultAzureCredential();
             AccessToken accessToken = await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: new[] { scope }));
-
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken.Token}");
 
             string subscriptionId = config["Arcus:SubscriptionId"];
             string resourceGroupName = config["Arcus:ResourceGroup:Name"];
             string cosmosDbName = config["Arcus:Cosmos:MongoDb:Name"];
 
-            string listConnectionStringUrl = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{cosmosDbName}/listConnectionStrings?api-version=2021-04-15";
-            var response = await httpClient.PostAsync(listConnectionStringUrl, new StringContent(""));
-            var responseBody = await response.Content.ReadAsStringAsync();
-            var connectionStrings = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(responseBody);
-            string connectionString = connectionStrings["connectionStrings"][0]["connectionString"];
+            var listConnectionStringUrl = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{cosmosDbName}/listConnectionStrings?api-version=2021-04-15";
+            
+            using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
+
+            using HttpResponseMessage response = await HttpClient.SendAsync(request);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            var connectionStringDic = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(responseBody);
+            
+            Assert.NotNull(connectionStringDic);
+            List<Dictionary<string, string>> connectionStrings = connectionStringDic["connectionStrings"];
+            Assert.NotEmpty(connectionStrings);
+
+            Dictionary<string, string> primaryConnectionString = connectionStrings[0];
+            Assert.NotEmpty(primaryConnectionString);
+
+            string connectionString = primaryConnectionString["connectionString"];
+            Assert.NotEmpty(connectionString);
 
             return new MongoClient(connectionString);
         }
@@ -93,9 +105,20 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task<string> WhenCollectionNameAvailableAsync()
         {
             string collectionName = WhenCollectionNameUnavailable();
+            _logger.LogTrace("[Test] create MongoDb collection '{CollectionName}' outside the fixture's scope", collectionName);
+
             await _database.CreateCollectionAsync(collectionName);
 
             return collectionName;
+        }
+
+        /// <summary>
+        /// Deletes an existing container in the NoSql database.
+        /// </summary>
+        public async Task WhenCollectionDeletedAsync(string collectionName)
+        {
+            _logger.LogTrace("[Test] delete MongoDb collection '{CollectionName}' outside test fixture's scope", collectionName);
+            await _database.DropCollectionAsync(collectionName);
         }
 
         /// <summary>
@@ -114,8 +137,23 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             BsonValue id = BsonTypeMapper.MapToBsonValue(newId);
             bson[elementName] = id;
 
+            _logger.LogTrace("[Test] add '{DocType}' item '{DocId}' to MongoDb collection '{CollectionName}'", typeof(T).Name, id, collectionName);
             await collection.InsertOneAsync(bson);
+
             return id;
+        }
+
+        /// <summary>
+        /// Deletes an existing document in the MongoDb collection.
+        /// </summary>
+        public async Task WhenDocumentDeletedAsync<T>(string collectionName, BsonValue id)
+        {
+            _logger.LogTrace("[Test] delete MongoDb document '{DocId}' in collection '{CollectionName}' outside test fixture's scope", id, collectionName);
+         
+            IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
+            FilterDefinition<T> filter = CreateIdFilter<T>(id);
+
+            await collection.DeleteOneAsync(filter);
         }
 
         /// <summary>
@@ -154,10 +192,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldStoreDocumentAsync<T>(string collectionName, BsonValue id, Action<T> assertion = null)
         {
             IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
-            
-            BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
-            string elementName = classMap.IdMemberMap.ElementName;
-            FilterDefinition<T> filter = Builders<T>.Filter.Eq(elementName, id);
+            FilterDefinition<T> filter = CreateIdFilter<T>(id);
 
             List<T> matchingDocs = await collection.Find(filter).ToListAsync();
             Assert.Single(matchingDocs);
@@ -171,12 +206,19 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldNotStoreDocumentAsync<T>(string collectionName, BsonValue id)
         {
             IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
+            FilterDefinition<T> filter = CreateIdFilter<T>(id);
+
+            List<T> matchingDocs = await collection.Find(filter).ToListAsync();
+            Assert.Empty(matchingDocs);
+        }
+
+        private static FilterDefinition<T> CreateIdFilter<T>(BsonValue id)
+        {
             BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
             string elementName = classMap.IdMemberMap.ElementName;
             FilterDefinition<T> filter = Builders<T>.Filter.Eq(elementName, id);
 
-            List<T> matchingDocs = await collection.Find(filter).ToListAsync();
-            Assert.Empty(matchingDocs);
+            return filter;
         }
 
         /// <summary>

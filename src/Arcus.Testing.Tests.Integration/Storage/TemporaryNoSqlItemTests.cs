@@ -191,10 +191,29 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 .Generate();
         }
 
-        private async Task<TemporaryNoSqlItem> WhenTempItemCreatedAsync<T>(NoSqlTestContext context, string containerName, T item)
+        [Fact]
+        public async Task CreateTempNoSqlItem_WithAlreadyDeletedItem_SucceedsByIgnoringDeletion()
+        {
+            // Arrange
+            await using NoSqlTestContext context = GivenNoSql();
+
+            Product expected = CreateProduct();
+            string containerName = await context.WhenContainerNameAvailableAsync(expected.PartitionKeyPath);
+
+            TemporaryNoSqlItem item = await WhenTempItemCreatedAsync(context, containerName, expected);
+            await context.WhenItemDeletedAsync(containerName, expected);
+
+            // Act
+            await item.DisposeAsync();
+
+            // Assert
+            await context.ShouldNotStoreItemAsync(containerName, expected);
+        }
+
+        private async Task<TemporaryNoSqlItem> WhenTempItemCreatedAsync<T>(NoSqlTestContext context, string containerName, T item, Container container = null)
             where T : INoSqlItem
         {
-            Container container = context.Database.GetContainer(containerName);
+            container ??= context.Database.GetContainer(containerName);
             return await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);
         }
     }

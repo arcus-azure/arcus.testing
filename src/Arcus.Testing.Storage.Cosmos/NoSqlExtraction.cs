@@ -6,8 +6,14 @@ using Newtonsoft.Json.Linq;
 
 namespace Arcus.Testing
 {
+    /// <summary>
+    /// Represents how the NoSql-related information is extracted from items.
+    /// </summary>
     internal static class NoSqlExtraction
     {
+        /// <summary>
+        /// Extracts the unique ID from the <paramref name="item"/>.
+        /// </summary>
         internal static string ExtractIdFromItem(JObject item, Type itemType = null)
         {
             string typeDescription = itemType is null ? "type" : $"'{itemType.Name }' type";
@@ -21,18 +27,18 @@ namespace Arcus.Testing
             var itemId = id.Value<string>();
             if (string.IsNullOrWhiteSpace(itemId))
             {
-                if (string.IsNullOrWhiteSpace(itemId))
-                {
-                    throw new InvalidOperationException(
-                        $"Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
-                        $"please provide an unique identifier to your item model");
-                }
+                throw new InvalidOperationException(
+                    $"Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
+                    $"please provide an unique identifier to your item model");
             }
 
             return itemId;
         }
 
-        internal static PartitionKey ExtractPartitionKeyFromItem(ContainerProperties properties, JObject item)
+        /// <summary>
+        /// Extracts the partition key from the <paramref name="item"/>.
+        /// </summary>
+        internal static PartitionKey ExtractPartitionKeyFromItem(JObject item, ContainerProperties properties)
         {
             string[][] partitionKeyTokens =
                 properties.PartitionKeyPaths.Select(path => path.Split('/', StringSplitOptions.RemoveEmptyEntries)).ToArray();

@@ -216,6 +216,23 @@ namespace Arcus.Testing.Tests.Integration.Storage
             public string BoatName { get; set; }
         }
 
+        [Fact]
+        public async Task CreateTempMongoDbCollection_WhenCollectionWasDeletedOutsideFixture_SucceedsByIgnoringDeletion()
+        {
+            // Arrange
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
+
+            string collectionName = context.WhenCollectionNameUnavailable();
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
+            await context.WhenCollectionDeletedAsync(collectionName);
+
+            // Act
+            await collection.DisposeAsync();
+
+            // Assert
+            await context.ShouldNotStoreCollectionAsync(collectionName);
+        }
+
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
             return configureOptions is null

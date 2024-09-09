@@ -12,7 +12,7 @@ using MongoDB.Driver;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents a temporary Azure CosmosDb MongoDb document that will be deleted after the instance is disposed.
+    /// Represents a temporary Azure Cosmos MongoDb document that will be deleted after the instance is disposed.
     /// </summary>
     public class TemporaryMongoDbDocument : IAsyncDisposable
     {
@@ -30,13 +30,13 @@ namespace Arcus.Testing
             IMongoCollection<BsonDocument> collection,
             ILogger logger)
         {
-            _documentType = documentType;
-            _filter = filter;
+            _documentType = documentType ?? throw new ArgumentNullException(nameof(documentType));
+            _filter = filter ?? throw new ArgumentNullException(nameof(filter));
             _originalDoc = originalDoc;
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             _logger = logger ?? NullLogger.Instance;
 
-            Id = id;
+            Id = id ?? throw new ArgumentNullException(nameof(id));
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Arcus.Testing
         public BsonValue Id { get; }
 
         /// <summary>
-        /// Inserts a temporary document to a MongoDb collection.
+        /// Inserts a temporary document to an Azure Cosmos MongoDb collection.
         /// </summary>
         /// <param name="cosmosDbResourceId">The resource ID pointing towards the Azure CosmosDb account.</param>
         /// <param name="databaseName">The name of the MongoDb database in which the collection resides where the document should be created.</param>
@@ -87,7 +87,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Inserts a temporary document to a MongoDb collection.
+        /// Inserts a temporary document to an Azure Cosmos MongoDb collection.
         /// </summary>
         /// <param name="collection">The collection client to interact with the MongoDb collection.</param>
         /// <param name="document">The document that should be temporarily inserted into the MongoDb collection.</param>
@@ -120,13 +120,13 @@ namespace Arcus.Testing
 
             if (matchingDocs.Count is 0)
             {
-                logger.LogTrace("Inserting new '{DocumentType}' MongoDb document to Azure CosmosDb collection '{CollectionName}'", typeof(TDocument).Name, collection.CollectionNamespace.FullName);
+                logger.LogTrace("Inserting new '{DocumentType}' MongoDb document to Azure Cosmos MongoDb collection '{CollectionName}'", typeof(TDocument).Name, collection.CollectionNamespace.FullName);
 
                 await collectionBson.InsertOneAsync(bson);
                 return new TemporaryMongoDbDocument(id, typeof(TDocument), findOneDocument, originalDoc: null, collectionBson, logger);
             }
 
-            logger.LogTrace("Replace '{DocumentType}' MongoDb document in Azure CosmosDb collection '{CollectionName}'", typeof(TDocument).Name, collection.CollectionNamespace.FullName);
+            logger.LogTrace("Replace '{DocumentType}' MongoDb document in Azure Cosmos MongoDb collection '{CollectionName}'", typeof(TDocument).Name, collection.CollectionNamespace.FullName);
 
             BsonDocument originalDoc = matchingDocs.Single();
             await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson);
@@ -174,13 +174,19 @@ namespace Arcus.Testing
 
             if (_originalDoc is null)
             {
-                _logger.LogTrace("Deleting '{DocumentType}' MongoDb document in Azure CosmosDb collection '{CollectionName}'", _documentType.Name, _collection.CollectionNamespace.FullName);
-                await _collection.FindOneAndDeleteAsync(_filter);
+                disposables.Add(AsyncDisposable.Create(async () =>
+                {
+                    _logger.LogTrace("Deleting '{DocumentType}' MongoDb document in Azure Cosmos MongoDb collection '{CollectionName}'", _documentType.Name, _collection.CollectionNamespace.FullName);
+                    await _collection.DeleteOneAsync(_filter);
+                }));
             }
             else
             {
-                _logger.LogTrace("Reverting '{DocumentType}' MongoDb document in Azure CosmosDb collection '{CollectionName}'", _documentType.Name, _collection.CollectionNamespace.FullName);
-                await _collection.FindOneAndReplaceAsync(_filter, _originalDoc);
+                disposables.Add(AsyncDisposable.Create(async () =>
+                {
+                    _logger.LogTrace("Reverting '{DocumentType}' MongoDb document in Azure Cosmos MongoDb collection '{CollectionName}'", _documentType.Name, _collection.CollectionNamespace.FullName);
+                    await _collection.ReplaceOneAsync(_filter, _originalDoc);
+                }));
             }
         }
     }

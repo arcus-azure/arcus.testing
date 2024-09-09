@@ -339,13 +339,13 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
-                logger.LogTrace("Cleaning all documents in Azure MongoDb collection '{CollectionName}'", collectionName);
+                logger.LogTrace("Cleaning all documents in Azure Cosmos MongoDb collection '{CollectionName}'", collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
-                logger.LogTrace("Clean all matching documents in Azure MongoDb collection '{CollectionName}'", collectionName);
+                logger.LogTrace("Clean all matching documents in Azure Cosmos MongoDb collection '{CollectionName}'", collectionName);
                 await collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
         }

@@ -138,6 +138,26 @@ namespace Arcus.Testing.Tests.Integration.Storage
         }
 
         [Fact]
+        public async Task CreateTempMongoDbDocument_WithAlreadyDeletedDocument_SucceedsByIgnoringDeletion()
+        {
+            // Arrange
+            await using MongoDbTestContext context = await GivenMongoDbAsync();
+
+            Product expected = CreateProduct();
+            string collectionName = await context.WhenCollectionNameAvailableAsync();
+
+            TemporaryMongoDbDocument doc = await WhenTempDocumentCreatedAsync(collectionName, expected);
+            BsonValue id = doc.Id;
+            await context.WhenDocumentDeletedAsync<Product>(collectionName, id);
+
+            // Act
+            await doc.DisposeAsync();
+
+            // Assert
+            await context.ShouldNotStoreDocumentAsync<Product>(collectionName, id);
+        }
+
+        [Fact]
         public async Task CreateTempMongoDbDocument_WithoutIdProperty_Fails()
         {
             await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WhenTempDocumentCreatedAsync("<collection-name>", new DocWithoutId()));

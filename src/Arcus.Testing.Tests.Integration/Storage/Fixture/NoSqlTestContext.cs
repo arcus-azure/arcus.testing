@@ -137,6 +137,17 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
+        /// Deletes an existing item in the NoSql container.
+        /// </summary>
+        public async Task WhenItemDeletedAsync<T>(string containerName, T item) where T : INoSqlItem
+        {
+            _logger.LogTrace("[Test] delete NoSql item '{ItemId}' in container '{ContainerName}' outside test fixture's scope", item.GetId(), containerName);
+
+            Container container = Database.GetContainer(containerName);
+            await container.DeleteItemAsync<T>(item.GetId(), item.GetPartitionKey());
+        }
+
+        /// <summary>
         /// Verifies that a container exists in a NoSql database.
         /// </summary>
         public async Task ShouldStoreContainerAsync(string containerId)
@@ -191,7 +202,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         {
             await using var disposables = new DisposableCollection(_logger);
 
-            disposables.Add(_connection);
             disposables.Add(AsyncDisposable.Create(async () =>
             {
                 var arm = new ArmClient(new DefaultAzureCredential());
@@ -227,6 +237,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                     // Ignore when the client is not active anymore.
                 }
             }));
+            disposables.Add(_connection);
         }
     }
 }

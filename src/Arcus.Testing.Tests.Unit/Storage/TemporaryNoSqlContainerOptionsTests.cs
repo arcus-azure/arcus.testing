@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingItems(null));
-            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingItems(new NoSqlItemFilter[] { null } ));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingItems(NoSqlItemFilter.ItemIdEqual("some-id"), null));
         }
 
         [Fact]
@@ -24,7 +24,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingItems(null));
-            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingItems(new NoSqlItemFilter[] { null } ));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingItems(NoSqlItemFilter.ItemIdEqual("some-id"), null));
         }
     }
 }

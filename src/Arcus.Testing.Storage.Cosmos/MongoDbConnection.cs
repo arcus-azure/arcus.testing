@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Core;
@@ -14,10 +11,16 @@ using MongoDB.Driver;
 
 namespace Arcus.Testing
 {
+    /// <summary>
+    /// Represents how the test infrastructure connects with the Azure Cosmos MongoDb resource.
+    /// </summary>
     internal static class MongoDbConnection
     {
         private static readonly HttpClient HttpClient = new();
 
+        /// <summary>
+        /// Authenticates a <see cref="MongoClient"/> with <see cref="DefaultAzureCredential"/>.
+        /// </summary>
         internal static async Task<MongoClient> AuthenticateMongoClientAsync(ResourceIdentifier cosmosDbResourceId, string databaseName, string collectionName, ILogger logger)
         {
             AccessToken accessToken = await RequestAccessTokenAsync(logger);
@@ -44,10 +47,10 @@ namespace Arcus.Testing
             ILogger logger)
         {
             var listConnectionStringUrl = $"https://management.azure.com/{cosmosDbResourceId}/listConnectionStrings?api-version=2021-04-15";
-            logger.LogTrace("Requesting access for Azure CosmosDb resource at '{Url}'", listConnectionStringUrl);
+            logger.LogTrace("Requesting access for Azure Cosmos MongoDb resource at '{Url}'", listConnectionStringUrl);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
-            request.Headers.Authorization = AuthenticationHeaderValue.Parse($"Bearer {accessToken.Token}");
+            using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
             
             using HttpResponseMessage response = await HttpClient.SendAsync(request);
             string responseBody = await response.Content.ReadAsStringAsync();
@@ -56,7 +59,7 @@ namespace Arcus.Testing
             {
                 throw new RequestFailedException(
                     (int) response.StatusCode,
-                    $"Cannot contact Azure CosmosDb MongoDb collection named '{collectionName}' at database '{databaseName}' in account '{cosmosDbResourceId.Name}', " +
+                    $"Cannot contact Azure Cosmos MongoDb collection named '{collectionName}' at database '{databaseName}' in account '{cosmosDbResourceId.Name}', " +
                     $"because the test host could not successfully request access from the resource at '{listConnectionStringUrl}': {responseBody}");
             }
 
@@ -82,12 +85,12 @@ namespace Arcus.Testing
             }
             catch (JsonException exception)
             {
-                logger.LogError(exception, "Failed to parse the response for Azure CosmosDb access due to a deserialization failure: {Message}", exception.Message);
+                logger.LogError(exception, "Failed to parse the response for Azure Cosmos MongoDb access due to a deserialization failure: {Message}", exception.Message);
                 throw;
             }
 
             throw new JsonException(
-                $"Failed to parse the response for Azure CosmosDb access as there does not exists any access information in the response: {responseBody}");
+                $"Failed to parse the response for Azure Cosmos MongoDb access as there does not exists any access information in the response: {responseBody}");
         }
     }
 }

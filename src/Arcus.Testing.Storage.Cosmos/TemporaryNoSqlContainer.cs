@@ -278,14 +278,14 @@ namespace Arcus.Testing
     public class TemporaryNoSqlContainer : IAsyncDisposable
     {
         private readonly CosmosDBSqlContainerResource _container;
-        private readonly CosmosClient _client;
+        private readonly CosmosClient _resourceClient;
         private readonly bool _createdByUs;
         private readonly Collection<IAsyncDisposable> _items = new();
         private readonly TemporaryNoSqlContainerOptions _options;
         private readonly ILogger _logger;
 
         private TemporaryNoSqlContainer(
-            CosmosClient client,
+            CosmosClient resourceClient,
             Container containerClient,
             CosmosDBSqlContainerResource container,
             bool createdByUs,
@@ -297,8 +297,8 @@ namespace Arcus.Testing
             _options = options ?? new TemporaryNoSqlContainerOptions();
             _logger = logger ?? NullLogger.Instance;
 
-            _client = client;
-            Client = containerClient;
+            _resourceClient = resourceClient ?? throw new ArgumentNullException(nameof(resourceClient));
+            Client = containerClient ?? throw new ArgumentNullException(nameof(containerClient));
         }
 
         /// <summary>
@@ -483,7 +483,7 @@ namespace Arcus.Testing
                 }));
             }
 
-            disposables.Add(_client);
+            disposables.Add(_resourceClient);
         }
 
         private async Task CleanContainerOnTeardownAsync()
@@ -538,7 +538,7 @@ namespace Arcus.Testing
                         continue;
                     }
 
-                    PartitionKey partitionKey = ExtractPartitionKeyFromItem(properties, doc);
+                    PartitionKey partitionKey = ExtractPartitionKeyFromItem(doc, properties);
 
                     if (itemFilter(id, partitionKey, doc, container.Database.Client))
                     {
