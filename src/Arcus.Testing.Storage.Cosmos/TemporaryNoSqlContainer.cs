@@ -317,7 +317,8 @@ namespace Arcus.Testing
         /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
         /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
         /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
-        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbAccountResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.

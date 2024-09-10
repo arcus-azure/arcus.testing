@@ -51,7 +51,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
             Shipment createdByUs = CreateShipment();
-            await collection.InsertDocumentAsync(createdByUs);
+            await collection.AddDocumentAsync(createdByUs);
 
             await context.ShouldStoreCollectionAsync(collectionName);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, existingId);
@@ -187,7 +187,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatName == matchedOnSetup.BoatName);
             });
             collection.OnTeardown.CleanAllDocuments();
-            await collection.InsertDocumentAsync(createdByUs);
+            await collection.AddDocumentAsync(createdByUs);
 
             await context.ShouldNotStoreDocumentAsync<Shipment>(collectionName, matchedOnSetupId);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedOnSetupId);

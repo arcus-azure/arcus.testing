@@ -32,7 +32,8 @@ namespace Arcus.Testing
         internal OnSetupMongoDbCollection Documents { get; private set; }
 
         /// <summary>
-        /// Gets the filter expression that determines if MongoDb documents should be cleaned when the <see cref="Documents"/> is configured as <see cref="OnSetupMongoDbCollection.CleanIfMatched"/>.
+        /// Gets the filter expression that determines if MongoDb documents should be cleaned
+        /// when the <see cref="Documents"/> is configured as <see cref="OnSetupMongoDbCollection.CleanIfMatched"/>.
         /// </summary>
         internal FilterDefinition<BsonDocument> IsMatched { get; private set; } = Builders<BsonDocument>.Filter.Where(_ => false);
 
@@ -56,7 +57,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents upon the test fixture creation that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents
+        /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will aggregated together in an OR expression.
@@ -71,7 +73,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents upon the test fixture creation that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents
+        /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will aggregated together in an OR expression.
@@ -105,13 +108,14 @@ namespace Arcus.Testing
         internal OnTeardownMongoDbCollection Documents { get; private set; }
 
         /// <summary>
-        /// Gets the filter expression that determines if MongoDb documents should be cleaned when the <see cref="Documents"/> is configured as <see cref="OnTeardownMongoDbCollection.CleanIfMatched"/>.
+        /// Gets the filter expression that determines if MongoDb documents should be cleaned
+        /// when the <see cref="Documents"/> is configured as <see cref="OnTeardownMongoDbCollection.CleanIfMatched"/>.
         /// </summary>
         internal FilterDefinition<BsonDocument> IsMatched { get; private set; } = Builders<BsonDocument>.Filter.Where(_ => false);
 
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete the MongoDb documents upon disposal
-        /// if the document was inserted by the test fixture (using <see cref="TemporaryMongoDbCollection.InsertDocumentAsync{TDocument}(TDocument)"/>).
+        /// if the document was inserted by the test fixture (using <see cref="TemporaryMongoDbCollection.AddDocumentAsync{TDocument}"/>).
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
         {
@@ -356,6 +360,15 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the client to interact with the collection that is temporary available.
+        /// </summary>
+        /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
+        public IMongoCollection<TDocument> GetCollectionClient<TDocument>()
+        {
+            return _database.GetCollection<TDocument>(_collectionName);
+        }
+
+        /// <summary>
         /// Inserts a temporary <paramref name="document"/> to the MongoDb collection.
         /// </summary>
         /// <remarks>
@@ -365,21 +378,12 @@ namespace Arcus.Testing
         /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
         /// <param name="document">The document to upload to the MongoDb collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
-        public async Task InsertDocumentAsync<TDocument>(TDocument document)
+        public async Task AddDocumentAsync<TDocument>(TDocument document)
         {
             ArgumentNullException.ThrowIfNull(document);
 
             IMongoCollection<TDocument> collection = GetCollectionClient<TDocument>();
             _documents.Add(await TemporaryMongoDbDocument.InsertIfNotExistsAsync(collection, document, _logger));
-        }
-
-        /// <summary>
-        /// Gets the client to interact with the collection that is temporary available.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
-        public IMongoCollection<TDocument> GetCollectionClient<TDocument>()
-        {
-            return _database.GetCollection<TDocument>(_collectionName);
         }
 
         /// <summary>
