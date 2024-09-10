@@ -393,6 +393,11 @@ namespace Arcus.Testing
         public BlobContainerClient Client { get; }
 
         /// <summary>
+        /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobContainer"/>.
+        /// </summary>
+        public OnTeardownBlobContainerOptions OnTeardown => _options.OnTeardown;
+
+        /// <summary>
         /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
         /// </summary>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>

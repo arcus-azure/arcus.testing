@@ -133,6 +133,11 @@ namespace Arcus.Testing
         public BlobClient Client { get; }
 
         /// <summary>
+        /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobFile"/>.
+        /// </summary>
+        public OnTeardownBlobFileOptions OnTeardown => _options.OnTeardown;
+
+        /// <summary>
         /// Uploads a temporary blob to the Azure Blob container.
         /// </summary>
         /// <remarks>
