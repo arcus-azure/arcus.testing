@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure;
@@ -220,6 +221,11 @@ namespace Arcus.Testing
                 SessionId = SessionId
             };
 
+            foreach (string serviceName in options.LinkedServiceNames)
+            {
+                await AddLinkedServiceAsync(debug, DataFactory, serviceName);
+            }
+
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
 
@@ -338,6 +344,7 @@ namespace Arcus.Testing
     {
         private int _maxRows = 100;
 
+        internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
@@ -372,6 +379,25 @@ namespace Arcus.Testing
 
                 _maxRows = value;
             }
+        }
+
+        /// <summary>
+        /// Adds an additional linked service to the Azure DataFactory debug session.
+        /// </summary>
+        /// <remarks>
+        ///     This can be used to add, for example, Azure Key vault linked services that are needed when datasets require a vault for their authentication.
+        /// </remarks>
+        /// <param name="serviceName">The name of the linked service in Azure DataFactory.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="serviceName"/> is blank.</exception>
+        public RunDataFlowOptions AddLinkedService(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                throw new ArgumentException("Linked service name should not be blank", nameof(serviceName));
+            }
+
+            LinkedServiceNames.Add(serviceName);
+            return this;
         }
     }
 }
