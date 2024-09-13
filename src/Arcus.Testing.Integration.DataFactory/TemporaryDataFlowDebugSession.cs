@@ -344,7 +344,7 @@ namespace Arcus.Testing
     {
         private int _maxRows = 100;
 
-        internal readonly Collection<string> LinkedServiceNames = new();
+        internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
