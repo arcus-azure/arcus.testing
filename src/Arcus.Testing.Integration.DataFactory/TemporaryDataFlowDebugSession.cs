@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure;
@@ -220,9 +221,9 @@ namespace Arcus.Testing
                 SessionId = SessionId
             };
 
-            if (options.IncludeDefaultKeyVault)
+            foreach (string serviceName in options.LinkedServiceNames)
             {
-                await AddLinkedServiceAsync(debug, DataFactory, options.DefaultKeyVaultName);
+                await AddLinkedServiceAsync(debug, DataFactory, serviceName);
             }
 
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
@@ -343,8 +344,7 @@ namespace Arcus.Testing
     {
         private int _maxRows = 100;
 
-        internal string DefaultKeyVaultName => "datafactory_sales_keyvaultLS";
-        internal bool IncludeDefaultKeyVault { get; private set; } = false;
+        internal readonly Collection<string> LinkedServiceNames = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
@@ -382,14 +382,21 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds the built-in Azure DataFactory Key vault linked service called 'datafactory_sales_keyvaultLS' to the debug session.
+        /// Adds an additional linked service to the Azure DataFactory debug session.
         /// </summary>
         /// <remarks>
-        ///     This special built-in linked service is often needed when datasets are dependent on secrets from Key vault for their authentication.
+        ///     This can be used to add, for example, Azure Key vault linked services that are needed when datasets require a vault for their authentication.
         /// </remarks>
-        public RunDataFlowOptions AddDefaultKeyVaultLinkedService()
+        /// <param name="serviceName">The name of the linked service in Azure DataFactory.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="serviceName"/> is blank.</exception>
+        public RunDataFlowOptions AddLinkedService(string serviceName)
         {
-            IncludeDefaultKeyVault = true;
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                throw new ArgumentException("Linked service name should not be blank", nameof(serviceName));
+            }
+
+            LinkedServiceNames.Add(serviceName);
             return this;
         }
     }
