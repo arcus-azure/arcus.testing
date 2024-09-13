@@ -84,5 +84,16 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             // Act / Assert
             Assert.ThrowsAny<NotSupportedException>(() => options.AddDataFlowParameter(name, invalidValue));
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void AddLinkedService_WithoutServiceName_Fails(string serviceName)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddLinkedService(serviceName));
+        }
     }
 }
