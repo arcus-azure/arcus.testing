@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure;
@@ -220,6 +221,11 @@ namespace Arcus.Testing
                 SessionId = SessionId
             };
 
+            if (options.IncludeDefaultKeyVault)
+            {
+                await AddLinkedServiceAsync(debug, DataFactory, options.DefaultKeyVaultName);
+            }
+
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
 
@@ -338,6 +344,8 @@ namespace Arcus.Testing
     {
         private int _maxRows = 100;
 
+        internal string DefaultKeyVaultName => "datafactory_sales_keyvaultLS";
+        internal bool IncludeDefaultKeyVault { get; private set; } = false;
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
@@ -372,6 +380,18 @@ namespace Arcus.Testing
 
                 _maxRows = value;
             }
+        }
+
+        /// <summary>
+        /// Adds the built-in Azure DataFactory Key vault linked service called 'datafactory_sales_keyvaultLS' to the debug session.
+        /// </summary>
+        /// <remarks>
+        ///     This special built-in linked service is often needed when datasets are dependent on secrets from Key vault for their authentication.
+        /// </remarks>
+        public RunDataFlowOptions AddDefaultKeyVaultLinkedService()
+        {
+            IncludeDefaultKeyVault = true;
+            return this;
         }
     }
 }
