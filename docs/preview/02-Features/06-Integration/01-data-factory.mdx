@@ -191,10 +191,16 @@ await session.RunDataFlowAsync(..., options =>
     // Adds a parameter to the data flow upon starting.
     options.AddDataFlowParameter("<name>", "<value>");
 
+    // Add additional linked services to the debug session.
+    // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.
+    options.AddLinkedService("datafactory_sales_keyvaultLS");
+
     // The maximum amount of rows to include in the preview response (default: 100 rows).
     options.MaxRows = 100;
 });
 ```
+
+> 🚩 When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
 
 ## Run a Data pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../01-core.md) packages:
