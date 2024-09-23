@@ -157,8 +157,8 @@ namespace Arcus.Testing
             JsonDifference diff = CompareJsonRoot(expected, actual, options);
             if (diff != null)
             {
-                string expectedJson = expected?.ToString() ?? "null";
-                string actualJson = actual?.ToString() ?? "null";
+                string expectedJson = diff.ExpectedNodeDiff ?? expected?.ToString() ?? "null";
+                string actualJson = diff.ActualNodeDiff ?? actual?.ToString() ?? "null";
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
@@ -219,7 +219,11 @@ namespace Arcus.Testing
 
             if (actualChildren.Length != expectedChildren.Length)
             {
-                return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
+                return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length)
+                {
+                    ExpectedNodeDiff = expectedArray.ToString(),
+                    ActualNodeDiff = actualArray.ToString(),
+                };
             }
 
             if (options.Order is AssertJsonOrder.Ignore)
@@ -371,7 +375,11 @@ namespace Arcus.Testing
 #endif
             if (!identical)
             {
-                return new(ActualOtherValue, expectedValue, actualValue);
+                return new(ActualOtherValue, expectedValue, actualValue)
+                {
+                    ExpectedNodeDiff = expectedValue.Parent?.ToString(),
+                    ActualNodeDiff = actualValue.Parent?.ToString()
+                };
             }
 
             return null;
@@ -429,9 +437,14 @@ namespace Arcus.Testing
         private readonly string _path;
         private readonly object _actual, _expected;
 
+        internal string ExpectedNodeDiff { get; set; }
+        internal string ActualNodeDiff { get; set; }
+
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
             : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))
         {
+            ExpectedNodeDiff = expected?.ToString();
+            ActualNodeDiff = actual?.ToString();
         }
 
         internal JsonDifference(JsonDifferenceKind kind, string path, object actual, object expected)

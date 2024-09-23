@@ -503,6 +503,55 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             });
         }
 
+        //"► ◄"
+        public static IEnumerable<object[]> FailingCasesWithScopedExpectedActualDifferences
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "{ \"movies\": [ \"The Matrix\", \"Blade Runner\", \"Terminator\" ] }",
+                    "{ \"movies\": [ \"The Matrix\", \"Blade Runner\" ] }",
+@"Expected:            Actual:
+[                    [
+  ""The Matrix"",        ""The Matrix"",
+  ""Blade Runner"",      ""Blade Runner""
+  ""Terminator""       ]
+]"
+                };
+                yield return new object[]
+                {
+                    "[ { \"title\": \"Ubik\", \"author\": \"Philip K. Dick\" } ]",
+                    "[ { \"title\": \"Ubik\", \"author\": \"Richard K. Morgan\" } ]",
+@"Expected:                       Actual:
+{                               {
+  ""title"": ""Ubik"",                ""title"": ""Ubik"",
+  ""author"": ""Philip K. Dick""      ""author"": ""Richard K. Morgan""
+}                               }"
+                };
+                yield return new object[]
+                {
+                    "{ \"band\": \"Cult of Luna\", \"genre\": \"post-metal\" }",
+                    "{ \"band\": \"Cult of Luna\", \"genre\": { \"name\": \"post-metal\" } }",
+@"Expected:     Actual:
+post-metal    {
+                ""name"": ""post-metal""
+              }"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithScopedExpectedActualDifferences))]
+        public void CompareJson_WithDifferences_ShouldScopeToDifference(
+            string expected,
+            string actual,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, expectedDifferences);
+        }
+        
+
         private static void EqualJson(TestJson expected, TestJson actual, Action<AssertJsonOptions> configureOptions = null)
         {
             EqualJson(expected.ToString(), actual.ToString(), configureOptions);

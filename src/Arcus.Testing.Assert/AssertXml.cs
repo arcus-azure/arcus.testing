@@ -171,8 +171,8 @@ namespace Arcus.Testing
             
             if (diff != null)
             {
-                string expectedXml = ReadXml(expected);
-                string actualXml = ReadXml(actual);
+                string expectedXml = diff.ExpectedNodeDiff ?? ReadXml(expected);
+                string actualXml = diff.ActualNodeDiff ?? ReadXml(actual);
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
@@ -194,10 +194,10 @@ namespace Arcus.Testing
             try
             {
                 var output = new StringBuilder();
-                using var txtWriter = new StringWriter(output);
-                using var writer = new XmlTextWriter(txtWriter);
-                writer.Formatting = Formatting.Indented;
+                var settings = new XmlWriterSettings { Indent = true, OmitXmlDeclaration = true };
+                using var writer = XmlWriter.Create(output, settings);
                 doc.WriteTo(writer);
+                writer.Flush();
 
                 return output.ToString();
             }
@@ -220,24 +220,40 @@ namespace Arcus.Testing
         {
             if (expected.NodeType != actual.NodeType)
             {
-                return new(ActualOtherType, expected, actual);
+                return new(ActualOtherType, expected, actual)
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             if (expected.NamespaceUri != actual.NamespaceUri)
             {
-                return new(ActualOtherNamespace, expected.NamespaceUri, actual.NamespaceUri, expected.Path);
+                return new(ActualOtherNamespace, expected.NamespaceUri, actual.NamespaceUri, expected.Path)
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             if (expected.LocalName != actual.LocalName)
             {
-                return new(ActualOtherName, expected, actual);
+                return new(ActualOtherName, expected, actual)
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             if (expected.Value != actual.Value)
             {
                 string actualValue = XmlDifference.Describe(actual.Current.FirstChild);
                 string expectedValue = XmlDifference.Describe(expected.Current.FirstChild);
-                return new(ActualOtherValue, expectedValue, actualValue, expected.Path + "/text()");
+                return new(ActualOtherValue, expectedValue, actualValue, expected.Path + "/text()")
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             XmlDifference attributeDiff = CompareAttributes(expected, actual, options);
@@ -254,7 +270,11 @@ namespace Arcus.Testing
         {
             if (expected.Children.Length != actual.Children.Length)
             {
-                return new(DifferentElementLength, expected.Children.Length, actual.Children.Length, expected.Path + "/");
+                return new(DifferentElementLength, expected.Children.Length, actual.Children.Length, expected.Path + "/")
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             for (var index = 0; index < expected.Children.Length; index++)
@@ -276,7 +296,11 @@ namespace Arcus.Testing
         {
             if (expected.Attributes.Length != actual.Attributes.Length)
             {
-                return new XmlDifference(DifferentAttributeLength, expected.Attributes.Length, actual.Attributes.Length, expected.Path);
+                return new XmlDifference(DifferentAttributeLength, expected.Attributes.Length, actual.Attributes.Length, expected.Path)
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = actual.ToString()
+                };
             }
 
             for (var index = 0; index < expected.Attributes.Length; index++)
@@ -291,28 +315,44 @@ namespace Arcus.Testing
                 
                 if (actualAttr is null)
                 {
-                    return new(ActualMissingAttribute, XmlDifference.Describe(expectedAttr), actual: "", path);
+                    return new(ActualMissingAttribute, XmlDifference.Describe(expectedAttr), actual: "", path)
+                    {
+                        ExpectedNodeDiff = expected.ToString(),
+                        ActualNodeDiff = actual.ToString()
+                    };
                 }
 
                 if (expectedAttr.NamespaceURI != actualAttr.NamespaceURI)
                 {
                     return new(ActualOtherNamespace, 
                         expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI, 
-                        actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path);
+                        actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path)
+                    {
+                        ExpectedNodeDiff = expected.ToString(),
+                        ActualNodeDiff = actual.ToString()
+                    };
                 }
 
                 if (expectedAttr.LocalName != actualAttr.LocalName)
                 {
                     string actualName = XmlDifference.Describe(actualAttr);
                     string expectedName = XmlDifference.Describe(expectedAttr);
-                    return new(ActualOtherName, expectedName, actualName, path);
+                    return new(ActualOtherName, expectedName, actualName, path)
+                    {
+                        ExpectedNodeDiff = expected.ToString(),
+                        ActualNodeDiff = actual.ToString()
+                    };
                 }
 
                 if (expectedAttr.Value != actualAttr.Value)
                 {
                     string actualValue = XmlDifference.Describe(actualAttr.FirstChild);
                     string expectedValue = XmlDifference.Describe(expectedAttr.FirstChild);
-                    return new(ActualOtherValue, expectedValue, actualValue, path);
+                    return new(ActualOtherValue, expectedValue, actualValue, path)
+                    {
+                        ExpectedNodeDiff = expected.ToString(),
+                        ActualNodeDiff = actual.ToString()
+                    };
                 }
             }
 
@@ -453,6 +493,23 @@ namespace Arcus.Testing
             public string Path { get; init; }
             public XPathXmlNode[] Children { get; init; }
         }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
+        {
+            var xml = new StringBuilder();
+
+            var settings = new XmlWriterSettings { Indent = true, OmitXmlDeclaration = true };
+            using var writer = XmlWriter.Create(xml, settings);
+            Current.WriteTo(writer);
+            writer.Flush();
+
+            var result = xml.ToString();
+            return result;
+        }
     }
 
     /// <summary>
@@ -477,6 +534,9 @@ namespace Arcus.Testing
     {
         private readonly XmlDifferenceKind _kind;
         private readonly string _expected, _actual, _path;
+
+        internal string ExpectedNodeDiff { get; set; }
+        internal string ActualNodeDiff { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="XmlDifference" /> class.

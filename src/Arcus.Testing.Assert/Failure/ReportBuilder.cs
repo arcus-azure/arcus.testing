@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace Arcus.Testing.Failure
@@ -46,7 +47,7 @@ namespace Arcus.Testing.Failure
         /// </summary>
         internal ReportBuilder AppendLine(string message, int maxCharacters = 1000)
         {
-            _report.AppendLine(Trim(message, maxCharacters));
+            _report.AppendLine(Truncate(message, maxCharacters));
             return this;
         }
 
@@ -86,17 +87,76 @@ namespace Arcus.Testing.Failure
             }
 
             _report.AppendLine();
-            _report.AppendLine("Expected:");
-            _report.AppendLine(Trim(expected, maxCharacters));
-            _report.AppendLine();
-            _report.AppendLine("Actual:");
-            _report.AppendLine(Trim(actual, maxCharacters));
+
+            string[] diff = PlaceDiffHorizontally(expected, actual, maxCharacters);
+
+            _report.AppendJoin(Environment.NewLine, diff);
             _report.AppendLine();
 
             return this;
         }
 
-        private string Trim(string txt, int maxCharacters) => txt.Length > maxCharacters ? txt[..maxCharacters] + "..." : txt;
+        private static string[] PlaceDiffHorizontally(string expected, string actual, int maxCharacters)
+        {
+            string[] expectedLines = Truncate(expected, maxCharacters).Split(Environment.NewLine).Prepend("Expected:").ToArray();
+            string[] actualLines = Truncate(actual, maxCharacters).Split(Environment.NewLine).Prepend("Actual:").ToArray();
+
+            if (expectedLines.Length != actualLines.Length)
+            {
+                if (expectedLines.Length > actualLines.Length)
+                {
+                    actualLines = AddEmptyPadding(actualLines, expectedLines.Length - actualLines.Length);
+                }
+                else
+                {
+                    expectedLines = AddEmptyPadding(expectedLines, actualLines.Length - expectedLines.Length);
+                }
+            }
+
+            int maxColumn = expectedLines.MaxBy(l => l.Length).Length;
+            expectedLines = EnsureSameLineLengths(expectedLines, maxColumn);
+
+            const string spaceBetween = "    ";
+            string[] diff = expectedLines.Zip(actualLines, (expectedLine, actualLine) => expectedLine + spaceBetween + actualLine).ToArray();
+            
+            return diff;
+        }
+
+        private static string Truncate(string txt, int maxCharacters)
+        {
+            var result = new StringBuilder();
+            var current = 0;
+
+            string suffix = string.Empty;
+            foreach (char ch in txt)
+            {
+                if (current >= maxCharacters)
+                {
+                    suffix = "...";
+                    break;
+                }
+
+                if (!char.IsWhiteSpace(ch))
+                {
+                    current++;
+                }
+
+                result.Append(ch);
+            }
+
+            result.AppendLine(suffix);
+            return result.ToString();
+        }
+
+        private static string[] AddEmptyPadding(string[] lines, int amount)
+        {
+            return lines.Concat(Enumerable.Repeat(string.Empty, amount)).ToArray();
+        }
+
+        private static string[] EnsureSameLineLengths(string[] lines, int length)
+        {
+            return lines.Select(l => l.Length < length ? l + string.Join("", Enumerable.Repeat(" ", length - l.Length)) : l).ToArray();
+        }
 
         /// <summary>
         /// Returns a string that represents the current object.

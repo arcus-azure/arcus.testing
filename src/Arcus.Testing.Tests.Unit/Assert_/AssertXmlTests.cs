@@ -348,6 +348,63 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expectedXml, actualXml, options => options.Order = order ?? options.Order, expectedDifference);
         }
 
+        public static IEnumerable<object[]> FailingCasesWithScopedExpectedActualDifferences
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "<x-files><dana-scully></dana-scully></x-files>",
+                    "<x-files><fox-mulder></fox-mulder></x-files>",
+@"Expected:                      Actual:
+<dana-scully></dana-scully>    <fox-mulder></fox-mulder>"
+                };
+                yield return new object[]
+                {
+                    @"<host type=""router"">
+        <name>router</name>
+        <desc>Internet Router</desc>
+        <baseimage>hardy-mini</baseimage>
+        <network>
+            <interface type=""static"">
+                <name>eth1</name>
+                <address>192.168.3.254</address>
+                <netmask>255.255.255.0</netmask>
+            </interface>
+        </network>
+    </host>",
+                    @"<host type=""router"">
+        <name>router</name>
+        <desc>Internet Router</desc>
+        <baseimage>hardy-mini</baseimage>
+        <network>
+            <interface type=""dynnamic"">
+                <name>eth1</name>
+                <address>192.168.3.254</address>
+                <netmask>255.255.255.0</netmask>
+            </interface>
+        </network>
+    </host>",
+@"Expected:                             Actual:
+<interface type=""static"">             <interface type=""dynnamic"">
+  <name>eth1</name>                     <name>eth1</name>
+  <address>192.168.3.254</address>      <address>192.168.3.254</address>
+  <netmask>255.255.255.0</netmask>      <netmask>255.255.255.0</netmask>
+</interface>                          </interface>"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithScopedExpectedActualDifferences))]
+        public void CompareXml_WithDifferences_ShouldScopeToDifference(
+            string expected,
+            string actual,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, expectedDifferences);
+        }
+
         [Property]
         public void Compare_SameXml_Succeeds()
         {
