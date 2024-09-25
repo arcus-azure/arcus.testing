@@ -150,8 +150,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
                 options.OnSetup.CleanMatchingBlobs(Matching(matchingCreationBlob.Name));
-                options.OnTeardown.CleanMatchingBlobs(Matching(matchingDeletionBlobName));
             });
+            container.OnTeardown.CleanMatchingBlobs(Matching(matchingDeletionBlobName));
 
             await context.ShouldDeleteBlobFileAsync(containerClient, matchingCreationBlob.Name);
             BlobClient matchingDeletionBlob = await context.WhenBlobAvailableAsync(containerClient, matchingDeletionBlobName);

@@ -614,7 +614,7 @@ namespace Arcus.Testing
             RowCount = rows.Length;
             ColumnCount = headerNames.Length;
 
-            if (headerNames.Any(h => h is null))
+            if (Array.Exists(headerNames, h => h is null))
             {
                 throw new CsvException(
                     "Cannot parse the incoming header names as one or more header names is 'null'");

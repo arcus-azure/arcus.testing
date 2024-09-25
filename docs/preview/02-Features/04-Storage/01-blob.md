@@ -87,7 +87,12 @@ await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
 
     // Delete Azure Blob container regardless if the test fixture created the container or not.
     options.OnTeardown.DeleteExistingContainer();
-})
+});
+
+// `OnTeardown` is also still available after the temporary container is created:
+await using TemporaryBlobContainer container = ...
+
+container.OnTeardown.CleanAllBlobs();
 ```
 
 > 🎖️ The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UploadBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
@@ -140,4 +145,9 @@ await TemporaryBlobFile.UploadIfNotExistsAsync(..., options =>
     // regardless if the test fixture created the blob.
     options.OnTeardown.DeleteExistingBlob();
 });
+
+// `OnTeardown` is also still available after the temporary file is created.
+await using TemporaryBlobFile file = ...
+
+file.OnTeardown.DeleteExistingBlob();
 ```
