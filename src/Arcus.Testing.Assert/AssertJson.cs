@@ -4,8 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using Arcus.Testing.Failure;
 using static Arcus.Testing.JsonDifferenceKind;
 
 namespace Arcus.Testing
