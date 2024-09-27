@@ -8,6 +8,7 @@ using FsCheck.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using static System.Environment;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -348,6 +349,109 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expectedXml, actualXml, options => options.Order = order ?? options.Order, expectedDifference);
         }
 
+        public static IEnumerable<object[]> FailingCasesWithScopedExpectedActualDifferences
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "<x-files><dana-scully></dana-scully></x-files>",
+                    "<x-files><fox-mulder></fox-mulder></x-files>",
+@"Expected:                      Actual:
+<dana-scully></dana-scully>    <fox-mulder></fox-mulder>"
+                };
+                yield return new object[]
+                {
+                    @"<host type=""router"">
+        <name>router</name>
+        <desc>Internet Router</desc>
+        <baseimage>hardy-mini</baseimage>
+        <network>
+            <interface type=""static"">
+                <name>eth1</name>
+                <address>192.168.3.254</address>
+                <netmask>255.255.255.0</netmask>
+            </interface>
+        </network>
+    </host>",
+                    @"<host type=""router"">
+        <name>router</name>
+        <desc>Internet Router</desc>
+        <baseimage>hardy-mini</baseimage>
+        <network>
+            <interface type=""dynnamic"">
+                <name>eth1</name>
+                <address>192.168.3.254</address>
+                <netmask>255.255.255.0</netmask>
+            </interface>
+        </network>
+    </host>",
+@"Expected:                             Actual:
+<interface type=""static"">             <interface type=""dynnamic"">
+  <name>eth1</name>                     <name>eth1</name>
+  <address>192.168.3.254</address>      <address>192.168.3.254</address>
+  <netmask>255.255.255.0</netmask>      <netmask>255.255.255.0</netmask>
+</interface>                          </interface>"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithScopedExpectedActualDifferences))]
+        public void CompareXml_WithDifferences_ShouldScopeToDifference(
+            string expected,
+            string actual,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, expectedDifferences);
+        }
+
+        public static IEnumerable<object[]> FailingCasesWithReportOptions
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "<tree></tree>",
+                    "<branch></branch>",
+                    new Action<AssertXmlOptions>(options => options.ReportFormat = ReportFormat.Vertical),
+                    $"Expected:{NewLine}<tree></tree>{NewLine}{NewLine}Actual:{NewLine}<branch></branch>"
+                };
+                yield return new object[]
+                {
+                    "<tree></tree>",
+                    "<branch></branch>",
+                    new Action<AssertXmlOptions>(options => options.ReportFormat = ReportFormat.Horizontal),
+                    $"Expected:        Actual:{NewLine}<tree></tree>    <branch></branch>"
+                };
+                yield return new object[]
+                {
+                    "<tree><branch/></tree>",
+                    "<tree><leaf/></tree>",
+                    new Action<AssertXmlOptions>(options => options.ReportScope = ReportScope.Limited),
+                    $"Expected:     Actual:{NewLine}<branch />    <leaf />"
+                };
+                yield return new object[]
+                {
+                    "<tree><branch/></tree>",
+                    "<tree><leaf/></tree>",
+                    new Action<AssertXmlOptions>(options => options.ReportScope = ReportScope.Complete),
+                    $"Expected:       Actual:{NewLine}<tree>          <tree>{NewLine}  <branch />      <leaf />{NewLine}</tree>         </tree>"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithReportOptions))]
+        public void CompareXml_WithReportOptions_ShouldCreateReportByOptions(
+            string expected,
+            string actual,
+            Action<AssertXmlOptions> configureOptions,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, configureOptions, expectedDifferences);
+        }
+
         [Property]
         public void Compare_SameXml_Succeeds()
         {
@@ -445,8 +549,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             }
             catch (XunitException)
             {
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Expected", expectedXml + Environment.NewLine);
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Actual", actualXml + Environment.NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Expected", expectedXml + NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Actual", actualXml + NewLine);
                 throw;
             }
         }
