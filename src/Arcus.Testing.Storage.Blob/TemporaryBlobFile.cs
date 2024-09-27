@@ -268,19 +268,18 @@ namespace Arcus.Testing
         {
             if (await client.ExistsAsync())
             {
-                logger.LogDebug("Azure Blob '{BlobName}' already exists in container '{ContainerName}'", client.Name, client.BlobContainerName);
                 BlobDownloadResult originalContent = await client.DownloadContentAsync();
 
                 if (options.OnSetup.OverrideBlob)
                 {
-                    logger.LogDebug("Override existing Azure Blob '{BlobName}' in container '{ContainerName}'", client.Name, client.BlobContainerName);
+                    logger.LogDebug("Replace already existing Azure Blob '{BlobName}' of container '{ContainerName}' in account '{AccountName}'", client.Name, client.BlobContainerName, client.AccountName);
                     await client.UploadAsync(newContent, overwrite: true);
                 }
 
                 return (createdByUs: false, originalContent.Content);
             }
 
-            logger.LogTrace("Uploading Azure Blob '{BlobName}' to container '{ContainerName}'", client.Name, client.BlobContainerName);
+            logger.LogTrace("Uploading Azure Blob '{BlobName}' to container '{ContainerName}' in account '{AccountName}'", client.Name, client.BlobContainerName, client.AccountName);
             await client.UploadAsync(newContent);
             
             return (createdByUs: true, originalData: null);
@@ -294,15 +293,17 @@ namespace Arcus.Testing
         {
             if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != OnTeardownBlob.DeleteIfExisted)
             {
-                _logger.LogDebug("Reverting Azure Blob '{BlobName}' original content in container '{ContainerName}'", Client.Name, Client.BlobContainerName);
+                _logger.LogDebug("Reverting replaced Azure Blob '{BlobName}' with original content of container '{ContainerName}' in account '{AccountName}'", Client.Name, Client.BlobContainerName, Client.AccountName);
                 await Client.UploadAsync(_originalData, overwrite: true); 
             }
 
             if (_createdByUs || _options.OnTeardown.Content is OnTeardownBlob.DeleteIfExisted)
             {
-                _logger.LogTrace("Deleting Azure Blob '{BlobName}' from container '{ContainerName}'", Client.Name, Client.BlobContainerName);
+                _logger.LogTrace("Deleting Azure Blob '{BlobName}' from container '{ContainerName}' in account '{AccountName}'", Client.Name, Client.BlobContainerName, Client.AccountName);
                 await Client.DeleteIfExistsAsync();
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

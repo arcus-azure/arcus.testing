@@ -505,13 +505,13 @@ namespace Arcus.Testing
             bool createdByUs = false;
             if (!await containerClient.ExistsAsync())
             {
-                logger.LogDebug("Creating Azure Blob container '{ContainerName}'", containerClient.Name);
+                logger.LogDebug("Creating Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
                 await containerClient.CreateIfNotExistsAsync();
                 createdByUs = true;
             }
             else
             {
-                logger.LogDebug("Azure Blob container '{ContainerName}' already exists", containerClient.Name);
+                logger.LogDebug("Use already existing Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
             }
 
             return createdByUs;
@@ -573,10 +573,12 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Deleting Azure Blob container '{ContainerName}'", Client.Name);
+                    _logger.LogTrace("Deleting Azure Blob container '{ContainerName}' in account '{AccountName}'", Client.Name, Client.AccountName);
                     await Client.DeleteIfExistsAsync();
                 })); 
             }
+
+            GC.SuppressFinalize(this);
         }
 
         private static async Task CleanBlobContainerUponCreationAsync(BlobContainerClient containerClient, TemporaryBlobContainerOptions options, ILogger logger)
@@ -586,12 +588,12 @@ namespace Arcus.Testing
                 return;
             }
 
-            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
+            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
-                    logger.LogTrace("Removing blob '{BlobName}' from Azure Blob container '{ContainerName}'", blob.Name, containerClient.Name);
+                    logger.LogTrace("Removing blob '{BlobName}' from Azure Blob container '{ContainerName}' in account '{AccountName}'", blob.Name, containerClient.Name, containerClient.AccountName);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
@@ -604,12 +606,12 @@ namespace Arcus.Testing
                 return;
             }
 
-            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}'", containerClient.Name);
+            logger.LogTrace("Cleaning Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
             {
                 if (options.OnTeardown.IsMatched(blob))
                 {
-                    logger.LogTrace("Removing blob '{BlobName}' from Azure Blob container '{ContainerName}'", blob.Name, containerClient.Name);
+                    logger.LogTrace("Removing blob '{BlobName}' from Azure Blob container '{ContainerName}' in account '{AccountName}'", blob.Name, containerClient.Name, containerClient.AccountName);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
