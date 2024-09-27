@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
+using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -143,8 +144,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, newContent, configureOptions: options =>
             {
                 options.OnSetup.UseExistingBlob();
-                options.OnTeardown.DeleteExistingBlob();
             });
+            sut.OnTeardown.DeleteExistingBlob();
             await context.ShouldStoreBlobFileAsync(containerClient, sut.Name, originalContent);
 
             // Act
