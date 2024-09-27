@@ -2,8 +2,71 @@
 using System.Linq;
 using System.Text;
 
-namespace Arcus.Testing.Failure
+namespace Arcus.Testing
 {
+    /// <summary>
+    /// Represents the position in the input document that should be included in the failure report.
+    /// </summary>
+    public enum ReportScope
+    {
+        /// <summary>
+        /// Limit the reported input document to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+        /// Useful for bigger documents where it would be hard to see the difference in the full document.
+        /// </summary>
+        /// <remarks>
+        ///     Will be truncated based on the configured maximum input characters.
+        ///     Also note that a bigger 'context' of the input document will be included in case the difference itself is too narrow to make decisions (ex. integer difference without the name of element or tag).
+        /// </remarks>
+        Limited = 0,
+        
+        /// <summary>
+        /// Include the complete input document in the failure report.
+        /// </summary>
+        /// <remarks>
+        ///     Will be truncated based on the configured maximum input characters.
+        /// </remarks>
+        Complete
+    }
+
+    /// <summary>
+    /// Represents the format in which the different input documents will be shown in the failure report.
+    /// </summary>
+    public enum ReportFormat
+    {
+        /// <summary>
+        /// Place the expected-actual documents horizontally next to each other.
+        /// Useful for documents that expand in length instead of width to see the difference more clearly (i.e. XML, JSON...).
+        /// </summary>
+        Horizontal = 0,
+        
+        /// <summary>
+        /// Place the expected-actual documents vertically below each other.
+        /// Useful for documents that expand in the width instead of length to see the difference more clearly (i.e. CSV, ...).
+        /// </summary>
+        Vertical
+    }
+
+    /// <summary>
+    /// Represents the additional options to configure the failure report written to the test output.
+    /// </summary>
+    internal class ReportOptions
+    {
+        /// <summary>
+        /// Gets or sets the maximum characters of the expected and actual inputs should be written to the test output.
+        /// </summary>
+        internal int MaxInputCharacters { get; set; } = 500;
+
+        /// <summary>
+        /// Gets or sets the position in the input document that should be included in the failure report.
+        /// </summary>
+        internal ReportScope Scope { get; set; } = ReportScope.Limited;
+
+        /// <summary>
+        /// Gets or sets the format in which the different input documents will be shown in the failure report.
+        /// </summary>
+        internal ReportFormat Format { get; set; } = ReportFormat.Horizontal;
+    }
+
     /// <summary>
     /// Represents a buildable humanly-readable report of a test assertion failure.
     /// </summary>
@@ -45,9 +108,9 @@ namespace Arcus.Testing.Failure
         /// <summary>
         /// Appends a new line to the test report.
         /// </summary>
-        internal ReportBuilder AppendLine(string message, int maxCharacters = 1000)
+        internal ReportBuilder AppendLine(string message)
         {
-            _report.AppendLine(Truncate(message, maxCharacters));
+            _report.AppendLine(message);
             return this;
         }
 
@@ -78,17 +141,28 @@ namespace Arcus.Testing.Failure
         /// </summary>
         /// <param name="expected">The value that was expected.</param>
         /// <param name="actual">The actual value.</param>
-        /// <param name="maxCharacters">The maximum amount of characters to take from either input.</param>
-        internal ReportBuilder AppendDiff(string expected, string actual, int maxCharacters = DefaultMaxInputCharacters)
+        /// <param name="configureOptions">The additional options to configure the failure report.</param>
+        internal ReportBuilder AppendDiff(string expected, string actual, Action<ReportOptions> configureOptions = null)
         {
-            if (maxCharacters <= 0)
+            var options = new ReportOptions();
+            configureOptions?.Invoke(options);
+
+            if (options.MaxInputCharacters <= 0)
             {
                 return this;
             }
 
             _report.AppendLine();
 
-            string[] diff = PlaceDiffHorizontally(expected, actual, maxCharacters);
+            string[] expectedLines = SplitLines(expected, "Expected:", options);
+            string[] actualLines = SplitLines(actual, "Actual:", options);
+
+            string[] diff = options.Format switch
+            {
+                ReportFormat.Horizontal => PlaceDiffHorizontally(expectedLines, actualLines),
+                ReportFormat.Vertical => PlaceDiffVertically(expectedLines, actualLines),
+                _ => throw new ArgumentOutOfRangeException(nameof(configureOptions), options.Format, "Cannot create failure report as an unknown report format is configured in the assert options")
+            };
 
             _report.AppendJoin(Environment.NewLine, diff);
             _report.AppendLine();
@@ -96,11 +170,19 @@ namespace Arcus.Testing.Failure
             return this;
         }
 
-        private static string[] PlaceDiffHorizontally(string expected, string actual, int maxCharacters)
+        private static string[] PlaceDiffVertically(string[] expectedLines, string[] actualLines)
         {
-            string[] expectedLines = Truncate(expected, maxCharacters).Split(Environment.NewLine).Prepend("Expected:").ToArray();
-            string[] actualLines = Truncate(actual, maxCharacters).Split(Environment.NewLine).Prepend("Actual:").ToArray();
+            if (!string.IsNullOrWhiteSpace(expectedLines[^1]))
+            {
+                expectedLines = expectedLines.Append(string.Empty).ToArray();
+            }
 
+            return expectedLines.Concat(actualLines)
+                                .ToArray();
+        }
+
+        private static string[] PlaceDiffHorizontally(string[] expectedLines, string[] actualLines)
+        {
             if (expectedLines.Length != actualLines.Length)
             {
                 if (expectedLines.Length > actualLines.Length)
@@ -122,30 +204,46 @@ namespace Arcus.Testing.Failure
             return diff;
         }
 
-        private static string Truncate(string txt, int maxCharacters)
+        private static string[] SplitLines(string input, string title, ReportOptions options)
         {
-            var result = new StringBuilder();
-            var current = 0;
+            var lines = Truncate(input, options).Split(Environment.NewLine).Prepend(title).ToArray();
+            return lines;
+        }
 
-            string suffix = string.Empty;
-            foreach (char ch in txt)
+        private static string Truncate(string txt, ReportOptions options)
+        {
+            switch (options.Scope)
             {
-                if (current >= maxCharacters)
-                {
-                    suffix = "...";
-                    break;
-                }
+                case ReportScope.Complete:
+                    return txt;
 
-                if (!char.IsWhiteSpace(ch))
-                {
-                    current++;
-                }
+                case ReportScope.Limited:
+                    var result = new StringBuilder();
+                    var current = 0;
 
-                result.Append(ch);
+                    var suffix = string.Empty;
+                    foreach (char ch in txt)
+                    {
+                        if (current >= options.MaxInputCharacters)
+                        {
+                            suffix = "...";
+                            break;
+                        }
+
+                        if (!char.IsWhiteSpace(ch))
+                        {
+                            current++;
+                        }
+
+                        result.Append(ch);
+                    }
+
+                    result.AppendLine(suffix);
+                    return result.ToString();
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(options), options.Scope, "Cannot create failure report as an unknown report scope is configured in the assert options");
             }
-
-            result.AppendLine(suffix);
-            return result.ToString();
         }
 
         private static string[] AddEmptyPadding(string[] lines, int amount)

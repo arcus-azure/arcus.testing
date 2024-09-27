@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Arcus.Testing.Failure;
 using static Arcus.Testing.JsonDifferenceKind;
 
@@ -90,6 +91,16 @@ namespace Arcus.Testing
                 _maxInputCharacters = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the position in the input document that should be included in the failure report (default: <see cref="ReportScope.Limited"/>).
+        /// </summary>
+        public ReportScope ReportScope { get; set; } = ReportScope.Limited;
+
+        /// <summary>
+        /// Gets or sets the format in which the different input documents will be shown in the failure report (default: <see cref="ReportFormat.Horizontal"/>).
+        /// </summary>
+        public ReportFormat ReportFormat { get; set; } = ReportFormat.Horizontal;
     }
 
     /// <summary>
@@ -157,8 +168,8 @@ namespace Arcus.Testing
             JsonDifference diff = CompareJsonRoot(expected, actual, options);
             if (diff != null)
             {
-                string expectedJson = diff.ExpectedNodeDiff ?? expected?.ToString() ?? "null";
-                string actualJson = diff.ActualNodeDiff ?? actual?.ToString() ?? "null";
+                string expectedJson = diff.ExpectedNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedNodeDiff : expected?.ToString() ?? "null";
+                string actualJson = diff.ActualNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ActualNodeDiff : actual?.ToString() ?? "null";
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
@@ -170,7 +181,12 @@ namespace Arcus.Testing
                                  .AppendLine(diff.ToString())
                                  .AppendLine()
                                  .AppendLine(optionsDescription)
-                                 .AppendDiff(expectedJson, actualJson, options.MaxInputCharacters)
+                                 .AppendDiff(expectedJson, actualJson, opt =>
+                                 {
+                                     opt.MaxInputCharacters = options.MaxInputCharacters;
+                                     opt.Format = options.ReportFormat;
+                                     opt.Scope = options.ReportScope;
+                                 })
                                  .ToString());
             }
         }
@@ -267,14 +283,27 @@ namespace Arcus.Testing
 
         private static JsonDifference CompareJsonObject(Dictionary<string, JsonNode> expectedDir, Dictionary<string, JsonNode> actualDir, AssertJsonOptions options)
         {
+            var serializerOptions = new JsonSerializerOptions()
+            {
+                WriteIndented = true
+            };
+
             if (TryGetValue(expectedDir, key => !actualDir.ContainsKey(key), out JsonNode missingActualPair))
             {
-                return new(ActualMissesProperty, missingActualPair.GetPath());
+                return new(ActualMissesProperty, missingActualPair.GetPath())
+                {
+                    ExpectedNodeDiff = JsonSerializer.Serialize(expectedDir, serializerOptions),
+                    ActualNodeDiff = JsonSerializer.Serialize(actualDir, serializerOptions)
+                };
             }
 
             if (TryGetValue(actualDir, key => !expectedDir.ContainsKey(key), out JsonNode missingExpectedPair))
             {
-                return new(ExpectedMissesProperty, missingExpectedPair.GetPath());
+                return new(ExpectedMissesProperty, missingExpectedPair.GetPath())
+                {
+                    ExpectedNodeDiff = JsonSerializer.Serialize(expectedDir, serializerOptions),
+                    ActualNodeDiff = JsonSerializer.Serialize(actualDir, serializerOptions)
+                };
             }
 
             foreach (KeyValuePair<string, JsonNode> expectedPair in expectedDir)
@@ -437,8 +466,8 @@ namespace Arcus.Testing
         private readonly string _path;
         private readonly object _actual, _expected;
 
-        internal string ExpectedNodeDiff { get; set; }
-        internal string ActualNodeDiff { get; set; }
+        internal string ExpectedNodeDiff { get; init; }
+        internal string ActualNodeDiff { get; init; }
 
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
             : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))

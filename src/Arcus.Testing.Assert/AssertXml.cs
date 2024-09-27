@@ -96,6 +96,16 @@ namespace Arcus.Testing
                 _maxInputCharacters = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the position in the input document that should be included in the failure report (default: <see cref="ReportScope.Limited"/>).
+        /// </summary>
+        public ReportScope ReportScope { get; set; } = ReportScope.Limited;
+
+        /// <summary>
+        /// Gets or sets the format in which the different input documents will be shown in the failure report (default: <see cref="ReportFormat.Horizontal"/>).
+        /// </summary>
+        public ReportFormat ReportFormat { get; set; } = ReportFormat.Horizontal;
     }
 
     /// <summary>
@@ -171,8 +181,8 @@ namespace Arcus.Testing
             
             if (diff != null)
             {
-                string expectedXml = diff.ExpectedNodeDiff ?? ReadXml(expected);
-                string actualXml = diff.ActualNodeDiff ?? ReadXml(actual);
+                string expectedXml = diff.ExpectedNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedNodeDiff : ReadXml(expected);
+                string actualXml = diff.ActualNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ActualNodeDiff : ReadXml(actual);
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
@@ -184,7 +194,13 @@ namespace Arcus.Testing
                                  .AppendLine(diff.ToString())
                                  .AppendLine()
                                  .AppendLine(optionsDescription)
-                                 .AppendDiff(expectedXml, actualXml, options.MaxInputCharacters)
+                                 .AppendDiff(expectedXml, actualXml,
+                                     opt =>
+                                     {
+                                         opt.MaxInputCharacters = options.MaxInputCharacters;
+                                         opt.Format = options.ReportFormat;
+                                         opt.Scope = options.ReportScope;
+                                     })
                                  .ToString());
             }
         }
@@ -535,8 +551,8 @@ namespace Arcus.Testing
         private readonly XmlDifferenceKind _kind;
         private readonly string _expected, _actual, _path;
 
-        internal string ExpectedNodeDiff { get; set; }
-        internal string ActualNodeDiff { get; set; }
+        internal string ExpectedNodeDiff { get; init; }
+        internal string ActualNodeDiff { get; init; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="XmlDifference" /> class.

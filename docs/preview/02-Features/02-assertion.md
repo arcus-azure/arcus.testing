@@ -22,15 +22,10 @@ AssertXml.Equal(expected, actual);
 // AssertXml.Equal failure: expected and actual XML documents do not match
 // Expected element tag name 'root' but was 'diff-root' at /root
 //
-// Expected:
-// <root>
-//      ...
-// </root>
-//
-// Actual:
-// <diff-root>
-//      ...
-// </diff-root>
+// Expected:    Actual:
+// <root>       <diff-root>
+//      ...         ...
+// </root>      </diff-root>
 ```
 
 💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
@@ -54,6 +49,18 @@ AssertXml.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Horizontal
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 
@@ -95,15 +102,10 @@ AssertJson.Equal(expected, actual);
 // AssertJson.Equal failure: expected and actual JSON contents do not match
 // Actual JSON misses property at $.root
 //
-// Expected:
-// {
-//    "root": ...
-// }
-//
-// Actual:
-// {
-//    "diff-root": ...
-// }
+// Expected:        Actual:
+// {                {
+//    "root": ...       "diff-root": ...
+// }                {
 ```
 
 💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
@@ -126,6 +128,18 @@ AssertJson.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Horizontal
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 
@@ -235,6 +249,18 @@ AssertCsv.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Vertical
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 

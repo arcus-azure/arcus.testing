@@ -8,6 +8,7 @@ using FsCheck.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using static System.Environment;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -405,6 +406,52 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expected, actual, expectedDifferences);
         }
 
+        public static IEnumerable<object[]> FailingCasesWithReportOptions
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "<tree></tree>",
+                    "<branch></branch>",
+                    new Action<AssertXmlOptions>(options => options.ReportFormat = ReportFormat.Vertical),
+                    $"Expected:{NewLine}<tree></tree>{NewLine}{NewLine}Actual:{NewLine}<branch></branch>"
+                };
+                yield return new object[]
+                {
+                    "<tree></tree>",
+                    "<branch></branch>",
+                    new Action<AssertXmlOptions>(options => options.ReportFormat = ReportFormat.Horizontal),
+                    $"Expected:        Actual:{NewLine}<tree></tree>    <branch></branch>"
+                };
+                yield return new object[]
+                {
+                    "<tree><branch/></tree>",
+                    "<tree><leaf/></tree>",
+                    new Action<AssertXmlOptions>(options => options.ReportScope = ReportScope.Limited),
+                    $"Expected:     Actual:{NewLine}<branch />    <leaf />"
+                };
+                yield return new object[]
+                {
+                    "<tree><branch/></tree>",
+                    "<tree><leaf/></tree>",
+                    new Action<AssertXmlOptions>(options => options.ReportScope = ReportScope.Complete),
+                    $"Expected:       Actual:{NewLine}<tree>          <tree>{NewLine}  <branch />      <leaf />{NewLine}</tree>         </tree>"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithReportOptions))]
+        public void CompareXml_WithReportOptions_ShouldCreateReportByOptions(
+            string expected,
+            string actual,
+            Action<AssertXmlOptions> configureOptions,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, configureOptions, expectedDifferences);
+        }
+
         [Property]
         public void Compare_SameXml_Succeeds()
         {
@@ -502,8 +549,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             }
             catch (XunitException)
             {
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Expected", expectedXml + Environment.NewLine);
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Actual", actualXml + Environment.NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Expected", expectedXml + NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Actual", actualXml + NewLine);
                 throw;
             }
         }

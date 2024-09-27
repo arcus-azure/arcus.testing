@@ -212,6 +212,16 @@ namespace Arcus.Testing
                 _maxInputCharacters = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the position in the input document that should be included in the failure report (default: <see cref="ReportScope.Limited"/>).
+        /// </summary>
+        public ReportScope ReportScope { get; set; } = ReportScope.Limited;
+
+        /// <summary>
+        /// Gets or sets the format in which the different input documents will be shown in the failure report (default: <see cref="ReportFormat.Vertical"/>).
+        /// </summary>
+        public ReportFormat ReportFormat { get; set; } = ReportFormat.Vertical;
     }
 
     /// <summary>
@@ -314,6 +324,9 @@ namespace Arcus.Testing
 
             if (diff != null)
             {
+                string expectedCsv = diff.ExpectedDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedDiff : expected.ToString();
+                string actualCsv = diff.ActualDiff != null && options.ReportScope is ReportScope.Limited ? diff.ActualDiff : actual.ToString();
+
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
                     $"\t- ignored columns: [{string.Join($"{options.Separator} ", options.IgnoredColumns)}]{Environment.NewLine}" +
@@ -326,7 +339,12 @@ namespace Arcus.Testing
                                  .AppendLine(diff.ToString())
                                  .AppendLine()
                                  .AppendLine(optionsDescription)
-                                 .AppendDiff(expected.ToString(), actual.ToString(), options.MaxInputCharacters)
+                                 .AppendDiff(expectedCsv, actualCsv, opt =>
+                                 {
+                                     opt.MaxInputCharacters = options.MaxInputCharacters;
+                                     opt.Format = options.ReportFormat;
+                                     opt.Scope = options.ReportScope;
+                                 })
                                  .ToString());
             }
         }
@@ -501,7 +519,11 @@ namespace Arcus.Testing
                     {
                         return shouldIgnoreOrder
                             ? new(ActualMissingRow, expectedRow, actualRow)
-                            : new(ActualOtherValue, expectedCell, actualCell);
+                            : new(ActualOtherValue, expectedCell, actualCell)
+                            {
+                                ExpectedDiff = expectedCsv.GetOriginalRowAt(expectedRow.RowNumber),
+                                ActualDiff = actualCsv.GetOriginalRowAt(actualRow.RowNumber)
+                            };
                     }
                 }
             }
@@ -518,6 +540,9 @@ namespace Arcus.Testing
         private readonly CsvDifferenceKind _kind;
         private readonly string _expected, _actual, _column;
         private readonly int _rowNumber;
+
+        internal string ExpectedDiff { get; init; }
+        internal string ActualDiff { get; init; }
 
         internal CsvDifference(CsvDifferenceKind kind, CsvRow expected, CsvRow actual)
             : this(kind, expected.ToString(), actual.ToString(), expected.RowNumber)
@@ -634,6 +659,8 @@ namespace Arcus.Testing
         }
 
         internal AssertCsvHeader Header => _options.Header;
+
+        internal string HeaderNamesTxt => string.Join(_options.Separator, HeaderNames);
 
         /// <summary>
         /// Gets the names of the headers of the first row in the table.
@@ -791,6 +818,27 @@ namespace Arcus.Testing
                                  .AppendInput(csv)
                                  .ToString());
             }
+        }
+
+        /// <summary>
+        /// Gets the original CSV row at a given <paramref name="index"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Safely implemented to fallback on the original CSV when the row cannot be found.
+        /// </remarks>
+        internal string GetOriginalRowAt(int index)
+        {
+            string[] rows = _originalCsv.Split(_options.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            int i = _options.Header is AssertCsvHeader.Present ? index + 1 : index;
+
+            string row = rows.ElementAtOrDefault(i);
+            if (row is null)
+            {
+                return _originalCsv;
+            }
+
+            string headerLine = string.Join(_options.Separator, HeaderNames);
+            return headerLine + _options.NewLine + row;
         }
 
         /// <summary>
