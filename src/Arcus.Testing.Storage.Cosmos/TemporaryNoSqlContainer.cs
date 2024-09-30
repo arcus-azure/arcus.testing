@@ -212,7 +212,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the NoSql items upon disposal - even if the test fixture didn't added them.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the NoSql items upon disposal - even if the test fixture didn't add them.
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanAllItems()
         {
