@@ -160,7 +160,7 @@ namespace Arcus.Testing
         /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
-        ///     Multiple calls will aggregated together in an OR expression.
+        ///     Multiple calls will be aggregated together in an OR expression.
         /// </remarks>
         /// <param name="filters">The filters to match NoSql items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
