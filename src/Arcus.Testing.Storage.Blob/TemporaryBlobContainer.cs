@@ -531,6 +531,10 @@ namespace Arcus.Testing
             await using var disposables = new DisposableCollection(_logger);
 
             disposables.AddRange(_blobs);
+            disposables.Add(AsyncDisposable.Create(async () =>
+            {
+                await CleanBlobContainerUponDeletionAsync(Client, _options, _logger);
+            }));
 
             if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
             {
@@ -539,13 +543,6 @@ namespace Arcus.Testing
                     _logger.LogDebug("[Test:Teardown] Delete Azure Blob container '{ContainerName}' from account '{AccountName}'", Client.Name, Client.AccountName);
                     await Client.DeleteIfExistsAsync();
                 })); 
-            }
-            else
-            {
-                disposables.Add(AsyncDisposable.Create(async () =>
-                {
-                    await CleanBlobContainerUponDeletionAsync(Client, _options, _logger);
-                }));
             }
 
             GC.SuppressFinalize(this);
