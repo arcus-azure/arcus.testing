@@ -34,7 +34,7 @@ await using var collection = await TemporaryMongoDbCollection.CreateIfNotExistsA
 IMongoCollection<Shipment> client = collection.GetCollectionClient<Shipment>();
 ```
 
-> 💡 Overloads are available that takes in the `IMongoDatabase` for custom authentication mechanism.
+> 🎖️ Overloads are available that takes in the `IMongoDatabase` for custom authentication mechanisms. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
 Inserting documents in the collection can also be done via the test fixture. It always make sure that any inserted documents are removed afterwards.
 
@@ -144,6 +144,8 @@ await using var container = await TemporaryNoSqlContainer.CreateIfNotExistsAsync
 // Interact with the container during the lifetime of the fixture.
 Container client = container.Client;
 ```
+
+> 🎖️ Overloads are available for custom authentication mechanisms. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
 Inserting items in the container can also be done via the test fixture. It always make sure that any inserted items are removed afterwards.
 

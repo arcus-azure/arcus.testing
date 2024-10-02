@@ -61,7 +61,7 @@ namespace Arcus.Testing
         /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
-        ///     Multiple calls will aggregated together in an OR expression.
+        ///     Multiple calls will aggregate together in an OR expression.
         /// </remarks>
         /// <typeparam name="T">The type of the documents in the MongoDb collection.</typeparam>
         /// <param name="filter">The filter expression to match documents that should be removed.</param>
@@ -77,7 +77,7 @@ namespace Arcus.Testing
         /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
-        ///     Multiple calls will aggregated together in an OR expression.
+        ///     Multiple calls will aggregate together in an OR expression.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
         /// <param name="filter">The filter expression to match documents that should be removed.</param>
@@ -124,7 +124,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the MongoDb documents upon disposal - even if the test fixture didn't inserted them.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the MongoDb documents upon disposal - even if the test fixture didn't insert them.
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanAllDocuments()
         {
@@ -210,10 +210,14 @@ namespace Arcus.Testing
             ILogger logger,
             TemporaryMongoDbCollectionOptions options)
         {
+            ArgumentNullException.ThrowIfNull(database);
+            ArgumentNullException.ThrowIfNull(collectionName);
+            ArgumentNullException.ThrowIfNull(options);
+
             _createdByUs = createdByUs;
             _collectionName = collectionName;
-            _database = database ?? throw new ArgumentNullException(nameof(database));
-            _options = options ?? new TemporaryMongoDbCollectionOptions();
+            _database = database;
+            _options = options;
             _logger = logger ?? NullLogger.Instance;
         }
 
@@ -323,18 +327,18 @@ namespace Arcus.Testing
                 Filter = Builders<BsonDocument>.Filter.Eq("name", collectionName)
             };
             using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions);
-            if (!await collectionNames.AnyAsync())
+            if (await collectionNames.AnyAsync())
             {
-                logger.LogTrace("Creating Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
-                await database.CreateCollectionAsync(collectionName);
+                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
 
-                return new TemporaryMongoDbCollection(createdByUs: true, collectionName, database, logger, options);
+                await CleanCollectionOnSetupAsync(database, collectionName, options, logger);
+                return new TemporaryMongoDbCollection(createdByUs: false, collectionName, database, logger, options);
             }
 
-            logger.LogTrace("Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}' already exists", collectionName, database.DatabaseNamespace.DatabaseName);
+            logger.LogDebug("[Test:Setup] Create new Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
+            await database.CreateCollectionAsync(collectionName);
 
-            await CleanCollectionOnSetupAsync(database, collectionName, options, logger);
-            return new TemporaryMongoDbCollection(createdByUs: false, collectionName, database, logger, options);
+            return new TemporaryMongoDbCollection(createdByUs: true, collectionName, database, logger, options);
         }
 
         private static async Task CleanCollectionOnSetupAsync(IMongoDatabase database, string collectionName, TemporaryMongoDbCollectionOptions options, ILogger logger)
@@ -348,13 +352,13 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
-                logger.LogTrace("Cleaning all documents in Azure Cosmos MongoDb collection '{CollectionName}'", collectionName);
+                logger.LogTrace("[Test:Setup] Clean all documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
-                logger.LogTrace("Clean all matching documents in Azure Cosmos MongoDb collection '{CollectionName}'", collectionName);
+                logger.LogTrace("[Test:Setup] Clean all matching documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
         }
@@ -399,7 +403,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Drop Azure Cosmos MongoDb '{CollectionName}' collection from database '{DatabaseName}'", _collectionName, _database.DatabaseNamespace.DatabaseName);
+                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", _collectionName, _database.DatabaseNamespace.DatabaseName);
                     await _database.DropCollectionAsync(_collectionName); 
                 }));
             }
@@ -410,6 +414,8 @@ namespace Arcus.Testing
                     await CleanCollectionOnTeardownAsync();
                 }));
             }
+
+            GC.SuppressFinalize(this);
         }
 
         private async Task CleanCollectionOnTeardownAsync()
@@ -423,13 +429,13 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
-                _logger.LogTrace("Clean all documents in Azure Cosmos MongoDb '{CollectionName}' collection", _collectionName);
+                _logger.LogTrace("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, _collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
-                _logger.LogTrace("Clean all matching documents in Azure Cosmos MongoDb '{CollectionName}' collection", _collectionName);
+                _logger.LogTrace("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, _collectionName);
                 await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
         }

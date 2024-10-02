@@ -25,7 +25,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbDocument_OnNonExistingDocumentId_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
-            await using MongoDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Product product = CreateProduct();
@@ -45,7 +45,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbDocument_OnExistingDocumentId_SucceedsByRevertingAfterFixtureLifetime()
         {
             // Arrange
-            await using MongoDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             Product original = CreateProduct();
@@ -96,7 +96,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Assert.Equal(expected.Amount, actual.Amount);
         }
 
-        private async Task<MongoDbTestContext> GivenMongoDbAsync()
+        private async Task<MongoDbTestContext> GivenCosmosMongoDbAsync()
         {
             return await MongoDbTestContext.GivenAsync(Configuration, Logger);
         }
@@ -105,7 +105,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbDocument_WithOtherThanObjectIdPropertyType_SucceedsByUsingBuiltInIdGenerator()
         {
             // Arrange
-            await using MongoDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
             var original = DocWithIntId.Generate();
@@ -141,7 +141,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempMongoDbDocument_WithAlreadyDeletedDocument_SucceedsByIgnoringDeletion()
         {
             // Arrange
-            await using MongoDbTestContext context = await GivenMongoDbAsync();
+            await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             Product expected = CreateProduct();
             string collectionName = await context.WhenCollectionNameAvailableAsync();

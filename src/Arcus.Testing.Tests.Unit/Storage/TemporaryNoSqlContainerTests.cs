@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Azure.Core;
+using Azure.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using static Arcus.Testing.TemporaryNoSqlContainer;
@@ -9,7 +10,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
 {
     public class TemporaryNoSqlContainerTests
     {
-        private ResourceIdentifier CosmosDbResourceId => ResourceIdentifier.Parse(
+        private static ResourceIdentifier CosmosDbResourceId => ResourceIdentifier.Parse(
             $"/subscriptions/{Guid.NewGuid()}/resourceGroups/group/providers/Microsoft.DocumentDB/databaseAccounts/account");
 
         [Theory]
@@ -18,6 +19,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
         {
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, databaseName, "<container-name>", "<partition-key-path>", NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, databaseName, "<container-name>", "<partition-key-path>", NullLogger.Instance, configureOptions: opt => { }));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), databaseName, "<container-name>", "<partition-key-path>", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), databaseName, "<container-name>", "<partition-key-path>", NullLogger.Instance, configureOptions: opt => { }));
         }
 
         [Theory]
@@ -26,6 +29,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
         {
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, "<database-name>", containerName, "<partition-key-path>", NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, "<database-name>", containerName, "<partition-key-path>", NullLogger.Instance, configureOptions: opt => { }));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), "<database-name>", containerName, "<partition-key-path>", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), "<database-name>", containerName, "<partition-key-path>", NullLogger.Instance, configureOptions: opt => { }));
         }
 
         [Theory]
@@ -34,6 +39,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
         {
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, "<database-name>", "<container-name>", partitionKeyPath, NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, "<database-name>", "<container-name>", partitionKeyPath, NullLogger.Instance, configureOptions: opt => { }));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), "<database-name>", "<container-name>", partitionKeyPath, NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => CreateIfNotExistsAsync(CosmosDbResourceId, new DefaultAzureCredential(), "<database-name>", "<container-name>", partitionKeyPath, NullLogger.Instance, configureOptions: opt => { }));
         }
     }
 }

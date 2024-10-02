@@ -32,7 +32,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WithNonExistingContainer_SucceedsByExistingDuringLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerId = context.WhenContainerNameUnavailable();
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerId);
@@ -52,7 +52,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WithExistingContainer_SucceedsByLeavingAfterLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip());
@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainer_WhenContainerWasDeletedOutsideFixture_SucceedsByIgnoringDeletion()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = context.WhenContainerNameUnavailable();
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName);
@@ -93,7 +93,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainerWithCleanAllOnSetup_WhenExistingItem_SucceedsByCleaningAllItems()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip());
@@ -112,7 +112,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainerWithCleanMatchingOnSetup_WhenExistingItem_SucceedsByCleaningSubset()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdMatched = await context.WhenItemAvailableAsync(containerName, CreateShip());
@@ -135,7 +135,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainerWithCleanMatchingOnTeardown_WhenExistingItem_SucceedsByCleaningSubset()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdMatched = CreateShip();
@@ -178,7 +178,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlContainerWithCleanAllOnTeardown_WhenExistingItem_SucceedsByCleaningAllItems()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip("before"));
@@ -201,7 +201,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldNotStoreItemAsync(containerName, createdAfter);
         }
 
-        private NoSqlTestContext GivenNoSql()
+        private NoSqlTestContext GivenCosmosNoSql()
         {
             return NoSqlTestContext.Given(Configuration, Logger);
         }

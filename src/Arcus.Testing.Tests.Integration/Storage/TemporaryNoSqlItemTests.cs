@@ -24,7 +24,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlItem_WithNonExistingItem_SucceedsByDeletingAfterLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             Product expected = CreateProduct();
             string containerName = await context.WhenContainerNameAvailableAsync(expected.PartitionKeyPath);
@@ -43,7 +43,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlItem_WithExistingItem_SucceedsByRevertingItemAfterLifetimeFixture()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             Product original = CreateProduct();
             Product newProduct = CreateProduct();
@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlItem_WithOtherPartitionKeyType_SucceedsByFollowingSameStandard<T>(T item) where T : INoSqlItem
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await context.WhenContainerNameAvailableAsync(item.PartitionKeyPath);
             TemporaryNoSqlItem temp = await WhenTempItemCreatedAsync(context, containerName, item);
@@ -94,7 +94,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlItem_WithoutId_FailsWithInvalidOperation()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             Product item = CreateProduct();
             item.Id = null;
@@ -150,7 +150,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             public string PartitionKeyPath => "/some";
         }
 
-        private NoSqlTestContext GivenNoSql()
+        private NoSqlTestContext GivenCosmosNoSql()
         {
             return NoSqlTestContext.Given(Configuration, Logger);
         }
@@ -195,7 +195,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         public async Task CreateTempNoSqlItem_WithAlreadyDeletedItem_SucceedsByIgnoringDeletion()
         {
             // Arrange
-            await using NoSqlTestContext context = GivenNoSql();
+            await using NoSqlTestContext context = GivenCosmosNoSql();
 
             Product expected = CreateProduct();
             string containerName = await context.WhenContainerNameAvailableAsync(expected.PartitionKeyPath);
@@ -214,7 +214,12 @@ namespace Arcus.Testing.Tests.Integration.Storage
             where T : INoSqlItem
         {
             container ??= context.Database.GetContainer(containerName);
-            return await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);
+            var temp = await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);
+
+            Assert.Equal(item.GetId(), temp.Id);
+            Assert.Equal(item.GetPartitionKey(), temp.PartitionKey);
+
+            return temp;
         }
     }
 }

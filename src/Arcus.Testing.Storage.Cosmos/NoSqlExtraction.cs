@@ -20,7 +20,7 @@ namespace Arcus.Testing
             if (!item.TryGetValue("id", out JToken idNode) || idNode is not JValue id)
             {
                 throw new NotSupportedException(
-                    $"Cannot temporary insert/delete NoSql items in NoSql container as no required 'id' JSON property was found for the {typeDescription}, " +
+                    $"[Test:Setup] Cannot temporary insert/delete NoSql items in NoSql container as no required 'id' JSON property was found for the {typeDescription}, " +
                     $"please make sure that there exists such a property in the type (Microsoft uses Newtonsoft.Json behind the scenes)");
             }
 
@@ -28,7 +28,7 @@ namespace Arcus.Testing
             if (string.IsNullOrWhiteSpace(itemId))
             {
                 throw new InvalidOperationException(
-                    $"Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
+                    $"[Test:Setup] Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
                     $"please provide an unique identifier to your item model");
             }
 

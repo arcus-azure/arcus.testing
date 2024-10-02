@@ -31,13 +31,17 @@ namespace Arcus.Testing
             Stream originalItemStream,
             ILogger logger)
         {
-            _container = container ?? throw new ArgumentNullException(nameof(container));
-            _itemType = itemType ?? throw new ArgumentNullException(nameof(itemType));
+            ArgumentNullException.ThrowIfNull(container);
+            ArgumentNullException.ThrowIfNull(itemType);
+            ArgumentNullException.ThrowIfNull(itemId);
+
+            _container = container;
+            _itemType = itemType;
             _createdByUs = createdByUs;
             _originalItemStream = originalItemStream;
             _logger = logger ?? NullLogger.Instance;
 
-            Id = itemId ?? throw new ArgumentNullException(nameof(itemId));
+            Id = itemId;
             PartitionKey = partitionKey;
         }
 
@@ -86,20 +90,22 @@ namespace Arcus.Testing
             TItem item,
             ILogger logger)
         {
+            logger.LogTrace("[Test:Setup] Try replacing Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'...", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
             ItemResponse<TItem> response = await container.ReadItemAsync<TItem>(itemId, partitionKey);
-            logger.LogTrace("Replace '{ItemType}' NoSql item'{ItemId}' in Azure Cosmos NoSql container '{ContainerName}'", typeof(TItem).Name, itemId, container.Id);
             
             CosmosSerializer serializer = container.Database.Client.ClientOptions.Serializer;
             if (serializer is null)
             {
                 throw new InvalidOperationException(
-                    "Cannot temporary insert a NoSql item in a NoSql container because no JSON serializer was set in the Cosmos client options");
+                    "[Test:Setup] Cannot temporary insert an Azure Cosmos NoSql item in a NoSql container because no JSON serializer was set in the Cosmos client options");
             }
 
             TItem original = response.Resource;
             var originalItemStream = serializer.ToStream(original);
 
+            logger.LogDebug("[Test:Setup] Replace Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
             await container.ReplaceItemAsync(item, itemId, partitionKey);
+
             return new TemporaryNoSqlItem(container, itemId, partitionKey, typeof(TItem), createdByUs: false, originalItemStream, logger);
         }
 
@@ -110,13 +116,13 @@ namespace Arcus.Testing
             TItem item,
             ILogger logger)
         {
-            logger.LogTrace("Inserting new '{ItemType}' NoSql item '{ItemId}' to Azure Cosmos NoSql container '{ContainerName}'", typeof(TItem).Name, itemId, container.Id);
+            logger.LogDebug("[Test:Setup] Insert new Azure Cosmos NoSql '{ItemType}' item '{ItemId}' to container '{DatabaseName}/{ContainerName}'", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
             ItemResponse<TItem> response = await container.CreateItemAsync(item);
             
             if (response.StatusCode != HttpStatusCode.Created)
             {
                 throw new RequestFailedException(
-                    (int) response.StatusCode, $"Unable to insert a new '{typeof(TItem).Name}' into the Azure Cosmos NoSql container '{container.Id}': {response.StatusCode} - " + response.Diagnostics);
+                    (int) response.StatusCode, $"[Test:Setup] Unable to insert a new Azure Cosmos NoSql '{typeof(TItem).Name}' item into the container '{container.Database.Id}/{container.Id}': {response.StatusCode} - " + response.Diagnostics);
             }
 
             return new TemporaryNoSqlItem(container, itemId, partitionKey, typeof(TItem), createdByUs: true, originalItemStream: null, logger);
@@ -134,7 +140,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Deleting '{ItemType}' NoSql item '{ItemId}' in Azure Cosmos NoSql container '{ContainerName}'", _itemType.Name, Id, _container.Id);
+                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     await _container.DeleteItemStreamAsync(Id, PartitionKey);
                 }));
             }
@@ -142,7 +148,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Reverting '{ItemType}' NoSql item '{ItemId}' in Azure Cosmos NoSql container '{ContainerName}'", _itemType.Name, Id, _container.Id);
+                    _logger.LogDebug("[Test:Teardown] Revert replaced Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     await _container.ReplaceItemStreamAsync(_originalItemStream, Id, PartitionKey);
                 }));
                 disposables.Add(AsyncDisposable.Create(async () =>
@@ -150,6 +156,8 @@ namespace Arcus.Testing
                     await _originalItemStream.DisposeAsync();
                 }));
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

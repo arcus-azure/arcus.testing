@@ -35,7 +35,7 @@ namespace Arcus.Testing
             const string scope = "https://management.azure.com/.default";
             var tokenProvider = new DefaultAzureCredential();
 
-            logger.LogTrace("Requesting access for test host at '{Url}'", scope);
+            logger.LogTrace("[Test:Setup] Request access token for Azure Cosmos MongoDb resource at scope '{Url}'", scope);
             return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: new[] { scope }));
         }
 
@@ -47,7 +47,7 @@ namespace Arcus.Testing
             ILogger logger)
         {
             var listConnectionStringUrl = $"https://management.azure.com/{cosmosDbResourceId}/listConnectionStrings?api-version=2021-04-15";
-            logger.LogTrace("Requesting access for Azure Cosmos MongoDb resource at '{Url}'", listConnectionStringUrl);
+            logger.LogTrace("[Test:Setup] Request access for Azure Cosmos MongoDb resource at '{Url}'", listConnectionStringUrl);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
@@ -59,7 +59,7 @@ namespace Arcus.Testing
             {
                 throw new RequestFailedException(
                     (int) response.StatusCode,
-                    $"Cannot contact Azure Cosmos MongoDb collection named '{collectionName}' at database '{databaseName}' in account '{cosmosDbResourceId.Name}', " +
+                    $"[Test:Setup] Cannot contact Azure Cosmos MongoDb collection named '{collectionName}' at database '{databaseName}' in account '{cosmosDbResourceId.Name}', " +
                     $"because the test host could not successfully request access from the resource at '{listConnectionStringUrl}': {responseBody}");
             }
 
@@ -85,12 +85,12 @@ namespace Arcus.Testing
             }
             catch (JsonException exception)
             {
-                logger.LogError(exception, "Failed to parse the response for Azure Cosmos MongoDb access due to a deserialization failure: {Message}", exception.Message);
+                logger.LogError(exception, "[Test:Setup] Failed to parse the response for Azure Cosmos MongoDb access due to a deserialization failure: {Message}", exception.Message);
                 throw;
             }
 
             throw new JsonException(
-                $"Failed to parse the response for Azure Cosmos MongoDb access as there does not exists any access information in the response: {responseBody}");
+                $"[Test:Setup] Failed to parse the response for Azure Cosmos MongoDb access as there does not exists any access information in the response: {responseBody}");
         }
     }
 }
