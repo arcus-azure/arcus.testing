@@ -530,6 +530,8 @@ namespace Arcus.Testing
         {
             await using var disposables = new DisposableCollection(_logger);
 
+            disposables.AddRange(_blobs);
+
             if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
@@ -540,7 +542,6 @@ namespace Arcus.Testing
             }
             else
             {
-                disposables.AddRange(_blobs);
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     await CleanBlobContainerUponDeletionAsync(Client, _options, _logger);
