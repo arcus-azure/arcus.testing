@@ -35,8 +35,8 @@ namespace Arcus.Testing.Tests.Integration.Core
             string mainAppSettingsName = $"{Bogus.Lorem.Word()}.json";
             string localAppSettingsName1 = $"{Bogus.Lorem.Word()}.local.json";
             string localAppSettingsName2 = $"{Bogus.Lorem.Word()}.local.json";
-            string key1 = Bogus.Lorem.Word(), expected1 = Bogus.Lorem.Word();
-            string key2 = Bogus.Lorem.Word(), expected2 = Bogus.Lorem.Word();
+            string key1 = Bogus.Random.Guid().ToString(), expected1 = Bogus.Lorem.Word();
+            string key2 = Bogus.Random.Guid().ToString(), expected2 = Bogus.Lorem.Word();
             AddLocalValueToCustomMain(localAppSettingsName1, key1, expected1, mainAppSettingsName);
             AddLocalValueToCustomMain(localAppSettingsName2, key2, expected2, mainAppSettingsName);
 
