@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
@@ -11,19 +9,20 @@ using Azure;
 using Azure.Data.Tables;
 using Azure.Data.Tables.Models;
 using Azure.Identity;
-using Azure.Storage.Blobs;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
+    /// <summary>
+    /// Represents a test context instance that provides meaningful interaction points with Azure Table storage.
+    /// </summary>
     public class TableStorageTestContext : IAsyncDisposable
     {
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly Collection<string> _tableNames = new();
         private readonly TableServiceClient _serviceClient;
-        private readonly StorageAccount _storageAccount;
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
@@ -31,12 +30,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private TableStorageTestContext(
             TemporaryManagedIdentityConnection connection,
             TableServiceClient serviceClient,
-            StorageAccount storageAccount,
             ILogger logger)
         {
             _connection = connection;
             _serviceClient = serviceClient;
-            _storageAccount = storageAccount;
             _logger = logger;
         }
 
@@ -52,9 +49,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                 new Uri($"https://{storageAccount.Name}.table.core.windows.net"),
                 new DefaultAzureCredential());
 
-            return Task.FromResult(new TableStorageTestContext(connection, serviceClient, storageAccount, logger));
+            return Task.FromResult(new TableStorageTestContext(connection, serviceClient, logger));
         }
 
+        /// <summary>
+        /// Provides a table that is currently not available remotely.
+        /// </summary>
         public TableClient WhenTableUnavailable()
         {
             string tableName = $"table{Guid.NewGuid()}".Replace("-", "");
@@ -63,6 +63,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return new TableClient(_serviceClient.Uri, tableName, new DefaultAzureCredential());
         }
 
+        /// <summary>
+        /// Provides a table that is currently available remotely.
+        /// </summary>
         public async Task<TableClient> WhenTableAvailableAsync()
         {
             TableClient client = WhenTableUnavailable();
@@ -73,6 +76,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return client;
         }
 
+        /// <summary>
+        /// Provides a table entity that is currently not available remotely.
+        /// </summary>
         public TableEntity WhenTableEntityUnavailable()
         {
             string CreateKey() => "prop" + Bogus.Random.Guid().ToString("N");
@@ -87,6 +93,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return entity;
         }
 
+        /// <summary>
+        /// Provides a table entity that is currently available remotely.
+        /// </summary>
         public async Task<TableEntity> WhenTableEntityAvailableAsync(TableClient client)
         {
             TableEntity entity = WhenTableEntityUnavailable();
@@ -95,16 +104,25 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             return entity;
         }
 
+        /// <summary>
+        /// Makes sure that the given table is deleted remotely.
+        /// </summary>
         public async Task WhenTableDeletedAsync(TableClient client)
         {
             await client.DeleteAsync();
         }
 
+        /// <summary>
+        /// Makes sure that the given table entity is deleted remotely.
+        /// </summary>
         public async Task WhenTableEntityDeletedAsync(TableClient client, TableEntity entity)
         {
             await client.DeleteEntityAsync(entity);
         }
 
+        /// <summary>
+        /// Verifies that a table is available remotely.
+        /// </summary>
         public async Task ShouldStoreTableAsync(TableClient table)
         {
             bool exists = false;
@@ -116,6 +134,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             Assert.True(exists, $"Azure table '{table.Name}' should be available");
         }
 
+        /// <summary>
+        /// Verifies that a table is not available remotely.
+        /// </summary>
         public async Task ShouldNotStoreTableAsync(TableClient table)
         {
             bool exists = false;
@@ -127,6 +148,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             Assert.False(exists, $"Azure table '{table.Name}' should not be available");
         }
 
+        /// <summary>
+        /// Verifies that a table entity is available remotely.
+        /// </summary>
         public async Task ShouldStoreTableEntityAsync(TableClient table, TableEntity entity)
         {
             NullableResponse<TableEntity> response = await table.GetEntityIfExistsAsync<TableEntity>(entity.PartitionKey, entity.RowKey);
@@ -138,6 +162,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             Assert.All(entity, item => Assert.Equal(item.Value, Assert.Contains(item.Key, response.Value)));
         }
 
+        /// <summary>
+        /// Verifies that a table entity is not available remotely.
+        /// </summary>
         public async Task ShouldNotStoreTableEntityAsync(TableClient table, TableEntity entity)
         {
             NullableResponse<TableEntity> response = await table.GetEntityIfExistsAsync<TableEntity>(entity.PartitionKey, entity.RowKey);
@@ -152,14 +179,15 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         {
             await using var disposables = new DisposableCollection(_logger);
 
-            foreach (string tableName in _tableNames)
+            disposables.AddRange(_tableNames.Select(tableName =>
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
+                return AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("[Test] delete Azure table '{TableName}'", tableName);
                     await _serviceClient.DeleteTableAsync(tableName);
-                }));
-            }
+                });
+            }));
+
             disposables.Add(_connection);
         }
     }
