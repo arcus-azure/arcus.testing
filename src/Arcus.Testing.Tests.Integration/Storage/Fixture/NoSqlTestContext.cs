@@ -12,6 +12,7 @@ using Azure.ResourceManager;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
@@ -162,9 +163,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldNotStoreContainerAsync(string containerId)
         {
-            Container cont = Database.GetContainer(containerId);
-            var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
-            Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
+            await Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                Container cont = Database.GetContainer(containerId);
+                var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
+                Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
+            });
         }
 
         /// <summary>

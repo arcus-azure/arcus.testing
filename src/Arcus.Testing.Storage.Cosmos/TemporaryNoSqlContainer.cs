@@ -474,7 +474,7 @@ namespace Arcus.Testing
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'...", containerName, databaseName);
+                logger.LogDebug("[Test:Setup] Create new Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", containerName, databaseName);
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
                 CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
