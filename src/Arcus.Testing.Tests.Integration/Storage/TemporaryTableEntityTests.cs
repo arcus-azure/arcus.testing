@@ -79,7 +79,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryTableEntity> CreateTempTableEntityAsync(TableClient client, TableEntity entity)
         {
-            return await TemporaryTableEntity.AddIfNotExistsAsync(client, entity, Logger);
+            return await TemporaryTableEntity.AddIfNotExistsAsync(client.AccountName, client.Name, entity, Logger);
         }
 
         private async Task<TableStorageTestContext> GivenTableStorageAsync()

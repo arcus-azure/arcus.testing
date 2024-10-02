@@ -130,16 +130,18 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldStoreTableEntityAsync(TableClient table, TableEntity entity)
         {
             NullableResponse<TableEntity> response = await table.GetEntityIfExistsAsync<TableEntity>(entity.PartitionKey, entity.RowKey);
-            Assert.True(response.HasValue, $"Azure table entity should be available in table '{table.Name}'");
+            Assert.True(response.HasValue, $"Azure Table entity should be available in table '{table.Name}'");
 
             Assert.NotNull(response.Value);
+
+
             Assert.All(entity, item => Assert.Equal(item.Value, Assert.Contains(item.Key, response.Value)));
         }
 
         public async Task ShouldNotStoreTableEntityAsync(TableClient table, TableEntity entity)
         {
             NullableResponse<TableEntity> response = await table.GetEntityIfExistsAsync<TableEntity>(entity.PartitionKey, entity.RowKey);
-            Assert.False(response.HasValue, $"Azure table entity should not be available in table '{table.Name}'");
+            Assert.False(response.HasValue, $"Azure Table entity should not be available in table '{table.Name}'");
         }
 
         /// <summary>
