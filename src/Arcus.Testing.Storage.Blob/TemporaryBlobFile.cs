@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Storage.Blobs;
@@ -282,7 +282,7 @@ namespace Arcus.Testing
 
             logger.LogTrace("Uploading Azure Blob '{BlobName}' to container '{ContainerName}'", client.Name, client.BlobContainerName);
             await client.UploadAsync(newContent);
-
+            
             return (createdByUs: true, originalData: null);
         }
 
@@ -303,8 +303,6 @@ namespace Arcus.Testing
                 _logger.LogTrace("Deleting Azure Blob '{BlobName}' from container '{ContainerName}'", Client.Name, Client.BlobContainerName);
                 await Client.DeleteIfExistsAsync();
             }
-
-            GC.SuppressFinalize(this);
         }
     }
 }

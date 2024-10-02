@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -506,7 +506,6 @@ namespace Arcus.Testing
             if (!await containerClient.ExistsAsync())
             {
                 logger.LogDebug("Creating Azure Blob container '{ContainerName}'", containerClient.Name);
-
                 await containerClient.CreateIfNotExistsAsync();
                 createdByUs = true;
             }
@@ -578,8 +577,6 @@ namespace Arcus.Testing
                     await Client.DeleteIfExistsAsync();
                 })); 
             }
-
-            GC.SuppressFinalize(this);
         }
 
         private static async Task CleanBlobContainerUponCreationAsync(BlobContainerClient containerClient, TemporaryBlobContainerOptions options, ILogger logger)
