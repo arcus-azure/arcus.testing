@@ -8,7 +8,9 @@ Install this package to easily assert on different output contents:
 PM> Install-Package -Name Arcus.Testing.Assert
 ```
 
-## XML
+<Tabs groupId="content-types">
+<TabItem value="xml" label="XML" default>
+
 The library has an `AssertXml` class that exposes usable test assertions when dealing with XML outputs. The most popular one is comparing XML documents.
 
 ```csharp
@@ -81,7 +83,9 @@ AssertXml.Equal(expected, actual);
 
 The `AssertXml.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 
-## JSON
+</TabItem>
+<TabItem value="json" label="JSON">
+
 The library has an `AssertJson` class that exposes useful test assertions when dealing with JSON outputs. The most popular one is comparing JSON documents.
 
 ```csharp
@@ -155,7 +159,9 @@ AssertJson.Equal(expected, actual);
 
 The `AssertJson.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 
-## CSV
+</TabItem>
+<TabItem value="csv" label="CSV">
+
 The library has an `AssertCsv` class that exposes useful test assertions when dealing with CSV outputs. The most popular one is comparing CSV documents.
 
 ```csharp
@@ -324,3 +330,6 @@ JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 > ❓ Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?
 
 The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
+
+</TabItem>
+</Tabs>
