@@ -27,7 +27,7 @@ PM > Install-Package -Name Arcus.Testing.Assert
 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
 <Tabs groupId="test-assertions">
-<TabItem value="xml" label="XML">
+<TabItem value="xml" label="XML" default>
 
 You can use `AssertXml` like any other assertion method. Instead of returning a boolean and a message, it throws an exception with a detailed report in case of a difference.
 
@@ -149,7 +149,7 @@ Transforming XML-XML to XML-JSON now also happens in a test asserted manner. It 
 ⚠️ **IMPORTANT** that you [add your XSLT files as links](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html) to the test project, that way any changes to the XSLT in the implementation project will be automatically copied to the XSLT transformation used in the tests. 
 
 <Tabs>
-<TabItem value="xml-xml" label="XML to XML">
+<TabItem value="xml-xml" label="XML to XML" default>
 
 Here's how XML-XML now works:
 
