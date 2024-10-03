@@ -148,8 +148,8 @@ Transforming XML-XML to XML-JSON now also happens in a test asserted manner. It 
 
 ⚠️ **IMPORTANT** that you [add your XSLT files as links](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html) to the test project, that way any changes to the XSLT in the implementation project will be automatically copied to the XSLT transformation used in the tests. 
 
-<Tabs groupId="transformations">
-<TabItem value="xml-xml" label="XML to XML" default>
+<!-- <Tabs groupId="transformations">
+<TabItem value="xml-xml" label="XML to XML" default> -->
 
 Here's how XML-XML now works:
 
@@ -176,8 +176,8 @@ Here's how XML-XML now works:
 
 > 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
-</TabItem>
-<TabItem label="xml-json" label="XML to JSON">
+<!-- </TabItem>
+<TabItem label="xml-json" label="XML to JSON"> -->
 
 Here's how XML-JSON now works:
 
@@ -204,8 +204,8 @@ Here's how XML-JSON now works:
 
 > 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
-</TabItem>
-<TabItem value="xml-csv" label="XML to CSV">
+<!-- </TabItem>
+<TabItem value="xml-csv" label="XML to CSV"> -->
 
 Here's how XML-CSV now works:
 
@@ -235,8 +235,8 @@ Here's how XML-CSV now works:
 
 🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertXslt`.
 
-</TabItem>
-</Tabs>
+<!-- </TabItem>
+</Tabs> -->
 
 #### Sequential transformations
 The original Testing Framework had a `TestXsltSequential` exposed functionality to run multiple XSLT transformation in sequence (output of one transformation becomes input of another). This was using separate input types for file names. Since this is made explicit in the `Arcus.Testing` packages, you can load those files yourself using the `ResourceDirectory` type and do the sequential transformation in a more explicit manner:
