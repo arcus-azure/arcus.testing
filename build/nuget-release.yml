@@ -96,7 +96,7 @@ stages:
                 ```shell
                 PM > Install-Package $(Project).Logging.Xunit --Version $(Build.BuildNumber)
                 ```
-                For a complete list of all $(Project) packages see the [documentation](https://github.com/arcus-azure/arcus.testing/blob/master/docs/index.md).
+                For a complete list of all $(Project) packages see the [documentation](https://testing.arcus-azure.net/).
                 ## What's new?
                 ### Features
                 * Provide the capability to do something (#123)
