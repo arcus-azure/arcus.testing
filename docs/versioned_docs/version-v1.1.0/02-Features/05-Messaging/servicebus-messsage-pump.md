@@ -6,6 +6,7 @@ layout: default
 # Testing Azure Service Bus message handling
 
 ## Installation
+
 Install this package to easily test your Service Bus message handlers:
 
 ```shell
@@ -13,13 +14,15 @@ PM> Install-Package -Name Arcus.Testing.Messaging.Pumps.ServiceBus
 ```
 
 ## Test Azure Service Bus message pump
+
 As an addition on the [Arcus Azure Service Bus message pump](https://messaging.arcus-azure.net/Features/message-handling/service-bus), we have provided a test version of the message pump to verify your custom Azure Service Bus message handler implementations.
-These hander implementations can be tested separately, and could be tested by interacting with the message router directly, but simulating messages like it would be from Azure Service Bus itself is a bit trickier.
+These handler implementations can be tested separately, and could be tested by interacting with the message router directly, but simulating messages like it would be from Azure Service Bus itself is a bit trickier.
 This test message pump functionality allows you to verify certain cases without the need of an actual Azure resource.
 
 We provide an extension that acts as an Azure Service Bus message pump and lets you decide how messages should be produced.
 
 Consider the following message handler implementations to test:
+
 ```csharp
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -33,7 +36,7 @@ public class OrderAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces order...
+        // Process order...
     }
 }
 
@@ -45,7 +48,7 @@ public class ShipmentAzureServiceBusMessageHandler : IAzureServiceBusMessageHand
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        // Proces shipment...
+        // Process shipment...
     }
 }
 ```
@@ -108,9 +111,10 @@ public class MessageHandlingTests
 Note that in this example, we use `Assert.True(handler.IsProcessed)` to determine if the `Order` message was correctly processed. In your application, you may want to inject your message handlers with test versions of dependencies and determine via those dependencies if the correct message handler was called.
 You can use one of the `.WithServiceBusMessageHandler<,>(...)` extensions to pass in your instance of the message handler so you can use it later in the test assertion, like it is shown in the example.
 
-> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging` package. See [this page on logging](./logging.md) for more information.
+> 💡 Note that the example uses `logging.AddXunitTestLogging`. This is available in the `Arcus.Testing.Logging.Xunit` package. See [this page on logging](../03-logging.mdx) for more information.
 
 ## Message producer configuration
+
 The test message pump can be configured extensively to meet your needs. You can even pass in your own implementation of a test message producer to have full control over how the Azure Service Bus messages should look like.
 When a custom message body is passed, an `ServiceBusReceivedMessage` will be created with the [correlation properties](https://messaging.arcus-azure.net/Features/message-handling/service-bus#message-correlation) already filled out. This allows for you to also test any the correlation specific functionality in your message handlers.
 
@@ -141,6 +145,7 @@ services.AddTestServiceBusMessagePump(producer =>
 
 If the creation of Azure Service Bus messages is rather complex, you require asynchronous serialization, or you want to re-use your message producing; you can implement your own message producer.
 This requires you to implement the `IAzureServiceBusMessageProducer` interface.
+
 ```csharp
 public class MyTestMessageProducer : IAzureServiceBusMessageProducer
 {
@@ -162,13 +167,16 @@ public class MyTestMessageProducer : IAzureServiceBusMessageProducer
 ```
 
 Such implementation can be passed along during the registration:
+
 ```csharp
 var producer = new MyTestMessageProducer();
 services.AddTestServiceBusMessagePump(producer);
 ```
 
 ## Message routing configuration
+
 The test Azure Service Bus registration internally uses the Azure Service Bus message router. To configure this router, use one of the extension overloads. This gives you access to the message router options, like in a general Azure Service Bus message pump registration.
+
 ```csharp
 services.AddTestServiceBusMessagePump(..., options =>
 {
