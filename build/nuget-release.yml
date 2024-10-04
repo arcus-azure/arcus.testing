@@ -92,7 +92,7 @@ stages:
             parameters:
               repositoryName: '$(Repository)'
               releaseNotes: |
-                Install the $(Project) packages that you need via NuGet, for instance [$(Project).Logging](https://www.nuget.org/packages/$(Project).Logging.Xunit/$(Build.BuildNumber)):
+                Install the $(Project) packages that you need via NuGet, for instance [$(Project).Logging.Xunit](https://www.nuget.org/packages/$(Project).Logging.Xunit/$(Build.BuildNumber)):
                 ```shell
                 PM > Install-Package $(Project).Logging.Xunit --Version $(Build.BuildNumber)
                 ```
