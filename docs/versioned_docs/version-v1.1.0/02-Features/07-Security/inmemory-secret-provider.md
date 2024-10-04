@@ -1,9 +1,4 @@
-﻿---
-title: Security
-layout: default
----
-
-# Security
+﻿# In-memory secret provider
 
 ## Installation
 
@@ -13,9 +8,9 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Security.Providers.InMemory
 ```
 
-## In-memory secret provider
+## Usage
 
-As an addition to the [Arcus Security](https://github.com/arcus-azure/arcus.security) package, we have added an in-memory `ISecretProvider` implementation. 
+As an addition to the [Arcus Security](https://github.com/arcus-azure/arcus.security) package, we have added an in-memory `ISecretProvider` implementation.
 This secret provider is created so you can test you secret store configuration with non-secret values in a easy manner, without implementing your own `ISecretProvider`.
 
 ⚡ Supports [synchronous secret retrieval](https://security.arcus-azure.net/Features/secrets/general).
