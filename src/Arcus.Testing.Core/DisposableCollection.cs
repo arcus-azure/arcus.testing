@@ -170,6 +170,7 @@ namespace Arcus.Testing
 
             if (exceptions.Count == 1)
             {
+                _logger.LogTrace(exceptions[0].ToString());
                 throw exceptions[0];
             }
 

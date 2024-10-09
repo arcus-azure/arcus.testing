@@ -1,14 +1,23 @@
 // Define the location for the deployment of the components.
 param location string
 
-// Define the name of the resource group where the components will be deployed.
-param resourceGroupName string
-
 // Define the name of the DataFactory resource that will be created.
 param dataFactoryName string
 
 // Define the name of the storage account that will be created.
 param storageAccountName string
+
+// Define the name of the CosmosDb MongoDb database account that will be created.
+param cosmosDb_mongoDb_name string
+
+// Define the name of the CosmosDb MongoDb database that will be created.
+param cosmosDb_mongoDb_databaseName string
+
+// Define the name of the CosmosDb NoSql database account that will be created.
+param cosmosDb_noSql_name string
+
+// Define the name of the CosmosDb NoSql database that will be created.
+param cosmosDb_noSql_databaseName string
 
 // Define the name of the key vault where the necessary secrets will be stored to access the deployed test resources.
 param keyVaultName string
@@ -16,23 +25,8 @@ param keyVaultName string
 // Define the Service Principal ID that needs access full access to the deployed resource group.
 param servicePrincipal_objectId string
 
-targetScope = 'subscription'
-
-module resourceGroup 'br/public:avm/res/resources/resource-group:0.2.3' = {
-  name: 'resourceGroupDeployment'
-  params: {
-    name: resourceGroupName
-    location: location
-  }
-}
-
-resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' existing = {
-  name: resourceGroupName
-}
-
 module factory 'br/public:avm/res/data-factory/factory:0.4.0' = {
   name: 'dataFactoryDeployment'
-  scope: rg
   params: {
     name: dataFactoryName
     location: location
@@ -41,7 +35,6 @@ module factory 'br/public:avm/res/data-factory/factory:0.4.0' = {
 
 module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
   name: 'storageAccountDeployment'
-  scope: rg
   params: {
     name: storageAccountName
     location: location
@@ -66,12 +59,74 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
   }
 }
 
+module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.6.0' = {
+  name: 'cosmosMongoDbDeployment'
+  params: {
+    name: cosmosDb_mongoDb_name
+    location: location
+    enableFreeTier: true
+    capabilitiesToAdd: [
+      'EnableMongo'
+      'EnableServerless'
+    ]
+    mongodbDatabases: [
+      {
+        name: cosmosDb_mongoDb_databaseName
+      }
+    ]
+    roleAssignments: [
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'DocumentDB Account Contributor'
+      }
+    ]
+  }
+}
+
+
+module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
+  name: 'cosmosNoSqlDeployment'
+  params: {
+    name: cosmosDb_noSql_name
+    location: location
+    disableLocalAuth: false
+    capabilitiesToAdd: [
+      'EnableServerless'
+    ]
+    sqlDatabases: [
+      {
+        name: cosmosDb_noSql_databaseName
+      }
+    ]
+    roleAssignments: [
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'DocumentDB Account Contributor'
+      }
+    ]
+    sqlRoleAssignmentsPrincipalIds: [
+      servicePrincipal_objectId
+    ]
+    sqlRoleDefinitions: [
+      {
+        name: 'MetadataRole'
+        roleType: 'CustomRole'
+        dataAction: [
+          'Microsoft.DocumentDB/databaseAccounts/readMetadata'
+          'Microsoft.DocumentDB/databaseAccounts/listKeys/*'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*'
+          'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*'
+        ]
+      }
+    ]
+    backupPolicyContinuousTier: null
+    backupPolicyType: null
+    backupStorageRedundancy: null
+  }
+}
+
 module vault 'br/public:avm/res/key-vault/vault:0.6.1' = {
   name: 'vaultDeployment'
-  dependsOn: [
-    resourceGroup
-  ]
-  scope: rg
   params: {
     name: keyVaultName
     location: location
