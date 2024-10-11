@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Messaging.ServiceBus\Arcus.Testing.Messaging.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj" />
   </ItemGroup>
