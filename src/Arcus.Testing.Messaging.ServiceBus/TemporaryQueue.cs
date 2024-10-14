@@ -25,8 +25,6 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(client);
-            ArgumentException.ThrowIfNullOrWhiteSpace(serviceBusNamespace);
-            ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
 
             _client = client;
             _serviceBusNamespace = serviceBusNamespace;
@@ -52,10 +50,7 @@ namespace Arcus.Testing.Messaging.ServiceBus
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
         /// </exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
-            string fullyQualifiedNamespace,
-            string queueName,
-            ILogger logger)
+        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger)
         {
             return await CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null);
         }
@@ -80,7 +75,11 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger,
             Action<CreateQueueOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank fully-qualified Azure Service bus namespace to set up a temporary queue", nameof(fullyQualifiedNamespace));
+            }
 
             var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
             return await CreateIfNotExistsAsync(client, queueName, logger, configureOptions);
@@ -117,8 +116,13 @@ namespace Arcus.Testing.Messaging.ServiceBus
             Action<CreateQueueOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(adminClient);
-            ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
             logger ??= NullLogger.Instance;
+
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank Azure Service bus queue name to set up a temporary queue", nameof(queueName));
+            }
 
             var options = new CreateQueueOptions(queueName);
             configureOptions?.Invoke(options);

@@ -27,8 +27,6 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(client);
-            ArgumentException.ThrowIfNullOrWhiteSpace(serviceBusNamespace);
-            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
 
             _client = client;
             _serviceBusNamespace = serviceBusNamespace;
@@ -79,7 +77,11 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger,
             Action<CreateTopicOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank fully-qualified Azure Service bus namespace to create a temporary topic", nameof(fullyQualifiedNamespace));
+            }
 
             var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
             return await CreateIfNotExistsAsync(client, topicName, logger, configureOptions);
@@ -116,9 +118,14 @@ namespace Arcus.Testing.Messaging.ServiceBus
             Action<CreateTopicOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(adminClient);
-            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
             logger ??= NullLogger.Instance;
 
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank Azure Service Bus topic name to create a temporary topic", nameof(topicName));
+            }
+            
             var options = new CreateTopicOptions(topicName);
             configureOptions?.Invoke(options);
 
@@ -157,7 +164,6 @@ namespace Arcus.Testing.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
         public async Task AddSubscriptionAsync(string subscriptionName, Action<CreateSubscriptionOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
             _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_client, Name, subscriptionName, _logger, configureOptions));
         }
 

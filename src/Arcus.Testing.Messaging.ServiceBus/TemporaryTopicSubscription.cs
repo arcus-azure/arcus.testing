@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus.Administration;
@@ -28,7 +27,6 @@ namespace Arcus.Testing.Messaging.ServiceBus
         {
             ArgumentNullException.ThrowIfNull(client);
             ArgumentNullException.ThrowIfNull(options);
-            ArgumentException.ThrowIfNullOrWhiteSpace(serviceBusNamespace);
 
             _client = client;
             _serviceBusNamespace = serviceBusNamespace;
@@ -85,7 +83,11 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger,
             Action<CreateSubscriptionOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank Azure Service bus namespace to create a temporary topic subscription", nameof(fullyQualifiedNamespace));
+            }
 
             var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
             return await CreateIfNotExistsAsync(client, topicName, subscriptionName, logger, configureOptions);
@@ -136,8 +138,20 @@ namespace Arcus.Testing.Messaging.ServiceBus
             ILogger logger,
             Action<CreateSubscriptionOptions> configureOptions)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
+            ArgumentNullException.ThrowIfNull(adminClient);
+
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank Azure Service bus topic name to create a temporary topic subscription", nameof(topicName));
+            }
+
+            if (string.IsNullOrWhiteSpace(subscriptionName))
+            {
+                throw new ArgumentException(
+                    "Requires a non-blank Azure Service bus topic subscription name to create a temporary topic subscription", nameof(subscriptionName));
+            }
+
             logger ??= NullLogger.Instance;
 
             var options = new CreateSubscriptionOptions(topicName, subscriptionName);
