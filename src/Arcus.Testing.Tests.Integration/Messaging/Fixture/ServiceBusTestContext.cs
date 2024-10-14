@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Formats.Asn1;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
@@ -15,6 +12,9 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
+    /// <summary>
+    /// Represents test-friendly operations to interact with the Azure Service bus resource.
+    /// </summary>
     internal class ServiceBusTestContext : IAsyncDisposable
     {
         private readonly TemporaryManagedIdentityConnection _connection;
@@ -33,6 +33,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             _logger = logger;
         }
 
+        /// <summary>
+        /// Creates a <see cref="ServiceBusTestContext"/> instance that tracks interactions with Azure Service bus.
+        /// </summary>
         public static ServiceBusTestContext Given(TestConfig config, ILogger logger)
         {
             ServicePrincipal servicePrincipal = config.GetServicePrincipal();
@@ -44,6 +47,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return new ServiceBusTestContext(connection, client, logger);
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus queue that is available remotely.
+        /// </summary>
+        /// <returns>The name of the available queue.</returns>
         public async Task<string> WhenQueueAvailableAsync()
         {
             string queueName = WhenQueueUnavailable();
@@ -53,6 +60,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return queueName;
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus queue that is not available remotely.
+        /// </summary>
+        /// <returns>The name of the unavailable queue.</returns>
         public string WhenQueueUnavailable()
         {
             string queueName = $"queue-{Guid.NewGuid()}";
@@ -61,6 +72,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return queueName;
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus topic that is available remotely.
+        /// </summary>
+        /// <returns>The name of the available topic.</returns>
         public async Task<string> WhenTopicAvailableAsync()
         {
             string topicName = WhenTopicUnavailable();
@@ -70,6 +85,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return topicName;
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus topic that is unavailable remotely.
+        /// </summary>
+        /// <returns>The name of the unavailable topic.</returns>
         public string WhenTopicUnavailable()
         {
             string topicName = $"topic-{Guid.NewGuid()}";
@@ -78,6 +97,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return topicName;
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus topic subscription that is available remotely.
+        /// </summary>
+        /// <param name="topicName">The name of the topic where the subscription should be available.</param>
+        /// <returns>The name of the available subscription.</returns>
         public async Task<string> WhenTopicSubscriptionAvailableAsync(string topicName)
         {
             string subscriptionName = WhenTopicSubscriptionUnavailable(topicName);
@@ -87,6 +111,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return subscriptionName;
         }
 
+        /// <summary>
+        /// Provides an Azure Service bus topic subscription that is unavailable remotely.
+        /// </summary>
+        /// <param name="topicName">THe name of the topic where the subscription should be unavailable.</param>
+        /// <returns>The name of the unavailable subscription.</returns>
         public string WhenTopicSubscriptionUnavailable(string topicName)
         {
             string subscriptionName = $"sub-{Guid.NewGuid()}";
@@ -95,49 +124,76 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return subscriptionName;
         }
 
+        /// <summary>
+        /// Makes sure that the Azure Service bus queue is deleted.
+        /// </summary>
         public async Task WhenQueueDeletedAsync(string queueName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus queue '{QueueName}'", queueName);
             await _adminClient.DeleteQueueAsync(queueName);
         }
 
+        /// <summary>
+        /// Makes sure that the Azure Service bus topic is deleted.
+        /// </summary>
         public async Task WhenTopicDeletedAsync(string topicName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic '{TopicName}'", topicName);
             await _adminClient.DeleteTopicAsync(topicName);
         }
 
+        /// <summary>
+        /// Makes sure that the Azure Service bus subscription is deleted on the topic.
+        /// </summary>
         public async Task WhenTopicSubscriptionDeletedAsync(string topicName, string subscriptionName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription '{SubscriptionName}' in topic '{TopicName}'", subscriptionName, topicName);
             await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
         }
 
+        /// <summary>
+        /// Verifies that the Service bus queue is available.
+        /// </summary>
         public async Task ShouldHaveQueueAsync(string queueName)
         {
             Assert.True(await _adminClient.QueueExistsAsync(queueName), $"Azure Service Bus queue '{queueName}' should be available on the namespace, but it isn't");
         }
 
+        /// <summary>
+        /// Verifies that the Service bus queue is unavailable.
+        /// </summary>
         public async Task ShouldNotHaveQueueAsync(string queueName)
         {
             Assert.False(await _adminClient.QueueExistsAsync(queueName), $"Azure Service Bus queue '{queueName}' should not be available on the namespace, but it is");
         }
 
+        /// <summary>
+        /// Verifies that the Service bus topic is available.
+        /// </summary>
         public async Task ShouldHaveTopicAsync(string topicName)
         {
             Assert.True(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should be available on the namespace, but it isn't");
         }
 
+        /// <summary>
+        /// Verifies that the Service bus topic is unavailable.
+        /// </summary>
         public async Task ShouldNotHaveTopicAsync(string topicName)
         {
             Assert.False(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
         }
 
+        /// <summary>
+        /// Verifies that the Service bus topic subscription is available.
+        /// </summary>
         public async Task ShouldHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
             Assert.True(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should have a subscription '{subscriptionName}', but it hasn't");
         }
 
+        /// <summary>
+        /// Verifies that the Service bus topic subscription is unavailable.
+        /// </summary>
         public async Task ShouldNotHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
             Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
