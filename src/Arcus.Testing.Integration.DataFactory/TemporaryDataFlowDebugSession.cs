@@ -20,6 +20,7 @@ namespace Arcus.Testing
     public class TemporaryDataFlowDebugSessionOptions
     {
         private int _timeToLiveInMinutes = 90;
+        private Guid _activeSessionId;
 
         /// <summary>
         /// Gets or sets the time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
@@ -38,6 +39,28 @@ namespace Arcus.Testing
                 _timeToLiveInMinutes = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the optional session ID of an 'active' debug session in the Data Factory resource.
+        /// </summary>
+        /// <remarks>
+        ///     This is useful when developing locally when you do not want to start/stop the debug session on every run.
+        ///     But this also means that in case an active session is found, it will not be teardown when the test fixture disposes.
+        /// </remarks>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is an empty GUID.</exception>
+        public Guid ActiveSessionId
+        {
+            get => _activeSessionId;
+            set
+            {
+                if (value == Guid.Empty)
+                {
+                    throw new ArgumentException("Requires  non-empty GUID to represent the session ID of an active debug session", nameof(value));
+                }
+
+                _activeSessionId = value;
+            }
+        }
     }
 
     /// <summary>
@@ -45,14 +68,19 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryDataFlowDebugSession : IAsyncDisposable
     {
+        private readonly bool _startedByUs;
         private readonly ILogger _logger;
 
-        private TemporaryDataFlowDebugSession(Guid? sessionId, DataFactoryResource resource, ILogger logger)
+        private TemporaryDataFlowDebugSession(bool startedByUs, Guid sessionId, DataFactoryResource resource, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(resource);
+            ArgumentNullException.ThrowIfNull(sessionId);
+
+            _startedByUs = startedByUs;
             _logger = logger ?? NullLogger.Instance;
 
-            DataFactory = resource ?? throw new ArgumentNullException(nameof(resource));
-            SessionId = sessionId ?? throw new ArgumentNullException(nameof(sessionId));
+            DataFactory = resource;
+            SessionId = sessionId;
         }
 
         /// <summary>
@@ -78,10 +106,7 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(ResourceIdentifier dataFactoryResourceId, ILogger logger)
         {
-            return await StartDebugSessionAsync(
-                dataFactoryResourceId ?? throw new ArgumentNullException(nameof(dataFactoryResourceId)),
-                logger,
-                configureOptions: null);
+            return await StartDebugSessionAsync(dataFactoryResourceId, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -101,10 +126,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryDataFlowDebugSessionOptions> configureOptions)
         {
-            if (dataFactoryResourceId is null)
-            {
-                throw new ArgumentNullException(nameof(dataFactoryResourceId));
-            }
+            ArgumentNullException.ThrowIfNull(dataFactoryResourceId);
 
             var armClient = new ArmClient(new DefaultAzureCredential());
             DataFactoryResource resource = armClient.GetDataFactoryResource(dataFactoryResourceId);
@@ -121,7 +143,7 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(DataFactoryResource resource, ILogger logger)
         {
-            return await StartDebugSessionAsync(resource ?? throw new ArgumentNullException(nameof(resource)), logger, configureOptions: null);
+            return await StartDebugSessionAsync(resource, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -137,27 +159,48 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryDataFlowDebugSessionOptions> configureOptions)
         {
-            if (resource is null)
-            {
-                throw new ArgumentNullException(nameof(resource));
-            }
-
+            ArgumentNullException.ThrowIfNull(resource);
             logger ??= NullLogger.Instance;
 
             var options = new TemporaryDataFlowDebugSessionOptions();
             configureOptions?.Invoke(options);
 
-            logger.LogTrace("Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
-            ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
-                await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
+            DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId);
+            if (activeSession is null)
+            {
+                logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
+                ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
+                    await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
+                    {
+                        TimeToLiveInMinutes = options.TimeToLiveInMinutes
+                    });
+
+                Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
+                logger.LogTrace("[Test:Setup] Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
+
+                return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
+            }
+
+            logger.LogTrace("[Test:Setup] Re-using Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
+            return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
+        }
+
+        private static async Task<DataFlowDebugSessionInfo> GetActiveDebugSessionOrDefaultAsync(DataFactoryResource resource, Guid existingSessionId)
+        {
+            if (existingSessionId == Guid.Empty)
+            {
+                return null;
+            }
+
+            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync())
+            {
+                if (existingSessionId == session.SessionId)
                 {
-                    TimeToLiveInMinutes = options.TimeToLiveInMinutes
-                });
+                    return session;
+                }
+            }
 
-            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
-            logger.LogTrace("Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
-
-            return new TemporaryDataFlowDebugSession(sessionId, resource, logger);
+            return null;
         }
 
         /// <summary>
@@ -211,7 +254,7 @@ namespace Arcus.Testing
 
         private async Task StartDataFlowAsync(string dataFlowName, RunDataFlowOptions options)
         {
-            _logger.LogTrace("Adding DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session...", dataFlowName, DataFactory.Id.Name);
+            _logger.LogTrace("[Test:Setup] Adding DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
             DataFactoryDataFlowResource dataFlow = await DataFactory.GetDataFactoryDataFlowAsync(dataFlowName);
 
             var debug = new DataFactoryDataFlowDebugPackageContent
@@ -230,7 +273,7 @@ namespace Arcus.Testing
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
 
             await DataFactory.AddDataFlowToDebugSessionAsync(debug);
-            _logger.LogTrace("Added DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
+            _logger.LogTrace("[Test:Setup] Added DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
         }
 
         private DataFlowDebugPackageDebugSettings CreateDebugSettings(RunDataFlowOptions options)
@@ -238,7 +281,7 @@ namespace Arcus.Testing
             var settings = new DataFlowDebugPackageDebugSettings();
             foreach (KeyValuePair<string, BinaryData> parameter in options.DataFlowParameters)
             {
-                _logger.LogTrace("Adding DataFlow parameter '{Name}' to debug session...", parameter.Key);
+                _logger.LogTrace("[Test:Setup] Adding DataFlow parameter '{Name}' to debug session", parameter.Key);
                 settings.Parameters[parameter.Key] = parameter.Value;
             }
 
@@ -282,7 +325,7 @@ namespace Arcus.Testing
 
         private async Task<DataFactoryDatasetResource> AddDataSetAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string datasetName)
         {
-            _logger.LogTrace("Adding DataSet '{DataSetName}' of DataFactory '{DataFactoryName}' to debug session...", datasetName, dataFactory.Id.Name);
+            _logger.LogTrace("[Test:Setup] Add DataSet '{DataSetName}' of DataFactory '{DataFactoryName}' to debug session", datasetName, dataFactory.Id.Name);
 
             DataFactoryDatasetResource dataset = await dataFactory.GetDataFactoryDatasetAsync(datasetName);
             debug.Datasets.Add(new DataFactoryDatasetDebugInfo(dataset.Data.Properties) { Name = dataset.Data.Name });
@@ -292,7 +335,7 @@ namespace Arcus.Testing
 
         private async Task AddLinkedServiceAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string serviceName)
         {
-            _logger.LogTrace("Adding LinkedService '{ServiceName}' of DataFactory '{DatFactoryName}' to debug session...", serviceName, dataFactory.Id.Name);
+            _logger.LogTrace("[Test:Setup] Add LinkedService '{ServiceName}' of DataFactory '{DatFactoryName}' to debug session", serviceName, dataFactory.Id.Name);
 
             DataFactoryLinkedServiceResource linkedService = await dataFactory.GetDataFactoryLinkedServiceAsync(serviceName);
             debug.LinkedServices.Add(new DataFactoryLinkedServiceDebugInfo(linkedService.Data.Properties) { Name = linkedService.Data.Name });
@@ -300,7 +343,7 @@ namespace Arcus.Testing
 
         private async Task<DataFlowRunResult> GetDataFlowResultAsync(string dataFlowName, string targetSinkName, RunDataFlowOptions options)
         {
-            _logger.LogTrace("Run DataFlow '{DataFlowName}' until result is available on sink '{SinkName}'...", dataFlowName, targetSinkName);
+            _logger.LogTrace("[Test] Run DataFlow '{DataFlowName}' until result is available on sink '{SinkName}'", dataFlowName, targetSinkName);
 
             ArmOperation<DataFactoryDataFlowDebugCommandResult> result = 
                 await DataFactory.ExecuteDataFlowDebugSessionCommandAsync(WaitUntil.Completed, new DataFlowDebugCommandContent
@@ -316,13 +359,10 @@ namespace Arcus.Testing
             if (result.Value.Status != "Succeeded")
             {
                 throw new InvalidOperationException(
-                    $"Executing DataFlow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in DataFactory '{DataFactory.Id.Name}' " +
+                    $"[Test] Executing DataFlow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in DataFactory '{DataFactory.Id.Name}' " +
                     $"did not result in a successful status: '{result.Value.Status}', please check whether the DataFlow is correctly set up and can be run within a debug session");
             }
 
-            
-
-            _logger.LogInformation("DataFlow '{DataFlowName}' successfully ran, result available at sink '{SinkName}': {RawOutput}", dataFlowName, targetSinkName, result.Value.Data);
             return new DataFlowRunResult(result.Value.Status, BinaryData.FromString(result.Value.Data));
         }
 
@@ -332,8 +372,13 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            _logger.LogTrace("Stop Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
-            await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = SessionId });
+            if (_startedByUs)
+            {
+                _logger.LogTrace("[Test:Teardown] Stop Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
+                await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = SessionId });
+            }
+
+            GC.SuppressFinalize(this);
         }
     }
 
