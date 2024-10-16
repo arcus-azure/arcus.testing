@@ -273,7 +273,6 @@ namespace Arcus.Testing
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
 
             await DataFactory.AddDataFlowToDebugSessionAsync(debug);
-            _logger.LogTrace("[Test:Setup] Added DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
         }
 
         private DataFlowDebugPackageDebugSettings CreateDebugSettings(RunDataFlowOptions options)
@@ -281,7 +280,7 @@ namespace Arcus.Testing
             var settings = new DataFlowDebugPackageDebugSettings();
             foreach (KeyValuePair<string, BinaryData> parameter in options.DataFlowParameters)
             {
-                _logger.LogTrace("[Test:Setup] Adding DataFlow parameter '{Name}' to debug session", parameter.Key);
+                _logger.LogTrace("[Test:Setup] Add DataFlow parameter '{Name}' to debug session", parameter.Key);
                 settings.Parameters[parameter.Key] = parameter.Value;
             }
 
