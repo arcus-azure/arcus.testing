@@ -165,23 +165,23 @@ namespace Arcus.Testing
             configureOptions?.Invoke(options);
 
             DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId);
-            if (activeSession is null)
+            if (activeSession is not null)
             {
-                logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
-                ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
-                    await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
-                    {
-                        TimeToLiveInMinutes = options.TimeToLiveInMinutes
-                    });
-
-                Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
-                logger.LogTrace("[Test:Setup] Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
-
-                return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
+                logger.LogTrace("[Test:Setup] Re-using Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
+                return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
             }
 
-            logger.LogTrace("[Test:Setup] Re-using Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
-            return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
+            logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
+            ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
+                await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
+                {
+                    TimeToLiveInMinutes = options.TimeToLiveInMinutes
+                });
+
+            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
+            logger.LogTrace("[Test:Setup] Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
+
+            return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
         }
 
         private static async Task<DataFlowDebugSessionInfo> GetActiveDebugSessionOrDefaultAsync(DataFactoryResource resource, Guid existingSessionId)
