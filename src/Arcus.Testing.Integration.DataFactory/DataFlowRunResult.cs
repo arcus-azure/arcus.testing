@@ -75,7 +75,7 @@ namespace Arcus.Testing
             var options = new DataPreviewJsonOptions();
             configureOptions?.Invoke(options);
 
-            var previewAsJson = Data.ToString();
+            string previewAsJson = Data.ToArray().Length > 0 ? Data.ToString() : string.Empty;
             try
             {
                 JsonObject outputObj = ParseOutputNode(previewAsJson);
@@ -350,7 +350,7 @@ namespace Arcus.Testing
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
-            var previewCsvAsJson = Data.ToString();
+            string previewCsvAsJson = Data.ToArray().Length > 0 ? Data.ToString() : string.Empty;
             try
             {
                 JsonObject outputObj = ParseOutputNode(previewCsvAsJson);
