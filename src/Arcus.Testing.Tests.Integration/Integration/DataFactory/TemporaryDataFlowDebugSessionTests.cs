@@ -29,10 +29,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task StartDebugSession_WithActiveSession_SucceedsByReusingSession()
         {
             // Arrange
-            Guid activeSessionId;
-            await using (var activeSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger))
+            Guid activeSessionId, unknownSessionId = Guid.NewGuid();
+            await using (var activeSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger, 
+                options => options.ActiveSessionId = unknownSessionId))
             {
                 activeSessionId = activeSession.SessionId;
+                Assert.NotEqual(unknownSessionId, activeSessionId);
 
                 // Act
                 await using (var otherSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger, 
@@ -46,29 +48,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             }
 
             await ShouldNotFindActiveSessionAsync(activeSessionId);
-        }
-
-        [Fact]
-        public async Task StartDebugSession_WithUnknownSession_SucceedsByStartingNewSession()
-        {
-            // Arrange
-            await using var activeSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger);
-            var unknownSessionId = Guid.NewGuid();
-            Guid otherSessionId;
-
-            // Act
-            await using (var otherSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger, 
-                options => options.ActiveSessionId = unknownSessionId))
-            {
-                // Assert
-                Assert.NotEqual(activeSession.SessionId, otherSession.SessionId);
-                Assert.NotEqual(unknownSessionId, otherSession.SessionId);
-                await ShouldFindActiveSessionAsync(otherSession.SessionId);
-                otherSessionId = otherSession.SessionId;
-            }
-
-            await ShouldNotFindActiveSessionAsync(otherSessionId);
-            await ShouldFindActiveSessionAsync(activeSession.SessionId);
         }
 
         private async Task ShouldFindActiveSessionAsync(Guid sessionId)
