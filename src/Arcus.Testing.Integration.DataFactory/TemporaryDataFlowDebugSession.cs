@@ -20,6 +20,7 @@ namespace Arcus.Testing
     public class TemporaryDataFlowDebugSessionOptions
     {
         private int _timeToLiveInMinutes = 90;
+        private Guid _activeSessionId;
 
         /// <summary>
         /// Gets or sets the time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
@@ -38,6 +39,28 @@ namespace Arcus.Testing
                 _timeToLiveInMinutes = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the optional session ID of an 'active' debug session in the Data Factory resource.
+        /// </summary>
+        /// <remarks>
+        ///     This is useful when developing locally when you do not want to start/stop the debug session on every run.
+        ///     But this also means that in case an active session is found, it will not be teardown when the test fixture disposes.
+        /// </remarks>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is an empty GUID.</exception>
+        public Guid ActiveSessionId
+        {
+            get => _activeSessionId;
+            set
+            {
+                if (value == Guid.Empty)
+                {
+                    throw new ArgumentException("Requires  non-empty GUID to represent the session ID of an active debug session", nameof(value));
+                }
+
+                _activeSessionId = value;
+            }
+        }
     }
 
     /// <summary>
@@ -45,13 +68,14 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryDataFlowDebugSession : IAsyncDisposable
     {
+        private readonly bool _startedByUs;
         private readonly ILogger _logger;
 
-        private TemporaryDataFlowDebugSession(Guid sessionId, DataFactoryResource resource, ILogger logger)
+        private TemporaryDataFlowDebugSession(bool startedByUs, Guid sessionId, DataFactoryResource resource, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(resource);
-            ArgumentNullException.ThrowIfNull(sessionId);
 
+            _startedByUs = startedByUs;
             _logger = logger ?? NullLogger.Instance;
 
             DataFactory = resource;
@@ -140,6 +164,13 @@ namespace Arcus.Testing
             var options = new TemporaryDataFlowDebugSessionOptions();
             configureOptions?.Invoke(options);
 
+            DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId);
+            if (activeSession is not null)
+            {
+                logger.LogTrace("[Test:Setup] Re-using Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
+                return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
+            }
+
             logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
             ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
                 await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
@@ -147,10 +178,28 @@ namespace Arcus.Testing
                     TimeToLiveInMinutes = options.TimeToLiveInMinutes
                 });
 
-            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"[Test:Setup] Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
+            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
             logger.LogTrace("[Test:Setup] Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
 
-            return new TemporaryDataFlowDebugSession(sessionId, resource, logger);
+            return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
+        }
+
+        private static async Task<DataFlowDebugSessionInfo> GetActiveDebugSessionOrDefaultAsync(DataFactoryResource resource, Guid existingSessionId)
+        {
+            if (existingSessionId == Guid.Empty)
+            {
+                return null;
+            }
+
+            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync())
+            {
+                if (existingSessionId == session.SessionId)
+                {
+                    return session;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -321,10 +370,13 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            GC.SuppressFinalize(this);
+            if (_startedByUs)
+            {
+                _logger.LogTrace("[Test:Teardown] Stop Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
+                await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = SessionId });
+            }
 
-            _logger.LogTrace("[Test:Teardown] Stop Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
-            await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = SessionId });
+            GC.SuppressFinalize(this);
         }
     }
 
