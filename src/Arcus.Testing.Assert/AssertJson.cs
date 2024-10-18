@@ -171,7 +171,7 @@ namespace Arcus.Testing
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
-                    $"\t- node order {options.Order}" +
+                    $"\t- node order {options.Order}{Environment.NewLine}" +
                     $"\t- ignored node names: [{string.Join(", ", options.IgnoredNodeNames)}]{Environment.NewLine}";
 
                 throw new EqualAssertionException(
@@ -249,7 +249,7 @@ namespace Arcus.Testing
                 }
                 else if (expectedChildren.OfType<JsonObject>().Any())
                 {
-                    if (actualChildren.Any(ch => ch is not JsonObject))
+                    if (Array.Exists(actualChildren, ch => ch is not JsonObject))
                     {
                         return new(ActualOtherType, expected, actualArray);
                     }

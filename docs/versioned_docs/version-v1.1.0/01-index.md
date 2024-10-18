@@ -10,7 +10,7 @@ sidebar_position: 1
 The Arcus Testing library provides test-friendly capabilities to kick-start your test suite. Ranges from tech-independent infrastructure code to fully production-ready assertions. The library contains also Azure-related test fixtures to make interactions during testing more maintainable, testable and fun to write.
 
 ## Guides
-* [Migrate from Testing Framework to Arcus.Testing v1.0](03-Guidance/migrate-from-testing-framework-to-arcus-testing-v1.0.mdx)
+* [Migrate from Testing Framework to Arcus.Testing v1.0](03-Guidance/migrate-from-testing-framework-to-arcus-testing-v1.0.md)
 
 # License
 
