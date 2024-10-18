@@ -62,5 +62,29 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => options.TimeToLiveInMinutes = Bogus.Random.Int(max: -1));
         }
+
+        [Fact]
+        public void ActiveSessionId_WithGuid_Succeeds()
+        {
+            // Arrange
+            var options = new TemporaryDataFlowDebugSessionOptions();
+            var value = Bogus.Random.Guid();
+
+            // Act
+            options.ActiveSessionId = value;
+
+            // Assert
+            Assert.Equal(value, options.ActiveSessionId);
+        }
+
+        [Fact]
+        public void ActiveSessionId_WithEmptyGuid_Succeeds()
+        {
+            // Arrange
+            var options = new TemporaryDataFlowDebugSessionOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.ActiveSessionId = Guid.Empty);
+        }
     }
 }
