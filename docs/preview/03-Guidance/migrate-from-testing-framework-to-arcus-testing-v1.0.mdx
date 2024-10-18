@@ -252,3 +252,134 @@ The original Testing Framework had a `TestXsltSequential` exposed functionality 
 + string inputContent = ...
 + string output = xsltFileContents.Aggregate(inputContent, (xslt, xml) => AssertXslt.TransformToXml(xslt, xml));
 ```
+
+## Replace `Codit.Testing.DataFactory` with `Arcus.Testing.Integration.DataFactory`
+The `Codit.Testing.DataFactory` handled start/stop functionality on DataFlow/Pipelines in DataFactory with and without debug sessions. Testing DataFlow's and managing debug sessions is now fully managed with `Arcus.Testing.Integration.DataFactory`.
+
+Start by installing this library:
+```shell
+PM > Install-Package -Name Arcus.Testing.Integration.DataFactory
+```
+
+### Start a debug session
+Arcus wraps the start/stop functionality previously defined in the testing framework as a single temporary test fixture that can act as a singleton test fixture for your entire test suite.
+
+```diff
+- using Codit.Testing.DataFactory;
++ using Arcus.Testing;
+
+- string activeSessionId = await DataFactoryHelper.StartDataFlowAsync(
+-     "<subscription-id>",
+-     "<tenant-id>",
+-     "<object-id>",
+-     "<client-id>",
+-     "<client-certificate>",
+-     "<data-factory-name>",
+-     "<data-factory-resource-group-name>",
+-     "<data-flow-name>",
+-     "<session-id>",
+-     "<key-vault-linked-service>",
+-     dataflowParameters: new Dictionary<string, object>(),
+-     datasetParameters: new Dictionary<string, Dictionary<string, object>>(),
+-     timeout: 30);
+
++ var resourceId =
++     DataFactoryResource.CreateResourceIdentifier("<subscription-id>", "<resource-group-name>", "<data-factory-name>");
+
++ await using var session =
++     await TemporaryDataFlowDebugSession.StartDebugSessionAsync(resourceId, logger);
+```
+
+### Run a DataFlow in debug session
+Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDebugSession` test fixture. A method is available to run a particular DataFlow, while expecting the result to become available in a passed-in sink.
+
+```diff
+- using Codit.Testing.DataFactory;
++ using Arcus.Testing;
+
+- (bool isSuccess, string errorMessage) = 
+-     await DataFactoryHelper.CheckDataFactoryDataFlowDebugOutputAsync(
+-         "<subscription-id>",
+-         "<tenant-id>",
+-         "<client-id>",
+-         "<client-certificate>",
+-         "<data-factory-name>",
+-         "<data-factory-resource-group-name>",
+-         activeSessionId,
+-         "<data-flow-name>",
+-         "<data-flow-sink-name>",
+-         expectedData: new List<Dictionary<string, object>>());
+
++ DataFlowRunResult result =
++     await session.RunDataFlowAsync("<data-flow-name>", "<data-flow-sink-name>", 
++         options =>
++         {
++             options.TimeToLiveInMinutes = 30;
++         });
+
++ JsonNode actual = result.GetDataAsJson();
++ JsonNode expected = // Load your expected JSON...
++ AssertJson.Equal(expected, actual);
+```
+
+> ⚡ Assertion is now separated also from the run operation. [Arcus.Testing.Assert](../02-Features/02-assertion.mdx) can be used to assert on the available sink result.
+
+### Run a Data pipeline
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../02-Features/01-core.md) packages.
+
+🔗 See the [feature documentation](../02-Features/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
+
+## Replace `Codit.Testing.BlobStorage` with `Arcus.Testing.Storage.Blob`
+The `Codit.Testing.BlobStorage` in the past acted as a wrapper for common storage operations. The container/blob operations are now available as single test fixtures in the `Arcus.Testing.Storage.Blob` library.
+
+These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
+
+Start by installing this library:
+```shell
+PM > Install-Package -Name Arcus.Testing.Storage.Blob
+```
+
+### Interact with Blob container
+The testing framework separated storage operations, which are now collected in a single `TemporaryBlobContainer` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the container can be done with the Azure SDK.
+
+```diff
+- using Codit.Testing.BlobStorage;
++ using Arcus.Testing.Storage.Blob;
+
+- // Implicitly creates the container if it does not exists.
+- BlobStorageHelper.ListBlobsAsync("<connection-string>", "<container-name>", "<prefix>");
+
++ // Container gets deleted if created by test, otherwise is left alone on disposal.
++ await using var container = await TemporaryBlobContainer.CreateIfNotExistsAsync(
++     "<account-name>",
++     "<container-name>",
++     logger);
+
++ BlobContainerClient client = container.Client;
++ await client.GetBlobsAsync(BlobTraits.None, BlobStates.None, "<prefix>");
+```
+
+🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+
+### Interact with Blob file
+The testing framework separated storage operations, which are now collected in a single `TemporaryBlobFile` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the file can be done with the Azure SDK.
+
+```diff
+- using Codit.Testing.BlobStorage;
++ using Arcus.Testing.Storage.Blob;
+
+- await BlobStorageHelper.UploadFileToBlobStorageAsync(
+-     "<connection-string>", "<container-name>", "<source-file>", "<prefix>");
+
++ // File gets deleted if created by test, otherwise replaced with original on disposal. 
++ await using var fs = File.OpenRead("<source-file>");
++ await using var file = await TemporaryBlobFile.UploadIfNotExistsAsync(
++     new Uri("https://<account-name>.blob.core.windows.net/<container-name>"),
++     "prefix/<blob-name>",
++     BinaryData.FromStream(fs),
++     logger);
+
++ BlobClient = file.Client;
+```
+
+🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
