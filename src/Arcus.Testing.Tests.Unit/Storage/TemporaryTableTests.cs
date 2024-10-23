@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Azure.Data.Tables;
 using Azure.Identity;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Storage
@@ -12,18 +14,18 @@ namespace Arcus.Testing.Tests.Unit.Storage
         private static readonly Faker Bogus = new();
 
         [Fact]
-        public async Task CreateTempTable_WithoutTableEndpoint_Fails()
+        public async Task CreateTempTable_WithoutClient_Fails()
         {
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryTable.CreateIfNotExistsAsync(tableEndpoint: null, new DefaultAzureCredential(), "tableName", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTable.CreateIfNotExistsAsync(serviceClient: null, "tableName", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTable.CreateIfNotExistsAsync(serviceClient: null, "tableName", NullLogger.Instance, opt => { }));
         }
 
         [Theory]
         [ClassData(typeof(Blanks))]
         public async Task CreateTempTable_WithoutTableName_Fails(string tableName)
         {
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryTable.CreateIfNotExistsAsync(new Uri("https://table-endpoint"), new DefaultAzureCredential(), tableName, NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTable.CreateIfNotExistsAsync(Mock.Of<TableServiceClient>(), tableName, NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTable.CreateIfNotExistsAsync(Mock.Of<TableServiceClient>(), tableName, NullLogger.Instance, opt => { }));
         }
 
         [Fact]

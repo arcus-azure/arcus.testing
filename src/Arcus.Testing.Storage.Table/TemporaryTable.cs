@@ -320,54 +320,41 @@ namespace Arcus.Testing
             }
 
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
-            return await CreateIfNotExistsAsync(tableEndpoint, new DefaultAzureCredential(), tableName, logger, configureOptions);
+            var serviceClient = new TableServiceClient(tableEndpoint, new DefaultAzureCredential());
+
+            return await CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTable"/> which creates a new Azure Table container if it doesn't exist yet.
         /// </summary>
-        /// <param name="tableEndpoint">
-        ///     The <see cref="TableClient.Uri" /> referencing the table service account.
-        ///     This is likely to be similar to "https://{account_name}.table.core.windows.net/?{sas_token}" or
-        ///     "https://{account_name}.table.cosmos.azure.com?{sas_token}".
-        /// </param>
-        /// <param name="credential">The credentials to authorize requests to the Azure Storage account.</param>
+        /// <param name="serviceClient">The client to interact with the Azure Table storage resource as a whole.</param>
         /// <param name="tableName">The name of the Azure Table to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="tableEndpoint"/> or the <paramref name="credential"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tableName"/> is blank.</exception>
-        public static async Task<TemporaryTable> CreateIfNotExistsAsync(
-            Uri tableEndpoint,
-            TokenCredential credential,
-            string tableName,
-            ILogger logger)
+        public static async Task<TemporaryTable> CreateIfNotExistsAsync(TableServiceClient serviceClient, string tableName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(tableEndpoint, credential, tableName, logger, configureOptions: null);
+            return await CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions: null);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTable"/> which creates a new Azure Table container if it doesn't exist yet.
         /// </summary>
-        /// <param name="tableEndpoint">
-        ///     The <see cref="TableClient.Uri" /> referencing the table service account.
-        ///     This is likely to be similar to "https://{account_name}.table.core.windows.net/?{sas_token}" or
-        ///     "https://{account_name}.table.cosmos.azure.com?{sas_token}".
-        /// </param>
-        /// <param name="credential">The credentials to authorize requests to the Azure Storage account.</param>
+        /// <param name="serviceClient">The client to interact with the Azure Table storage resource as a whole.</param>
         /// <param name="tableName">The name of the Azure Table to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="tableEndpoint"/> or the <paramref name="credential"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tableName"/> is blank.</exception>
         public static async Task<TemporaryTable> CreateIfNotExistsAsync(
-            Uri tableEndpoint,
-            TokenCredential credential,
+            TableServiceClient serviceClient,
             string tableName,
             ILogger logger,
             Action<TemporaryTableOptions> configureOptions)
         {
+            ArgumentNullException.ThrowIfNull(serviceClient);
             ArgumentNullException.ThrowIfNull(tableName);
-            ArgumentNullException.ThrowIfNull(credential);
 
             if (string.IsNullOrWhiteSpace(tableName))
             {
@@ -379,19 +366,18 @@ namespace Arcus.Testing
             var options = new TemporaryTableOptions();
             configureOptions?.Invoke(options);
 
-            bool createdByUs = await EnsureTableCreatedAsync(tableEndpoint, credential, tableName, logger);
-            var tableClient = new TableClient(tableEndpoint, tableName, credential);
+            bool createdByUs = await EnsureTableCreatedAsync(serviceClient, tableName, logger);
+            TableClient tableClient = serviceClient.GetTableClient(tableName);
 
             await CleanTableUponSetupAsync(tableClient, options, logger);
             return new TemporaryTable(tableClient, createdByUs, options, logger);
         }
 
-        private static async Task<bool> EnsureTableCreatedAsync(Uri tableEndpoint, TokenCredential credential, string tableName, ILogger logger)
+        private static async Task<bool> EnsureTableCreatedAsync(TableServiceClient serviceClient, string tableName, ILogger logger)
         {
             var createdByUs = false;
 
             var exists = false;
-            var serviceClient = new TableServiceClient(tableEndpoint, credential);
             await foreach (TableItem _ in serviceClient.QueryAsync(t => t.Name == tableName))
             {
                 exists = true;
