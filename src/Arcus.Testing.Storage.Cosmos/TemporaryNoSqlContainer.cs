@@ -307,6 +307,11 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the unique name of the NoSql container, currently available on Azure Cosmos.
+        /// </summary>
+        public string Name => Client.Id;
+
+        /// <summary>
         /// Gets the client to interact with the NoSql container.
         /// </summary>
         public Container Client { get; }

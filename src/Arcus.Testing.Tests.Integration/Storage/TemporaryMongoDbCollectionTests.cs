@@ -235,9 +235,12 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
-            return configureOptions is null
+            var collection = configureOptions is null
                 ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger)
                 : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
+
+            Assert.Equal(collectionName, collection.Name);
+            return collection;
         }
 
         private async Task<MongoDbTestContext> GivenCosmosMongoDbAsync()

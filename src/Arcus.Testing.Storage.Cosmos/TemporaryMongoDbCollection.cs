@@ -197,7 +197,6 @@ namespace Arcus.Testing
     public class TemporaryMongoDbCollection : IAsyncDisposable
     {
         private readonly bool _createdByUs;
-        private readonly string _collectionName;
         private readonly IMongoDatabase _database;
         private readonly TemporaryMongoDbCollectionOptions _options;
         private readonly Collection<IAsyncDisposable> _documents = new();
@@ -215,11 +214,17 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(options);
 
             _createdByUs = createdByUs;
-            _collectionName = collectionName;
             _database = database;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            
+            Name = collectionName;
         }
+
+        /// <summary>
+        /// Gets the unique name of the MongoDb collection, currently available on Azure Cosmos.
+        /// </summary>
+        public string Name { get; }
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryMongoDbCollection"/>.
@@ -369,7 +374,7 @@ namespace Arcus.Testing
         /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
         public IMongoCollection<TDocument> GetCollectionClient<TDocument>()
         {
-            return _database.GetCollection<TDocument>(_collectionName);
+            return _database.GetCollection<TDocument>(Name);
         }
 
         /// <summary>
@@ -403,8 +408,8 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", _collectionName, _database.DatabaseNamespace.DatabaseName);
-                    await _database.DropCollectionAsync(_collectionName); 
+                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
+                    await _database.DropCollectionAsync(Name); 
                 }));
             }
             else
@@ -425,17 +430,17 @@ namespace Arcus.Testing
                 return;
             }
 
-            IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(_collectionName);
+            IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(Name);
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
-                _logger.LogTrace("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, _collectionName);
+                _logger.LogTrace("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
-                _logger.LogTrace("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, _collectionName);
+                _logger.LogTrace("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
         }

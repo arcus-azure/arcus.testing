@@ -221,7 +221,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                     : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
 
             Assert.Equal(NoSql.DatabaseName, container.Client.Database.Id);
-            Assert.Equal(containerName, container.Client.Id);
+            Assert.Equal(containerName, container.Name);
 
             return container;
         }
