@@ -92,11 +92,11 @@ stages:
             parameters:
               repositoryName: '$(Repository)'
               releaseNotes: |
-                Install the $(Project) packages that you need via NuGet, for instance [$(Project).Logging](https://www.nuget.org/packages/$(Project).Logging.Xunit/$(Build.BuildNumber)):
+                Install the $(Project) packages that you need via NuGet, for instance [$(Project).Logging.Xunit](https://www.nuget.org/packages/$(Project).Logging.Xunit/$(Build.BuildNumber)):
                 ```shell
                 PM > Install-Package $(Project).Logging.Xunit --Version $(Build.BuildNumber)
                 ```
-                For a complete list of all $(Project) packages see the [documentation](https://github.com/arcus-azure/arcus.testing/blob/master/docs/index.md).
+                For a complete list of all $(Project) packages see the [documentation](https://testing.arcus-azure.net/).
                 ## What's new?
                 ### Features
                 * Provide the capability to do something (#123)

@@ -42,8 +42,14 @@ await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
 {
     // The time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
     options.TimeToLiveInMinutes = 60;
+
+    // The session ID of an already active debug session.
+    // Default: empty, meaning: a new debug session will be started. This also happens when no matching session is found.
+    options.ActiveSessionId = new Guid("3B0E4AF5-AA5C-4BB3-9CDB-06442EE2F2E3");
 });
 ```
+
+> 💡 The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
 
 ### Full example
 The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.

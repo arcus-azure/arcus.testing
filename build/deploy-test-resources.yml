@@ -13,7 +13,7 @@ parameters:
     default: arcus-testing-dev-we-rg
   - name: keyVaultName
     displayName: 'Key vault name'
-    value: 'arcus-testing-kv'
+    default: 'arcus-testing-kv'
 
 variables:
   - template: ./variables/build.yml
@@ -41,19 +41,28 @@ stages:
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
-                $deployOutput = az deployment sub create `
+                az deployment sub create `
                   --location westeurope `
+                  --template-file ./build/templates/resource-group.bicep `
+                  --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
+                  --parameters location=westeurope 
+
+                $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
+                $deployOutput = az deployment group create `
+                  --resource-group ${{ parameters.resourceGroupName }} `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
-                  --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
                   --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
+                  --parameters cosmosDb_mongoDb_name=${{ variables['Arcus.Testing.Cosmos.MongoDb.Name'] }} `
+                  --parameters cosmosDb_mongoDb_databaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
+                  --parameters cosmosDb_noSql_name=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
+                  --parameters cosmosDb_noSql_databaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
                   --parameters keyVaultName=${{ parameters.keyVaultName }} `
                   --parameters servicePrincipal_objectId=$objectId
 
                 $accountKey = (az storage account keys list --account-name ${{ variables['Arcus.Testing.StorageAccount.Name'] }} | ConvertFrom-Json)[0].value
-                az keyvault set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
+                az keyvault secret set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
 
   - stage: SmokeTests
     dependsOn: Deploy
@@ -65,9 +74,6 @@ stages:
           vmImage: $(Vm.Image)
         steps:
           - task: AzureCLI@2
-            env:
-              resourceGroupName: ${{ parameters.resourceGroupName }}
-              storageAccountName: $(Arcus.Testing.StorageAccount.Name)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
@@ -79,6 +85,7 @@ stages:
                 Invoke-Pester -Script "./build/templates/smoke-tests.ps1" -OutputFile "./pester.test.results.xml" -OutputFormat 'NUnitXML' -EnableExit
           - task: PublishTestResults@2
             displayName: 'Publish test results'
+            condition: always()
             inputs:
               testResultsFormat: 'NUnit'
               testResultsFiles: '**/pester.test.results.xml'
