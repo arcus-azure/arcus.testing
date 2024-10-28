@@ -521,8 +521,8 @@ namespace Arcus.Testing
                             ? new(ActualMissingRow, expectedRow, actualRow)
                             : new(ActualOtherValue, expectedCell, actualCell)
                             {
-                                ExpectedDiff = expectedCsv.GetOriginalRowAt(expectedRow.RowNumber),
-                                ActualDiff = actualCsv.GetOriginalRowAt(actualRow.RowNumber)
+                                ExpectedDiff = expectedCsv.GetOriginalRowAtOrAll(expectedRow.RowNumber),
+                                ActualDiff = actualCsv.GetOriginalRowAtOrAll(actualRow.RowNumber)
                             };
                     }
                 }
@@ -821,12 +821,13 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the original CSV row at a given <paramref name="index"/>.
+        /// Gets the original CSV row at a given <paramref name="index"/>,
+        /// or the entire table when no such row could be found.
         /// </summary>
         /// <remarks>
         ///     Safely implemented to fallback on the original CSV when the row cannot be found.
         /// </remarks>
-        internal string GetOriginalRowAt(int index)
+        internal string GetOriginalRowAtOrAll(int index)
         {
             string[] rows = _originalCsv.Split(_options.NewLine, StringSplitOptions.RemoveEmptyEntries);
             int i = _options.Header is AssertCsvHeader.Present ? index + 1 : index;
