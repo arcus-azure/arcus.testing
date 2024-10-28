@@ -45,9 +45,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integration", "Integration"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Integration.DataFactory", "Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj", "{2321112D-0971-4465-AF85-42BAFF265C1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Tests.Core", "Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj", "{2434BA10-0D39-4A86-9025-8E2439E08A8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Core", "Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj", "{2434BA10-0D39-4A86-9025-8E2439E08A8B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Storage.Cosmos", "Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj", "{54A67E0F-270B-4979-9E72-C68EA8222F89}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Storage.Table", "Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj", "{74AB9F6E-791F-4609-96BD-15420C25AA72}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -117,6 +119,10 @@ Global
 		{54A67E0F-270B-4979-9E72-C68EA8222F89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{54A67E0F-270B-4979-9E72-C68EA8222F89}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54A67E0F-270B-4979-9E72-C68EA8222F89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -136,6 +142,7 @@ Global
 		{2321112D-0971-4465-AF85-42BAFF265C1B} = {0848C446-1D7E-43E1-83A8-5C1A981E3C6F}
 		{2434BA10-0D39-4A86-9025-8E2439E08A8B} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 		{54A67E0F-270B-4979-9E72-C68EA8222F89} = {FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}
+		{74AB9F6E-791F-4609-96BD-15420C25AA72} = {FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E5382820-51FF-4B00-92BE-C78E80EA0841}
