@@ -277,6 +277,11 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the name of the currently remotely available Azure Table being set up by the test fixture.
+        /// </summary>
+        public string Name => Client.Name;
+
+        /// <summary>
         /// Gets the client to interact with the Azure Table currently being set up by the test fixture.
         /// </summary>
         public TableClient Client { get; }

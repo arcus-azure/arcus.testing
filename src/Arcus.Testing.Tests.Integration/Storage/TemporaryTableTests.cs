@@ -224,7 +224,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 ? await TemporaryTable.CreateIfNotExistsAsync(client.AccountName, client.Name, Logger)
                 : await TemporaryTable.CreateIfNotExistsAsync(client.AccountName, client.Name, Logger, configureOptions);
 
-            Assert.Equal(client.Name, temp.Client.Name);
+            Assert.Equal(client.Name, temp.Name);
             Assert.Equal(client.AccountName, temp.Client.AccountName);
 
             return temp;
