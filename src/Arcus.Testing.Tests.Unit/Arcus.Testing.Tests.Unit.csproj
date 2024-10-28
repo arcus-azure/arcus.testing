@@ -32,6 +32,7 @@
     <ProjectReference Include="..\Arcus.Testing.Security.Providers.InMemory\Arcus.Testing.Security.Providers.InMemory.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj" />
   </ItemGroup>
 
