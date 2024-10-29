@@ -216,7 +216,11 @@ namespace Arcus.Testing
                 JsonArray actualArray => CompareJsonArray(expected, actualArray, options),
                 JsonObject actualObject => CompareJsonObject(expected, actualObject, options),
                 JsonValue actualValue => CompareJsonValue(expected, actualValue),
-                null => expected is null ? null : new JsonDifference(ActualIsNull, expected.GetPath()),
+                null => expected is null ? null : new JsonDifference(ActualIsNull, expected.GetPath())
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = "null"
+                },
                 _ => null
             };
         }
@@ -470,8 +474,8 @@ namespace Arcus.Testing
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
             : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))
         {
-            ExpectedNodeDiff = expected?.ToString();
-            ActualNodeDiff = actual?.ToString();
+            ExpectedNodeDiff = expected?.ToString() ?? "null";
+            ActualNodeDiff = actual?.ToString() ?? "null";
         }
 
         internal JsonDifference(JsonDifferenceKind kind, string path, object actual, object expected)
