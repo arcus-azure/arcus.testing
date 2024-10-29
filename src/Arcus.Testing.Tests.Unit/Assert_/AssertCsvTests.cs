@@ -626,12 +626,63 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [MemberData(nameof(FailingBeEquivalentCases))]
         public void Compare_NotEqual_ShouldFailWithDifference(string expectedCsv, string actualCsv, params string[] expectedDifferences)
         {
-            CompareShouldFailWithDescription(LoadCsv(expectedCsv), LoadCsv(actualCsv), configureOptions: null, expectedDifferences);
+            CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, expectedDifferences);
+        }
+
+        public static IEnumerable<object[]> FailingCasesWithReportOptions
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    $"tree;branch{NewLine}1;2",
+                    $"branch;leaf{NewLine}1;2",
+                    new Action<AssertCsvOptions>(options => options.ReportFormat = ReportFormat.Vertical),
+                    $"Expected:{NewLine}tree;branch{NewLine}1;2{NewLine}{NewLine}Actual:{NewLine}branch;leaf{NewLine}1;2"
+                };
+                yield return new object[]
+                {
+                    $"tree;branch{NewLine}1;2",
+                    $"branch;leaf{NewLine}1;2",
+                    new Action<AssertCsvOptions>(options => options.ReportFormat = ReportFormat.Horizontal),
+                    $"Expected:      Actual:{NewLine}tree;branch    branch;leaf{NewLine}1;2            1;2"
+                };
+                yield return new object[]
+                {
+                    $"tree;branch;leaf{NewLine}1;2;3{NewLine}4;5;6",
+                    $"tree;branch;leaf{NewLine}1;2;3{NewLine}4;4;6",
+                    new Action<AssertCsvOptions>(options => options.ReportScope = ReportScope.Limited),
+                    $"Expected:{NewLine}tree;branch;leaf{NewLine}4;5;6{NewLine}{NewLine}Actual:{NewLine}tree;branch;leaf{NewLine}4;4;6"
+                };
+                yield return new object[]
+                {
+                    $"tree;branch;leaf{NewLine}1;2;3{NewLine}4;5;6",
+                    $"tree;branch;leaf{NewLine}1;2;3{NewLine}4;4;6",
+                    new Action<AssertCsvOptions>(options => options.ReportScope = ReportScope.Complete),
+                    $"Expected:{NewLine}tree;branch;leaf{NewLine}1;2;3{NewLine}4;5;6{NewLine}{NewLine}Actual:{NewLine}tree;branch;leaf{NewLine}1;2;3{NewLine}4;4;6"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithReportOptions))]
+        public void CompareCsv_WithReportOptions_ShouldCreateReportByOptions(
+            string expected,
+            string actual,
+            Action<AssertCsvOptions> configureOptions,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDescription(expected, actual, configureOptions, expectedDifferences);
         }
 
         private void CompareShouldFailWithDescription(TestCsv expected, TestCsv actual, params string[] expectedDifferences)
         {
             CompareShouldFailWithDescription(expected, actual, configureOptions: null, expectedDifferences);
+        }
+
+        private void CompareShouldFailWithDescription(string expected, string actual, Action<AssertCsvOptions> configureOptions, params string[] expectedDifferences)
+        {
+            CompareShouldFailWithDescription(LoadCsv(expected), LoadCsv(actual), configureOptions, expectedDifferences);
         }
 
         private void CompareShouldFailWithDescription(TestCsv expected, TestCsv actual, Action<AssertCsvOptions> configureOptions, params string[] expectedDifferences)
