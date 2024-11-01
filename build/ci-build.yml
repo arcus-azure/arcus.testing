@@ -67,6 +67,27 @@ stages:
               targetPath: '$(Pipeline.Workspace)/build'
               artifactName: Build
 
+      - job: Lint
+        pool:
+          vmImage: '$(Vm.Image)'
+        steps:
+          - checkout: self
+          - script: docker pull oxsecurity/megalinter:v8
+            displayName: Pull MegaLinter
+          - script: |
+              docker run -v $(System.DefaultWorkingDirectory):/tmp/lint \
+                --env-file <(env | grep -e SYSTEM_ -e BUILD_ -e TF_ -e AGENT_) \
+                -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
+                -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+                oxsecurity/megalinter:v8
+            displayName: Run MegaLinter
+          - task: PublishPipelineArtifact@1
+            condition: succeededOrFailed()
+            displayName: Upload MegaLinter reports
+            inputs:
+              targetPath: "$(System.DefaultWorkingDirectory)/megalinter-reports/"
+              artifactName: MegaLinterReport
+
   - stage: Tests
     dependsOn: Build
     condition: succeeded()
