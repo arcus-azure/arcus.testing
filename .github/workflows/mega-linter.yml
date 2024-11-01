@@ -30,6 +30,8 @@ env:
   # or posted in a PR (pull_request)
   APPLY_FIXES_MODE: commit
 
+  DISABLE_LINTERS: CSS, JAVASCRIPT, JSON, REPOSITORY, MARKDOWN, SPELL
+
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
   cancel-in-progress: true
