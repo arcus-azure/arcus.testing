@@ -9,4 +9,4 @@ variables:
   
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
-  Arcus.Testing.StorageAccount.Key.SecretName: 'Arcus-Testing-StorageAccount-Key'
+  Arcus.Testing.StorageAccount.Key.SecretName: 'Arcus-Testing-StorageAccount-Key' # checkov:skip=CKV_SECRET_6
