@@ -1,5 +1,4 @@
-﻿﻿using Arcus.Template.Tests.Integration.Logging;
-using Arcus.Testing.Tests.Integration.Configuration;
+﻿using Arcus.Testing.Tests.Integration.Configuration;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
