@@ -86,7 +86,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a filter to match a NoSql item based on its contents.
         /// </summary>
-        /// <typeparam name="TItem">The custom custom type </typeparam>
+        /// <typeparam name="TItem">The custom type </typeparam>
         /// <param name="itemFilter">The custom filter to match against the contents of the NoSql item.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="itemFilter"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the used client has no serializer configured.</exception>
@@ -202,8 +202,8 @@ namespace Arcus.Testing
         internal OnTeardownNoSqlContainer Items { get; private set; }
 
         /// <summary>
-        /// (default for cleaning documents) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSql items upon disposal
-        /// if the document was inserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
+        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSql items upon disposal
+        /// if the item was inserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanCreatedItems()
         {
@@ -225,7 +225,7 @@ namespace Arcus.Testing
         /// upon disposal that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of documents only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
         ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
@@ -572,7 +572,7 @@ namespace Arcus.Testing
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
-                    await _container.DeleteAsync(WaitUntil.Started);
+                    await _container.DeleteAsync(WaitUntil.Completed);
                 })); 
             }
             else
