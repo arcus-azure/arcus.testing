@@ -29,7 +29,8 @@ jobs:
     permissions:
       actions: read
       contents: read
-      security-events: write # checkov:skip=CKV2_GHA_1
+      # checkov:skip=CKV2_GHA_1
+      security-events: write
 
     strategy:
       fail-fast: false

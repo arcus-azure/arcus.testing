@@ -32,7 +32,8 @@ env:
   # or posted in a PR (pull_request)
   APPLY_FIXES_MODE: commit
 
-  DISABLE_LINTERS: REPOSITORY_GRYPE, REPOSITORY_TRIVY, REPOSITORY_CHECKOV, COPYPASTE_JSCPD
+  DISABLE: REPOSITORY
+  DISABLE_LINTERS: COPYPASTE_JSCPD
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
@@ -46,7 +47,8 @@ jobs:
     # Give the default GITHUB_TOKEN write permission to commit and push, comment
     # issues & post new PR; remove the ones you do not need
     permissions:
-      pull-requests: write # checkov:skip=CKV2_GHA_1
+      # checkov:skip=CKV2_GHA_1
+      pull-requests: write
 
     steps:
 
