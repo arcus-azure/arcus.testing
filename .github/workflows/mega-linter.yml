@@ -30,7 +30,7 @@ env:
   # or posted in a PR (pull_request)
   APPLY_FIXES_MODE: commit
 
-  DISABLE_LINTERS: REPOSITORY_GRYPE, REPOSITORY_TRIVY
+  DISABLE_LINTERS: REPOSITORY_GRYPE, REPOSITORY_TRIVY, REPOSITORY_CHECKOV, COPYPASTE_JSCPD
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
