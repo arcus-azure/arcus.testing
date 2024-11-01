@@ -539,6 +539,44 @@ post-metal    {
                 ""name"": ""post-metal""
               }"
                 };
+                yield return new object[]
+                {
+                    "{ \"this\": \"that\", \"options\": null }",
+                    "{ \"this\": \"that\", \"options\": { \"and\": \"this\" } }",
+@"Expected:    Actual:
+null         {
+               ""and"": ""this""
+             }"
+                };
+                yield return new object[]
+                {
+                    "{ \"this\": \"that\", \"options\": { \"and\": \"this\" } }",
+                    "{ \"this\": \"that\", \"options\": null }",
+@"Expected:          Actual:
+{                  null
+  ""and"": ""this""    
+}"
+                };
+                yield return new object[]
+                {
+                    "null",
+                    "[ \"this\", \"that\" ]",
+@"Expected:    Actual:
+null         [
+               ""this"",
+               ""that""
+             ]"
+                };
+                yield return new object[]
+                {
+                    "[ \"this\", \"that\" ]",
+                    "null",
+@"Expected:    Actual:
+[            null
+  ""this"",    
+  ""that""     
+] "
+                };
             }
         }
 
