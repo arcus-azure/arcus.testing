@@ -102,7 +102,7 @@ namespace Arcus.Testing
                 logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
 
-                if (response.IsError && response.Status != NotFound)
+                if (response.IsError)
                 {
                     throw new RequestFailedException(
                         $"[Test:Setup] Failed to replace an existing Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
@@ -118,7 +118,7 @@ namespace Arcus.Testing
                 logger.LogDebug("[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.AddEntityAsync(entity);
 
-                if (response.IsError && response.Status != NotFound)
+                if (response.IsError)
                 {
                     throw new RequestFailedException(
                         $"[Test:Setup] Failed to add a new Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
