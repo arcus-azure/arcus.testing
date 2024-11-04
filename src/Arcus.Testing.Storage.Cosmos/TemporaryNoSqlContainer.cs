@@ -536,7 +536,7 @@ namespace Arcus.Testing
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
-                            $"[Test:Setup] Failed to delete Azure Cosmos NoSql item '{id}' {key} in container '{container.Database.Id}/{container.Id}' " +
+                            $"[Test:Setup] Failed to delete Azure Cosmos NoSql item '{id}' {partitionKey} in container '{container.Database.Id}/{container.Id}' " +
                             $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                     }
                 });
