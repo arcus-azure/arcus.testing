@@ -259,6 +259,8 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryTable : IAsyncDisposable
     {
+        private const int NotFound = 404;
+
         private readonly bool _createdByUs;
         private readonly Collection<TemporaryTableEntity> _entities = new();
         private readonly TemporaryTableOptions _options;
@@ -416,7 +418,7 @@ namespace Arcus.Testing
                     logger.LogTrace("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
                     using Response response = await tableClient.DeleteEntityAsync(item);
 
-                    if (response.IsError)
+                    if (response.IsError && response.Status != NotFound)
                     {
                         throw new RequestFailedException(
                             $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
@@ -434,7 +436,7 @@ namespace Arcus.Testing
                         logger.LogTrace("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
                         using Response response = await tableClient.DeleteEntityAsync(item);
 
-                        if (response.IsError)
+                        if (response.IsError && response.Status != NotFound)
                         {
                             throw new RequestFailedException(
                                 $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
@@ -471,7 +473,7 @@ namespace Arcus.Testing
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'", Client.Name, Client.AccountName);
                 using Response response = await Client.DeleteAsync(); 
 
-                if (response.IsError)
+                if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
@@ -504,7 +506,7 @@ namespace Arcus.Testing
                         _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
                         using Response response = await Client.DeleteEntityAsync(item);
 
-                        if (response.IsError)
+                        if (response.IsError && response.Status != NotFound)
                         {
                             throw new RequestFailedException(
                                 $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
@@ -525,7 +527,7 @@ namespace Arcus.Testing
                             _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
                             using Response response = await Client.DeleteEntityAsync(item);
 
-                            if (response.IsError)
+                            if (response.IsError && response.Status != NotFound)
                             {
                                 throw new RequestFailedException(
                                     $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +

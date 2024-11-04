@@ -142,7 +142,13 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.DeleteItemStreamAsync(Id, PartitionKey);
-                    response.EnsureSuccessStatusCode();
+                    
+                    if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Teardown] Failed to delete Azure Cosmos NoSql '{_itemType.Name}' item '{Id}' {PartitionKey} in container '{_container.Database.Id}/{_container.Id}' " +
+                            $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                    }
                 }));
             }
             else
@@ -151,7 +157,13 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Revert replaced Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.ReplaceItemStreamAsync(_originalItemStream, Id, PartitionKey);
-                    response.EnsureSuccessStatusCode();
+                    
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Teardown] Failed to revert Azure Cosmos NoSql '{_itemType.Name}' item '{Id}' {PartitionKey} in container '{_container.Database.Id}/{_container.Id}' " +
+                            $"since the replace operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                    }
                 }));
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {

@@ -14,6 +14,8 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryTableEntity : IAsyncDisposable
     {
+        private const int NotFound = 404;
+
         private readonly TableClient _tableClient;
         private readonly Type _entityType;
         private readonly bool _createdByUs;
@@ -100,7 +102,7 @@ namespace Arcus.Testing
                 logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
 
-                if (response.IsError)
+                if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Setup] Failed to replace an existing Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
@@ -116,7 +118,7 @@ namespace Arcus.Testing
                 logger.LogDebug("[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.AddEntityAsync(entity);
 
-                if (response.IsError)
+                if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Setup] Failed to add a new Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
@@ -139,7 +141,7 @@ namespace Arcus.Testing
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", _entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
                 using Response response = await _tableClient.DeleteEntityAsync(_entity);
 
-                if (response.IsError)
+                if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Teardown] Failed to delete a Azure Table entity '{_entityType.Name}' (rowKey: '{_entity.RowKey}', partitionKey: '{_entity.PartitionKey}') in table '{_tableClient.AccountName}/{_tableClient.Name}' " +

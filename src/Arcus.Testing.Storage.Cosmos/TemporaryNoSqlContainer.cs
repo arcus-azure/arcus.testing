@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Azure;
@@ -531,7 +532,13 @@ namespace Arcus.Testing
                 {
                     logger.LogTrace("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
                     using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
-                    response.EnsureSuccessStatusCode();
+                    
+                    if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Setup] Failed to delete Azure Cosmos NoSql item '{id}' {key} in container '{container.Database.Id}/{container.Id}' " +
+                            $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                    }
                 });
             }
             else if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
@@ -542,7 +549,13 @@ namespace Arcus.Testing
                     {
                         logger.LogTrace("[Test:Setup] Delete matched Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, key, container.Database.Id, container.Id);
                         using ResponseMessage response = await container.DeleteItemStreamAsync(id, key);
-                        response.EnsureSuccessStatusCode();
+
+                        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+                        {
+                            throw new RequestFailedException(
+                                $"[Test:Setup] Failed to delete matched Azure Cosmos NoSql item '{id}' {key} in container '{container.Database.Id}/{container.Id}' " +
+                                $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                        }
                     }
                 });
             }
@@ -602,7 +615,13 @@ namespace Arcus.Testing
                     {
                         _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                         using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                        response.EnsureSuccessStatusCode();
+                        
+                        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+                        {
+                            throw new RequestFailedException(
+                                $"[Test:Teardown] Failed to delete Azure Cosmos NoSql item '{id}' {key} in container '{Client.Database.Id}/{Client.Id}' " +
+                                $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                        }
                     }));
 
                     return Task.CompletedTask;
@@ -618,7 +637,13 @@ namespace Arcus.Testing
                         {
                             _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                             using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                            response.EnsureSuccessStatusCode();
+                            
+                            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+                            {
+                                throw new RequestFailedException(
+                                    $"[Test:Teardown] Failed to delete matched Azure Cosmos NoSql item '{id}' {key} in container '{Client.Database.Id}/{Client.Id}' " +
+                                    $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
+                            }
                         }
                     }));
 
