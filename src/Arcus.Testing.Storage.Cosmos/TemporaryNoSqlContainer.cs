@@ -530,7 +530,8 @@ namespace Arcus.Testing
                 await ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
                     logger.LogTrace("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
-                    await container.DeleteItemStreamAsync(id, partitionKey);
+                    using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
+                    response.EnsureSuccessStatusCode();
                 });
             }
             else if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
@@ -540,7 +541,8 @@ namespace Arcus.Testing
                     if (options.OnSetup.IsMatched(id, key, doc, container.Database.Client))
                     {
                         logger.LogTrace("[Test:Setup] Delete matched Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, key, container.Database.Id, container.Id);
-                        await container.DeleteItemStreamAsync(id, key);
+                        using ResponseMessage response = await container.DeleteItemStreamAsync(id, key);
+                        response.EnsureSuccessStatusCode();
                     }
                 });
             }
@@ -577,10 +579,7 @@ namespace Arcus.Testing
             }
             else
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
-                {
-                    await CleanContainerOnTeardownAsync();
-                }));
+                await CleanContainerOnTeardownAsync(disposables);
             }
 
             disposables.Add(_resourceClient);
@@ -588,7 +587,7 @@ namespace Arcus.Testing
             GC.SuppressFinalize(this);
         }
 
-        private async Task CleanContainerOnTeardownAsync()
+        private async Task CleanContainerOnTeardownAsync(DisposableCollection disposables)
         {
             if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfCreated)
             {
@@ -597,21 +596,33 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanAll)
             {
-                await ForEachItemAsync(async (id, key, _) =>
+                await ForEachItemAsync((id, key, _) =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
-                    await Client.DeleteItemStreamAsync(id, key);
+                    disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
+                        using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
+                        response.EnsureSuccessStatusCode();
+                    }));
+
+                    return Task.CompletedTask;
                 });
             }
             else if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfMatched)
             {
-                await ForEachItemAsync(async (id, key, doc) =>
+                await ForEachItemAsync((id, key, doc) =>
                 {
-                    if (_options.OnTeardown.IsMatched(id, key, doc, Client.Database.Client))
+                    disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
-                        await Client.DeleteItemStreamAsync(id, key);
-                    }
+                        if (_options.OnTeardown.IsMatched(id, key, doc, Client.Database.Client))
+                        {
+                            _logger.LogTrace("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
+                            using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
+                            response.EnsureSuccessStatusCode();
+                        }
+                    }));
+
+                    return Task.CompletedTask;
                 });
             }
         }
