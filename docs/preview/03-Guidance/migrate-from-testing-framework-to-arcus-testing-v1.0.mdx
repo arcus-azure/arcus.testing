@@ -329,6 +329,11 @@ Arcus does not provide any additional functionality to run a pipeline and wait f
 
 🔗 See the [feature documentation](../02-Features/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
 
+## Replace storage account interactions
+
+<Tabs groupId="storage-systems">
+<TabItem value="blob" label="Blob storage" default>
+
 ## Replace `Codit.Testing.BlobStorage` with `Arcus.Testing.Storage.Blob`
 The `Codit.Testing.BlobStorage` in the past acted as a wrapper for common storage operations. The container/blob operations are now available as single test fixtures in the `Arcus.Testing.Storage.Blob` library.
 
@@ -383,3 +388,88 @@ The testing framework separated storage operations, which are now collected in a
 ```
 
 🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+
+</TabItem>
+<TabItem value="table" label="Table storage">
+
+## Replace `Codit.Testing.TableStorage` with `Arcus.Testing.Storage.Table`
+The `Codit.Testing.TableStorage` in the past acted as a wrapper for common storage operations. The table/entity operations are now available as single test fixtures in the `Arcus.Testing.Storage.Table` library.
+
+These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
+
+Start by installing this library:
+```shell
+PM > Install-Package -Name Arcus.Testing.Storage.Table
+```
+
+### Interact with Table
+The testing framework separated storage operations, which are now collected in a single `TemporaryTable` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the container can be done with the Azure SDK.
+
+```diff
+- using Codit.Testing.TableStorage;
++ using Arcus.Testing;
+
+- await TableStorageHelper.DeleteAllRecordsWithPartitionKey(
+-     "<connection-string>", "<table-name>", "<partition-key>");
+
+- await TableStorageHelper.InsertRecord(
+-     "<connection-string>", "<table-name>",
+-     "<partition-key>", "<row-key>", JObject.Parse("{}"));
+
++ await using var table = await TemporaryTable.CreateIfNotExistsAsync(
++     "<account-name>", "<table-name>", logger, options =>
++ {
++      options.OnSetup/OnTeardown.CleanMatchingEntities(
++          TableEntityFilter.PartitionKeyEqual("<partition-key>"));
+);
++ });
+
++ await table.AddEntityAsync(<model>);
+```
+
+🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Table storage.
+
+</TabItem>
+</Tabs>
+
+## Replace `Codit.Testing.CosmosDb` with `Arcus.Testing.Storage.Cosmos`
+The `Codit.Testing.CosmosDb` in the past acted as a wrapper for common storage operations. The container/item operations are now available as single test fixtures in the `Arcus.Testing.Storage.Cosmos` library.
+
+These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
+
+Start by installing this library:
+```shell
+PM > Install-Package -Name Arcus.Testing.Storage.Cosmos
+```
+
+### Interact with a NoSql container
+The testing framework separated storage operations, which are now collected in a single `TemporaryNoSqlContainer` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the container can be done with the Azure SDK.
+
+```diff
+- Codit.Testing.CosmosDb;
++ Arcus.Testing;
+
+- CosmosSqlHelper.DeleteItems(
+-     "<doc-endpoint>", "<account-key>", "<database-id>", "<container-id>",
+-     docIdPartitionKeys: new List<Tuple<string, string>>());
+
+- CosmosSqlHelper.SetDocumentAsync(
+-     "<doc-endpoint>", "<container-id>", "<database-id>", "<account-key>",
+-     <model>, "<partition-key>");
+
++ await using var container = await TemporaryNoSqlContainer.CreateIfNotExistsAsync(
++     ResourceIdentifier.Parse("<account-resource-id>"),
++     "<database-id>",
++     "<container-name>",
++     "<partition-key-path>",
++     logger,
++     options =>
++     {
++         options.OnSetup/Teardown.CleanMatchingItems(
++             NoSqlItemFilter.PartitionKeyEqual("<partition-key>"));
++     });
+
++ await container.AddItemAsync(<model>);
+```
+
+🔗 See the [feature documentation](../02-Features/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.
