@@ -163,12 +163,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldNotStoreContainerAsync(string containerId)
         {
-            await Poll.UntilAvailableAsync<XunitException>(async () =>
-            {
-                Container cont = Database.GetContainer(containerId);
-                var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
-                Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
-            });
+            Container cont = Database.GetContainer(containerId);
+            var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
+            Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
         }
 
         /// <summary>
