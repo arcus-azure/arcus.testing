@@ -48,7 +48,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="itemId">The unique required 'id' value.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="itemId"/> is blank.</exception>
-        public static NoSqlItemFilter ItemIdEqual(string itemId)
+        public static NoSqlItemFilter IdEqual(string itemId)
         {
             if (string.IsNullOrWhiteSpace(itemId))
             {
@@ -64,7 +64,7 @@ namespace Arcus.Testing
         /// <param name="itemId">The unique required 'id' value.</param>
         /// <param name="comparisonType">The value that specifies how the strings will be compared.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="itemId"/> is blank.</exception>
-        public static NoSqlItemFilter ItemIdEqual(string itemId, StringComparison comparisonType)
+        public static NoSqlItemFilter IdEqual(string itemId, StringComparison comparisonType)
         {
             if (string.IsNullOrWhiteSpace(itemId))
             {
@@ -86,11 +86,11 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a filter to match a NoSql item based on its contents.
         /// </summary>
-        /// <typeparam name="TItem">The custom custom type </typeparam>
+        /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
         /// <param name="itemFilter">The custom filter to match against the contents of the NoSql item.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="itemFilter"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the used client has no serializer configured.</exception>
-        public static NoSqlItemFilter ItemEqual<TItem>(Func<TItem, bool> itemFilter)
+        public static NoSqlItemFilter Where<TItem>(Func<TItem, bool> itemFilter)
         {
             ArgumentNullException.ThrowIfNull(itemFilter);
 
@@ -112,6 +112,23 @@ namespace Arcus.Testing
                 }
 
                 return itemFilter(item);
+            });
+        }
+
+        /// <summary>
+        /// Creates a filter to match a NoSql item based on its contents.
+        /// </summary>
+        /// <param name="itemFilter">The custom filter to match against the contents of the NoSql item.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="itemFilter"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the used client has no serializer configured.</exception>
+        public static NoSqlItemFilter Where(Func<IDictionary<string, object>, bool> itemFilter)
+        {
+            ArgumentNullException.ThrowIfNull(itemFilter);
+
+            return new NoSqlItemFilter((_, _, json, _) =>
+            {
+                var dic = json.ToObject<Dictionary<string, object>>();
+                return itemFilter(dic);
             });
         }
 

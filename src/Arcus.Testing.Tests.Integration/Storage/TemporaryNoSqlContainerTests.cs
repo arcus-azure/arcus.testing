@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Bogus;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -164,12 +163,13 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private static NoSqlItemFilter CreateMatchingFilter(Ship item)
         {
-            return Bogus.Random.Int(1, 4) switch
+            return Bogus.Random.Int(1, 5) switch
             {
-                1 => NoSqlItemFilter.ItemIdEqual(item.Id),
-                2 => NoSqlItemFilter.ItemIdEqual(item.Id, StringComparison.OrdinalIgnoreCase),
+                1 => NoSqlItemFilter.IdEqual(item.Id),
+                2 => NoSqlItemFilter.IdEqual(item.Id, StringComparison.OrdinalIgnoreCase),
                 3 => NoSqlItemFilter.PartitionKeyEqual(item.GetPartitionKey()),
-                4 => NoSqlItemFilter.ItemEqual<Ship>(x => x.BoatName == item.BoatName),
+                4 => NoSqlItemFilter.Where<Ship>(x => x.BoatName == item.BoatName),
+                5 => NoSqlItemFilter.Where(x => x["BoatName"].ToString() == item.BoatName),
                 _ => throw new ArgumentOutOfRangeException(nameof(item), "Unknown filter type")
             };
         }
