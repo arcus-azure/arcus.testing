@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Threading;
+using System.Net;
 using System.Threading.Tasks;
-using Azure.Core;
+using Azure;
 using Azure.Data.Tables;
 using Azure.Data.Tables.Models;
 using Azure.Identity;
@@ -259,6 +259,8 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryTable : IAsyncDisposable
     {
+        private const int NotFound = 404;
+
         private readonly bool _createdByUs;
         private readonly Collection<TemporaryTableEntity> _entities = new();
         private readonly TemporaryTableOptions _options;
@@ -414,7 +416,15 @@ namespace Arcus.Testing
                 await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
                 {
                     logger.LogTrace("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
-                    await tableClient.DeleteEntityAsync(item);
+                    using Response response = await tableClient.DeleteEntityAsync(item);
+
+                    if (response.IsError && response.Status != NotFound)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
+                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                            new RequestFailedException(response));
+                    }
                 }
             }
             else if (options.OnSetup.Entities is OnSetupTable.CleanIfMatched)
@@ -424,7 +434,15 @@ namespace Arcus.Testing
                     if (options.OnSetup.IsMatch(item))
                     {
                         logger.LogTrace("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
-                        await tableClient.DeleteEntityAsync(item);
+                        using Response response = await tableClient.DeleteEntityAsync(item);
+
+                        if (response.IsError && response.Status != NotFound)
+                        {
+                            throw new RequestFailedException(
+                                $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                new RequestFailedException(response));
+                        }
                     }
                 }
             }
@@ -453,18 +471,26 @@ namespace Arcus.Testing
             if (_createdByUs)
             {
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'", Client.Name, Client.AccountName);
-                await Client.DeleteAsync(); 
+                using Response response = await Client.DeleteAsync(); 
+
+                if (response.IsError && response.Status != NotFound)
+                {
+                    throw new RequestFailedException(
+                        $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
+                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                        new RequestFailedException(response));
+                }
             }
             else
             {
                 disposables.AddRange(_entities);
-                disposables.Add(AsyncDisposable.Create(CleanTableUponTeardownAsync));
+                await CleanTableUponTeardownAsync(disposables);
             }
 
             GC.SuppressFinalize(this);
         }
 
-        private async Task CleanTableUponTeardownAsync()
+        private async Task CleanTableUponTeardownAsync(DisposableCollection disposables)
         {
             if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfCreated)
             {
@@ -475,19 +501,41 @@ namespace Arcus.Testing
             {
                 await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
                 {
-                    _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
-                    await Client.DeleteEntityAsync(item);
+                    disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
+                        using Response response = await Client.DeleteEntityAsync(item);
+
+                        if (response.IsError && response.Status != NotFound)
+                        {
+                            throw new RequestFailedException(
+                                $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                new RequestFailedException(response));
+                        }
+                    }));
                 } 
             }
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
                 await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
                 {
-                    if (_options.OnTeardown.IsMatch(item))
+                    disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
-                        await Client.DeleteEntityAsync(item);
-                    }
+                        if (_options.OnTeardown.IsMatch(item))
+                        {
+                            _logger.LogTrace("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
+                            using Response response = await Client.DeleteEntityAsync(item);
+
+                            if (response.IsError && response.Status != NotFound)
+                            {
+                                throw new RequestFailedException(
+                                    $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
+                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                    new RequestFailedException(response));
+                            }
+                        }
+                    }));
                 } 
             }
         }

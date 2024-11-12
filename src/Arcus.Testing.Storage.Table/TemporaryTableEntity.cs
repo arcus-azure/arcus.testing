@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Data.Tables;
@@ -13,6 +14,8 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryTableEntity : IAsyncDisposable
     {
+        private const int NotFound = 404;
+
         private readonly TableClient _tableClient;
         private readonly Type _entityType;
         private readonly bool _createdByUs;
@@ -97,15 +100,34 @@ namespace Arcus.Testing
                 ITableEntity originalEntity = entityExists.Value;
                 
                 logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-                await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
+                using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
+
+                if (response.IsError)
+                {
+                    throw new RequestFailedException(
+                        $"[Test:Setup] Failed to replace an existing Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
+                        $"since the upsert operation responded with failure: {response.Status} {(HttpStatusCode) response.Status}",
+                        new RequestFailedException(response));
+                }
 
                 return new TemporaryTableEntity(client, entityType, createdByUs: false, originalEntity, logger);
             }
 
-            logger.LogDebug("[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-            await client.AddEntityAsync(entity);
+            else
+            {
+                logger.LogDebug("[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
+                using Response response = await client.AddEntityAsync(entity);
 
-            return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger);
+                if (response.IsError)
+                {
+                    throw new RequestFailedException(
+                        $"[Test:Setup] Failed to add a new Azure Table entity '{typeof(TEntity).Name}' (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') in table '{client.AccountName}/{client.Name}' " +
+                        $"since the add operation responded with failure: {response.Status} {(HttpStatusCode) response.Status}",
+                        new RequestFailedException(response));
+                }
+
+                return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger); 
+            }
         }
 
         /// <summary>
@@ -117,12 +139,28 @@ namespace Arcus.Testing
             if (_createdByUs)
             {
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", _entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                await _tableClient.DeleteEntityAsync(_entity);
+                using Response response = await _tableClient.DeleteEntityAsync(_entity);
+
+                if (response.IsError && response.Status != NotFound)
+                {
+                    throw new RequestFailedException(
+                        $"[Test:Teardown] Failed to delete a Azure Table entity '{_entityType.Name}' (rowKey: '{_entity.RowKey}', partitionKey: '{_entity.PartitionKey}') in table '{_tableClient.AccountName}/{_tableClient.Name}' " +
+                        $"since the delete operation responded with failure: {response.Status} {(HttpStatusCode) response.Status}",
+                        new RequestFailedException(response));
+                }
             }
             else
             {
                 _logger.LogDebug("[Test:Teardown] Revert replaced Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", _entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace);
+                using Response response = await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace);
+
+                if (response.IsError)
+                {
+                    throw new RequestFailedException(
+                        $"[Test:Teardown] Failed to revert a Azure Table entity '{_entityType.Name}' (rowKey: '{_entity.RowKey}', partitionKey: '{_entity.PartitionKey}') in table '{_tableClient.AccountName}/{_tableClient.Name}' " +
+                        $"since the upsert operation responded with failure: {response.Status} {(HttpStatusCode) response.Status}",
+                        new RequestFailedException(response));
+                }
             }
 
             GC.SuppressFinalize(this);
