@@ -130,11 +130,11 @@ BsonValue documentId = document.Id;
 > 
 > **This role is not a built-in Azure RBAC, but a role specific for NoSql**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
 > ```shell
-> az cosmosdb sql role assignment create
->   --account-name "CosmosDBAccountName"
->   --resource-group "ResourceGroupName"
->   --role-definition-name "Cosmos DB Built-in Data Contributor"
->   --scope "/"
+> az cosmosdb sql role assignment create `
+>   --account-name "CosmosDBAccountName" `
+>   --resource-group "ResourceGroupName" `
+>   --role-definition-name "Cosmos DB Built-in Data Contributor" `
+>   --scope "/" `
 >   --principal-id "UserOrPrincipalObjectId"
 > ```
 
