@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
         [ClassData(typeof(Blanks))]
         public void CreateFilter_WithoutItemId_Fails(string itemId)
         {
-            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.ItemIdEqual(itemId));
+            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.IdEqual(itemId));
         }
 
         [Theory]
@@ -21,13 +21,19 @@ namespace Arcus.Testing.Tests.Unit.Storage
         public void CreateFilter_WithComparisonWithoutItemId_Fails(string itemId)
         {
             Assert.ThrowsAny<ArgumentException>(
-                () => NoSqlItemFilter.ItemIdEqual(itemId, Bogus.PickRandom<StringComparison>()));
+                () => NoSqlItemFilter.IdEqual(itemId, Bogus.PickRandom<StringComparison>()));
+        }
+
+        [Fact]
+        public void CreateFilter_WithoutItemTFilter_Fails()
+        {
+            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.Where<Shipment>(null));
         }
 
         [Fact]
         public void CreateFilter_WithoutItemFilter_Fails()
         {
-            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.ItemEqual<Shipment>(null));
+            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.Where(null));
         }
     }
 }
