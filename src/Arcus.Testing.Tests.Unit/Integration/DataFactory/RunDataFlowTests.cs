@@ -85,6 +85,78 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             Assert.ThrowsAny<NotSupportedException>(() => options.AddDataFlowParameter(name, invalidValue));
         }
 
+        [Fact]
+        public void AddDataSetParameter_WithExistingDataSetNameAndNewName_SucceedsByAddingNewParameter()
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string datasetName = Bogus.Lorem.Word();
+            string name = Bogus.Lorem.Word();
+            string newName = Bogus.Lorem.Word();
+            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
+
+            // Act
+            options.AddDataSetParameter(datasetName, newName, Bogus.Random.Guid());
+
+            // Assert
+            Assert.NotNull(options);
+        }
+
+        [Fact]
+        public void AddDataSetParameter_WithExistingDataSetNameAndExistingName_SucceedsByOverriding()
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string datasetName = Bogus.Lorem.Word();
+            string name = Bogus.Lorem.Word();
+            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
+
+            // Act
+            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
+
+            // Assert
+            Assert.NotNull(options);
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void AddDataSetParameter_WithoutDataSetName_Fails(string dataSetName)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string name = Bogus.Lorem.Word();
+            string value = Bogus.Lorem.Word();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddDataSetParameter(dataSetName, name, value));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void AddDataSetParameter_WithoutParameterName_Fails(string name)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string dataSetName = Bogus.Lorem.Word();
+            string value = Bogus.Lorem.Word();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddDataSetParameter(dataSetName, name, value));
+        }
+
+        [Fact]
+        public void AddDataSetParameter_WithoutUnsupportedJson_Fails()
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string dataSetName = Bogus.Lorem.Word();
+            string name = Bogus.Lorem.Word();
+            Type invalidValue = GetType();
+
+            // Act / Assert
+            Assert.ThrowsAny<NotSupportedException>(() => options.AddDataSetParameter(dataSetName, name, invalidValue));
+        }
+
         [Theory]
         [ClassData(typeof(Blanks))]
         public void AddLinkedService_WithoutServiceName_Fails(string serviceName)

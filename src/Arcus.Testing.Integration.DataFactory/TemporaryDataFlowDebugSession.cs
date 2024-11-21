@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using Azure;
+﻿using Azure;
 using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
@@ -11,6 +6,12 @@ using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Arcus.Testing
 {
@@ -172,7 +173,7 @@ namespace Arcus.Testing
             }
 
             logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
-            ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result = 
+            ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result =
                 await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
                 {
                     TimeToLiveInMinutes = options.TimeToLiveInMinutes
@@ -247,7 +248,7 @@ namespace Arcus.Testing
             configureOptions?.Invoke(options);
 
             await StartDataFlowAsync(dataFlowName, options);
-            
+
             return await GetDataFlowResultAsync(dataFlowName, targetSinkName, options);
         }
 
@@ -277,11 +278,16 @@ namespace Arcus.Testing
         private DataFlowDebugPackageDebugSettings CreateDebugSettings(RunDataFlowOptions options)
         {
             var settings = new DataFlowDebugPackageDebugSettings();
+
             foreach (KeyValuePair<string, BinaryData> parameter in options.DataFlowParameters)
             {
                 _logger.LogTrace("[Test:Setup] Add DataFlow parameter '{Name}' to debug session", parameter.Key);
                 settings.Parameters[parameter.Key] = parameter.Value;
             }
+
+            _logger.LogTrace("[Test:Setup] Add DataSet parameters to debug session");
+            string jsonString = System.Text.Json.JsonSerializer.Serialize(options.DataSetParameters);
+            settings.DatasetParameters = BinaryData.FromString(jsonString);
 
             return settings;
         }
@@ -343,7 +349,7 @@ namespace Arcus.Testing
         {
             _logger.LogTrace("[Test] Run DataFlow '{DataFlowName}' until result is available on sink '{SinkName}'", dataFlowName, targetSinkName);
 
-            ArmOperation<DataFactoryDataFlowDebugCommandResult> result = 
+            ArmOperation<DataFactoryDataFlowDebugCommandResult> result =
                 await DataFactory.ExecuteDataFlowDebugSessionCommandAsync(WaitUntil.Completed, new DataFlowDebugCommandContent
                 {
                     Command = "executePreviewQuery",
@@ -380,7 +386,7 @@ namespace Arcus.Testing
         }
     }
 
-     /// <summary>
+    /// <summary>
     /// Represents the run options when calling the <see cref="TemporaryDataFlowDebugSession.RunDataFlowAsync(string,string,Action{RunDataFlowOptions})"/>.
     /// </summary>
     public class RunDataFlowOptions
@@ -389,6 +395,7 @@ namespace Arcus.Testing
 
         internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
+        internal IDictionary<string, BinaryData> DataSetParameters { get; } = new Dictionary<string, BinaryData>();
 
         /// <summary>
         /// Adds a parameter to the DataFlow to run.
@@ -402,6 +409,42 @@ namespace Arcus.Testing
             }
 
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a parameter to a DataSet present the DataFlow to run.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
+        public RunDataFlowOptions AddDataSetParameter(string datasetName, string name, object value)
+        {
+            if (string.IsNullOrWhiteSpace(datasetName))
+            {
+                throw new ArgumentException("DataSet name should not be blank", nameof(datasetName));
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("DataSet parameter name should not be blank", nameof(name));
+            }
+
+            IDictionary<string, object> dataSetParameters;
+            if (DataSetParameters.TryGetValue(datasetName, out BinaryData keyValue))
+            {
+                dataSetParameters = JsonSerializer.Deserialize<IDictionary<string, object>>(keyValue);
+                dataSetParameters.Add(name, value);
+            }
+            else
+            {
+                dataSetParameters = new Dictionary<string, object>
+                {
+                    { name, value }
+                };
+            }
+
+            string jsonString = JsonSerializer.Serialize(dataSetParameters);
+            DataSetParameters[datasetName] = BinaryData.FromString(jsonString);
             return this;
         }
 
