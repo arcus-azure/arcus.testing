@@ -415,8 +415,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
         /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> or the <paramref name="name" /> is blank.</exception>
         public RunDataFlowOptions AddDataSetParameter(string datasetName, string name, object value)
         {
             if (string.IsNullOrWhiteSpace(datasetName))
