@@ -413,7 +413,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds a parameter to a DataSet present the DataFlow to run.
+        /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
