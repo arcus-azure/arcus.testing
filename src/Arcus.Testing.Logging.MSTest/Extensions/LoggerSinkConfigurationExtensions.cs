@@ -16,6 +16,7 @@ namespace Serilog.Configuration
         /// <param name="config">The Serilog sink configuration where the NUnit test logging will be added.</param>
         /// <param name="testContext">The MSTest test writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or <paramref name="testContext"/> is <c>null</c>.</exception>
+        [Obsolete("Arcus.Testing.Logging.MSTest will stop supporting Serilog by default, please implement Serilog sinks yourself as this extension will be removed in v2.0")]
         public static LoggerConfiguration MSTestLogging(this LoggerSinkConfiguration config, TestContext testContext)
         {
             if (config is null)

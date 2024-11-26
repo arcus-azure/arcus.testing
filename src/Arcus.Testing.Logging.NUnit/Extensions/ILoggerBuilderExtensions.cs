@@ -12,22 +12,15 @@ namespace Microsoft.Extensions.Logging
     public static class ILoggerBuilderExtensions
     {
         /// <summary>
-        /// Adds an the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
         /// <param name="builder">The logging builder to add the NUnit logging test messages to.</param>
         /// <param name="outputWriter">The NUnit test writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public static ILoggingBuilder AddNUnitTestLogging(this ILoggingBuilder builder, TextWriter outputWriter)
         {
-            if (builder is null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (outputWriter is null)
-            {
-                throw new ArgumentNullException(nameof(outputWriter));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
+            ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter);
             var provider = new CustomLoggerProvider(logger);
@@ -36,7 +29,7 @@ namespace Microsoft.Extensions.Logging
         }
 
         /// <summary>
-        /// Adds an the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
         /// <param name="builder">The logging builder to add the NUnit logging test messages to.</param>
         /// <param name="outputWriter">The NUnit test writer to write custom test output.</param>
@@ -44,15 +37,8 @@ namespace Microsoft.Extensions.Logging
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/>, <paramref name="outputWriter"/> or the <paramref name="errorWriter"/> is <c>null</c>.</exception>
         public static ILoggingBuilder AddNUnitTestLogging(this ILoggingBuilder builder, TextWriter outputWriter, TextWriter errorWriter)
         {
-            if (builder is null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (outputWriter is null)
-            {
-                throw new ArgumentNullException(nameof(outputWriter));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
+            ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter, errorWriter);
             var provider = new CustomLoggerProvider(logger);

@@ -10,6 +10,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a logging sink that collects the emitted log events in-memory.
     /// </summary>
+    [Obsolete("Arcus.Testing.Logging.Core will stop supporting Serilog by default, please implement Serilog sinks yourself as this sink will be removed in v2.0")]
     public class InMemoryLogSink : ILogEventSink
     {
         private readonly ConcurrentQueue<LogEvent> _logEmits = new ConcurrentQueue<LogEvent>();

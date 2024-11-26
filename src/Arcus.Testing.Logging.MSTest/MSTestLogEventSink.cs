@@ -8,6 +8,7 @@ namespace Arcus.Testing
     /// <summary>
     /// <see cref="ILogEventSink"/> representation of an <see cref="MSTestLogger"/> instance.
     /// </summary>
+    [Obsolete("Arcus.Testing.Logging.MSTest will stop supporting Serilog by default, please implement Serilog sinks yourself as this sink will be removed in v2.0")]
     public class MSTestLogEventSink : ILogEventSink
     {
         private readonly TestContext _context;

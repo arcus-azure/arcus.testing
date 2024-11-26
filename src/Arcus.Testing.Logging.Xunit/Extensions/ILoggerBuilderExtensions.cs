@@ -12,22 +12,15 @@ namespace Microsoft.Extensions.Logging
     public static class ILoggerBuilderExtensions
     {
         /// <summary>
-        /// Adds an the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
         /// <param name="builder">The logging builder to add the xUnit logging test messages to.</param>
         /// <param name="outputWriter">The xUnit test logger used across the test suite.</param>
         /// <exception cref="ArgumentNullException">Thrown when either the <paramref name="builder"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public static ILoggingBuilder AddXunitTestLogging(this ILoggingBuilder builder, ITestOutputHelper outputWriter)
         {
-            if (builder is null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (outputWriter is null)
-            {
-                throw new ArgumentNullException(nameof(outputWriter));
-            }
+            ArgumentNullException.ThrowIfNull(builder);
+            ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new XunitTestLogger(outputWriter);
             var provider = new CustomLoggerProvider(logger);
