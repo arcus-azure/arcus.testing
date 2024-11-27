@@ -194,10 +194,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
             return Bogus.Random.Int(1, 4) switch
             {
                 1 => Bogus.Random.Bool() ? NameEqual(name) : NameEqual(RandomCase(name), StringComparison.OrdinalIgnoreCase),
-                2 => Bogus.Random.Bool() ? NameStartsWith(name[..5]) : NameStartsWith(RandomCase(name[..5]), StringComparison.OrdinalIgnoreCase),
-                3 => Bogus.Random.Bool() ? NameEndsWith(name[^5..]) : NameEndsWith(RandomCase(name[^5..]), StringComparison.OrdinalIgnoreCase),
-                4 => Bogus.Random.Bool() ? NameContains(name[5..10]) : NameContains(RandomCase(name[5..10]), StringComparison.OrdinalIgnoreCase),
-                _ => throw new ArgumentOutOfRangeException()
+                2 => Bogus.Random.Bool() ? NameStartsWith(name[..10]) : NameStartsWith(RandomCase(name[..10]), StringComparison.OrdinalIgnoreCase),
+                3 => Bogus.Random.Bool() ? NameEndsWith(name[^10..]) : NameEndsWith(RandomCase(name[^10..]), StringComparison.OrdinalIgnoreCase),
+                4 => Bogus.Random.Bool() ? NameContains(name[1..10]) : NameContains(RandomCase(name[1..10]), StringComparison.OrdinalIgnoreCase),
+                _ => throw new InvalidOperationException($"Unsupported '{nameof(BlobNameFilter)}' method, please provide one in the switch expression")
             };
         }
 
