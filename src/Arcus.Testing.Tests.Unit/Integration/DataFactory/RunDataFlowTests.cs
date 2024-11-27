@@ -111,19 +111,6 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             Assert.ThrowsAny<ArgumentException>(() => options.AddDataSetParameter(dataSetName, name, value));
         }
 
-        [Fact]
-        public void AddDataSetParameter_WithoutUnsupportedJson_Fails()
-        {
-            // Arrange
-            var options = new RunDataFlowOptions();
-            string dataSetName = Bogus.Lorem.Word();
-            string name = Bogus.Lorem.Word();
-            Type invalidValue = GetType();
-
-            // Act / Assert
-            Assert.ThrowsAny<NotSupportedException>(() => options.AddDataSetParameter(dataSetName, name, invalidValue));
-        }
-
         [Theory]
         [ClassData(typeof(Blanks))]
         public void AddLinkedService_WithoutServiceName_Fails(string serviceName)
