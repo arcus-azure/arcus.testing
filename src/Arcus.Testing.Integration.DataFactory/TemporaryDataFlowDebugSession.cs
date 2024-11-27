@@ -425,7 +425,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds a parameter to a DataSet present the DataFlow to run.
+        /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
         /// 
         /// "datasetName" should be the "Output stream name" of the source or sink dataset in the DataFlow, rather than the actual DataSet name.
         /// </summary>
