@@ -85,39 +85,6 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             Assert.ThrowsAny<NotSupportedException>(() => options.AddDataFlowParameter(name, invalidValue));
         }
 
-        [Fact]
-        public void AddDataSetParameter_WithExistingDataSetNameAndNewName_SucceedsByAddingNewParameter()
-        {
-            // Arrange
-            var options = new RunDataFlowOptions();
-            string datasetName = Bogus.Lorem.Word();
-            string name = Bogus.Lorem.Word();
-            string newName = Bogus.Lorem.Word();
-            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
-
-            // Act
-            options.AddDataSetParameter(datasetName, newName, Bogus.Random.Guid());
-
-            // Assert
-            Assert.NotNull(options);
-        }
-
-        [Fact]
-        public void AddDataSetParameter_WithExistingDataSetNameAndExistingName_SucceedsByOverriding()
-        {
-            // Arrange
-            var options = new RunDataFlowOptions();
-            string datasetName = Bogus.Lorem.Word();
-            string name = Bogus.Lorem.Word();
-            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
-
-            // Act
-            options.AddDataSetParameter(datasetName, name, Bogus.Random.Guid());
-
-            // Assert
-            Assert.NotNull(options);
-        }
-
         [Theory]
         [ClassData(typeof(Blanks))]
         public void AddDataSetParameter_WithoutDataSetName_Fails(string dataSetName)

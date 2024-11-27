@@ -69,6 +69,26 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
         }
 
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameter_SucceedsByGettingCsvFileOnSinkWithSubPathParameter()
+        {
+            // Arrange
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAndDataSetParameterAsync(Configuration, Logger, ConfigureCsv);
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv, dataFlow.SourceDataSetParameterValue);
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(
+                dataFlow.Name,
+                dataFlow.SinkName,
+                options => options.AddDataSetParameter(dataFlow.SourceName, dataFlow.SourceDataSetParameterKey, dataFlow.SourceDataSetParameterValue));
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
+        }
+
         private static string GenerateCsv()
         {
             var input = TestCsv.Generate(ConfigureCsv);

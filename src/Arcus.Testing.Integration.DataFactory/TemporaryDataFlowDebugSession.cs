@@ -1,4 +1,9 @@
-﻿using Azure;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using Azure;
 using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
@@ -6,12 +11,6 @@ using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Arcus.Testing
 {
@@ -285,7 +284,17 @@ namespace Arcus.Testing
                 settings.Parameters[parameter.Key] = parameter.Value;
             }
 
-            _logger.LogTrace("[Test:Setup] Add DataSet parameters to debug session");
+            foreach (KeyValuePair<string, IDictionary<string, object>> datasetParameter in options.DataSetParameters)
+            {
+                foreach (KeyValuePair<string, object> parameter in datasetParameter.Value)
+                {
+                    _logger.LogTrace("[Test:Setup] Add DataSet parameter '{ParameterName}' for DataSet '{DataSetName}' to debug session",
+                        parameter.Key,
+                        datasetParameter.Key
+                    );
+                }
+            }
+
             string jsonString = System.Text.Json.JsonSerializer.Serialize(options.DataSetParameters);
             settings.DatasetParameters = BinaryData.FromString(jsonString);
 
@@ -395,12 +404,13 @@ namespace Arcus.Testing
 
         internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
-        internal IDictionary<string, BinaryData> DataSetParameters { get; } = new Dictionary<string, BinaryData>();
+        internal IDictionary<string, IDictionary<string, object>> DataSetParameters { get; } = new Dictionary<string, IDictionary<string, object>>();
 
         /// <summary>
         /// Adds a parameter to the DataFlow to run.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
         public RunDataFlowOptions AddDataFlowParameter(string name, object value)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -408,43 +418,40 @@ namespace Arcus.Testing
                 throw new ArgumentException("DataFlow parameter name should not be blank", nameof(name));
             }
 
+            ArgumentNullException.ThrowIfNull(value);
+
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
             return this;
         }
 
         /// <summary>
         /// Adds a parameter to a DataSet present the DataFlow to run.
+        /// 
+        /// "datasetName" should be the "Output stream name" of the source or sink dataset in the DataFlow, rather than the actual DataSet name.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
-        public RunDataFlowOptions AddDataSetParameter(string datasetName, string name, object value)
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="parameterName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
+        public RunDataFlowOptions AddDataSetParameter(string datasetName, string parameterName, object parameterValue)
         {
             if (string.IsNullOrWhiteSpace(datasetName))
             {
                 throw new ArgumentException("DataSet name should not be blank", nameof(datasetName));
             }
 
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(parameterName))
             {
-                throw new ArgumentException("DataSet parameter name should not be blank", nameof(name));
+                throw new ArgumentException("DataSet parameter name should not be blank", nameof(parameterName));
             }
 
-            IDictionary<string, object> dataSetParameters;
-            if (DataSetParameters.TryGetValue(datasetName, out BinaryData keyValue))
+            ArgumentNullException.ThrowIfNull(parameterValue);
+
+            if (!DataSetParameters.ContainsKey(datasetName))
             {
-                dataSetParameters = JsonSerializer.Deserialize<IDictionary<string, object>>(keyValue);
-                dataSetParameters.Add(name, value);
-            }
-            else
-            {
-                dataSetParameters = new Dictionary<string, object>
-                {
-                    { name, value }
-                };
+                DataSetParameters[datasetName] = new Dictionary<string, object>();
             }
 
-            string jsonString = JsonSerializer.Serialize(dataSetParameters);
-            DataSetParameters[datasetName] = BinaryData.FromString(jsonString);
+            DataSetParameters[datasetName].Add(parameterName, parameterValue);
             return this;
         }
 

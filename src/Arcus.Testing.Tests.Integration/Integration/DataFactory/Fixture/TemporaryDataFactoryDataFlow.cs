@@ -45,30 +45,55 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             _dataType = dataType;
             _sinkDatasetName = RandomizeWith("sink");
             _linkedServiceName = RandomizeWith("storage");
-            
+
             _arm = new ArmClient(new DefaultAzureCredential());
             _config = config;
             _logger = logger;
 
             Name = RandomizeWith("dataFlow");
-            SourceName = RandomizeWith("source");
+            SourceName = RandomizeWith("sourceName");
+            SinkName = RandomizeWith("sinkName");
+            SourceDataSetName = RandomizeWith("sourceDataSet");
+            SourceDataSetParameterKey = RandomizeWith("sourceDataSetParameterKey");
+            SourceDataSetParameterValue = RandomizeWith("SourceDataSetParameterValue");
         }
 
         private string SubscriptionId => _config["Arcus:SubscriptionId"];
         private string ResourceGroupName => _config["Arcus:ResourceGroup:Name"];
         private DataFactoryConfig DataFactory => _config.GetDataFactory();
         private StorageAccount StorageAccount => _config.GetStorageAccount();
-        private string SourceName { get; }
+
+        /// <summary>
+        /// Gets the unique name of the source of the temporary DataFlow in Azure DataFactory.
+        /// This name is the name of the source "step" of the DataFlow, not to be mistaken with the source DataSet name.
+        /// </summary>
+        public string SourceName { get; }
+
+        /// <summary>
+        /// Gets the unique name of the sink of the temporary DataFlow in Azure DataFactory.
+        /// This name is the name of the sink "step" of the DataFlow, not to be mistaken with the sink DataSet name.
+        /// </summary>
+        public string SinkName { get; }
+
+        /// <summary>
+        /// Gets the unique name of the source DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string SourceDataSetName { get; }
+
+        /// <summary>
+        /// Gets the unique name of the parameter key of the source DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string SourceDataSetParameterKey { get; }
+
+        /// <summary>
+        /// Gets the unique name of the parameter value of the source DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string SourceDataSetParameterValue { get; }
 
         /// <summary>
         /// Gets the unique name of the temporary DataFlow in Azure DataFactory.
         /// </summary>
         public string Name { get; }
-
-        /// <summary>
-        /// Gets the unique name of the sink of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public string SinkName { get; } = "dataflowsink";
 
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
@@ -84,6 +109,32 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 await temp.AddSourceBlobContainerAsync();
                 await temp.AddLinkedServiceAsync();
                 await temp.AddCsvSourceAsync(options);
+                await temp.AddCsvSinkAsync(options);
+                await temp.AddDataFlowAsync();
+            }
+            catch
+            {
+                await temp.DisposeAsync();
+                throw;
+            }
+
+            return temp;
+        }
+
+        /// <summary>
+        /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
+        /// </summary>
+        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAndDataSetParameterAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions)
+        {
+            var options = new AssertCsvOptions();
+            configureOptions?.Invoke(options);
+
+            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Csv, config, logger);
+            try
+            {
+                await temp.AddSourceBlobContainerAsync();
+                await temp.AddLinkedServiceAsync();
+                await temp.AddCsvSourceWithDataSetParameterAsync(options);
                 await temp.AddCsvSinkAsync(options);
                 await temp.AddDataFlowAsync();
             }
@@ -145,11 +196,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
         private async Task AddCsvSourceAsync(AssertCsvOptions options)
         {
-            _logger.LogTrace("Adding CSV source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceName, Name, DataFactory.Name);
+            _logger.LogTrace("Adding CSV source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceDataSetName, Name, DataFactory.Name);
 
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
-            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceName));
+            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
             var sourceProperties = new DelimitedTextDataset(blobStorageLinkedService)
             {
                 ColumnDelimiter = options.Separator.ToString(),
@@ -159,26 +210,51 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 DataLocation = new AzureBlobStorageLocation()
                 {
                     Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
-                    FolderPath = SourceName
+                    FolderPath = SourceDataSetName
                 }
             };
+
+            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
+        }
+
+        private async Task AddCsvSourceWithDataSetParameterAsync(AssertCsvOptions options)
+        {
+            _logger.LogTrace("Adding CSV source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceDataSetName, Name, DataFactory.Name);
+
+            var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
+
+            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
+            var sourceProperties = new DelimitedTextDataset(blobStorageLinkedService)
+            {
+                ColumnDelimiter = options.Separator.ToString(),
+                RowDelimiter = options.NewLine,
+                QuoteChar = options.Quote.ToString(),
+                FirstRowAsHeader = options.Header is AssertCsvHeader.Present,
+                DataLocation = new AzureBlobStorageLocation()
+                {
+                    Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
+                    FolderPath = DataFactoryElement<string>.FromExpression($"@concat('{SourceDataSetName}/', dataset().{SourceDataSetParameterKey})")
+                }
+            };
+            sourceProperties.Parameters.Add(SourceDataSetParameterKey, new EntityParameterSpecification(EntityParameterType.String));
+
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
         }
 
         private async Task AddJsonSourceAsync()
         {
-            _logger.LogTrace("Adding JSON source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceName, Name, DataFactory.Name);
+            _logger.LogTrace("Adding JSON source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceDataSetName, Name, DataFactory.Name);
 
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
-            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceName));
+            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
 
             var sourceProperties = new JsonDataset(blobStorageLinkedService)
             {
                 DataLocation = new AzureBlobStorageLocation()
                 {
                     Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
-                    FolderPath = SourceName
+                    FolderPath = SourceDataSetName
                 }
             };
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
@@ -214,7 +290,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
             _sinkDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, _sinkDatasetName));
-            
+
             var sinkProperties = new JsonDataset(blobStorageLinkedService)
             {
                 DataLocation = new AzureBlobStorageLocation
@@ -233,14 +309,13 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             ResourceIdentifier dataFlowResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, Name);
             _dataFlow = _arm.GetDataFactoryDataFlowResource(dataFlowResourceId);
 
-            var sourceName = "dataflowsource";
             var properties = new DataFactoryMappingDataFlowProperties
             {
                 Sources =
                 {
-                    new DataFlowSource(sourceName)
+                    new DataFlowSource(SourceName)
                     {
-                        Dataset = new DatasetReference(DatasetReferenceType.DatasetReference, SourceName)
+                        Dataset = new DatasetReference(DatasetReferenceType.DatasetReference, SourceDataSetName)
                     }
                 },
                 Sinks =
@@ -254,8 +329,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             IEnumerable<string> scriptLines = _dataType switch
             {
-                DataFlowDataType.Csv => DataFlowCsvScriptLines(sourceName, SinkName),
-                DataFlowDataType.Json => DataFlowJsonScriptLines(sourceName, SinkName, docForm),
+                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName),
+                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -317,7 +392,26 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents}", _dataType, expected);
             await _sourceContainer.UploadBlobAsync(
-                Path.Combine(SourceName, RandomizeWith("input") + fileExtension), 
+                Path.Combine(SourceDataSetName, RandomizeWith("input") + fileExtension),
+                BinaryData.FromString(expected));
+        }
+
+        /// <summary>
+        /// Uploads a file to the source of the temporary DataFlow, while specifying a sub-path.
+        /// </summary>
+        public async Task UploadToSourceAsync(string expected, string subPath)
+        {
+            string fileExtension = _dataType switch
+            {
+                DataFlowDataType.Csv => ".csv",
+                DataFlowDataType.Json => ".json",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            string filePath = Path.Combine(SourceDataSetName, subPath, RandomizeWith("input") + fileExtension);
+
+            _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents} with path: {filePath}", _dataType, expected, filePath);
+            await _sourceContainer.UploadBlobAsync(
+                filePath,
                 BinaryData.FromString(expected));
         }
 
@@ -346,7 +440,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("Deleting CSV source '{SourceName}' from Azure DataFactory '{DataFactoryName}'", SourceName, DataFactory.Name);
+                    _logger.LogTrace("Deleting CSV source '{SourceName}' from Azure DataFactory '{DataFactoryName}'", SourceDataSetName, DataFactory.Name);
                     await _sourceDataset.DeleteAsync(WaitUntil.Completed);
                 }));
             }
