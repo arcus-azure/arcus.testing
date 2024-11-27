@@ -67,6 +67,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         private StorageAccount StorageAccount => _config.GetStorageAccount();
 
         /// <summary>
+        /// Gets the unique name of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
         /// Gets the unique name of the source of the temporary DataFlow in Azure DataFactory.
         /// This name is the name of the source "step" of the DataFlow, not to be mistaken with the source DataSet name.
         /// </summary>
@@ -102,11 +107,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// Gets the unique name of the parameter value of the sink DataSet of the temporary DataFlow in Azure DataFactory.
         /// </summary>
         public string SinkDataSetParameterValue { get; }
-
-        /// <summary>
-        /// Gets the unique name of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public string Name { get; }
 
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
