@@ -8,6 +8,7 @@ namespace Arcus.Testing
     /// <summary>
     /// <see cref="ILogEventSink"/> representation of an <see cref="NUnitTestLogger"/> instance.
     /// </summary>
+    [Obsolete("Arcus.Testing.Logging.NUnit will stop supporting Serilog by default, please implement Serilog sinks yourself as this sink will be removed in v2.0")]
     public class NUnitTestLogEventSink : ILogEventSink
     {
         private readonly TextWriter _outputWriter, _errorWriter;
