@@ -15,6 +15,7 @@ using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
@@ -73,16 +74,24 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameter_SucceedsByGettingCsvFileOnSinkWithSubPathParameter()
         {
             // Arrange
-            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAndDataSetParameterAsync(Configuration, Logger, ConfigureCsv);
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAndDataSetParametersAsync(Configuration, Logger, ConfigureCsv);
 
             string expectedCsv = GenerateCsv();
-            await dataFlow.UploadToSourceAsync(expectedCsv, dataFlow.SourceDataSetParameterValue);
+            await dataFlow.UploadToSourceAsync(expectedCsv, dataFlow.SourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(
                 dataFlow.Name,
                 dataFlow.SinkName,
-                options => options.AddDataSetParameter(dataFlow.SourceName, dataFlow.SourceDataSetParameterKey, dataFlow.SourceDataSetParameterValue));
+                options =>
+                {
+                    foreach (var sourceDataSetParameter in dataFlow.SourceDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
+                    }
+                    options.AddDataSetParameter(dataFlow.SinkName, dataFlow.SinkDataSetParameterKey, dataFlow.SinkDataSetParameterValue);
+                }
+            );
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
