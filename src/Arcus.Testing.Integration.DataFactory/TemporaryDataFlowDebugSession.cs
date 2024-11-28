@@ -426,9 +426,10 @@ namespace Arcus.Testing
 
         /// <summary>
         /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
-        /// 
-        /// "datasetName" should be the "Output stream name" of the source or sink dataset in the DataFlow, rather than the actual DataSet name.
         /// </summary>
+        /// <remarks>
+        ///     The <paramref name=“datasetName”/> should be the "Output stream name" of the source or sink dataset in the DataFlow, rather than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings” />.
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="parameterName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
