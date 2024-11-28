@@ -207,7 +207,8 @@ await session.RunDataFlowAsync(..., options =>
     options.AddDataFlowParameter("<name>", "<value>");
 
     // Adds a dataset parameter to the data flow upon starting.
-    // Note here that the dataset name should be the "Output stream name" (can also be called DataFlow source or sink name) of the source or sink dataset in the DataFlow, rather than the actual DataSet name.
+    // 👀 Note that the dataset name should be the "Output stream name" (can also be called DataFlow source or sink name) of the source or sink dataset in the DataFlow, rather than the actual DataSet name.
+    // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
     options.AddDataSetParameter("<datasetName>", "<parameterName>", "<parameterValue>");
 
     // Add additional linked services to the debug session.
