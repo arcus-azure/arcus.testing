@@ -44,7 +44,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         {
             // Arrange
             await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithJsonSinkSourceAsync(docForm, Configuration, Logger);
-            await dataFlow.UploadToSourceAsync(expected!.ToString());
+            await dataFlow.UploadToSourceAsync(expected!.ToString(), null);
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
@@ -57,10 +57,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task RunDataFlow_WithCsvFileOnSource_SucceedsByGettingCsvFileOnSink()
         {
             // Arrange
-            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv);
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, null);
 
             string expectedCsv = GenerateCsv();
-            await dataFlow.UploadToSourceAsync(expectedCsv);
+            await dataFlow.UploadToSourceAsync(expectedCsv, null);
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
@@ -74,7 +74,21 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameter_SucceedsByGettingCsvFileOnSinkWithSubPathParameter()
         {
             // Arrange
-            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAndDataSetParametersAsync(Configuration, Logger, ConfigureCsv);
+            IDictionary<string, string> sourceDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") },
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") }
+            };
+            IDictionary<string, string> sinkDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sinkDataSetParameterKey"), RandomizeWith("sinkDataSetParameterValue") }
+            };
+
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, dataFlowOptions =>
+            {
+                dataFlowOptions.Source.SetSourceDataSetParameterKeyValues(sourceDataSetParameterKeyValues);
+                dataFlowOptions.Sink.SetSinkDataSetParameterKeyValues(sinkDataSetParameterKeyValues);
+            });
 
             string expectedCsv = GenerateCsv();
             await dataFlow.UploadToSourceAsync(expectedCsv, dataFlow.SourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
@@ -89,7 +103,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                     {
                         options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
                     }
-                    options.AddDataSetParameter(dataFlow.SinkName, dataFlow.SinkDataSetParameterKey, dataFlow.SinkDataSetParameterValue);
+                    foreach (var sinkDataSetParameter in dataFlow.SinkDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
+                    }
                 }
             );
 
@@ -109,6 +126,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Header = AssertCsvHeader.Present;
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
+        }
+        private static string RandomizeWith(string label)
+        {
+            return label + Guid.NewGuid().ToString()[..5];
         }
     }
 

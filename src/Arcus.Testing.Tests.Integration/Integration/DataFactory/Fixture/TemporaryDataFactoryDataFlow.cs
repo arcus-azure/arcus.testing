@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
 using Azure.Core;
+using Azure.Core.Expressions.DataFactory;
 using Azure.Identity;
 using Azure.ResourceManager;
-using Azure.ResourceManager.DataFactory.Models;
 using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager.DataFactory.Models;
 using Microsoft.Extensions.Logging;
-using Azure.Core.Expressions.DataFactory;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 {
@@ -55,9 +55,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             SinkName = RandomizeWith("sinkName");
             SinkDataSetName = RandomizeWith("sinkDataSet");
             SourceDataSetName = RandomizeWith("sourceDataSet");
-            SourceDataSetParameterKeyValues.Add(RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue"));
-            SourceDataSetParameterKeyValues.Add(RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue"));
-            SinkDataSetParameterKey = RandomizeWith("sinkDataSetParameterKey");
             SinkDataSetParameterValue = RandomizeWith("sinkDataSetParameterValue");
         }
 
@@ -94,35 +91,38 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         public string SinkDataSetName { get; }
 
         /// <summary>
-        /// Gets the unique key and values of the parameters of the source DataSet of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public IDictionary<string, string> SourceDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Gets the unique name of the parameter key of the sink DataSet of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public string SinkDataSetParameterKey { get; }
-
-        /// <summary>
         /// Gets the unique name of the parameter value of the sink DataSet of the temporary DataFlow in Azure DataFactory.
         /// </summary>
         public string SinkDataSetParameterValue { get; }
 
         /// <summary>
+        /// Gets the unique key and values of the parameters of the source DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> SourceDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets the unique key and values of the parameters of the sink DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> SinkDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
+
+        /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
         /// </summary>
-        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions)
+        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions, Action<TempDataFlowOptions> tempDataFlowOptions)
         {
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
+
+            var dfOptions = new TempDataFlowOptions();
+            tempDataFlowOptions?.Invoke(dfOptions);
 
             var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Csv, config, logger);
             try
             {
                 await temp.AddSourceBlobContainerAsync();
                 await temp.AddLinkedServiceAsync();
-                await temp.AddCsvSourceAsync(options);
-                await temp.AddCsvSinkAsync(options);
+                await temp.AddCsvSourceAsync(options, dfOptions);
+                await temp.AddCsvSinkAsync(options, dfOptions);
                 await temp.AddDataFlowAsync();
             }
             catch
@@ -134,6 +134,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return temp;
         }
 
+        /*
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
         /// </summary>
@@ -158,7 +159,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             }
 
             return temp;
-        }
+        }*/
 
         /// <summary>
         /// Creates a DataFlow with a JSON source and sink on an Azure DataFactory resource.
@@ -207,13 +208,19 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             }));
         }
 
-        private async Task AddCsvSourceAsync(AssertCsvOptions options)
+        private async Task AddCsvSourceAsync(AssertCsvOptions options, TempDataFlowOptions dataFlowOptions)
         {
             _logger.LogTrace("Adding CSV source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceDataSetName, Name, DataFactory.Name);
 
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
             _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
+
+            foreach (var parameter in dataFlowOptions?.Source.SourceDataSetParameterKeyValues)
+            {
+                SourceDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
+            }
+
             var sourceProperties = new DelimitedTextDataset(blobStorageLinkedService)
             {
                 ColumnDelimiter = options.Separator.ToString(),
@@ -227,41 +234,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
-        }
-
-        private async Task AddCsvSourceWithDataSetParameterAsync(AssertCsvOptions options)
-        {
-            _logger.LogTrace("Adding CSV source '{SourceName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SourceDataSetName, Name, DataFactory.Name);
-
-            var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
-
-            _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
-
-            string folderPathExpression = $"@concat('{SourceDataSetName}/', ";
-            foreach (var sourceDataSetParametersKey in SourceDataSetParameterKeyValues.Keys)
-            {
-                folderPathExpression += $"dataset().{sourceDataSetParametersKey}, '/', ";
-            }
-            // Remove the last ", '/', " part
-            folderPathExpression = folderPathExpression[..^7] + ")";
-
-            var sourceProperties = new DelimitedTextDataset(blobStorageLinkedService)
-            {
-                ColumnDelimiter = options.Separator.ToString(),
-                RowDelimiter = options.NewLine,
-                QuoteChar = options.Quote.ToString(),
-                FirstRowAsHeader = options.Header is AssertCsvHeader.Present,
-                DataLocation = new AzureBlobStorageLocation()
-                {
-                    Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
-                    FolderPath = DataFactoryElement<string>.FromExpression(folderPathExpression)
-                }
-            };
-            foreach (var parameters in SourceDataSetParameterKeyValues)
-            {
-                sourceProperties.Parameters.Add(parameters.Key, new EntityParameterSpecification(EntityParameterType.String));
-            }
+            dataFlowOptions?.Source.ApplyOptions(ref sourceProperties, SourceDataSetName);
+            dataFlowOptions?.Source.AddDataSetParameters(ref sourceProperties, SourceDataSetParameterKeyValues);
 
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
         }
@@ -285,13 +259,19 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
         }
 
-        private async Task AddCsvSinkAsync(AssertCsvOptions options)
+        private async Task AddCsvSinkAsync(AssertCsvOptions options, TempDataFlowOptions dataFlowOptions)
         {
             _logger.LogTrace("Adding CSV sink '{SinkName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SinkDataSetName, Name, DataFactory.Name);
 
             var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
 
             _sinkDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SinkDataSetName));
+
+            foreach (var parameter in dataFlowOptions.Sink.SinkDataSetParameterKeyValues)
+            {
+                SinkDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
+            }
+
             var sinkProperties = new DelimitedTextDataset(blobStorageLinkedService)
             {
                 ColumnDelimiter = options.Separator.ToString(),
@@ -305,29 +285,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
-        }
-
-        private async Task AddCsvSinkAsyncWithDataSetParameterAsync(AssertCsvOptions options)
-        {
-            _logger.LogTrace("Adding CSV sink '{SinkName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", SinkDataSetName, Name, DataFactory.Name);
-
-            var blobStorageLinkedService = new DataFactoryLinkedServiceReference(DataFactoryLinkedServiceReferenceKind.LinkedServiceReference, _linkedServiceName);
-
-            _sinkDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SinkDataSetName));
-            var sinkProperties = new DelimitedTextDataset(blobStorageLinkedService)
-            {
-                ColumnDelimiter = options.Separator.ToString(),
-                RowDelimiter = options.NewLine,
-                QuoteChar = options.Quote.ToString(),
-                FirstRowAsHeader = options.Header is AssertCsvHeader.Present,
-                DataLocation = new AzureBlobStorageLocation
-                {
-                    Container = _sourceContainer?.Name ?? throw new InvalidOperationException("Azure blob storage container should be available at this point"),
-                    FolderPath = DataFactoryElement<string>.FromExpression($"@concat('{SinkDataSetName}/', dataset().{SinkDataSetParameterKey})")
-                }
-            };
-            sinkProperties.Parameters.Add(SinkDataSetParameterKey, new EntityParameterSpecification(EntityParameterType.String));
+            dataFlowOptions?.Sink.ApplyOptions(ref sinkProperties, SinkDataSetName);
+            dataFlowOptions?.Sink.AddDataSetParameters(ref sinkProperties, SinkDataSetParameterKeyValues);
 
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
@@ -430,24 +389,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// <summary>
         /// Uploads a file to the source of the temporary DataFlow.
         /// </summary>
-        public async Task UploadToSourceAsync(string expected)
-        {
-            string fileExtension = _dataType switch
-            {
-                DataFlowDataType.Csv => ".csv",
-                DataFlowDataType.Json => ".json",
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-            _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents}", _dataType, expected);
-            await _sourceContainer.UploadBlobAsync(
-                Path.Combine(SourceDataSetName, RandomizeWith("input") + fileExtension),
-                BinaryData.FromString(expected));
-        }
-
-        /// <summary>
-        /// Uploads a file to the source of the temporary DataFlow, while specifying a sub-path.
-        /// </summary>
         public async Task UploadToSourceAsync(string expected, string[] subPath)
         {
             string fileExtension = _dataType switch
@@ -457,7 +398,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            string filePath = subPath.Aggregate(SourceDataSetName, Path.Combine);
+            string filePath = subPath?.Aggregate(SourceDataSetName, Path.Combine) ?? string.Empty;
             filePath = Path.Combine(filePath, RandomizeWith("input") + fileExtension);
 
             _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents} with path: {filePath}", _dataType, expected, filePath);
@@ -512,6 +453,96 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     _logger.LogTrace("Deleting Azure Blob storage linked service '{LinkedServiceName}' from Azure DataFactory '{DataFactoryName}'", _linkedServiceName, DataFactory.Name);
                     await _linkedService.DeleteAsync(WaitUntil.Completed);
                 }));
+            }
+        }
+    }
+
+    public class TempDataFlowOptions
+    {
+        public TempDataFlowSourceOptions Source { get; } = new();
+        public TempDataFlowSinkOptions Sink { get; } = new();
+    }
+
+    public class TempDataFlowSourceOptions
+    {
+        /// <summary>
+        /// Gets the unique key and values of the parameters of the source DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> SourceDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
+
+        public TempDataFlowSourceOptions SetSourceDataSetParameterKeyValues(IDictionary<string, string> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                SourceDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
+            }
+            return this;
+        }
+
+        internal void ApplyOptions(ref DelimitedTextDataset dataSet, string sourceDataSetName)
+        {
+            string folderPathExpression = $"@concat('{sourceDataSetName}/', ";
+            foreach (var sourceDataSetParametersKey in SourceDataSetParameterKeyValues.Keys)
+            {
+                folderPathExpression += $"dataset().{sourceDataSetParametersKey}, '/', ";
+            }
+            // Remove the last ", '/', " part only if we have parameters
+            // Else just remove the last ", " part
+            folderPathExpression = (SourceDataSetParameterKeyValues.Keys.Count > 0 ? folderPathExpression[..^7] : folderPathExpression[..^2]) + ")";
+
+            if (SourceDataSetParameterKeyValues.Any())
+            {
+                dataSet.DataLocation.FolderPath = DataFactoryElement<string>.FromExpression(folderPathExpression);
+            }
+        }
+
+        internal void AddDataSetParameters(ref DelimitedTextDataset dataSet, IDictionary<string, string> sourceDataSetParameterKeyValues)
+        {
+            foreach (var parameters in sourceDataSetParameterKeyValues)
+            {
+                dataSet.Parameters.Add(parameters.Key, new EntityParameterSpecification(EntityParameterType.String));
+            }
+        }
+    }
+
+    public class TempDataFlowSinkOptions
+    {
+        /// <summary>
+        /// Gets the unique key and values of the parameters of the sink DataSet of the temporary DataFlow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> SinkDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
+
+        public TempDataFlowSinkOptions SetSinkDataSetParameterKeyValues(IDictionary<string, string> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                SinkDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
+            }
+            return this;
+        }
+
+        internal void ApplyOptions(ref DelimitedTextDataset dataSet, string sinkDataSetName)
+        {
+            string folderPathExpression = $"@concat('{sinkDataSetName}/', ";
+            foreach (var sinkDataSetParametersKey in SinkDataSetParameterKeyValues.Keys)
+            {
+                folderPathExpression += $"dataset().{sinkDataSetParametersKey}, '/', ";
+            }
+            // Remove the last ", '/', " part only if we have parameters
+            // Else just remove the last ", " part
+            folderPathExpression = (SinkDataSetParameterKeyValues.Keys.Count > 0 ? folderPathExpression[..^7] : folderPathExpression[..^2]) + ")";
+
+            if (SinkDataSetParameterKeyValues.Any())
+            {
+                dataSet.DataLocation.FolderPath = DataFactoryElement<string>.FromExpression(folderPathExpression);
+            }
+        }
+
+        internal void AddDataSetParameters(ref DelimitedTextDataset dataSet, IDictionary<string, string> sinkDataSetParameterKeyValues)
+        {
+            foreach (var parameters in sinkDataSetParameterKeyValues)
+            {
+                dataSet.Parameters.Add(parameters.Key, new EntityParameterSpecification(EntityParameterType.String));
             }
         }
     }
