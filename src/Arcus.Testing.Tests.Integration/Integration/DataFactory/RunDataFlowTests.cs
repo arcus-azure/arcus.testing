@@ -86,8 +86,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, dataFlowOptions =>
             {
-                dataFlowOptions.Source.SetSourceDataSetParameterKeyValues(sourceDataSetParameterKeyValues);
-                dataFlowOptions.Sink.SetSinkDataSetParameterKeyValues(sinkDataSetParameterKeyValues);
+                dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
+                dataFlowOptions.Sink.AddFolderPathParameters(sinkDataSetParameterKeyValues);
             });
 
             string expectedCsv = GenerateCsv();

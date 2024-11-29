@@ -443,7 +443,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// </summary>
         public IDictionary<string, string> SourceDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
 
-        public TempDataFlowSourceOptions SetSourceDataSetParameterKeyValues(IDictionary<string, string> parameters)
+        public TempDataFlowSourceOptions AddFolderPathParameters(IDictionary<string, string> parameters)
         {
             foreach (var parameter in parameters)
             {
@@ -485,7 +485,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// </summary>
         public IDictionary<string, string> SinkDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
 
-        public TempDataFlowSinkOptions SetSinkDataSetParameterKeyValues(IDictionary<string, string> parameters)
+        public TempDataFlowSinkOptions AddFolderPathParameters(IDictionary<string, string> parameters)
         {
             foreach (var parameter in parameters)
             {
