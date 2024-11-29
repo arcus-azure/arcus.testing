@@ -134,33 +134,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return temp;
         }
 
-        /*
-        /// <summary>
-        /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
-        /// </summary>
-        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAndDataSetParametersAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions)
-        {
-            var options = new AssertCsvOptions();
-            configureOptions?.Invoke(options);
-
-            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Csv, config, logger);
-            try
-            {
-                await temp.AddSourceBlobContainerAsync();
-                await temp.AddLinkedServiceAsync();
-                await temp.AddCsvSourceWithDataSetParameterAsync(options);
-                await temp.AddCsvSinkAsyncWithDataSetParameterAsync(options);
-                await temp.AddDataFlowAsync();
-            }
-            catch
-            {
-                await temp.DisposeAsync();
-                throw;
-            }
-
-            return temp;
-        }*/
-
         /// <summary>
         /// Creates a DataFlow with a JSON source and sink on an Azure DataFactory resource.
         /// </summary>
