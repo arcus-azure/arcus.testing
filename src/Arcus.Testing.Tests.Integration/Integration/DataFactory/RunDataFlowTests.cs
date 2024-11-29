@@ -91,7 +91,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             });
 
             string expectedCsv = GenerateCsv();
-            await dataFlow.UploadToSourceAsync(expectedCsv, dataFlow.SourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
+            await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(

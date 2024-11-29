@@ -96,16 +96,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         public string SinkDataSetParameterValue { get; }
 
         /// <summary>
-        /// Gets the unique key and values of the parameters of the source DataSet of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public IDictionary<string, string> SourceDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Gets the unique key and values of the parameters of the sink DataSet of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public IDictionary<string, string> SinkDataSetParameterKeyValues { get; } = new Dictionary<string, string>();
-
-        /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
         /// </summary>
         public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions, Action<TempDataFlowOptions> tempDataFlowOptions)
@@ -189,11 +179,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             _sourceDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SourceDataSetName));
 
-            foreach (var parameter in dataFlowOptions?.Source.SourceDataSetParameterKeyValues)
-            {
-                SourceDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
-            }
-
             var sourceProperties = new DelimitedTextDataset(blobStorageLinkedService)
             {
                 ColumnDelimiter = options.Separator.ToString(),
@@ -208,7 +193,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             };
 
             dataFlowOptions?.Source.ApplyOptions(ref sourceProperties, SourceDataSetName);
-            dataFlowOptions?.Source.AddDataSetParameters(ref sourceProperties, SourceDataSetParameterKeyValues);
+            dataFlowOptions?.Source.AddDataSetParameters(ref sourceProperties, dataFlowOptions?.Source.SourceDataSetParameterKeyValues);
 
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
         }
@@ -240,11 +225,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             _sinkDataset = _arm.GetDataFactoryDatasetResource(DataFactoryDatasetResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, SinkDataSetName));
 
-            foreach (var parameter in dataFlowOptions.Sink.SinkDataSetParameterKeyValues)
-            {
-                SinkDataSetParameterKeyValues.Add(parameter.Key, parameter.Value);
-            }
-
             var sinkProperties = new DelimitedTextDataset(blobStorageLinkedService)
             {
                 ColumnDelimiter = options.Separator.ToString(),
@@ -259,7 +239,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             };
 
             dataFlowOptions?.Sink.ApplyOptions(ref sinkProperties, SinkDataSetName);
-            dataFlowOptions?.Sink.AddDataSetParameters(ref sinkProperties, SinkDataSetParameterKeyValues);
+            dataFlowOptions?.Sink.AddDataSetParameters(ref sinkProperties, dataFlowOptions?.Sink.SinkDataSetParameterKeyValues);
 
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
@@ -362,7 +342,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// <summary>
         /// Uploads a file to the source of the temporary DataFlow.
         /// </summary>
-        public async Task UploadToSourceAsync(string expected, string[] subPath)
+        public async Task UploadToSourceAsync(string expected, params string[] subPath)
         {
             string fileExtension = _dataType switch
             {
@@ -371,7 +351,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            string filePath = subPath?.Aggregate(SourceDataSetName, Path.Combine) ?? string.Empty;
+            string filePath = subPath.Aggregate(SourceDataSetName, Path.Combine);
             filePath = Path.Combine(filePath, RandomizeWith("input") + fileExtension);
 
             _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents} with path: {filePath}", _dataType, expected, filePath);
