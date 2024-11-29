@@ -429,9 +429,8 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The <paramref name="sourceOrSinkName"/> should be the "Output stream name" of the source or sink dataset in the DataFlow, not than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings" />.
-        /// </remarks>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="sourceOrSinkName"/> is blank.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="parameterName"/> is blank.</exception>
+        /// </remarks>///
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="sourceOrSinkName"/> or the <paramref name="parameterName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
         public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)
         {
