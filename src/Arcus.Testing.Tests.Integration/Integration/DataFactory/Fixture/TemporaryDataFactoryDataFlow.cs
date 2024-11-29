@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
 using Azure.Core;
@@ -11,7 +12,6 @@ using Azure.ResourceManager.DataFactory.Models;
 using Azure.ResourceManager.DataFactory;
 using Microsoft.Extensions.Logging;
 using Azure.Core.Expressions.DataFactory;
-using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 {

@@ -428,16 +428,16 @@ namespace Arcus.Testing
         /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
         /// </summary>
         /// <remarks>
-        ///     The <paramref name=“datasetName”/> should be the "Output stream name" of the source or sink dataset in the DataFlow, rather than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings” />.
+        ///     The <paramref name="sourceOrSinkName"/> should be the "Output stream name" of the source or sink dataset in the DataFlow, not than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings" />.
         /// </remarks>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="datasetName"/> is blank.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="sourceOrSinkName"/> is blank.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="parameterName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
-        public RunDataFlowOptions AddDataSetParameter(string datasetName, string parameterName, object parameterValue)
+        public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)
         {
-            if (string.IsNullOrWhiteSpace(datasetName))
+            if (string.IsNullOrWhiteSpace(sourceOrSinkName))
             {
-                throw new ArgumentException("DataSet name should not be blank", nameof(datasetName));
+                throw new ArgumentException("Source or Sink name should not be blank", nameof(sourceOrSinkName));
             }
 
             if (string.IsNullOrWhiteSpace(parameterName))
@@ -447,12 +447,12 @@ namespace Arcus.Testing
 
             ArgumentNullException.ThrowIfNull(parameterValue);
 
-            if (!DataSetParameters.ContainsKey(datasetName))
+            if (!DataSetParameters.ContainsKey(sourceOrSinkName))
             {
-                DataSetParameters[datasetName] = new Dictionary<string, object>();
+                DataSetParameters[sourceOrSinkName] = new Dictionary<string, object>();
             }
 
-            DataSetParameters[datasetName].Add(parameterName, parameterValue);
+            DataSetParameters[sourceOrSinkName].Add(parameterName, parameterValue);
             return this;
         }
 
