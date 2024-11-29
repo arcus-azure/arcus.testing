@@ -99,11 +99,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 dataFlow.SinkName,
                 options =>
                 {
-                    foreach (var sourceDataSetParameter in dataFlow.SourceDataSetParameterKeyValues)
+                    foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
                     {
                         options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
                     }
-                    foreach (var sinkDataSetParameter in dataFlow.SinkDataSetParameterKeyValues)
+                    foreach (var sinkDataSetParameter in sinkDataSetParameterKeyValues)
                     {
                         options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
                     }
