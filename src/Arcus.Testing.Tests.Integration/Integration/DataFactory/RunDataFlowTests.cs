@@ -44,7 +44,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         {
             // Arrange
             await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithJsonSinkSourceAsync(docForm, Configuration, Logger);
-            await dataFlow.UploadToSourceAsync(expected!.ToString(), null);
+            await dataFlow.UploadToSourceAsync(expected!.ToString());
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
@@ -60,7 +60,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, null);
 
             string expectedCsv = GenerateCsv();
-            await dataFlow.UploadToSourceAsync(expectedCsv, null);
+            await dataFlow.UploadToSourceAsync(expectedCsv);
 
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
