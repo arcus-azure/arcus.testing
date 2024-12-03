@@ -57,7 +57,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task RunDataFlow_WithCsvFileOnSource_SucceedsByGettingCsvFileOnSink()
         {
             // Arrange
-            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv);
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, null);
 
             string expectedCsv = GenerateCsv();
             await dataFlow.UploadToSourceAsync(expectedCsv);

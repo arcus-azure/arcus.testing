@@ -55,7 +55,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             SinkName = RandomizeWith("sinkName");
             SinkDataSetName = RandomizeWith("sinkDataSet");
             SourceDataSetName = RandomizeWith("sourceDataSet");
-            SinkDataSetParameterValue = RandomizeWith("sinkDataSetParameterValue");
         }
 
         private string SubscriptionId => _config["Arcus:SubscriptionId"];
@@ -89,11 +88,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// Gets the unique name of the source DataSet of the temporary DataFlow in Azure DataFactory.
         /// </summary>
         public string SinkDataSetName { get; }
-
-        /// <summary>
-        /// Gets the unique name of the parameter value of the sink DataSet of the temporary DataFlow in Azure DataFactory.
-        /// </summary>
-        public string SinkDataSetParameterValue { get; }
 
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
@@ -192,8 +186,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            dataFlowOptions?.Source.ApplyOptions(ref sourceProperties, SourceDataSetName);
-            dataFlowOptions?.Source.AddDataSetParameters(ref sourceProperties, dataFlowOptions?.Source.SourceDataSetParameterKeyValues);
+            dataFlowOptions?.Source.ApplyOptions(sourceProperties, SourceDataSetName, dataFlowOptions?.Source.SourceDataSetParameterKeyValues);
 
             await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
         }
@@ -238,8 +231,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            dataFlowOptions?.Sink.ApplyOptions(ref sinkProperties, SinkDataSetName);
-            dataFlowOptions?.Sink.AddDataSetParameters(ref sinkProperties, dataFlowOptions?.Sink.SinkDataSetParameterKeyValues);
+            dataFlowOptions?.Sink.ApplyOptions(sinkProperties, SinkDataSetName, dataFlowOptions?.Sink.SinkDataSetParameterKeyValues);
 
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
@@ -432,7 +424,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return this;
         }
 
-        internal void ApplyOptions(DelimitedTextDataset dataSet, string sourceDataSetName)
+        internal void ApplyOptions(DelimitedTextDataset dataSet, string sourceDataSetName, IDictionary<string, string> sourceDataSetParameterKeyValues)
         {
             string folderPathExpression = $"@concat('{sourceDataSetName}/', ";
             foreach (var sourceDataSetParametersKey in SourceDataSetParameterKeyValues.Keys)
@@ -447,10 +439,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             {
                 dataSet.DataLocation.FolderPath = DataFactoryElement<string>.FromExpression(folderPathExpression);
             }
-        }
 
-        internal void AddDataSetParameters(DelimitedTextDataset dataSet, IDictionary<string, string> sourceDataSetParameterKeyValues)
-        {
             foreach (var parameters in sourceDataSetParameterKeyValues)
             {
                 dataSet.Parameters.Add(parameters.Key, new EntityParameterSpecification(EntityParameterType.String));
@@ -474,7 +463,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return this;
         }
 
-        internal void ApplyOptions(ref DelimitedTextDataset dataSet, string sinkDataSetName)
+        internal void ApplyOptions(DelimitedTextDataset dataSet, string sinkDataSetName, IDictionary<string, string> sinkDataSetParameterKeyValues)
         {
             string folderPathExpression = $"@concat('{sinkDataSetName}/', ";
             foreach (var sinkDataSetParametersKey in SinkDataSetParameterKeyValues.Keys)
@@ -489,10 +478,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             {
                 dataSet.DataLocation.FolderPath = DataFactoryElement<string>.FromExpression(folderPathExpression);
             }
-        }
 
-        internal void AddDataSetParameters(ref DelimitedTextDataset dataSet, IDictionary<string, string> sinkDataSetParameterKeyValues)
-        {
             foreach (var parameters in sinkDataSetParameterKeyValues)
             {
                 dataSet.Parameters.Add(parameters.Key, new EntityParameterSpecification(EntityParameterType.String));
