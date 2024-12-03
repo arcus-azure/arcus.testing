@@ -432,7 +432,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return this;
         }
 
-        internal void ApplyOptions(ref DelimitedTextDataset dataSet, string sourceDataSetName)
+        internal void ApplyOptions(DelimitedTextDataset dataSet, string sourceDataSetName)
         {
             string folderPathExpression = $"@concat('{sourceDataSetName}/', ";
             foreach (var sourceDataSetParametersKey in SourceDataSetParameterKeyValues.Keys)
@@ -449,7 +449,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             }
         }
 
-        internal void AddDataSetParameters(ref DelimitedTextDataset dataSet, IDictionary<string, string> sourceDataSetParameterKeyValues)
+        internal void AddDataSetParameters(DelimitedTextDataset dataSet, IDictionary<string, string> sourceDataSetParameterKeyValues)
         {
             foreach (var parameters in sourceDataSetParameterKeyValues)
             {
