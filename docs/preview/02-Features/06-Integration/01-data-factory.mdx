@@ -206,6 +206,11 @@ await session.RunDataFlowAsync(..., options =>
     // Adds a parameter to the data flow upon starting.
     options.AddDataFlowParameter("<name>", "<value>");
 
+    // Adds a dataset parameter to the data flow upon starting.
+    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the DataFlow, not the actual DataSet name.
+    // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
+    options.AddDataSetParameter(“<soure-or-sink-name>", “<parameter-name>", “<parameter-value>");
+
     // Add additional linked services to the debug session.
     // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.
     options.AddLinkedService("datafactory_sales_keyvaultLS");

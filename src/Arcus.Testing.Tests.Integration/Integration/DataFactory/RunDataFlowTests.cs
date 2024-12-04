@@ -15,6 +15,7 @@ using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
@@ -69,6 +70,51 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
         }
 
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameter_SucceedsByGettingCsvFileOnSinkWithSubPathParameter()
+        {
+            // Arrange
+            IDictionary<string, string> sourceDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") },
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") }
+            };
+            IDictionary<string, string> sinkDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sinkDataSetParameterKey"), RandomizeWith("sinkDataSetParameterValue") }
+            };
+
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, dataFlowOptions =>
+            {
+                dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
+                dataFlowOptions.Sink.AddFolderPathParameters(sinkDataSetParameterKeyValues);
+            });
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(
+                dataFlow.Name,
+                dataFlow.SinkName,
+                options =>
+                {
+                    foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
+                    }
+                    foreach (var sinkDataSetParameter in sinkDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
+                    }
+                }
+            );
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
+        }
+
         private static string GenerateCsv()
         {
             var input = TestCsv.Generate(ConfigureCsv);
@@ -80,6 +126,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Header = AssertCsvHeader.Present;
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
+        }
+        private static string RandomizeWith(string label)
+        {
+            return label + Guid.NewGuid().ToString()[..5];
         }
     }
 
