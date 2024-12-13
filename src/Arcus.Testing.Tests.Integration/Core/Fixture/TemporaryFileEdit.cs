@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using GuardNet;
 
 namespace Arcus.Testing.Tests.Integration.Core.Fixture
 {
@@ -14,9 +13,6 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
 
         private TemporaryFileEdit(FileInfo file, string originalContents)
         {
-            Guard.NotNull(file, nameof(file));
-            Guard.NotNull(originalContents, nameof(originalContents));
-
             _file = file;
             _originalContents = originalContents;
         }
@@ -26,9 +22,6 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryFileEdit At(FileInfo file, Func<string, string> editContents)
         {
-            Guard.NotNull(file, nameof(file));
-            Guard.NotNull(editContents, nameof(editContents));
-
             string originalContents = File.ReadAllText(file.FullName);
             string editedContents = editContents(originalContents);
 
