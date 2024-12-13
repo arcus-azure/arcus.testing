@@ -15,6 +15,8 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
 
         private TemporaryFile(FileInfo file, byte[] fileContents)
         {
+            ArgumentNullException.ThrowIfNull(file);
+
             _file = file;
             Contents = fileContents;
         }
@@ -39,6 +41,8 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryFile GenerateAt(DirectoryInfo directory)
         {
+            ArgumentNullException.ThrowIfNull(directory);
+
             string fileName = Bogus.System.FileName();
             byte[] fileContents = Bogus.Random.Bytes(Bogus.Random.Int(10, 20));
 
@@ -50,6 +54,8 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryFile CreateAt(DirectoryInfo directory, string fileName, byte[] fileContents)
         {
+            ArgumentNullException.ThrowIfNull(directory);
+
             string filePath = Path.Combine(directory.FullName, fileName);
             File.WriteAllBytes(filePath, fileContents);
 

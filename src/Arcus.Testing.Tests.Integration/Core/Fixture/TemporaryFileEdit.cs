@@ -13,6 +13,8 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
 
         private TemporaryFileEdit(FileInfo file, string originalContents)
         {
+            ArgumentNullException.ThrowIfNull(file);
+
             _file = file;
             _originalContents = originalContents;
         }
