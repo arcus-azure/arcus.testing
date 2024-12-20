@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture;
 using Bogus;
 using Xunit;
 
@@ -27,7 +26,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
         [Fact]
         public void CreateFilter_WithoutItemTFilter_Fails()
         {
-            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.Where<Shipment>(null));
+            Assert.ThrowsAny<ArgumentException>(() => NoSqlItemFilter.Where<Person>(null));
         }
 
         [Fact]
