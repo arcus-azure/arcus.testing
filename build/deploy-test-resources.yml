@@ -38,6 +38,7 @@ stages:
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
+              failOnStandardError: true
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
