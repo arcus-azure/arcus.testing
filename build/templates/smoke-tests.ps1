@@ -44,7 +44,8 @@ Describe 'Storage account' {
         -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
         -Name $containerName `
-        -PartitionKeyPath '/pk'
+        -PartitionKeyPath '/pk' `
+        -PartitionKeyKind Hash
     }
     finally {
       Remove-AzCosmosDBSqlContainer `
