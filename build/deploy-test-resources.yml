@@ -38,6 +38,7 @@ stages:
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
+              failOnStandardError: true
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
@@ -48,7 +49,7 @@ stages:
                   --parameters location=westeurope 
 
                 $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
-                $deployOutput = az deployment group create `
+                az deployment group create `
                   --resource-group ${{ parameters.resourceGroupName }} `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
@@ -58,6 +59,7 @@ stages:
                   --parameters cosmosDb_mongoDb_databaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
                   --parameters cosmosDb_noSql_name=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
                   --parameters cosmosDb_noSql_databaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
+                  --parameters serviceBusNamespaceName=${{ variables['Arcus.Testing.ServiceBus.Namespace'] }} `
                   --parameters keyVaultName=${{ parameters.keyVaultName }} `
                   --parameters servicePrincipal_objectId=$objectId
 
