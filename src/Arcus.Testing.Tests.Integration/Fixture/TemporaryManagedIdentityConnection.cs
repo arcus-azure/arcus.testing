@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Testing.Tests.Integration.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Fixture
@@ -34,11 +35,12 @@ namespace Arcus.Testing.Tests.Integration.Fixture
                 throw new ArgumentNullException(nameof(servicePrincipal));
             }
 
+            var logger = NullLogger.Instance;
             var environmentVariables = new[]
             {
-                TemporaryEnvironmentVariable.Create("AZURE_TENANT_ID", servicePrincipal.TenantId),
-                TemporaryEnvironmentVariable.Create("AZURE_CLIENT_ID", servicePrincipal.ClientId),
-                TemporaryEnvironmentVariable.Create("AZURE_CLIENT_SECRET", servicePrincipal.ClientSecret)
+                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_TENANT_ID", servicePrincipal.TenantId, logger),
+                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_CLIENT_ID", servicePrincipal.ClientId, logger),
+                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_CLIENT_SECRET", servicePrincipal.ClientSecret, logger)
             };
 
             return new TemporaryManagedIdentityConnection(servicePrincipal.ClientId, environmentVariables);
