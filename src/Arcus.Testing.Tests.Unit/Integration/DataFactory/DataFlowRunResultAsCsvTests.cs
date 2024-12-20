@@ -158,7 +158,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             ShouldFailToGetDataAsCsv(input);
         }
 
-        private CsvException ShouldFailToGetDataAsCsv(string input)
+        private static CsvException ShouldFailToGetDataAsCsv(string input)
         {
             // Arrange
             DataFlowRunResult result = CreateRunResult(input);
@@ -167,7 +167,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             return Assert.ThrowsAny<CsvException>(() => result.GetDataAsCsv());
         }
 
-        private void ShouldContain(string actual, params string[] expected)
+        private static void ShouldContain(string actual, params string[] expected)
         {
             Assert.All(expected, str => Assert.Contains(str, actual, StringComparison.OrdinalIgnoreCase));
         }
