@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
