@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcus.Testing.Tests.Unit.Messaging.ServiceBus.Fixture;
+using Bogus;
 using MongoDB.Driver;
 using Xunit;
 
@@ -14,8 +14,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
             var options = new TemporaryMongoDbCollectionOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingDocuments<Order>(null));
-            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingDocuments((FilterDefinition<Order>) null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingDocuments<Person>(null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingDocuments((FilterDefinition<Person>) null));
         }
 
         [Fact]
@@ -25,8 +25,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
             var options = new TemporaryMongoDbCollectionOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingDocuments<Order>(null));
-            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingDocuments((FilterDefinition<Order>) null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingDocuments<Person>(null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingDocuments((FilterDefinition<Person>) null));
         }
     }
 }
