@@ -138,6 +138,7 @@ module serviceBusNamespace 'br/public:avm/res/service-bus/namespace:0.10.1' = {
     skuObject: {
       name: 'Standard'
     }
+    zoneRedundant: null
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId
