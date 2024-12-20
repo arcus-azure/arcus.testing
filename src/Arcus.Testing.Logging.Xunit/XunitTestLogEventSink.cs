@@ -8,6 +8,7 @@ namespace Arcus.Testing
     /// <summary>
     /// <see cref="ILogEventSink"/> representation of an <see cref="ITestOutputHelper"/> instance.
     /// </summary>
+    [Obsolete("Arcus.Testing.Logging.Xunit will stop supporting Serilog by default, please implement Serilog sinks yourself as this sink will be removed in v2.0")]
     public class XunitLogEventSink : ILogEventSink
     {
         private readonly ITestOutputHelper _outputWriter;

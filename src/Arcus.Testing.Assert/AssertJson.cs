@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Arcus.Testing.Failure;
 using static Arcus.Testing.JsonDifferenceKind;
 
 namespace Arcus.Testing
@@ -90,6 +89,16 @@ namespace Arcus.Testing
                 _maxInputCharacters = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the position in the input document that should be included in the failure report (default: <see cref="ReportScope.Limited"/>).
+        /// </summary>
+        public ReportScope ReportScope { get; set; } = ReportScope.Limited;
+
+        /// <summary>
+        /// Gets or sets the format in which the different input documents will be shown in the failure report (default: <see cref="ReportFormat.Horizontal"/>).
+        /// </summary>
+        public ReportFormat ReportFormat { get; set; } = ReportFormat.Horizontal;
     }
 
     /// <summary>
@@ -157,8 +166,8 @@ namespace Arcus.Testing
             JsonDifference diff = CompareJsonRoot(expected, actual, options);
             if (diff != null)
             {
-                string expectedJson = expected?.ToString() ?? "null";
-                string actualJson = actual?.ToString() ?? "null";
+                string expectedJson = diff.ExpectedNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedNodeDiff : expected?.ToString() ?? "null";
+                string actualJson = diff.ActualNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ActualNodeDiff : actual?.ToString() ?? "null";
 
                 string optionsDescription =
                     $"Options: {Environment.NewLine}" +
@@ -170,7 +179,12 @@ namespace Arcus.Testing
                                  .AppendLine(diff.ToString())
                                  .AppendLine()
                                  .AppendLine(optionsDescription)
-                                 .AppendDiff(expectedJson, actualJson, options.MaxInputCharacters)
+                                 .AppendDiff(expectedJson, actualJson, opt =>
+                                 {
+                                     opt.MaxInputCharacters = options.MaxInputCharacters;
+                                     opt.Format = options.ReportFormat;
+                                     opt.Scope = options.ReportScope;
+                                 })
                                  .ToString());
             }
         }
@@ -202,7 +216,11 @@ namespace Arcus.Testing
                 JsonArray actualArray => CompareJsonArray(expected, actualArray, options),
                 JsonObject actualObject => CompareJsonObject(expected, actualObject, options),
                 JsonValue actualValue => CompareJsonValue(expected, actualValue),
-                null => expected is null ? null : new JsonDifference(ActualIsNull, expected.GetPath()),
+                null => expected is null ? null : new JsonDifference(ActualIsNull, expected.GetPath())
+                {
+                    ExpectedNodeDiff = expected.ToString(),
+                    ActualNodeDiff = "null"
+                },
                 _ => null
             };
         }
@@ -219,7 +237,11 @@ namespace Arcus.Testing
 
             if (actualChildren.Length != expectedChildren.Length)
             {
-                return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length);
+                return new(DifferentLength, expectedArray.GetPath(), actualChildren.Length, expectedChildren.Length)
+                {
+                    ExpectedNodeDiff = expectedArray.ToString(),
+                    ActualNodeDiff = actualArray.ToString(),
+                };
             }
 
             if (options.Order is AssertJsonOrder.Ignore)
@@ -263,14 +285,27 @@ namespace Arcus.Testing
 
         private static JsonDifference CompareJsonObject(Dictionary<string, JsonNode> expectedDir, Dictionary<string, JsonNode> actualDir, AssertJsonOptions options)
         {
+            var serializerOptions = new JsonSerializerOptions()
+            {
+                WriteIndented = true
+            };
+
             if (TryGetValue(expectedDir, key => !actualDir.ContainsKey(key), out JsonNode missingActualPair))
             {
-                return new(ActualMissesProperty, missingActualPair.GetPath());
+                return new(ActualMissesProperty, missingActualPair.GetPath())
+                {
+                    ExpectedNodeDiff = JsonSerializer.Serialize(expectedDir, serializerOptions),
+                    ActualNodeDiff = JsonSerializer.Serialize(actualDir, serializerOptions)
+                };
             }
 
             if (TryGetValue(actualDir, key => !expectedDir.ContainsKey(key), out JsonNode missingExpectedPair))
             {
-                return new(ExpectedMissesProperty, missingExpectedPair.GetPath());
+                return new(ExpectedMissesProperty, missingExpectedPair.GetPath())
+                {
+                    ExpectedNodeDiff = JsonSerializer.Serialize(expectedDir, serializerOptions),
+                    ActualNodeDiff = JsonSerializer.Serialize(actualDir, serializerOptions)
+                };
             }
 
             foreach (KeyValuePair<string, JsonNode> expectedPair in expectedDir)
@@ -371,7 +406,11 @@ namespace Arcus.Testing
 #endif
             if (!identical)
             {
-                return new(ActualOtherValue, expectedValue, actualValue);
+                return new(ActualOtherValue, expectedValue, actualValue)
+                {
+                    ExpectedNodeDiff = expectedValue.Parent?.ToString(),
+                    ActualNodeDiff = actualValue.Parent?.ToString()
+                };
             }
 
             return null;
@@ -429,9 +468,14 @@ namespace Arcus.Testing
         private readonly string _path;
         private readonly object _actual, _expected;
 
+        internal string ExpectedNodeDiff { get; init; }
+        internal string ActualNodeDiff { get; init; }
+
         internal JsonDifference(JsonDifferenceKind kind, JsonNode expected, JsonNode actual)
             : this(kind, expected?.GetPath() ?? actual?.GetPath() ?? "<not-available>", expected: Describe(expected), actual: Describe(actual))
         {
+            ExpectedNodeDiff = expected?.ToString() ?? "null";
+            ActualNodeDiff = actual?.ToString() ?? "null";
         }
 
         internal JsonDifference(JsonDifferenceKind kind, string path, object actual, object expected)

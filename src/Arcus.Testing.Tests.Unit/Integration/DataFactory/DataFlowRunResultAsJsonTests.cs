@@ -242,8 +242,8 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             var preview = DataPreview.Create(headersTxt, dataTxt);
 
             // Act / Assert
-            JsonException exception = ShouldFailToGetDataAsJson(preview.ToString());
-            Assert.StartsWith("Cannot load", exception.Message, StringComparison.OrdinalIgnoreCase);
+            var exception = Assert.ThrowsAny<JsonException>(() => result.GetDataAsJson());
+            Assert.Contains("cannot load", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("only supports limited", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
 

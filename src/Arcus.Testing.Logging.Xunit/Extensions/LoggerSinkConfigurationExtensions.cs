@@ -16,6 +16,7 @@ namespace Serilog.Configuration
         /// <param name="config">The Serilog sink configuration where the xUnit test logging will be added.</param>
         /// <param name="outputWriter">The xUnit test output writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or <paramref name="outputWriter"/> is <c>null</c>.</exception>
+        [Obsolete("Arcus.Testing.Logging.Xunit will stop supporting Serilog by default, please implement Serilog sinks yourself as this extension will be removed in v2.0")]
         public static LoggerConfiguration XunitTestLogging(
             this LoggerSinkConfiguration config, 
             ITestOutputHelper outputWriter)

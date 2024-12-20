@@ -42,8 +42,23 @@ await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
 {
     // The time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
     options.TimeToLiveInMinutes = 60;
+
+    // The session ID of an already active debug session.
+    // Default: empty, meaning: a new debug session will be started. This also happens when no matching session is found.
+    options.ActiveSessionId = new Guid("3B0E4AF5-AA5C-4BB3-9CDB-06442EE2F2E3");
 });
 ```
+
+> #### 💡 Leveraging the `ActiveSessionId` option
+> The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
+> 
+> ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
+>
+> 1. Run a **custom script** task before any of the test suites to start a debug session.
+> 2. Set a new **pipeline variable with the session ID** of the active debug session.
+> 3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
+> 4. Run a custom script after all the test suites to stop the debug session.
+>    * ⚠️ **_Make sure that this always runs, even if the tests fail._**
 
 ### Full example
 The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.
@@ -190,6 +205,11 @@ await session.RunDataFlowAsync(..., options =>
 {
     // Adds a parameter to the data flow upon starting.
     options.AddDataFlowParameter("<name>", "<value>");
+
+    // Adds a dataset parameter to the data flow upon starting.
+    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the DataFlow, not the actual DataSet name.
+    // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
+    options.AddDataSetParameter(“<soure-or-sink-name>", “<parameter-name>", “<parameter-value>");
 
     // Add additional linked services to the debug session.
     // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.

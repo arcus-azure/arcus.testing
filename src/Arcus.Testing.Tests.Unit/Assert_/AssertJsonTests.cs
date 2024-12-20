@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using static System.Environment;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -468,8 +469,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             }
             catch (XunitException)
             {
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Expected", expectedJson + Environment.NewLine);
-                _outputWriter.WriteLine("{0}: {1}", Environment.NewLine + "Actual", actualJson + Environment.NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Expected", expectedJson + NewLine);
+                _outputWriter.WriteLine("{0}: {1}", NewLine + "Actual", actualJson + NewLine);
                 throw;
             }
         }
@@ -501,6 +502,138 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             {
                 EqualJson(testCase.Value, testCase.Key);
             });
+        }
+
+        //"► ◄"
+        public static IEnumerable<object[]> FailingCasesWithScopedExpectedActualDifferences
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "{ \"movies\": [ \"The Matrix\", \"Blade Runner\", \"Terminator\" ] }",
+                    "{ \"movies\": [ \"The Matrix\", \"Blade Runner\" ] }",
+@"Expected:            Actual:
+[                    [
+  ""The Matrix"",        ""The Matrix"",
+  ""Blade Runner"",      ""Blade Runner""
+  ""Terminator""       ]
+]"
+                };
+                yield return new object[]
+                {
+                    "[ { \"title\": \"Ubik\", \"author\": \"Philip K. Dick\" } ]",
+                    "[ { \"title\": \"Ubik\", \"author\": \"Richard K. Morgan\" } ]",
+@"Expected:                       Actual:
+{                               {
+  ""title"": ""Ubik"",                ""title"": ""Ubik"",
+  ""author"": ""Philip K. Dick""      ""author"": ""Richard K. Morgan""
+}                               }"
+                };
+                yield return new object[]
+                {
+                    "{ \"band\": \"Cult of Luna\", \"genre\": \"post-metal\" }",
+                    "{ \"band\": \"Cult of Luna\", \"genre\": { \"name\": \"post-metal\" } }",
+@"Expected:     Actual:
+post-metal    {
+                ""name"": ""post-metal""
+              }"
+                };
+                yield return new object[]
+                {
+                    "{ \"this\": \"that\", \"options\": null }",
+                    "{ \"this\": \"that\", \"options\": { \"and\": \"this\" } }",
+@"Expected:    Actual:
+null         {
+               ""and"": ""this""
+             }"
+                };
+                yield return new object[]
+                {
+                    "{ \"this\": \"that\", \"options\": { \"and\": \"this\" } }",
+                    "{ \"this\": \"that\", \"options\": null }",
+@"Expected:          Actual:
+{                  null
+  ""and"": ""this""    
+}"
+                };
+                yield return new object[]
+                {
+                    "null",
+                    "[ \"this\", \"that\" ]",
+@"Expected:    Actual:
+null         [
+               ""this"",
+               ""that""
+             ]"
+                };
+                yield return new object[]
+                {
+                    "[ \"this\", \"that\" ]",
+                    "null",
+@"Expected:    Actual:
+[            null
+  ""this"",    
+  ""that""     
+] "
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithScopedExpectedActualDifferences))]
+        public void CompareJson_WithDifferences_ShouldScopeToDifference(
+            string expected,
+            string actual,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, expectedDifferences);
+        }
+
+        public static IEnumerable<object[]> FailingCasesWithReportOptions
+        {
+            get
+            {
+                yield return new object[]
+                {
+                    "{ \"tree\": [] }",
+                    "{ \"branch\": [] }",
+                    new Action<AssertJsonOptions>(options => options.ReportFormat = ReportFormat.Vertical),
+                    $"Expected:{NewLine}{{{NewLine}  \"tree\": []{NewLine}}}{NewLine}{NewLine}Actual:{NewLine}{{{NewLine}  \"branch\": []{NewLine}}}"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": [] }",
+                    "{ \"branch\": [] }",
+                    new Action<AssertJsonOptions>(options => options.ReportFormat = ReportFormat.Horizontal),
+                    $"Expected:       Actual:{NewLine}{{               {{{NewLine}  \"tree\": []      \"branch\": []{NewLine}}}               }}"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": [ { \"branch\": 1 } ] }",
+                    "{ \"tree\": [ { \"leaf\": 1 } ] }",
+                    new Action<AssertJsonOptions>(options => options.ReportScope = ReportScope.Limited),
+                    $"{{                {{{NewLine}  \"branch\": 1      \"leaf\": 1{NewLine}}}                }}"
+                };
+                yield return new object[]
+                {
+                    "{ \"tree\": [ { \"branch\": 1 } ] }",
+                    "{ \"tree\": [ { \"leaf\": 1 } ] }",
+                    new Action<AssertJsonOptions>(options => options.ReportScope = ReportScope.Complete),
+                    $"Expected:            Actual:{NewLine}{{                    {{{NewLine}  \"tree\": [            \"tree\": [{NewLine}    {{                    {{{NewLine}      \"branch\": 1          \"leaf\": 1{NewLine}    }}                    }}{NewLine}  ]                    ]{NewLine}}}                    }}"
+                };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithReportOptions))]
+        public void CompareJson_WithReportOptions_ShouldCreateReportByOptions(
+            string expected,
+            string actual,
+            Action<AssertJsonOptions> configureOptions,
+            string expectedDifferences)
+        {
+            CompareShouldFailWithDifference(expected, actual, configureOptions, expectedDifferences);
         }
 
         private static void EqualJson(TestJson expected, TestJson actual, Action<AssertJsonOptions> configureOptions = null)

@@ -7,14 +7,20 @@ using Arcus.Testing.Tests.Core.Integration.DataFactory;
 using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
+using Azure.Identity;
+using Azure.ResourceManager.DataFactory.Models;
+using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
+using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
-    public class RunDataFlowTests : IntegrationTest, IClassFixture<DataFactoryDebugSession>
+    [Collection(DataFactoryDebugSessionCollection.CollectionName)]
+    public class RunDataFlowTests : IntegrationTest
     {
         private readonly DataFactoryDebugSession _session;
 
@@ -64,6 +70,51 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
         }
 
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameter_SucceedsByGettingCsvFileOnSinkWithSubPathParameter()
+        {
+            // Arrange
+            IDictionary<string, string> sourceDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") },
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("SourceDataSetParameterValue") }
+            };
+            IDictionary<string, string> sinkDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sinkDataSetParameterKey"), RandomizeWith("sinkDataSetParameterValue") }
+            };
+
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(Configuration, Logger, ConfigureCsv, dataFlowOptions =>
+            {
+                dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
+                dataFlowOptions.Sink.AddFolderPathParameters(sinkDataSetParameterKeyValues);
+            });
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(
+                dataFlow.Name,
+                dataFlow.SinkName,
+                options =>
+                {
+                    foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
+                    }
+                    foreach (var sinkDataSetParameter in sinkDataSetParameterKeyValues)
+                    {
+                        options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
+                    }
+                }
+            );
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
+        }
+
         private static string GenerateCsv()
         {
             var input = TestCsv.Generate(ConfigureCsv);
@@ -76,6 +127,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
         }
+        private static string RandomizeWith(string label)
+        {
+            return label + Guid.NewGuid().ToString()[..5];
+        }
+    }
+
+    [CollectionDefinition(CollectionName)]
+    public class DataFactoryDebugSessionCollection : ICollectionFixture<DataFactoryDebugSession>
+    {
+        public const string CollectionName = "Active DataFactory debug session";
+
+        // This class has no code, and is never created. Its purpose is simply
+        // to be the place to apply [CollectionDefinition] and all the
+        // ICollectionFixture<> interfaces.
     }
 
     public class DataFactoryDebugSession : IAsyncLifetime
@@ -92,6 +157,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             _config = TestConfig.Create();
         }
 
+        private DataFactoryConfig DataFactory => _config.GetDataFactory();
+        private Guid SessionId { get; set; }
+
         /// <summary>
         /// Gets the current value state of the debug session.
         /// </summary>
@@ -105,9 +173,47 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             _connection = TemporaryManagedIdentityConnection.Create(_config.GetServicePrincipal());
 
             DataFactoryConfig dataFactory = _config.GetDataFactory();
+            Guid unknownSessionId = Guid.NewGuid();
+
             Value = Bogus.Random.Bool()
                 ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance)
-                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt => opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15));
+                : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
+                {
+                    opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15);
+                    opt.ActiveSessionId = unknownSessionId;
+                });
+
+            Assert.NotEqual(unknownSessionId, Value.SessionId);
+            SessionId = Value.SessionId;
+        }
+
+        public async Task ShouldFindActiveSessionAsync(Guid sessionId)
+        {
+            bool isActive = await IsDebugSessionActiveAsync(sessionId);
+            Assert.True(isActive, $"expected to have an active debug session in DataFactory '{DataFactory.Name}' for session ID: '{sessionId}', but got none");
+        }
+
+        public async Task ShouldNotFindActiveSessionAsync(Guid sessionId)
+        {
+            bool isActive = await IsDebugSessionActiveAsync(sessionId);
+            Assert.False(isActive, $"expected to remove active debug session '{sessionId}' in DataFactory '{DataFactory.Name}', but it's still active");
+        }
+
+        private async Task<bool> IsDebugSessionActiveAsync(Guid sessionId)
+        {
+            var armClient = new ArmClient(new DefaultAzureCredential());
+            DataFactoryResource resource = armClient.GetDataFactoryResource(DataFactory.ResourceId);
+
+            var isActive = false;
+            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync())
+            {
+                if (session.SessionId == sessionId)
+                {
+                    isActive = true;
+                }
+            }
+
+            return isActive;
         }
 
         /// <summary>
@@ -116,12 +222,18 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async Task DisposeAsync()
         {
+            await using var disposables = new DisposableCollection(NullLogger.Instance);
+
             if (Value != null)
             {
-                await Value.DisposeAsync();
+                disposables.Add(AsyncDisposable.Create(async () =>
+                {
+                    await Value.DisposeAsync();
+                    await ShouldNotFindActiveSessionAsync(SessionId);
+                }));
             }
 
-            _connection?.Dispose();
+            disposables.Add(_connection);
         }
     }
 }

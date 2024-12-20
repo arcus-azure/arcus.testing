@@ -1,3 +1,6 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 # Test assertions
 The `Arcus.Testing.Assert` library is a highly reusable and independent library that contains dev-friendly test assertions on different types of output (XML, JSON...). The purpose of the library is to write readable and test-friendly assertions that show quickly what went wrong with the (XML, JSON...) output of a certain piece of functionality.
 
@@ -8,7 +11,9 @@ Install this package to easily assert on different output contents:
 PM> Install-Package -Name Arcus.Testing.Assert
 ```
 
-## XML
+<Tabs groupId="content-types">
+<TabItem value="xml" label="XML" default>
+
 The library has an `AssertXml` class that exposes usable test assertions when dealing with XML outputs. The most popular one is comparing XML documents.
 
 ```csharp
@@ -22,15 +27,10 @@ AssertXml.Equal(expected, actual);
 // AssertXml.Equal failure: expected and actual XML documents do not match
 // Expected element tag name 'root' but was 'diff-root' at /root
 //
-// Expected:
-// <root>
-//      ...
-// </root>
-//
-// Actual:
-// <diff-root>
-//      ...
-// </diff-root>
+// Expected:    Actual:
+// <root>       <diff-root>
+//      ...         ...
+// </root>      </diff-root>
 ```
 
 💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
@@ -54,6 +54,18 @@ AssertXml.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Horizontal
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 
@@ -81,7 +93,9 @@ AssertXml.Equal(expected, actual);
 
 The `AssertXml.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 
-## JSON
+</TabItem>
+<TabItem value="json" label="JSON">
+
 The library has an `AssertJson` class that exposes useful test assertions when dealing with JSON outputs. The most popular one is comparing JSON documents.
 
 ```csharp
@@ -95,15 +109,10 @@ AssertJson.Equal(expected, actual);
 // AssertJson.Equal failure: expected and actual JSON contents do not match
 // Actual JSON misses property at $.root
 //
-// Expected:
-// {
-//    "root": ...
-// }
-//
-// Actual:
-// {
-//    "diff-root": ...
-// }
+// Expected:        Actual:
+// {                {
+//    "root": ...       "diff-root": ...
+// }                {
 ```
 
 💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
@@ -126,6 +135,18 @@ AssertJson.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs that should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Horizontal
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 
@@ -155,7 +176,9 @@ AssertJson.Equal(expected, actual);
 
 The `AssertJson.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 
-## CSV
+</TabItem>
+<TabItem value="csv" label="CSV">
+
 The library has an `AssertCsv` class that exposes useful test assertions when dealing with CSV outputs. The most popular one is comparing CSV documents.
 
 ```csharp
@@ -235,6 +258,18 @@ AssertCsv.Equal(..., options =>
     // Sets the maximum characters of the expected and actual inputs should be written to the test output.
     // Default: 500 characters.
     options.MaxInputCharacters = 1000;
+
+    // Sets the format in which the different input documents will be shown in the failure report.
+    // Useful for documents that either expand in length or width to see the difference more clearly.
+    // Default: Vertical
+    options.ReportFormat = ReportFormat.Vertical;
+
+    // Sets position in the input document that should be included in the failure report.
+    // Either Limited to the element, tag, value... that differs - only a portion of the input document will be shown where the difference resides.
+    // Useful for bigger documents where it would be hard to see the difference in the full document.
+    // Or Complete to include the entire input document in the failure report.
+    // Default: Limited
+    options.ReportScope = ReportScope.Complete;
 });
 ```
 
@@ -261,6 +296,9 @@ CsvTable actual = AssertCsv.Load(csv, options => ...);
 // Overload with tables.
 AssertCsv.Equal(expected, actual);
 ```
+
+</TabItem>
+</Tabs>
 
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.

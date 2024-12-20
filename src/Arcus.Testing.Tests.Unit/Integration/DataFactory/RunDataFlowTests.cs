@@ -87,6 +87,32 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 
         [Theory]
         [ClassData(typeof(Blanks))]
+        public void AddDataSetParameter_WithoutDataSetName_Fails(string dataSetName)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string name = Bogus.Lorem.Word();
+            string value = Bogus.Lorem.Word();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddDataSetParameter(dataSetName, name, value));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void AddDataSetParameter_WithoutParameterName_Fails(string name)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+            string dataSetName = Bogus.Lorem.Word();
+            string value = Bogus.Lorem.Word();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddDataSetParameter(dataSetName, name, value));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
         public void AddLinkedService_WithoutServiceName_Fails(string serviceName)
         {
             // Arrange
