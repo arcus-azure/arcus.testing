@@ -9,7 +9,7 @@ The features provided in this package are very often used and/or required for a 
 ## Installation
 The following infrastructure is available when installing this package:
 
-```shell
+```powershell
 PM> Install-Package -Name Arcus.Testing.Core
 ```
 

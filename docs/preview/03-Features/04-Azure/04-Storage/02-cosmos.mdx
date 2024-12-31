@@ -7,7 +7,7 @@ The `Arcus.Testing.Storage.CosmosDb` package provides test fixtures to Azure Cos
 ## Installation
 The following functionality is available when installing this package:
 
-```shell
+```powershell
 PM> Install-Package -Name Arcus.Testing.Storage.Cosmos
 ```
 
@@ -129,7 +129,7 @@ BsonValue documentId = document.Id;
 > 🛡️ Make sure that the test client that interacts with the Cosmos storage has at least [`Cosmos DB Built-in Data Contributor`](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/security/reference-data-plane-roles)-rights if the test needs to create/update/delete containers.
 > 
 > **This role is not a built-in Azure RBAC, but a role specific for NoSql**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
-> ```shell
+> ```powershell
 > az cosmosdb sql role assignment create `
 >   --account-name "CosmosDBAccountName" `
 >   --resource-group "ResourceGroupName" `

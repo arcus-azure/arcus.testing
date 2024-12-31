@@ -18,7 +18,7 @@ This guide will walk you through the process of migrating your test suite from u
 The `Codit.Testing.OutputComparison` library has some functionality to compare different kinds of file types. The new `Arcus.Testing.Assert` library handles these comparisons from now on.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
@@ -257,7 +257,7 @@ The original Testing Framework had a `TestXsltSequential` exposed functionality 
 The `Codit.Testing.DataFactory` handled start/stop functionality on DataFlow/Pipelines in DataFactory with and without debug sessions. Testing DataFlow's and managing debug sessions is now fully managed with `Arcus.Testing.Integration.DataFactory`.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Integration.DataFactory
 ```
 
@@ -340,7 +340,7 @@ The `Codit.Testing.BlobStorage` in the past acted as a wrapper for common storag
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Blob
 ```
 
@@ -398,7 +398,7 @@ The `Codit.Testing.TableStorage` in the past acted as a wrapper for common stora
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Table
 ```
 
@@ -438,7 +438,7 @@ The `Codit.Testing.CosmosDb` in the past acted as a wrapper for common storage o
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Cosmos
 ```
 
