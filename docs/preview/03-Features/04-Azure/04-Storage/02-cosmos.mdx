@@ -17,7 +17,7 @@ PM> Install-Package -Name Arcus.Testing.Storage.Cosmos
 > 🛡️ Make sure that the test client that interacts with the Cosmos storage has at least [`DocumentDB Account Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/databases#documentdb-account-contributor)-rights if the test needs to create/update/delete collections.
 
 ### Temporary MongoDb collection
-The `TemporaryMongoDbCollection` provides a solution when the integration tes requires a storage system (collection) during the test run. An MongoDb collection is created upon setup of the test fixture and is deleted again when the test fixture disposed.
+The `TemporaryMongoDbCollection` provides a solution when the integration tes requires a storage system (collection) during the test run. A MongoDb collection is created upon setup of the test fixture and is deleted again when the test fixture disposed.
 
 > ⚡ The test fixture automatically uses an existing collection - if exists, but does not remove it if it was not responsible for creating the collection.
 
