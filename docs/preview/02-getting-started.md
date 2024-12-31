@@ -82,7 +82,7 @@ It also helps with passing arguments to implementation code that relies on `ILog
   In the same fashion, Arcus Testing has packages for all sorts of Azure technologies, each time with the test-usability in mind.
 
   > 🔗 See the following dedicated feature documentation pages for more information on interacting with your technology in your test:
-  > * [Storage Account](./03-Features/04-Storage/01-storage-account.mdx)
-  > * [Data Factory](./03-Features/06-Integration/01-data-factory.mdx)
+  > * [Storage Account](./03-Features/04-Technology/04-Storage/01-storage-account.mdx)
+  > * [Data Factory](./03-Features/04-Technology/06-Integration/01-data-factory.mdx)
   > * See the sidebar for more technologies.
 </details>
