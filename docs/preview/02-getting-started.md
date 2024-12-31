@@ -34,7 +34,7 @@ The following guides will show you how to start with these categories in new or 
   3. Use the `var config = TestConfig.Create()` to create a default instance;
   4. Use the common `config["Your:Config:Key]` syntax to retrieve your value.
   
-  > 🔗 See [the dedicated feature documentation](./02-Features/01-core.md) for more information on this `Arcus.Testing.Core` package and what other common test operations you repeatably use, like polling, reading local files, etc.
+  > 🔗 See [the dedicated feature documentation](./03-Features/01-core.md) for more information on this `Arcus.Testing.Core` package and what other common test operations you repeatably use, like polling, reading local files, etc.
 
 </details>
 
@@ -48,7 +48,7 @@ Integration tests usually use content types like XML, JSON or CSV to pass data b
 3. Load both the expected and actual contents as `string` (or `JsonNode`, `XmlDocument`...);
 4. Use the `Assert[Xml/Json/Csv].Equal` method to check for equality.
 
-> 🔗 See [the dedicated feature documentation](./02-Features/02-assertion.mdx) for more information on this `Arcus.Testing.Assert` package and what other equalization and failure reporting options you can use.
+> 🔗 See [the dedicated feature documentation](./03-Features/02-assertion.mdx) for more information on this `Arcus.Testing.Assert` package and what other equalization and failure reporting options you can use.
 
 ### Do you write log messages to the test output?
 The test output is usually the first place you look when a test fails. Either the testing framework has written the exception message to the output, and assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
@@ -63,5 +63,5 @@ It also helps with passing arguments to implementation code that relies on `ILog
 3. Create an `new Xunit/NUnit/MSTestTestLogger(...)` instance that takes in the framework dependent logger.
 4. Now, use the `ILogger`-implemented test logger instead.
 
-> 🔗 See [the dedicated feature documentation](.//02-Features/03-logging.mdx) for more information on these `Arcus.Testing.Logging.[Xunit/NUnit/MSTest]` packages.
+> 🔗 See [the dedicated feature documentation](./03-Features/03-logging.mdx) for more information on these `Arcus.Testing.Logging.[Xunit/NUnit/MSTest]` packages.
 
