@@ -32,7 +32,7 @@ The following guides will show you how to start with these categories in new or 
   1. Install the `Arcus.Testing.Core` NuGet package;
   2. Locate the place where your tests retrieve their values;
   3. Use the `var config = TestConfig.Create()` to create a default instance;
-  4. Use the common `config["Your:Config:Key]` syntax to retrieve your value.
+  4. Use the common `config["Your:Config:Key"]` syntax to retrieve your value.
   
   > 🔗 See [the dedicated feature documentation](./03-Features/01-core.md) for more information on this `Arcus.Testing.Core` package and what other common test operations you repeatably use, like polling, reading local files, etc.
 
