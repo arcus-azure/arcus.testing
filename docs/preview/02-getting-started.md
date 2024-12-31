@@ -39,7 +39,8 @@ The following guides will show you how to start with these categories in new or 
 </details>
 
 <details>
-  <summary><strong>Do you test if XML, JSON or CSV contents are equal?</strong></summary>
+  <summary><strong>How do you handle assertions for data equality?</strong></summary>
+  
   Integration tests usually use content types like XML, JSON or CSV to pass data between systems. When asserting on whether the system used or transformed the data correctly, you have to do an 'equal' check on that data. The problem arises when elements are in a different order, have different casing or contain values that you don't care about, but are there anyway.
 
   ⚡ Arcus Testing provides several `Assert[Xml/Json/Csv].Equal` classes to make this equalization check easier for you. Fully customizable with options to ignore elements, node order, and each time with a clear assertion failure message (including line number and element names) on what part is considered 'not equal'.
@@ -50,11 +51,12 @@ The following guides will show you how to start with these categories in new or 
   4. Use the `Assert[Xml/Json/Csv].Equal` method to check for equality.
 
   > 🔗 See [the dedicated feature documentation](./03-Features/02-assertion.mdx) for more information on this `Arcus.Testing.Assert` package and what other equalization and failure reporting options you can use.
-
 </details>
+
 
 <details>
   <summary><strong>Do you write log messages to the test output?</strong></summary>
+  
   The test output is usually the first place you look when a test fails. Either the testing framework has written the exception message to the output, and assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
 
   Testing frameworks all have their different ways of writing log messages to the test output, which means that each piece of test code that interacts with these test framework-specifics, is more tightly coupled to that framework.
@@ -68,11 +70,11 @@ It also helps with passing arguments to implementation code that relies on `ILog
   4. Now, use the `ILogger`-implemented test logger instead.
 
   > 🔗 See [the dedicated feature documentation](./03-Features/03-logging.mdx) for more information on these `Arcus.Testing.Logging.[Xunit/NUnit/MSTest]` packages.
-
 </details>
 
 <details>
   <summary><strong>Do you interact with Azure resources in your test?</strong></summary>
+  
   Integration-like tests (meaning: tests that interact with resources outside the code environment), often need additional test infrastructure to interact with those resources in a test-friendly way. If a resource store a state, you might want to clear the state at the end of the test, for example.
 
   ⚡ Arcus Testing provides several Azure technology-specific packages that helps with this interaction. If your system is interacting with Azure Blob storage, you can use the `TemporaryBlobContainer` in the `Arcus.Testing.Storage.Blob` package, which clears up any lingering state before/after the actual test.
@@ -83,5 +85,4 @@ It also helps with passing arguments to implementation code that relies on `ILog
   > * [Storage Account](./03-Features/04-Storage/01-storage-account.mdx)
   > * [Data Factory](./03-Features/06-Integration/01-data-factory.mdx)
   > * See the sidebar for more technologies.
-
 </details>
