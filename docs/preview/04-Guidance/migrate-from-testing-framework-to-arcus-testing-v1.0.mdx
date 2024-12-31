@@ -327,7 +327,7 @@ Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDe
 ### Run a Data pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../03-Features/01-core.md) packages.
 
-🔗 See the [feature documentation](../03-Features/04-Technology/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
+🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
 
 ## Replace storage account interactions
 
@@ -364,7 +364,7 @@ The testing framework separated storage operations, which are now collected in a
 + await client.GetBlobsAsync(BlobTraits.None, BlobStates.None, "<prefix>");
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Technology/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 ### Interact with Blob file
 The testing framework separated storage operations, which are now collected in a single `TemporaryBlobFile` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the file can be done with the Azure SDK.
@@ -387,7 +387,7 @@ The testing framework separated storage operations, which are now collected in a
 + BlobClient = file.Client;
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Technology/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 </TabItem>
 <TabItem value="table" label="Table storage">
@@ -427,7 +427,7 @@ The testing framework separated storage operations, which are now collected in a
 + await table.AddEntityAsync(<model>);
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Technology/04-Storage/01-storage-account.mdx) for more information on interacting with Table storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Table storage.
 
 </TabItem>
 </Tabs>
@@ -472,4 +472,4 @@ The testing framework separated storage operations, which are now collected in a
 + await container.AddItemAsync(<model>);
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Technology/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.

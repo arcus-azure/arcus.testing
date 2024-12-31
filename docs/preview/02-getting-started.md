@@ -13,7 +13,7 @@ The libraries in the Arcus Testing space are split up in these main categories:
 - **Core infrastructure** (contains tech-independent functionality)
 - **Assertions** (contains ways to verify functionality)
 - **Logging** (contains ways to use Microsoft's `ILogger` in your test project)
-- **Technology fixtures** (contains ways to interact with technology in your tests)
+- **Azure fixtures** (contains ways to interact with technology in your tests)
 
 Depending on the context of your project, you might use one or more libraries in these categories.
 The following guides will show you how to start with these categories in new or existing projects.
@@ -82,7 +82,7 @@ It also helps with passing arguments to implementation code that relies on `ILog
   In the same fashion, Arcus Testing has packages for all sorts of Azure technologies, each time with the test-usability in mind.
 
   > 🔗 See the following dedicated feature documentation pages for more information on interacting with your technology in your test:
-  > * [Storage Account](./03-Features/04-Technology/04-Storage/01-storage-account.mdx)
-  > * [Data Factory](./03-Features/04-Technology/06-Integration/01-data-factory.mdx)
+  > * [Storage Account](./03-Features/04-Azure/04-Storage/01-storage-account.mdx)
+  > * [Data Factory](./03-Features/04-Azure/06-Integration/01-data-factory.mdx)
   > * See the sidebar for more technologies.
 </details>
