@@ -22,7 +22,7 @@ Start by installing this library:
 PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the supported assertions.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the supported assertions.
 
 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
@@ -59,7 +59,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertXml`.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXml`.
 
 </TabItem>
 <TabItem value="json" label="JSON">
@@ -174,7 +174,7 @@ Here's how XML-XML now works:
 
 > 💡You can use the test-friendly `AssertXml/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 </TabItem>
 <TabItem value="json" label="XML to JSON">
@@ -322,10 +322,10 @@ Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDe
 + AssertJson.Equal(expected, actual);
 ```
 
-> ⚡ Assertion is now separated also from the run operation. [Arcus.Testing.Assert](../02-Features/02-assertion.mdx) can be used to assert on the available sink result.
+> ⚡ Assertion is now separated also from the run operation. [Arcus.Testing.Assert](../03-Features/02-assertion.mdx) can be used to assert on the available sink result.
 
 ### Run a Data pipeline
-Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../02-Features/01-core.md) packages.
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../03-Features/01-core.md) packages.
 
 🔗 See the [feature documentation](../03-Features/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
 
