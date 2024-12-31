@@ -6,30 +6,37 @@ sidebar_label: Getting started
 **Welcome to Arcus Testing! 🎉**
 
 This page is dedicated to be used as a walkthrough on how to integrate Arcus Testing in new and existing projects.
+Arcus Testing is an umbrella term for a set of NuGet packages that kick-start your code testing. 
 
 ## The basics
-The libraries in Arcus Testing are split up in these main categories:
+The libraries in the Arcus Testing space are split up in these main categories:
 - **Core infrastructure** (contains tech-independent functionality)
 - **Assertions** (contains ways to verify functionality)
 - **Logging** (contains ways to use Microsoft's `ILogger` in your test project)
 - **Technology fixtures** (contains ways to interact with technology in your tests)
 
-Depending on the context of your project, you might use one or more of these categories. The following guides will show you how these categories can be used in new or existing projects.
+Depending on the context of your project, you might use one or more libraries in these categories.
+The following guides will show you how to start with these categories in new or existing projects.
 
 ## Step-by-step guides
-> 🎉 All classes described here are available in the same namespace (`Arcus.Testing`), regardless which library you install.
+> 🎉 All classes described here are available in the same namespace : `Arcus.Testing`, regardless which library you install.
 
-### Where does your integration tests get their values from?
-Usually, integration tests projects need to have configuration values: HTTP endpoints of deployed applications, access keys to authenticate to a deployed service... In your project, these values might come in from environment variables, `appsettings.json` files, or other places.
 
-⚡ Arcus Testing provides a `TestConfig` class that implements Microsoft's `IConfiguration`. This class already has the `appsettings.json` and optional (local) `appsetting.local.json` files embedded upon creation. Meaning that you don't have to re-create this in each test project.
+<details>
+  <summary><h3>Where does your integration tests get their values from?</h3></summary>
 
-1. Install the `Arcus.Testing.Core` NuGet package;
-2. Locate the place where your tests retrieve their values;
-3. Use the `var config = TestConfig.Create()` to create a default instance;
-4. Use the common `config["Your:Config:Key]` syntax to retrieve your value.
+  Usually, integration tests projects need to have configuration values: HTTP endpoints of deployed applications, access keys to authenticate to a deployed service... In your project, these values might come in from environment variables, `appsettings.json` files, or other places.
 
-> 🔗 See [the dedicated feature documentation](./02-Features/01-core.md) for more information on this `Arcus.Testing.Core` package and what other common test operations you repeatably use, like polling, reading local files, etc.
+  ⚡ Arcus Testing provides a `TestConfig` class that implements Microsoft's `IConfiguration`. This class already has the `appsettings.json` and optional (local) `appsetting.local.json` files embedded upon creation. Meaning that you don't have to re-create this in each test project.
+
+  1. Install the `Arcus.Testing.Core` NuGet package;
+  2. Locate the place where your tests retrieve their values;
+  3. Use the `var config = TestConfig.Create()` to create a default instance;
+  4. Use the common `config["Your:Config:Key]` syntax to retrieve your value.
+  
+  > 🔗 See [the dedicated feature documentation](./02-Features/01-core.md) for more information on this `Arcus.Testing.Core` package and what other common test operations you repeatably use, like polling, reading local files, etc.
+
+</details>
 
 ### Do you test if XML, JSON or CSV contents are equal?
 Integration tests usually use content types like XML, JSON or CSV to pass data between systems. When asserting on whether the system used or transformed the data correctly, you have to do an 'equal' check on that data. The problem arises when elements are in a different order, have different casing or contain values that you don't care about, but are there anyway.
