@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
@@ -123,6 +124,26 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         }
 
         /// <summary>
+        /// Provides an Azure Service bus topic subscription rule that is available remotely.
+        /// </summary>
+        /// <returns>The name of the available subscription.</returns>
+        public async Task<RuleProperties> WhenTopicSubscriptionRuleAvailableAsync(string topicName, string subscriptionName)
+        {
+            _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic subscription '{SubscriptionName}' on topic '{TopicName}'", subscriptionName, topicName);
+
+            string ruleName = WhenTopicSubscriptionRuleUnavailable();
+            var filter = Bogus.PickRandom<RuleFilter>(
+                new TrueRuleFilter(),
+                new FalseRuleFilter(),
+                new SqlRuleFilter("1=1"),
+                new CorrelationRuleFilter(Bogus.Random.Guid().ToString()));
+
+            var action = new SqlRuleAction($"SET sys.CorrelationId = '{Bogus.Random.Guid()}';");
+
+            return await _adminClient.CreateRuleAsync(topicName, subscriptionName, new CreateRuleOptions(ruleName, filter) { Action = action });
+        }
+
+        /// <summary>
         /// Provides an Azure Service bus topic subscription that is unavailable remotely.
         /// </summary>
         /// <param name="topicName">THe name of the topic where the subscription should be unavailable.</param>
@@ -133,6 +154,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             _subscriptionNames.Add((topicName, subscriptionName));
 
             return subscriptionName;
+        }
+
+        public string WhenTopicSubscriptionRuleUnavailable()
+        {
+            string ruleName = $"rule-{Bogus.Random.Guid()}";
+            return ruleName;
         }
 
         /// <summary>
@@ -227,6 +254,27 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task ShouldNotHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
             Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
+        }
+
+        public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, RuleProperties rule)
+        {
+            await ShouldHaveTopicSubscriptionRuleAsync(topicName, subscriptionName, rule.Name, actualRule =>
+            {
+                Assert.Equal(rule.Filter, actualRule.Filter);
+            });
+        }
+
+        public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName, Action<RuleProperties> assertion = null)
+        {
+            Assert.True(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service bus topic subscription '{topicName}/{subscriptionName}' should have a subscription rule '{ruleName}', but it hasn't");
+
+            RuleProperties actualRule = await _adminClient.GetRuleAsync(topicName, subscriptionName, ruleName);
+            assertion?.Invoke(actualRule);
+        }
+
+        public async Task ShouldNotHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
+        {
+            Assert.False(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service bus topic subscription '{topicName}/{subscriptionName}' should not have a subscription rule '{ruleName}', but it has");
         }
 
         public async Task ShouldLeaveMessageAsync(string entityName, ServiceBusMessage message)

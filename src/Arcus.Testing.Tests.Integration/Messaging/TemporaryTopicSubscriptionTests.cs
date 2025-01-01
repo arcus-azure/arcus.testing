@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Arcus.Testing.Messaging.ServiceBus;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
@@ -69,6 +70,20 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             // Assert
             await serviceBus.ShouldNotHaveTopicSubscriptionAsync(topicName, subscriptionName);
+        }
+
+        [Fact]
+        public async Task CreateTempTopicSubscription_OnNonExistingTopic_FailsWithSetupError()
+        {
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            // Act / Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => CreateTempTopicSubscriptionAsync("non-existing-topic", "ignored-subscription-name"));
+
+            Assert.Contains("Azure Service bus topic", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("does not exists", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<TemporaryTopicSubscription> CreateTempTopicSubscriptionAsync(string topicName, string subscriptionName)
