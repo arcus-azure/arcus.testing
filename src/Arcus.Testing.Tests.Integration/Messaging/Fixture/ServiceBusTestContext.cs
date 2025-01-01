@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,9 +7,12 @@ using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
@@ -19,17 +23,22 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
     {
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ServiceBusAdministrationClient _adminClient;
+        private readonly ServiceBusClient _messagingClient;
         private readonly Collection<string> _topicNames = new(), _queueNames = new();
         private readonly Collection<(string topicName, string subscriptionName)> _subscriptionNames = new();
         private readonly ILogger _logger;
 
+        private static readonly Faker Bogus = new();
+
         private ServiceBusTestContext(
             TemporaryManagedIdentityConnection connection,
             ServiceBusAdministrationClient adminClient,
+            ServiceBusClient messagingClient,
             ILogger logger)
         {
             _connection = connection;
             _adminClient = adminClient;
+            _messagingClient = messagingClient;
             _logger = logger;
         }
 
@@ -42,9 +51,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             ServiceBusNamespace serviceBus = config.GetServiceBus();
 
             var connection = TemporaryManagedIdentityConnection.Create(servicePrincipal);
-            var client = new ServiceBusAdministrationClient(serviceBus.HostName, new DefaultAzureCredential());
+            var credential = new DefaultAzureCredential();
+            var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
+            var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
 
-            return new ServiceBusTestContext(connection, client, logger);
+            return new ServiceBusTestContext(connection, adminClient, messagingClient, logger);
         }
 
         /// <summary>
@@ -151,6 +162,25 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
         }
 
+        public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
+        {
+            await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
+            ServiceBusMessage message = WhenMessageUnsent();
+
+            await sender.SendMessageAsync(message);
+            return message;
+        }
+
+        public ServiceBusMessage WhenMessageUnsent()
+        {
+            var message = new ServiceBusMessage(Bogus.Random.Bytes(10))
+            {
+                MessageId = $"test-{Bogus.Random.Guid()}"
+            };
+
+            return message;
+        }
+
         /// <summary>
         /// Verifies that the Service bus queue is available.
         /// </summary>
@@ -199,6 +229,31 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
         }
 
+        public async Task ShouldLeaveMessageAsync(string entityName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+        }
+
+        public async Task ShouldDeadLetteredMessageAsync(string entityName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
+        }
+
+        public async Task ShouldCompleteMessageAsync(string entityName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
+
+            await using ServiceBusReceiver deadLetter = _messagingClient.CreateReceiver(entityName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
+            Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
         /// </summary>
@@ -234,6 +289,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
                 }
             })));
 
+            disposables.Add(_messagingClient);
             disposables.Add(_connection);
         }
     }

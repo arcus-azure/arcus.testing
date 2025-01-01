@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net6.0</TargetFrameworks>
+    <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Description>Provides messaging capabilities for Azure Service Bus during Arcus testing</Description>
