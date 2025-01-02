@@ -2,27 +2,22 @@
   # MegaLinter GitHub Action configuration file
   # More info at https://megalinter.io
   name: MegaLinter
-  
+
   on:
     # Trigger mega-linter at every push. Action will also be visible from Pull Requests to main
     push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
     pull_request:
       branches: [main]
-  
+
   concurrency:
     group: ${{ github.ref }}-${{ github.workflow }}
     cancel-in-progress: true
-  
+
   jobs:
     megalinter:
       name: MegaLinter
       runs-on: ubuntu-latest
-      permissions:
-        # Give the default GITHUB_TOKEN write permission to commit and push, comment issues & post new PR
-        # Remove the ones you do not need
-        contents: write
-        issues: write
-        pull-requests: write
+      permissions: write-all
       steps:
         # Git Checkout
         - name: Checkout Code
@@ -30,7 +25,7 @@
           with:
             token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
             fetch-depth: 0 # If you use VALIDATE_ALL_CODEBASE = true, you can remove this line to improve performances
-  
+
         # MegaLinter
         - name: MegaLinter
           id: ml
