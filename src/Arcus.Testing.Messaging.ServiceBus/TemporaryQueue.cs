@@ -25,19 +25,7 @@ namespace Arcus.Testing
         private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = new(), _shouldCompleteMessages = new();
 
         internal OnSetupQueue Messages { get; private set; }
-
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
-
-        internal Func<string, CreateQueueOptions> CreateQueueOptions => name =>
-        {
-            var options = new CreateQueueOptions(name);
-            foreach (var action in _configuredOptions)
-            {
-                action(options);
-            }
-
-            return options;
-        };
 
         /// <summary>
         /// Configures the <see cref="Azure.Messaging.ServiceBus.Administration.CreateQueueOptions"/> used when the test fixture creates the queue.
@@ -56,22 +44,6 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the maximum time duration to wait for messages when setting up the test fixture.
-        /// </summary>
-        /// <param name="maxWaitTime">The maximum time to wait for a message.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
-        public OnSetupTemporaryQueueOptions WaitMaxForMessages(TimeSpan maxWaitTime)
-        {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
-            MaxWaitTime = maxWaitTime;
-            return this;
-        }
-
-        /// <summary>
         /// (default) Configures the <see cref="TemporaryQueue"/> to leave any existing messages be on the queue.
         /// </summary>
         public OnSetupTemporaryQueueOptions LeaveExistingMessages()
@@ -83,15 +55,42 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryQueue"/> to dead-letter any pre-existing messages on the queue upon the creation of the test fixture.
         /// </summary>
+        /// <remarks>
+        ///     Can be used in combination with message-filter on-setup methods.
+        /// </remarks>
         public OnSetupTemporaryQueueOptions DeadLetterMessages()
         {
-            Messages = OnSetupQueue.DeadLetterMessages;
-            return this;
+            return DeadLetterMessages(MaxWaitTime);
         }
 
         /// <summary>
         /// Configures the <see cref="TemporaryQueue"/> to dead-letter any pre-existing messages on the queue upon the creation of the test fixture.
         /// </summary>
+        /// <remarks>
+        ///     Can be used in combination with message-filter on-setup methods.
+        /// </remarks>
+        /// <param name="maxWaitTime">The maximum time to wait for a message.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
+        public OnSetupTemporaryQueueOptions DeadLetterMessages(TimeSpan maxWaitTime)
+        {
+            if (maxWaitTime < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
+            }
+
+            MaxWaitTime = maxWaitTime;
+            Messages = OnSetupQueue.DeadLetterMessages;
+            
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryQueue"/> to dead-letter any pre-existing messages
+        /// that matches the given <paramref name="messageFilter"/> on the queue upon the creation of the test fixture.
+        /// </summary>
+        /// <remarks>
+        ///     The maximum time to wait for messages on receiving is determined by <see cref="DeadLetterMessages(TimeSpan)"/>.
+        /// </remarks>
         /// <param name="messageFilter">The custom filter to determine whether a message should be dead-lettered or not.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageFilter"/> is <c>null</c>.</exception>
         public OnSetupTemporaryQueueOptions DeadLetterMessages(Func<ServiceBusReceivedMessage, bool> messageFilter)
@@ -102,18 +101,46 @@ namespace Arcus.Testing
             return this;
         }
 
-
         /// <summary>
         /// Configures the <see cref="TemporaryQueue"/> to complete any pre-existing messages on the queue upon the creation of the test fixture.
         /// </summary>
+        /// <remarks>
+        ///     Can be used in combination with message-filter on-setup methods.
+        /// </remarks>
         public OnSetupTemporaryQueueOptions CompleteMessages()
         {
-            Messages = OnSetupQueue.CompleteMessages;
-            return this;
+            return CompleteMessages(MaxWaitTime);
         }
 
         /// <summary>
         /// Configures the <see cref="TemporaryQueue"/> to complete any pre-existing messages on the queue upon the creation of the test fixture.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     Can be used in combination with message-filter on-setup methods.
+        ///   </para>
+        ///   <para>
+        ///     The maximum time to wait for messages on receiving is determined by <see cref="CompleteMessages(TimeSpan)"/>.
+        ///   </para>
+        /// </remarks>
+        /// <param name="maxWaitTime">The maximum time to wait for a message.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
+        public OnSetupTemporaryQueueOptions CompleteMessages(TimeSpan maxWaitTime)
+        {
+            if (maxWaitTime < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
+            }
+
+            MaxWaitTime = maxWaitTime;
+            Messages = OnSetupQueue.CompleteMessages;
+            
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryQueue"/> to complete any pre-existing messages
+        /// that matches the given <paramref name="messageFilter"/> on the queue upon the creation of the test fixture.
         /// </summary>
         /// <param name="messageFilter">The custom filter to determine whether a message should be completed or not.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageFilter"/> is <c>null</c>.</exception>
@@ -123,6 +150,17 @@ namespace Arcus.Testing
             _shouldCompleteMessages.Add(messageFilter);
 
             return this;
+        }
+
+        internal CreateQueueOptions CreateQueueOptions(string name)
+        {
+            var options = new CreateQueueOptions(name);
+            foreach (var action in _configuredOptions)
+            {
+                action(options);
+            }
+
+            return options;
         }
 
         internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message)
@@ -158,11 +196,37 @@ namespace Arcus.Testing
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
 
         /// <summary>
-        /// Configures the maximum time duration to wait for messages when tearing down the test fixture.
+        /// (default) Configures the <see cref="TemporaryQueue"/> to dead-letter any remaining messages on the queue.
         /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     This both dead-letters messages that were send via the test fixture and outside the test fixture
+        ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     Can be used in combination of message-filter on-teardown methods.
+        ///   </para>
+        /// </remarks>
+        public OnTeardownTemporaryQueueOptions DeadLetterMessages()
+        {
+            return DeadLetterMessages(MaxWaitTime);
+        }
+
+        /// <summary>
+        /// (default) Configures the <see cref="TemporaryQueue"/> to dead-letter any remaining messages on the queue.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     This both dead-letters messages that were send via the test fixture and outside the test fixture
+        ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     Can be used in combination of message-filter on-teardown methods.
+        ///   </para>
+        /// </remarks>
         /// <param name="maxWaitTime">The maximum time to wait for a message.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
-        public OnTeardownTemporaryQueueOptions WaitMaxForMessages(TimeSpan maxWaitTime)
+        public OnTeardownTemporaryQueueOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
             if (maxWaitTime < TimeSpan.Zero)
             {
@@ -170,19 +234,8 @@ namespace Arcus.Testing
             }
 
             MaxWaitTime = maxWaitTime;
-            return this;
-        }
-
-        /// <summary>
-        /// (default) Configures the <see cref="TemporaryQueue"/> to dead-letter any remaining messages on the queue.
-        /// </summary>
-        /// <remarks>
-        ///     This both dead-letters messages that were send via the test fixture and outside the test fixture
-        ///     to ensure a non-lingering queue after the test run.
-        /// </remarks>
-        public OnTeardownTemporaryQueueOptions DeadLetterMessages()
-        {
             Messages = OnTeardownQueue.DeadLetterMessages;
+
             return this;
         }
 
@@ -191,8 +244,13 @@ namespace Arcus.Testing
         /// that matches the given <paramref name="messageFilter"/>.
         /// </summary>
         /// <remarks>
+        ///   <para>
         ///     This both dead-letters messages that were send via the test fixture and outside the test fixture
         ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     The maximum time to wait for messages on receiving is determined by <see cref="DeadLetterMessages(TimeSpan)"/>.
+        ///   </para>
         /// </remarks>
         /// <param name="messageFilter">The custom filter to determine whether a message should be dead-lettered or not.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageFilter"/> is <c>null</c>.</exception>
@@ -208,12 +266,43 @@ namespace Arcus.Testing
         /// Configures the <see cref="TemporaryQueue"/> to complete any remaining messages on the queue.
         /// </summary>
         /// <remarks>
+        ///   <para>
         ///     This both completes messages that were send via the test fixture and outside the test fixture
         ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     Can be used in combination of message-filter on-teardown methods.
+        ///   </para>
         /// </remarks>
         public OnTeardownTemporaryQueueOptions CompleteMessages()
         {
+            return CompleteMessages(MaxWaitTime);
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryQueue"/> to complete any remaining messages on the queue.
+        /// </summary>
+        /// <remarks>
+        ///   <para>
+        ///     This both completes messages that were send via the test fixture and outside the test fixture
+        ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     Can be used in combination of message-filter on-teardown methods.
+        ///   </para>
+        /// </remarks>
+        /// <param name="maxWaitTime">The maximum time to wait for a message.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
+        public OnTeardownTemporaryQueueOptions CompleteMessages(TimeSpan maxWaitTime)
+        {
+            if (maxWaitTime < TimeSpan.Zero)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
+            }
+
+            MaxWaitTime = maxWaitTime;
             Messages = OnTeardownQueue.CompleteMessages;
+            
             return this;
         }
 
@@ -221,8 +310,13 @@ namespace Arcus.Testing
         /// Configures the <see cref="TemporaryQueue"/> to complete any remaining messages on the queue.
         /// </summary>
         /// <remarks>
+        ///   <para>
         ///     This both completes messages that were send via the test fixture and outside the test fixture
         ///     to ensure a non-lingering queue after the test run.
+        ///   </para>
+        ///   <para>
+        ///     The maximum time to wait for messages on receiving is determined by <see cref="CompleteMessages(TimeSpan)"/>.
+        ///   </para>
         /// </remarks>
         /// <param name="messageFilter">The custom filter to determine whether a message should be completed or not.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageFilter"/> is <c>null</c>.</exception>
@@ -279,7 +373,6 @@ namespace Arcus.Testing
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
 
-        private readonly string _serviceBusNamespace;
         private readonly bool _createdByUs;
         private readonly TemporaryQueueOptions _options;
         private readonly ILogger _logger;
@@ -287,7 +380,6 @@ namespace Arcus.Testing
         private TemporaryQueue(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
-            string serviceBusNamespace,
             string queueName,
             bool createdByUs,
             TemporaryQueueOptions options,
@@ -295,17 +387,16 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(adminClient);
             ArgumentNullException.ThrowIfNull(messagingClient);
-            ArgumentNullException.ThrowIfNull(serviceBusNamespace);
             ArgumentNullException.ThrowIfNull(queueName);
 
             _adminClient = adminClient;
             _messagingClient = messagingClient;
-            _serviceBusNamespace = serviceBusNamespace;
             _createdByUs = createdByUs;
             _options = options ?? new TemporaryQueueOptions();
             _logger = logger ?? NullLogger.Instance;
 
             Name = queueName;
+            FullyQualifiedNamespace = messagingClient.FullyQualifiedNamespace;
             Sender = _messagingClient.CreateSender(queueName);
             Receiver = _messagingClient.CreateReceiver(queueName);
         }
@@ -314,6 +405,11 @@ namespace Arcus.Testing
         /// Gets the name of the Azure Service bus queue that is possibly created by the test fixture.
         /// </summary>
         public string Name { get; }
+
+        /// <summary>
+        /// Gets the fully-qualified name of the Azure Service bus namespace for which this test fixture managed a queue.
+        /// </summary>
+        public string FullyQualifiedNamespace { get; }
 
         /// <summary>
         /// Gets the options related to tearing down the <see cref="TemporaryQueue"/>.
@@ -329,6 +425,11 @@ namespace Arcus.Testing
         /// Gets the client to receive messages from this Azure Service bus test-managed queue.
         /// </summary>
         public ServiceBusReceiver Receiver { get; }
+
+        /// <summary>
+        /// Gets the filter client to search for messages on the Azure Service bus test-managed queue (a.k.a. 'spy test fixture').
+        /// </summary>
+        public ServiceBusMessageFilter Messages => new(Name, _messagingClient);
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
@@ -436,25 +537,22 @@ namespace Arcus.Testing
             var options = new TemporaryQueueOptions();
             configureOptions?.Invoke(options);
 
-            var createOptions = options.OnSetup.CreateQueueOptions(queueName);
-
-            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync();
-            string serviceBusNamespace = properties.Name;
+            CreateQueueOptions createOptions = options.OnSetup.CreateQueueOptions(queueName);
 
             if (await adminClient.QueueExistsAsync(createOptions.Name))
             {
-                logger.LogTrace("[Test:Setup] Use already existing Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, serviceBusNamespace);
-                var queue = new TemporaryQueue(adminClient, messagingClient, serviceBusNamespace, createOptions.Name, createdByUs: false, options, logger);
+                logger.LogDebug("[Test:Setup] Use already existing Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, createdByUs: false, options, logger);
 
                 await queue.CleanOnSetupAsync();
                 return queue;
             }
             else
             {
-                logger.LogTrace("[Test:Setup] Create new Azure Service bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, serviceBusNamespace);
+                logger.LogDebug("[Test:Setup] Create new Azure Service bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 await adminClient.CreateQueueAsync(createOptions);
 
-                var queue = new TemporaryQueue(adminClient, messagingClient, serviceBusNamespace, createOptions.Name, createdByUs: true, options, logger);
+                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, createdByUs: true, options, logger);
 
                 await queue.CleanOnSetupAsync();
                 return queue;
@@ -474,26 +572,15 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnSetup.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, _serviceBusNamespace);
+                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await Receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, _serviceBusNamespace);
+                    _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await Receiver.CompleteMessageAsync(message);
                 }
             });
-        }
-
-        /// <summary>
-        /// Sends a message to the temporary available Azure Service bus queue.
-        /// </summary>
-        /// <param name="message">The message to send to the queue.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> or its ID are <c>null</c>.</exception>
-        public async Task SendMessageAsync(ServiceBusMessage message)
-        {
-            ArgumentNullException.ThrowIfNull(message);
-            await Sender.SendMessageAsync(message);
         }
 
         /// <summary>
@@ -510,7 +597,7 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", Name, _serviceBusNamespace);
+                        _logger.LogDebug("[Test:Teardown] Delete Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", Name, FullyQualifiedNamespace);
                         await _adminClient.DeleteQueueAsync(Name);
                     }));
                 }
@@ -536,12 +623,12 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, _serviceBusNamespace);
+                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await Receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, _serviceBusNamespace);
+                    _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await Receiver.CompleteMessageAsync(message);
                 }
             });

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Testing.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -25,16 +25,22 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync("<namespace>", topicName, NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync("<namespace>", topicName, NullLogger.Instance, configureOptions: opt => { }));
 
-            var client = new Mock<ServiceBusAdministrationClient>();
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(client.Object, topicName, NullLogger.Instance));
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(client.Object, topicName, NullLogger.Instance, configureOptions: opt => { }));
+            var adminClient = new Mock<ServiceBusAdministrationClient>();
+            var messagingClient = new Mock<ServiceBusClient>();
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient.Object, messagingClient.Object, topicName, NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient.Object, messagingClient.Object, topicName, NullLogger.Instance, configureOptions: opt => { }));
         }
 
         [Fact]
         public async Task CreateTempTopic_WithoutClient_Fails()
         {
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient: null, "<topic-name>", NullLogger.Instance));
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient: null, "<topic-name>", NullLogger.Instance, configureOptions: opt => { }));
+            var messagingClient = new Mock<ServiceBusClient>();
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient: null, messagingClient.Object, "<topic-name>", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient: null, messagingClient.Object, "<topic-name>", NullLogger.Instance, configureOptions: opt => { }));
+
+            var adminClient = new Mock<ServiceBusAdministrationClient>();
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient.Object, messagingClient: null, "<topic-name>", NullLogger.Instance));
+            await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryTopic.CreateIfNotExistsAsync(adminClient.Object, messagingClient: null, "<topic-name>", NullLogger.Instance, configureOptions: opt => { }));
         }
     }
 }

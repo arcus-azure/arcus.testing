@@ -180,15 +180,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             await _adminClient.DeleteTopicAsync(topicName);
         }
 
-        /// <summary>
-        /// Makes sure that the Azure Service bus subscription is deleted on the topic.
-        /// </summary>
-        public async Task WhenTopicSubscriptionDeletedAsync(string topicName, string subscriptionName)
-        {
-            _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription '{SubscriptionName}' in topic '{TopicName}'", subscriptionName, topicName);
-            await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
-        }
-
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
         {
             await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
@@ -240,46 +231,16 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             Assert.False(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
         }
 
-        /// <summary>
-        /// Verifies that the Service bus topic subscription is available.
-        /// </summary>
-        public async Task ShouldHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
-        {
-            Assert.True(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should have a subscription '{subscriptionName}', but it hasn't");
-        }
-
-        /// <summary>
-        /// Verifies that the Service bus topic subscription is unavailable.
-        /// </summary>
-        public async Task ShouldNotHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
-        {
-            Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
-        }
-
-        public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, RuleProperties rule)
-        {
-            await ShouldHaveTopicSubscriptionRuleAsync(topicName, subscriptionName, rule.Name, actualRule =>
-            {
-                Assert.Equal(rule.Filter, actualRule.Filter);
-            });
-        }
-
-        public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName, Action<RuleProperties> assertion = null)
-        {
-            Assert.True(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service bus topic subscription '{topicName}/{subscriptionName}' should have a subscription rule '{ruleName}', but it hasn't");
-
-            RuleProperties actualRule = await _adminClient.GetRuleAsync(topicName, subscriptionName, ruleName);
-            assertion?.Invoke(actualRule);
-        }
-
-        public async Task ShouldNotHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
-        {
-            Assert.False(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service bus topic subscription '{topicName}/{subscriptionName}' should not have a subscription rule '{ruleName}', but it has");
-        }
-
         public async Task ShouldLeaveMessageAsync(string entityName, ServiceBusMessage message)
         {
             await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+        }
+
+        public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName);
             IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
             Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
         }
@@ -291,13 +252,31 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
         }
 
-        public async Task ShouldCompleteMessageAsync(string entityName, ServiceBusMessage message)
+        public async Task ShouldDeadLetteredMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
+        }
+
+        public async Task ShouldCompletedMessageAsync(string entityName, ServiceBusMessage message)
         {
             await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
             IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
             Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
 
             await using ServiceBusReceiver deadLetter = _messagingClient.CreateReceiver(entityName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
+            Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
+        }
+
+        public async Task ShouldCompletedMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
+
+            await using ServiceBusReceiver deadLetter = _messagingClient.CreateReceiver(entityName, subscriptionName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
             IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
             Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
         }

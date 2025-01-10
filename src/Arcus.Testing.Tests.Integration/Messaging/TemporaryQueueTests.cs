@@ -51,7 +51,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldLeaveMessageAsync(queueName, messageBefore);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
-            await temp.SendMessageAsync(messageAfter);
+            await temp.Sender.SendMessageAsync(messageAfter);
 
             await temp.DisposeAsync();
             await serviceBus.ShouldHaveQueueAsync(queueName);
@@ -79,10 +79,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             // Assert
             await serviceBus.ShouldHaveQueueAsync(queueName);
             await serviceBus.ShouldDeadLetteredMessageAsync(queueName, messageDeadLetterBefore);
-            await serviceBus.ShouldCompleteMessageAsync(queueName, messageCompleteBefore);
+            await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteBefore);
+
+            Assert.True(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageDeadLetterBefore.MessageId).AnyAsync(), $"temp queue should have found dead-lettered message '{messageDeadLetterBefore.MessageId}'");
+            Assert.False(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageCompleteBefore.MessageId).AnyAsync(), $"temp queue should not have found completed message '{messageCompleteBefore.MessageId}'");
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
-            await temp.SendMessageAsync(messageAfter);
+            await temp.Sender.SendMessageAsync(messageAfter);
 
             await temp.DisposeAsync();
             await serviceBus.ShouldDeadLetteredMessageAsync(queueName, messageAfter);
@@ -99,7 +102,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             ServiceBusMessage messageDeadLetterBefore = await serviceBus.WhenMessageSentAsync(queueName);
 
             // Act
-            _ = await CreateTempQueueAsync(queueName, options =>
+            TemporaryQueue temp = await CreateTempQueueAsync(queueName, options =>
             {
                 options.OnSetup.CompleteMessages()
                                .DeadLetterMessages(msg => msg.MessageId == messageDeadLetterBefore.MessageId);
@@ -107,8 +110,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             // Assert
             await serviceBus.ShouldHaveQueueAsync(queueName);
-            await serviceBus.ShouldCompleteMessageAsync(queueName, messageCompleteBefore);
+            await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteBefore);
             await serviceBus.ShouldDeadLetteredMessageAsync(queueName, messageDeadLetterBefore);
+
+            Assert.Empty(await temp.Messages.Where(msg => msg.MessageId == messageCompleteBefore.MessageId));
+            Assert.Single(await temp.Messages.FromDeadLetter().Take(10).Where(msg => msg.MessageId == messageDeadLetterBefore.MessageId));
         }
 
         [Fact]
@@ -133,6 +139,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             // Assert
             await serviceBus.ShouldHaveQueueAsync(queueName);
             await serviceBus.ShouldLeaveMessageAsync(queueName, messageCompleteBefore1);
+            Assert.Single(await temp.Messages.Where(msg => msg.MessageId == messageCompleteBefore1.MessageId));
 
             ServiceBusMessage messageCompleteAfter = serviceBus.WhenMessageUnsent(),
                               messageDeadLetterAfter = serviceBus.WhenMessageUnsent();
@@ -141,9 +148,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             await temp.DisposeAsync();
 
-            await serviceBus.ShouldCompleteMessageAsync(queueName, messageCompleteBefore1);
-            await serviceBus.ShouldCompleteMessageAsync(queueName, messageCompleteBefore2);
-            await serviceBus.ShouldCompleteMessageAsync(queueName, messageCompleteAfter);
+            await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteBefore1);
+            await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteBefore2);
+            await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteAfter);
             await serviceBus.ShouldDeadLetteredMessageAsync(queueName, messageDeadLetterAfter);
         }
 
@@ -177,9 +184,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging
                             options.OnSetup.CreateQueueWith(queue => queue.Name = Bogus.Random.Guid().ToString())
                                            .CreateQueueWith(queue => queue.Name = queueName);
 
-                            options.OnSetup.WaitMaxForMessages(TimeSpan.FromSeconds(5));
-                            options.OnTeardown.WaitMaxForMessages(TimeSpan.FromSeconds(5));
-
                             configureOptions(options);
                         });
 
@@ -187,6 +191,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             Assert.Equal(queueName, temp.Sender.EntityPath);
             Assert.Equal(queueName, temp.Receiver.EntityPath);
 
+            Assert.Equal(fullyQualifiedNamespace, temp.FullyQualifiedNamespace);
             Assert.Equal(fullyQualifiedNamespace, temp.Sender.FullyQualifiedNamespace);
             Assert.Equal(fullyQualifiedNamespace, temp.Receiver.FullyQualifiedNamespace);
 
