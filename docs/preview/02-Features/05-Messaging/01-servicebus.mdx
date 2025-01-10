@@ -28,27 +28,92 @@ await using var topic = await TemporaryTopic.CreateIfNotExistsAsync(
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
 
-Adding subscriptions to the topic can also be done via the test fixture. It always makes sure that any added subscriptions are deleted again afterwards.
+### Customization
+The `TemporaryTopic` allows testers to configure setup/teardown operations on any messages that were on the topic subscriptions (or the topic itself) at the time of setup/teardown. This follows the 'clean environment' testing principle.
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryTopic.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+    
+    // Change the default topic-creation behavior.
+    options.OnSetup.CreateTopicWith((CreateTopicOptions opt) => ...);
+
+    // (Default) leave any existing messages on all the topic subscriptions. 
+    options.OnSetup.LeaveExistingMessages();
+
+    // Dead-letter any existing messages on all the topic subscriptions.
+    options.OnSetup.DeadLetterMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnSetup.DeadLetterMessages(TimeSpan.FromSeconds(10));
+    options.OnSetup.DeadLetterMessages((ServiceBusReceivedMessage msg) => 
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>");
+    });
+
+    // Complete any existing messages on all the topic subscriptions.
+    options.OnSetup.CompleteMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnSetup.CompleteMessages(TimeSpan.FromSeconds(10));
+    options.OnSetup.CompleteMessages((ServiceBusReceivedMessage msg) =>
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>"); 
+    });
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default) Dead-letter any lingering messages on all the topic subscriptions.
+    options.OnTeardown.DeadLetterMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnTeardown.DeadLetterMessages(TimeSpan.FromSeconds(10));
+    options.OnTeardown.DeadLetterMessages((ServiceBusReceivedMessage msg) => 
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>");
+    });
+
+    // Complete any lingering messages on all the topic subscriptions.
+    options.OnTeardown.CompleteMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnTeardown.CompleteMessages(TimeSpan.FromSeconds(10));
+    options.OnTeardown.CompleteMessages((ServiceBusReceivedMessage msg) =>
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>"); 
+    });
+});
+```
+
+### Peek for messages
+The `TemporaryTopic` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a topic, or as a test assertion to verify Service bus-related implementations.
 
 ```csharp
 using Arcus.Testing;
 
 await using TemporaryTopic topic = ...
 
-await topic.AddSubscriptionAsync("<subscription-name>");
+IEnumerable<ServiceBusReceivedMessage> messages =
+  await topic.MessagesOn("<subscription-name>")
+
+              // Get subset messages currently on the topic subscription.
+             .Where(msg => msg.ApplicationProperties.ContainsKey("<my-key>"))
+             .Where(msg => msg.ContentType == "application/json")
+
+              // Get messages only from the dead-letter sub-queue.
+             .FromDeadLetter()
+
+             // Get only a number of messages (default: 100).
+             .Take(10)
+
+             // Start peeking for messages.
+             .ToListAsync();
 ```
-
-### Temporary topic subscription
-While topic subscriptions can be added to a topic via the `AddSubscription` on the `TemporaryTopic` test fixture, the library also supports adding such subscriptions directly with a dedicated fixture.
-
-```csharp
-using Arcus.Testing;
-
-await var subscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(
-  "<fully-qualified-namespace>", "<topic-name>", "<subscription-name>", logger);
-```
-
-> ⚠️ Make sure that there is an Azure Service Bus topic available at the time of setting up this test fixture, otherwise an exception will be thrown.
 
 </TabItem>
 <TabItem value="queue" label="Queue">
@@ -66,6 +131,94 @@ await using var queue = await TemporaryQueue.CreateIfNotExistsAsync(
 ```
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
+
+
+### Customization
+The `TemporaryQueue` allows testers to configure setup/teardown operations on any messages that were on the queue (or the queue itself) at the time of setup/teardown. This follows the 'clean environment' testing principle.
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryQueue.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+    
+    // Change the default queue-creation behavior.
+    options.OnSetup.CreateQueueWith((CreateQueueOptions opt) => ...);
+
+    // (Default) leave any existing messages on the queue. 
+    options.OnSetup.LeaveExistingMessages();
+
+    // Dead-letter any existing messages on the queue.
+    options.OnSetup.DeadLetterMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnSetup.DeadLetterMessages(TimeSpan.FromSeconds(10));
+    options.OnSetup.DeadLetterMessages((ServiceBusReceivedMessage msg) => 
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>");
+    });
+
+    // Complete any existing messages on the queue.
+    options.OnSetup.CompleteMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnSetup.CompleteMessages(TimeSpan.FromSeconds(10));
+    options.OnSetup.CompleteMessages((ServiceBusReceivedMessage msg) =>
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>"); 
+    });
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default) Dead-letter any lingering messages on the queue.
+    options.OnTeardown.DeadLetterMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnTeardown.DeadLetterMessages(TimeSpan.FromSeconds(10));
+    options.OnTeardown.DeadLetterMessages((ServiceBusReceivedMessage msg) => 
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>");
+    });
+
+    // Complete any lingering messages on the queue.
+    options.OnTeardown.CompleteMessages(); // 💡 Max wait time default 5 seconds.
+    options.OnTeardown.CompleteMessages(TimeSpan.FromSeconds(10));
+    options.OnTeardown.CompleteMessages((ServiceBusReceivedMessage msg) =>
+    {
+        // ⚡ Multiple calls will be aggregated.
+        // ⚡ Can be used in combination with other complete/dead-letter operations.  
+        return msg.ApplicationProperties.ContainsKey("<key>"); 
+    });
+});
+```
+
+### Peek for messages
+The `TemporaryQueue` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a queue, or as a test assertion to verify Service bus-related implementations.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryQueue queue = ...
+
+IEnumerable<ServiceBusReceivedMessage> messages =
+  await queue.Messages
+
+              // Get subset messages currently on the queue.
+             .Where(msg => msg.ApplicationProperties.ContainsKey("<my-key>"))
+             .Where(msg => msg.ContentType == "application/json")
+
+              // Get messages only from the dead-letter sub-queue.
+             .FromDeadLetter()
+
+             // Get only a number of messages (default: 100).
+             .Take(10)
+
+             // Start peeking for messages.
+             .ToListAsync();
+```
 
 </TabItem>
 </Tabs>

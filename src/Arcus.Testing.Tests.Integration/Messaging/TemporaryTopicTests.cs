@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Identity.Client;
 using Xunit;
 using Xunit.Abstractions;
 

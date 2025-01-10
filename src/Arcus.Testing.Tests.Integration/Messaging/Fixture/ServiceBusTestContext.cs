@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
@@ -13,7 +12,6 @@ using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
@@ -124,26 +122,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         }
 
         /// <summary>
-        /// Provides an Azure Service bus topic subscription rule that is available remotely.
-        /// </summary>
-        /// <returns>The name of the available subscription.</returns>
-        public async Task<RuleProperties> WhenTopicSubscriptionRuleAvailableAsync(string topicName, string subscriptionName)
-        {
-            _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic subscription '{SubscriptionName}' on topic '{TopicName}'", subscriptionName, topicName);
-
-            string ruleName = WhenTopicSubscriptionRuleUnavailable();
-            var filter = Bogus.PickRandom<RuleFilter>(
-                new TrueRuleFilter(),
-                new FalseRuleFilter(),
-                new SqlRuleFilter("1=1"),
-                new CorrelationRuleFilter(Bogus.Random.Guid().ToString()));
-
-            var action = new SqlRuleAction($"SET sys.CorrelationId = '{Bogus.Random.Guid()}';");
-
-            return await _adminClient.CreateRuleAsync(topicName, subscriptionName, new CreateRuleOptions(ruleName, filter) { Action = action });
-        }
-
-        /// <summary>
         /// Provides an Azure Service bus topic subscription that is unavailable remotely.
         /// </summary>
         /// <param name="topicName">THe name of the topic where the subscription should be unavailable.</param>
@@ -154,12 +132,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             _subscriptionNames.Add((topicName, subscriptionName));
 
             return subscriptionName;
-        }
-
-        public string WhenTopicSubscriptionRuleUnavailable()
-        {
-            string ruleName = $"rule-{Bogus.Random.Guid()}";
-            return ruleName;
         }
 
         /// <summary>
@@ -231,54 +203,71 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             Assert.False(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
         }
 
+        /// <summary>
+        /// Verifies that the message is left alone on the Azure Service bus entity.
+        /// </summary>
         public async Task ShouldLeaveMessageAsync(string entityName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            await ShouldLeaveMessageAsync(entityName, subscriptionName: null, message);
         }
 
+        /// <summary>
+        /// Verifies that the message is left alone on the Azure Service bus entity.
+        /// </summary>
         public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName);
+            await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
             IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
             Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
         }
 
+        /// <summary>
+        /// Verifies that the message is dead-lettered on the Azure Service bus entity.
+        /// </summary>
         public async Task ShouldDeadLetteredMessageAsync(string entityName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
+            await ShouldDeadLetteredMessageAsync(entityName, subscriptionName: null, message);
         }
 
+        /// <summary>
+        /// Verifies that the message is dead-lettered on the Azure Service bus entity.
+        /// </summary>
         public async Task ShouldDeadLetteredMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName, SubQueue.DeadLetter);
             IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
             Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
         }
 
+        /// <summary>
+        /// Verifies that the message is completed on the Azure Service bus entity.
+        /// </summary>
         public async Task ShouldCompletedMessageAsync(string entityName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName);
+            await ShouldCompletedMessageAsync(entityName, subscriptionName: null, message);
+        }
+        
+        /// <summary>
+        /// Verifies that the message is completed on the Azure Service bus entity.
+        /// </summary>
+        public async Task ShouldCompletedMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
+        {
+            await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
             IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
             Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
 
-            await using ServiceBusReceiver deadLetter = _messagingClient.CreateReceiver(entityName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+            await using ServiceBusReceiver deadLetter = CreateReceiver(entityName, subscriptionName, SubQueue.DeadLetter);
             IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
             Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
         }
 
-        public async Task ShouldCompletedMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
+        private ServiceBusReceiver CreateReceiver(string entityName, string subscriptionName = null, SubQueue subQueue = SubQueue.None)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(entityName, subscriptionName);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-            Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
+            var options = new ServiceBusReceiverOptions { SubQueue = subQueue };
 
-            await using ServiceBusReceiver deadLetter = _messagingClient.CreateReceiver(entityName, subscriptionName, new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
-            IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
-            Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
+            return subscriptionName is null
+                ? _messagingClient.CreateReceiver(entityName, options)
+                : _messagingClient.CreateReceiver(entityName, subscriptionName, options);
         }
 
         /// <summary>
