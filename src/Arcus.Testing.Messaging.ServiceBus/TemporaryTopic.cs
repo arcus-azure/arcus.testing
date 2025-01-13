@@ -598,7 +598,7 @@ namespace Arcus.Testing
         ///     The function to configure the additional options that describes how the Azure Service Bus topic subscription should be created.
         /// </param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        public async Task AddSubscriptionAsync(string subscriptionName, Action<CreateSubscriptionOptions> configureOptions)
+        public async Task AddSubscriptionAsync(string subscriptionName, Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
             _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions));
         }

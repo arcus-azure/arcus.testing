@@ -163,8 +163,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
         {
-            await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
             ServiceBusMessage message = WhenMessageUnsent();
+            return await WhenMessageSentAsync(entityName, message);
+        }
+
+        public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName, ServiceBusMessage message)
+        {
+            await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
 
             await sender.SendMessageAsync(message);
             return message;
