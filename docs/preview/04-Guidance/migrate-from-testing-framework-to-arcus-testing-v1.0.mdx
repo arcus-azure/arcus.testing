@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Migrate your test suite from Testing Framework to Arcus.Testing v1.0
+# Migrate your test suite from Testing Framework to Arcus.Testing v1
 This guide will walk you through the process of migrating your test suite from using the Testing Framework to `Arcus.Testing`.
 
 > ⚠️ **IMPORTANT** to note that the `Arcus.Testing` approach uses the files in the build output in any of its functionality (`TestConfig`, `ResourceDirectory`...). It uses this approach for more easily access to the actual files used (instead of hidden as an embedded resource). It is best to add your files needed in your test project either as links ([see how](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html)) or as actual files if only used for testing. **In both cases, they need to be copied to the output.**:
@@ -18,11 +18,11 @@ This guide will walk you through the process of migrating your test suite from u
 The `Codit.Testing.OutputComparison` library has some functionality to compare different kinds of file types. The new `Arcus.Testing.Assert` library handles these comparisons from now on.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the supported assertions.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the supported assertions.
 
 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
@@ -59,7 +59,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertXml`.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXml`.
 
 </TabItem>
 <TabItem value="json" label="JSON">
@@ -94,7 +94,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertJson` and the available options.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertJson` and the available options.
 
 </TabItem>
 <TabItem value="csv" label="CSV">
@@ -138,7 +138,7 @@ string actualCsv = ...;
 + });
 ```
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertCsv` and the available options.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertCsv` and the available options.
 
 </TabItem>
 </Tabs>
@@ -174,7 +174,7 @@ Here's how XML-XML now works:
 
 > 💡You can use the test-friendly `AssertXml/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 </TabItem>
 <TabItem value="json" label="XML to JSON">
@@ -202,7 +202,7 @@ Here's how XML-JSON now works:
 
 > 💡You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/JSON document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 </TabItem>
 <TabItem value="csv" label="XML to CSV">
@@ -230,10 +230,10 @@ Here's how XML-CSV now works:
 
 > 💡You can use the test-friendly `AssertXml/Csv/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/CSV document. Upon failure, a load exception with a detailed description will be reported to the tester.
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../02-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
 
 
-🔗 See the [feature documentation](../02-Features/02-assertion.mdx) for more info on the `AssertXslt`.
+🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXslt`.
 
 </TabItem>
 </Tabs>
@@ -257,7 +257,7 @@ The original Testing Framework had a `TestXsltSequential` exposed functionality 
 The `Codit.Testing.DataFactory` handled start/stop functionality on DataFlow/Pipelines in DataFactory with and without debug sessions. Testing DataFlow's and managing debug sessions is now fully managed with `Arcus.Testing.Integration.DataFactory`.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Integration.DataFactory
 ```
 
@@ -322,12 +322,12 @@ Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDe
 + AssertJson.Equal(expected, actual);
 ```
 
-> ⚡ Assertion is now separated also from the run operation. [Arcus.Testing.Assert](../02-Features/02-assertion.mdx) can be used to assert on the available sink result.
+> ⚡ Assertion is now separated also from the run operation. [Arcus.Testing.Assert](../03-Features/02-assertion.mdx) can be used to assert on the available sink result.
 
 ### Run a Data pipeline
-Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../02-Features/01-core.md) packages.
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../03-Features/01-core.md) packages.
 
-🔗 See the [feature documentation](../02-Features/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
+🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
 
 ## Replace storage account interactions
 
@@ -340,7 +340,7 @@ The `Codit.Testing.BlobStorage` in the past acted as a wrapper for common storag
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Blob
 ```
 
@@ -364,7 +364,7 @@ The testing framework separated storage operations, which are now collected in a
 + await client.GetBlobsAsync(BlobTraits.None, BlobStates.None, "<prefix>");
 ```
 
-🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 ### Interact with Blob file
 The testing framework separated storage operations, which are now collected in a single `TemporaryBlobFile` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the file can be done with the Azure SDK.
@@ -387,7 +387,7 @@ The testing framework separated storage operations, which are now collected in a
 + BlobClient = file.Client;
 ```
 
-🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 </TabItem>
 <TabItem value="table" label="Table storage">
@@ -398,7 +398,7 @@ The `Codit.Testing.TableStorage` in the past acted as a wrapper for common stora
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Table
 ```
 
@@ -427,7 +427,7 @@ The testing framework separated storage operations, which are now collected in a
 + await table.AddEntityAsync(<model>);
 ```
 
-🔗 See the [feature documentation](../02-Features/04-Storage/01-storage-account.mdx) for more information on interacting with Table storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Table storage.
 
 </TabItem>
 </Tabs>
@@ -438,7 +438,7 @@ The `Codit.Testing.CosmosDb` in the past acted as a wrapper for common storage o
 These fixtures are configurable to fit the need of the test, instead of having to call multiple methods on 'helpers'.
 
 Start by installing this library:
-```shell
+```powershell
 PM > Install-Package -Name Arcus.Testing.Storage.Cosmos
 ```
 
@@ -472,4 +472,4 @@ The testing framework separated storage operations, which are now collected in a
 + await container.AddItemAsync(<model>);
 ```
 
-🔗 See the [feature documentation](../02-Features/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.
+🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.

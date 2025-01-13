@@ -149,7 +149,7 @@ namespace Arcus.Testing
             AsyncRetryPolicy policy =
                 Policy.Handle<Exception>(ex =>
                       {
-                          _logger.LogError(ex, "Test fixture failed to be tear down, retrying {RetryInterval:g}...", Options.RetryInterval);
+                          _logger.LogError(ex, "[Test:Teardown] Test fixture failed to be tear down: '{Message}', retrying in {RetryInterval:g}...", ex.Message, Options.RetryInterval);
                           return true;
                       })
                       .WaitAndRetryAsync(Options.RetryCount, index => Options.RetryInterval);
@@ -175,7 +175,9 @@ namespace Arcus.Testing
 
             if (exceptions.Count > 1)
             {
-                throw new AggregateException("Some test fixtures failed to tear down correctly", exceptions);
+                throw new AggregateException(
+                    "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information", 
+                    exceptions);
             }
         }
     }
