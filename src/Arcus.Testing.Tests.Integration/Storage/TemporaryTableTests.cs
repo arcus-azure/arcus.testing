@@ -214,7 +214,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 3 => TableEntityFilter.EntityEqual(e => e.ContainsKey(Bogus.PickRandom(entity.Keys.Where(k =>
                 {
                     return k != nameof(TableEntity.RowKey) && k != nameof(TableEntity.PartitionKey);
-                }))))
+                })))),
+
+                _ => throw new NotSupportedException("[Test:Setup] not-supported yet matching Azure Table entity filter type")
             };
         }
 

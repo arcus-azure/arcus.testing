@@ -240,12 +240,29 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         {
             // Arrange
             var preview = DataPreview.Create(headersTxt, dataTxt);
-            DataFlowRunResult result = CreateRunResult(preview);
 
             // Act / Assert
-            var exception = Assert.ThrowsAny<JsonException>(() => result.GetDataAsJson());
+            var exception = ShouldFailToGetDataAsJson(preview.ToString());
             Assert.Contains("cannot load", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("only supports limited", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData(" ")]
+        [InlineData("   ")]
+        public void GetDataAsJson_WithBlankInput_Fails(string input)
+        { 
+            ShouldFailToGetDataAsJson(input);
+        }
+
+        private static JsonException ShouldFailToGetDataAsJson(string input)
+        {
+            // Arrange
+            DataFlowRunResult result = CreateRunResult(input);
+
+            // Act / Assert
+            return Assert.ThrowsAny<JsonException>(() => result.GetDataAsJson());
         }
 
         private static DataFlowRunResult CreateRunResult(DataPreview preview)
