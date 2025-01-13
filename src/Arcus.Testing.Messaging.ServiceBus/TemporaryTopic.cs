@@ -366,15 +366,18 @@ namespace Arcus.Testing
     {
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
-        private readonly bool _createdByUs;
+        private readonly Collection<TemporaryTopicSubscription> _subscriptions = new();
+
+        private readonly bool _topicCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryTopicOptions _options;
         private readonly ILogger _logger;
 
         private TemporaryTopic(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
+            bool messagingClientCreatedByUs,
             string topicName,
-            bool createdByUs,
+            bool topicCreatedByUs,
             TemporaryTopicOptions options,
             ILogger logger)
         {
@@ -383,8 +386,10 @@ namespace Arcus.Testing
 
             _adminClient = adminClient;
             _messagingClient = messagingClient;
+            _messagingClientCreatedByUs = messagingClientCreatedByUs;
 
-            _createdByUs = createdByUs;
+            _topicCreatedByUs = topicCreatedByUs;
+            
             _options = options ?? new TemporaryTopicOptions();
             _logger = logger;
 
@@ -461,7 +466,7 @@ namespace Arcus.Testing
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
 
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, topicName, logger, configureOptions);
+            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName, logger, configureOptions);
         }
 
         /// <summary>
@@ -505,6 +510,17 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTopicOptions> configureOptions)
         {
+            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, topicName, logger, configureOptions);
+        }
+
+        private static async Task<TemporaryTopic> CreateIfNotExistsAsync(
+            ServiceBusAdministrationClient adminClient,
+            ServiceBusClient messagingClient,
+            bool messagingClientCreatedByUs,
+            string topicName,
+            ILogger logger,
+            Action<TemporaryTopicOptions> configureOptions)
+        {
             ArgumentNullException.ThrowIfNull(adminClient);
             ArgumentNullException.ThrowIfNull(messagingClient);
             logger ??= NullLogger.Instance;
@@ -523,7 +539,7 @@ namespace Arcus.Testing
             if (await adminClient.TopicExistsAsync(createOptions.Name))
             {
                 logger.LogTrace("[Test:Setup] Use already existing Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                var topic = new TemporaryTopic(adminClient, messagingClient, createOptions.Name, createdByUs: false, options, logger);
+                var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name, topicCreatedByUs: false, options, logger);
 
                 await topic.CleanOnSetupAsync();
                 return topic;
@@ -533,7 +549,7 @@ namespace Arcus.Testing
                 logger.LogTrace("[Test:Setup] Create new Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 await adminClient.CreateTopicAsync(createOptions);
 
-                var topic = new TemporaryTopic(adminClient, messagingClient, createOptions.Name, createdByUs: true, options, logger);
+                var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name, topicCreatedByUs: true, options, logger);
                 await topic.CleanOnSetupAsync();
 
                 return topic;
@@ -565,6 +581,29 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Adds a subscription to this temporary Azure Service Bus topic which will be deleted together with the test fixture.
+        /// </summary>
+        /// <param name="subscriptionName">The name of the subscription within the topic.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
+        public async Task AddSubscriptionAsync(string subscriptionName)
+        {
+            await AddSubscriptionAsync(subscriptionName, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Adds a subscription to this temporary Azure Service Bus topic which will be deleted together with the test fixture.
+        /// </summary>
+        /// <param name="subscriptionName">The name of the subscription within the topic.</param>
+        /// <param name="configureOptions">
+        ///     The function to configure the additional options that describes how the Azure Service Bus topic subscription should be created.
+        /// </param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
+        public async Task AddSubscriptionAsync(string subscriptionName, Action<CreateSubscriptionOptions> configureOptions)
+        {
+            _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions));
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
         /// </summary>
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
@@ -574,7 +613,7 @@ namespace Arcus.Testing
 
             if (await _adminClient.TopicExistsAsync(Name))
             {
-                if (_createdByUs)
+                if (_topicCreatedByUs)
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
@@ -584,8 +623,14 @@ namespace Arcus.Testing
                 }
                 else
                 {
+                    disposables.AddRange(_subscriptions);
                     disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
                 }
+            }
+
+            if (_messagingClientCreatedByUs)
+            {
+                disposables.Add(_messagingClient);
             }
 
             GC.SuppressFinalize(this);

@@ -373,7 +373,7 @@ namespace Arcus.Testing
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
 
-        private readonly bool _createdByUs;
+        private readonly bool _queueCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryQueueOptions _options;
         private readonly ILogger _logger;
 
@@ -381,7 +381,8 @@ namespace Arcus.Testing
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string queueName,
-            bool createdByUs,
+            bool queueCreatedByUs,
+            bool messagingClientCreatedByUs,
             TemporaryQueueOptions options,
             ILogger logger)
         {
@@ -391,14 +392,15 @@ namespace Arcus.Testing
 
             _adminClient = adminClient;
             _messagingClient = messagingClient;
-            _createdByUs = createdByUs;
+            _messagingClientCreatedByUs = messagingClientCreatedByUs;
+            
+            _queueCreatedByUs = queueCreatedByUs;
+            
             _options = options ?? new TemporaryQueueOptions();
             _logger = logger ?? NullLogger.Instance;
 
             Name = queueName;
             FullyQualifiedNamespace = messagingClient.FullyQualifiedNamespace;
-            Sender = _messagingClient.CreateSender(queueName);
-            Receiver = _messagingClient.CreateReceiver(queueName);
         }
 
         /// <summary>
@@ -415,16 +417,6 @@ namespace Arcus.Testing
         /// Gets the options related to tearing down the <see cref="TemporaryQueue"/>.
         /// </summary>
         public OnTeardownTemporaryQueueOptions OnTeardown => _options.OnTeardown;
-
-        /// <summary>
-        /// Gets the client to send messages to this Azure Service bus test-managed queue.
-        /// </summary>
-        public ServiceBusSender Sender { get; }
-
-        /// <summary>
-        /// Gets the client to receive messages from this Azure Service bus test-managed queue.
-        /// </summary>
-        public ServiceBusReceiver Receiver { get; }
 
         /// <summary>
         /// Gets the filter client to search for messages on the Azure Service bus test-managed queue (a.k.a. 'spy test fixture').
@@ -477,7 +469,7 @@ namespace Arcus.Testing
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
             
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions);
+            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
         }
 
         /// <summary>
@@ -525,6 +517,17 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryQueueOptions> configureOptions)
         {
+            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, queueName, logger, configureOptions);
+        }
+
+        private static async Task<TemporaryQueue> CreateIfNotExistsAsync(
+            ServiceBusAdministrationClient adminClient,
+            ServiceBusClient messagingClient,
+            bool messagingClientCreatedByUs,
+            string queueName,
+            ILogger logger,
+            Action<TemporaryQueueOptions> configureOptions)
+        {
             ArgumentNullException.ThrowIfNull(adminClient);
             logger ??= NullLogger.Instance;
 
@@ -542,7 +545,7 @@ namespace Arcus.Testing
             if (await adminClient.QueueExistsAsync(createOptions.Name))
             {
                 logger.LogDebug("[Test:Setup] Use already existing Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, createdByUs: false, options, logger);
+                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: false, messagingClientCreatedByUs, options, logger);
 
                 await queue.CleanOnSetupAsync();
                 return queue;
@@ -552,7 +555,7 @@ namespace Arcus.Testing
                 logger.LogDebug("[Test:Setup] Create new Azure Service bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 await adminClient.CreateQueueAsync(createOptions);
 
-                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, createdByUs: true, options, logger);
+                var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: true, messagingClientCreatedByUs, options, logger);
 
                 await queue.CleanOnSetupAsync();
                 return queue;
@@ -567,18 +570,18 @@ namespace Arcus.Testing
             }
 
             TimeSpan maxWaitTime = _options.OnSetup.MaxWaitTime;
-            await ForEachMessageOnQueueAsync(maxWaitTime, async message =>
+            await ForEachMessageOnQueueAsync(maxWaitTime, async (receiver, message) =>
             {
                 MessageSettle settle = _options.OnSetup.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await Receiver.DeadLetterMessageAsync(message);
+                    await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
                     _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await Receiver.CompleteMessageAsync(message);
+                    await receiver.CompleteMessageAsync(message);
                 }
             });
         }
@@ -593,7 +596,7 @@ namespace Arcus.Testing
 
             if (await _adminClient.QueueExistsAsync(Name))
             {
-                if (_createdByUs)
+                if (_queueCreatedByUs)
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
@@ -607,9 +610,10 @@ namespace Arcus.Testing
                 }
             }
 
-            disposables.Add(Sender);
-            disposables.Add(Receiver);
-            disposables.Add(_messagingClient);
+            if (_messagingClientCreatedByUs)
+            {
+                disposables.Add(_messagingClient);
+            }
 
             GC.SuppressFinalize(this);
         }
@@ -618,33 +622,35 @@ namespace Arcus.Testing
         {
             TimeSpan maxWaitTime = _options.OnTeardown.MaxWaitTime;
 
-            await ForEachMessageOnQueueAsync(maxWaitTime, async message =>
+            await ForEachMessageOnQueueAsync(maxWaitTime, async (receiver, message) =>
             {
                 MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await Receiver.DeadLetterMessageAsync(message);
+                    await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
                     _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await Receiver.CompleteMessageAsync(message);
+                    await receiver.CompleteMessageAsync(message);
                 }
             });
         }
 
-        private async Task ForEachMessageOnQueueAsync(TimeSpan waitTime, Func<ServiceBusReceivedMessage, Task> operation)
+        private async Task ForEachMessageOnQueueAsync(TimeSpan waitTime, Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
+            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
+
             while (true)
             {
-                ServiceBusReceivedMessage message = await Receiver.ReceiveMessageAsync(waitTime);
+                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime);
                 if (message is null)
                 {
                     return;
                 }
 
-                await operation(message);
+                await operation(receiver, message);
             }
         }
     }

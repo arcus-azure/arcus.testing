@@ -28,6 +28,16 @@ await using var topic = await TemporaryTopic.CreateIfNotExistsAsync(
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
 
+Adding subscriptions to the topic can also be done via the test fixture. It always makes sure that any added subscriptions are deleted again afterwards.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryTopic topic = ...
+
+await topic.AddSubscriptionAsync("<subscription-name>");
+```
+
 ### Customization
 The `TemporaryTopic` allows testers to configure setup/teardown operations on any messages that were on the topic subscriptions (or the topic itself) at the time of setup/teardown. This follows the 'clean environment' testing principle.
 

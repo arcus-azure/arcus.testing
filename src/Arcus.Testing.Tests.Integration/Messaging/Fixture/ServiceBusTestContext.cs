@@ -152,6 +152,15 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             await _adminClient.DeleteTopicAsync(topicName);
         }
 
+        /// <summary>
+        /// Makes sure that the Azure Service bus subscription is deleted on the topic.
+        /// </summary>
+        public async Task WhenTopicSubscriptionDeletedAsync(string topicName, string subscriptionName)
+        {
+            _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription '{SubscriptionName}' in topic '{TopicName}'", subscriptionName, topicName);
+            await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
+        }
+
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
         {
             await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
@@ -201,6 +210,22 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task ShouldNotHaveTopicAsync(string topicName)
         {
             Assert.False(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
+        }
+
+        /// <summary>
+        /// Verifies that the Service bus topic subscription is available.
+        /// </summary>
+        public async Task ShouldHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
+        {
+            Assert.True(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should have a subscription '{subscriptionName}', but it hasn't");
+        }
+
+        /// <summary>
+        /// Verifies that the Service bus topic subscription is unavailable.
+        /// </summary>
+        public async Task ShouldNotHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
+        {
+            Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
         }
 
         /// <summary>
