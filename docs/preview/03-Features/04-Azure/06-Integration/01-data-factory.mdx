@@ -7,7 +7,7 @@ The `Arcus.Testing.Integration.DataFactory` package provides test fixtures relat
 ## Installation
 The following functionality is available when installing this package:
 
-```shell
+```powershell
 PM> Install-Package -Name Arcus.Testing.Integration.DataFactory
 ```
 
@@ -223,7 +223,7 @@ await session.RunDataFlowAsync(..., options =>
 > 🚩 When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
 
 ## Run a Data pipeline
-Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../01-core.md) packages:
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../../01-core.md) packages:
 
 ```csharp
 using Arcus.Testing;
