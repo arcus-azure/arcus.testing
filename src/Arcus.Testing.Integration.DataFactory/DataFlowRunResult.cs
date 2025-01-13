@@ -354,6 +354,13 @@ namespace Arcus.Testing
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
+            if (Data.ToMemory().IsEmpty)
+            {
+                throw new CsvException(
+                    "[Test] Cannot load the content of the DataFactory preview expression as CSV as the run result data could not be parsed to JSON: the data is empty, " +
+                    "verify that the DataFactory test fixture returned the correct output preview expression");
+            }
+
             var previewCsvAsJson = Data.ToString();
             try
             {
