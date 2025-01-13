@@ -251,7 +251,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData("")]
         [InlineData(" ")]
         [InlineData("   ")]
-        public void GetDataAsCsv_WithBlankInput_Fails(string input)
+        public void GetDataAsJson_WithBlankInput_Fails(string input)
         { 
             ShouldFailToGetDataAsJson(input);
         }
