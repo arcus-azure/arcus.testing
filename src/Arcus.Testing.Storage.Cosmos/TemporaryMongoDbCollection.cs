@@ -357,13 +357,13 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
-                logger.LogTrace("[Test:Setup] Clean all documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogDebug("[Test:Setup] Clean all documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
-                logger.LogTrace("[Test:Setup] Clean all matching documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogDebug("[Test:Setup] Clean all matching documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
         }
@@ -434,13 +434,13 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
-                _logger.LogTrace("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogDebug("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
-                _logger.LogTrace("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogDebug("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
         }

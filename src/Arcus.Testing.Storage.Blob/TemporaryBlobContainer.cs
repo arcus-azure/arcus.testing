@@ -559,7 +559,7 @@ namespace Arcus.Testing
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
-                    logger.LogTrace("[Test:Setup] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
+                    logger.LogDebug("[Test:Setup] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
@@ -576,7 +576,7 @@ namespace Arcus.Testing
             {
                 if (options.OnTeardown.IsMatched(blob))
                 {
-                    logger.LogTrace("[Test:Teardown] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
+                    logger.LogDebug("[Test:Teardown] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
