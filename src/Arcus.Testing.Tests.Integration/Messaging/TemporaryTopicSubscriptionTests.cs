@@ -87,7 +87,15 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
         private async Task<TemporaryTopicSubscription> CreateTempTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
-            var temp = await TemporaryTopicSubscription.CreateIfNotExistsAsync(Configuration.GetServiceBus().HostName, topicName, subscriptionName, Logger);
+            string fullyQualifiedNamespace = Configuration.GetServiceBus().HostName;
+
+            var temp = 
+                Bogus.Random.Bool()
+                    ? await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, Logger)
+                    : await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, "otherTopic", subscriptionName, Logger, configureOptions: options =>
+                    {
+                        options.OnSetup.CreateSubscriptionWith(sub => sub.TopicName = topicName);
+                    });
 
             Assert.Equal(subscriptionName, temp.Name);
             return temp;
