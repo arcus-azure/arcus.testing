@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Microsoft.Azure.Amqp.Framing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -165,14 +166,14 @@ namespace Arcus.Testing
 
         internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message)
         {
-            if (_shouldCompleteMessages.Any(func => func(message)))
-            {
-                return MessageSettle.Complete;
-            }
-
             if (_shouldDeadLetterMessages.Any(func => func(message)))
             {
                 return MessageSettle.DeadLetter;
+            }
+
+            if (_shouldCompleteMessages.Any(func => func(message)))
+            {
+                return MessageSettle.Complete;
             }
 
             if (Messages is OnSetupQueue.CompleteMessages)
@@ -328,16 +329,24 @@ namespace Arcus.Testing
             return this;
         }
 
-        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message)
+        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver, ILogger logger)
         {
-            if (_shouldCompleteMessages.Any(func => func(message)))
-            {
-                return MessageSettle.Complete;
-            }
+            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
+            bool shouldComplete = _shouldCompleteMessages.Any(func => func(message));
 
-            if (_shouldDeadLetterMessages.Any(func => func(message)))
+            if (shouldDeadLetter && shouldComplete)
+            {
+                logger.LogWarning("[Test:Teardown] Service bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
+                return MessageSettle.DeadLetter;
+            }
+            if (shouldDeadLetter)
             {
                 return MessageSettle.DeadLetter;
+            }
+
+            if (shouldComplete)
+            {
+                return MessageSettle.Complete;
             }
 
             if (Messages is OnTeardownQueue.CompleteMessages)
@@ -624,7 +633,7 @@ namespace Arcus.Testing
 
             await ForEachMessageOnQueueAsync(maxWaitTime, async (receiver, message) =>
             {
-                MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message);
+                MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message, receiver, _logger);
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);

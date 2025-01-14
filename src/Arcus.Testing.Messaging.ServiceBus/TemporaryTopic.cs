@@ -160,14 +160,14 @@ namespace Arcus.Testing
 
         internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message)
         {
-            if (_shouldCompleteMessages.Any(func => func(message)))
-            {
-                return MessageSettle.Complete;
-            }
-
             if (_shouldDeadLetterMessages.Any(func => func(message)))
             {
                 return MessageSettle.DeadLetter;
+            }
+
+            if (_shouldCompleteMessages.Any(func => func(message)))
+            {
+                return MessageSettle.Complete;
             }
 
             if (Messages is OnSetupMessagesTopic.CompleteMessages)
@@ -186,8 +186,8 @@ namespace Arcus.Testing
     {
         private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = new(), _shouldDeadLetterMessages = new();
 
-        internal OnTeardownMessagesTopic Messages { get; private set; }
-        internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
+        private OnTeardownMessagesTopic Messages { get; set; }
+        private TimeSpan MaxWaitTime { get; set; } = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryTopic"/> to dead-letter any remaining messages on the topic.
@@ -322,16 +322,25 @@ namespace Arcus.Testing
             return this;
         }
 
-        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message)
+        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver, ILogger logger)
         {
-            if (_shouldCompleteMessages.Any(func => func(message)))
+            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
+            bool shouldComplete = _shouldCompleteMessages.Any(func => func(message));
+
+            if (shouldDeadLetter && shouldComplete)
             {
-                return MessageSettle.Complete;
+                logger.LogWarning("[Test:Teardown] Service bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
+                return MessageSettle.DeadLetter;
             }
 
-            if (_shouldDeadLetterMessages.Any(func => func(message)))
+            if (shouldDeadLetter)
             {
                 return MessageSettle.DeadLetter;
+            }
+
+            if (shouldComplete)
+            {
+                return MessageSettle.Complete;
             }
 
             if (Messages is OnTeardownMessagesTopic.CompleteMessages)
@@ -640,7 +649,7 @@ namespace Arcus.Testing
         {
             await ForEachMessageOnTopicAsync(async (receiver, message) =>
             {
-                MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message);
+                MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message, receiver, _logger);
 
                 if (settle is MessageSettle.DeadLetter)
                 {

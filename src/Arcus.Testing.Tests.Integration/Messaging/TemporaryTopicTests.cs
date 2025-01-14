@@ -110,7 +110,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             {
                 options.OnSetup.CompleteMessages()
                                .DeadLetterMessages(msg => msg.MessageId == messageBeforeDeadLetter1.MessageId)
-                               .DeadLetterMessages(msg => msg.MessageId == messageBeforeDeadLetter2.MessageId);
+                               .DeadLetterMessages(msg => msg.MessageId == messageBeforeDeadLetter2.MessageId)
+                               .CompleteMessages(msg => msg.MessageId == messageBeforeDeadLetter1.MessageId);
             });
 
             // Assert

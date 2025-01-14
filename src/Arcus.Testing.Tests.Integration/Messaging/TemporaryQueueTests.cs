@@ -103,7 +103,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             TemporaryQueue temp = await CreateTempQueueAsync(queueName, options =>
             {
                 options.OnSetup.CompleteMessages()
-                               .DeadLetterMessages(msg => msg.MessageId == messageDeadLetterBefore.MessageId);
+                               .DeadLetterMessages(msg => msg.MessageId == messageDeadLetterBefore.MessageId)
+                               .CompleteMessages(msg => msg.MessageId == messageDeadLetterBefore.MessageId);
             });
 
             // Assert
