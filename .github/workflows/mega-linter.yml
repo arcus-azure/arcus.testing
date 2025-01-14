@@ -1,51 +1,53 @@
 ---
-  # MegaLinter GitHub Action configuration file
-  # More info at https://megalinter.io
-  name: MegaLinter
+# MegaLinter GitHub Action configuration file
+# More info at https://megalinter.io
+name: MegaLinter
 
-  on:
-    # Trigger mega-linter at every push. Action will also be visible from Pull Requests to main
-    push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
-    pull_request:
-      branches: [main]
+on:
+  # Trigger mega-linter at every push. Action will also be visible from Pull Requests to main
+  push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
+  pull_request:
+    branches: [main]
 
-  concurrency:
-    group: ${{ github.ref }}-${{ github.workflow }}
-    cancel-in-progress: true
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
 
-  jobs:
-    megalinter:
-      name: MegaLinter
-      runs-on: ubuntu-latest
-      permissions: write-all
-      steps:
-        # Git Checkout
-        - name: Checkout Code
-          uses: actions/checkout@v4
-          with:
-            token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
-            fetch-depth: 0 # If you use VALIDATE_ALL_CODEBASE = true, you can remove this line to improve performances
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    #checkov:skip=CKV2_GHA_1: requires write access to the repository.
+    permissions: write-all
 
-        # MegaLinter
-        - name: MegaLinter
-          id: ml
-          # You can override MegaLinter flavor used to have faster performances
-          # More info at https://megalinter.io/latest/flavors/
-          uses: oxsecurity/megalinter@1fc052d03c7a43c78fe0fee19c9d648b749e0c01 #v8.3.0
-          env:
-            # All available variables are described in documentation
-            # https://megalinter.io/latest/configuration/
-            VALIDATE_ALL_CODEBASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # Validates all source when push on main, else just the git diff with main. Override with true if you always want to lint all sources
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            # ADD YOUR CUSTOM ENV VARIABLES HERE OR DEFINE THEM IN A FILE .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
-            DISABLE: REPOSITORY_CHECKOV # Uncomment to disable copy-paste and spell checks
-  
-        # Upload MegaLinter artifacts
-        - name: Archive production artifacts
-          if: success() || failure()
-          uses: actions/upload-artifact@v4
-          with:
-            name: MegaLinter reports
-            path: |
-              megalinter-reports
-              mega-linter.log
+    steps:
+      # Git Checkout
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          fetch-depth: 0 # If you use VALIDATE_ALL_CODEBASE = true, you can remove this line to improve performances
+
+      # MegaLinter
+      - name: MegaLinter
+        id: ml
+        # You can override MegaLinter flavor used to have faster performances
+        # More info at https://megalinter.io/latest/flavors/
+        uses: oxsecurity/megalinter@1fc052d03c7a43c78fe0fee19c9d648b749e0c01 #v8.3.0
+        env:
+          # All available variables are described in documentation
+          # https://megalinter.io/latest/configuration/
+          VALIDATE_ALL_CODEBASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # Validates all source when push on main, else just the git diff with main. Override with true if you always want to lint all sources
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # ADD YOUR CUSTOM ENV VARIABLES HERE OR DEFINE THEM IN A FILE .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+          DISABLE: REPOSITORY_CHECKOV # Uncomment to disable copy-paste and spell checks
+
+      # Upload MegaLinter artifacts
+      - name: Archive production artifacts
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MegaLinter reports
+          path: |
+            megalinter-reports
+            mega-linter.log

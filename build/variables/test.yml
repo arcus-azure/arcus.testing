@@ -9,4 +9,5 @@ variables:
   
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
+  #checkov:skip=CKV_SECRET_6: checkov incorrectly sees this secret name as a hard-coded secret.
   Arcus.Testing.StorageAccount.Key.SecretName: 'Arcus-Testing-StorageAccount-Key'
