@@ -12,6 +12,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
     /// </summary>
     public class TestXml
     {
+        private const string NamespaceDefinition = "http://www.w3.org/2000/xmlns/"; // DevSkim: ignore DS137138
+
         private XmlDocument _doc;
         private static readonly Faker Bogus = new();
 
@@ -148,8 +150,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             XmlElement node = SelectRandomlyElement();
 
-            string namespaceDefinition = "http://www.w3.org/2000/xmlns/";
-            XmlAttribute oldAttribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != namespaceDefinition));
+            XmlAttribute oldAttribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != NamespaceDefinition));
             XmlAttribute newAttribute = string.IsNullOrWhiteSpace(oldAttribute.NamespaceURI)
                 ? _doc.CreateAttribute(oldAttribute.Prefix, newName, null)
                 : _doc.CreateAttribute(oldAttribute.Prefix, newName, oldAttribute.NamespaceURI);
@@ -167,8 +168,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             XmlElement node = SelectRandomlyElement();
 
-            string namespaceDefinition = "http://www.w3.org/2000/xmlns/";
-            XmlAttribute oldAttribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != namespaceDefinition));
+            XmlAttribute oldAttribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != NamespaceDefinition));
             XmlAttribute newAttribute = _doc.CreateAttribute(GenPrefix(), oldAttribute.LocalName, newNamespace);
 
             node.Attributes.InsertAfter(newAttribute, oldAttribute);
@@ -182,8 +182,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             XmlElement node = SelectRandomlyElement();
 
-            string namespaceDefinition = "http://www.w3.org/2000/xmlns/";
-            XmlAttribute attribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != namespaceDefinition));
+            XmlAttribute attribute = Bogus.PickRandom(node.Attributes.OfType<XmlAttribute>().Where(a => a.NamespaceURI != NamespaceDefinition));
             attribute.Value = newValue;
         }
 
@@ -296,7 +295,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
             {
                 XmlAttribute[] attributes = Bogus.Random.Shuffle(
                     element.Attributes.OfType<XmlAttribute>()
-                           .Where(a => a.NamespaceURI != "http://www.w3.org/2000/xmlns/")).ToArray();
+                           .Where(a => a.NamespaceURI != NamespaceDefinition)).ToArray();
                 
                 Assert.All(attributes, attr => element.RemoveAttribute(attr.Name));
 

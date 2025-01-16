@@ -12,6 +12,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 {
     public class AssertXsltTests
     {
+        private const string NamespaceDefinition = "http://www.w3.org/1999/XSL/Transform"; // DevSkim: ignore DS137138
+
         private static readonly Faker Bogus = new();
 
         [Fact]
@@ -68,7 +70,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string xslt = 
-                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\"><root/></xsl:template></xsl:stylesheet>";
 
             string input = TestXml.Generate().ToString();
@@ -84,7 +86,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string xslt = 
-                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">{ \"root\": [] }</xsl:template></xsl:stylesheet>";
 
             string input = TestXml.Generate().ToString();
@@ -100,7 +102,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string xslt = 
-                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">a;b;c\n1;3</xsl:template></xsl:stylesheet>";
 
             string input = TestXml.Generate().ToString();
@@ -117,7 +119,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string xslt = 
-                "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
+                $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                     "<xsl:template match=\"/\"><xsl:message terminate=\"yes\">NotImplementedException</xsl:message></xsl:template></xsl:stylesheet>";
 
             string input = TestXml.Generate().ToString();

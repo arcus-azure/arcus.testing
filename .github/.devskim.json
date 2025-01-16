@@ -1,0 +1,8 @@
+{
+  "Globs": [
+    "docs/**"
+  ],
+  "LanguageRuleIgnoreMap": {
+     "csharp" : [ "DS176209"]
+  }
+}

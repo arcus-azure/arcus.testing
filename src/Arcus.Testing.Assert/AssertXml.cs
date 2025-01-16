@@ -409,7 +409,7 @@ namespace Arcus.Testing
         {
             _node = node ?? throw new ArgumentNullException(nameof(node));
 
-            const string namespaceDefinition = "http://www.w3.org/2000/xmlns/";
+            const string namespaceDefinition = "http://www.w3.org/2000/xmlns/"; // DevSkim: ignore DS137138
             Attributes = 
                 _node.Current.Attributes
                     ?.OfType<XmlAttribute>()
