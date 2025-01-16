@@ -27,7 +27,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      # checkov:skip=CKV2_GHA_1: requires write access to the repository.
       security-events: write
 
     strategy:

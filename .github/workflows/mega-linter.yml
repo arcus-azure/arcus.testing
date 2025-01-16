@@ -17,7 +17,6 @@ jobs:
   megalinter:
     name: MegaLinter
     runs-on: ubuntu-latest
-    # checkov:skip=CKV2_GHA_1: requires write access to the repository.
     permissions: write-all
 
     steps:
