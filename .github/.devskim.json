@@ -2,7 +2,7 @@
   "Globs": [
     "docs/**"
   ],
-  "LanguageRuleIgnoreMap": {
-     "csharp" : [ "DS176209"]
-  }
+  "IgnoreRuleIds": [
+    "DS176209"
+  ]
 }
