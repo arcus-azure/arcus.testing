@@ -11,5 +11,6 @@ REPOSITORY_DEVSKIM_CONFIG_FILE: '/.github/.devskim.json'
 REPOSITORY_DEVSKIM_ARGUMENTS: '-f text'
 
 REPOSITORY_CHECKOV_CONFIG_FILE: '/.github/.checkov.yml'
+REPOSITORY_CHECKOV_ARGUMENTS: '--skip-path */obj/'
 
 CSHARP_DOTNET_FORMAT_ARGUMENTS: './src/Arcus.Testing.sln'
