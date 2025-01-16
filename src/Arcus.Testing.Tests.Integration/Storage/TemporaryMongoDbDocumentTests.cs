@@ -64,7 +64,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldStoreDocumentAsync<Product>(collectionName, id, stored => AssertProduct(original, stored));
         }
 
-        private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc) 
+        private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc)
             where TDoc : class
         {
             return await TemporaryMongoDbDocument.InsertIfNotExistsAsync(

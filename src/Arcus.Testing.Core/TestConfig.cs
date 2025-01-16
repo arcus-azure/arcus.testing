@@ -47,7 +47,7 @@ namespace Arcus.Testing
         /// Gets the main JSON path to the configuration source.
         /// </summary>
         internal string MainJsonPath { get; private set; } = "appsettings.json";
-        
+
         /// <summary>
         /// Gets all the configured additional JSON paths to files that acts as configuration sources.
         /// </summary>
@@ -104,7 +104,7 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
         public static TestConfig Create(Action<TestConfigOptions> configureOptions)
         {
-           return new TestConfig(configureOptions);
+            return new TestConfig(configureOptions);
         }
 
         /// <summary>

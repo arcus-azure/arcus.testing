@@ -14,7 +14,7 @@ namespace Arcus.Testing
     public class InMemoryLogSink : ILogEventSink
     {
         private readonly ConcurrentQueue<LogEvent> _logEmits = new ConcurrentQueue<LogEvent>();
-        
+
         /// <summary>
         /// Gets the current log emits available on the sink.
         /// </summary>
@@ -24,7 +24,7 @@ namespace Arcus.Testing
         /// Gets the current messages of the log emits available on the sink.
         /// </summary>
         public IEnumerable<string> CurrentLogMessages => CurrentLogEmits.Select(emit => emit.RenderMessage());
-        
+
         /// <summary>
         /// Emit the provided log event to the sink.
         /// </summary>

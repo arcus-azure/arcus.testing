@@ -43,7 +43,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public static Task<TableStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(configuration.GetServicePrincipal());
-            
+
             StorageAccount storageAccount = configuration.GetStorageAccount();
             var serviceClient = new TableServiceClient(
                 new Uri($"https://{storageAccount.Name}.table.core.windows.net"),

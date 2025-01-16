@@ -118,8 +118,8 @@ namespace Arcus.Testing.Tests.Unit.Core
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
                           .FailWith(expected), errorParts: expected);
-            
-            await FailsByResultAsync(async () => 
+
+            await FailsByResultAsync(async () =>
                 await Poll.Target<object, TestPollException>(AlwaysSucceedsResultAsync)
                           .LowestTimeFrame()
                           .Until(AlwaysTrue)

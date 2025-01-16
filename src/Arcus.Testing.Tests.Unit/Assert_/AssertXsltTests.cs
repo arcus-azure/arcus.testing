@@ -85,7 +85,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToXml_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">{ \"root\": [] }</xsl:template></xsl:stylesheet>";
 
@@ -101,7 +101,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToCsv_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">a;b;c\n1;3</xsl:template></xsl:stylesheet>";
 
@@ -118,7 +118,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Transform_WithInvalidTransformation_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                     "<xsl:template match=\"/\"><xsl:message terminate=\"yes\">NotImplementedException</xsl:message></xsl:template></xsl:stylesheet>";
 
@@ -179,7 +179,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Contains(nameof(AssertXslt), exception.Message);
             Assert.Contains("XSLT contents", exception.Message);
         }
-        
+
         [Fact]
         public void TransformXml_WithoutArgs_Fails()
         {

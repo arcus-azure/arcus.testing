@@ -81,7 +81,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                 case IAsyncDisposable d:
                     if (Bogus.Random.Bool())
                     {
-                        collection.Add(d); 
+                        collection.Add(d);
                     }
                     else
                     {
@@ -92,7 +92,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                 case IDisposable d:
                     if (Bogus.Random.Bool())
                     {
-                        collection.Add(d); 
+                        collection.Add(d);
                     }
                     else
                     {

@@ -176,7 +176,7 @@ namespace Arcus.Testing
             if (exceptions.Count > 1)
             {
                 throw new AggregateException(
-                    "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information", 
+                    "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information",
                     exceptions);
             }
         }

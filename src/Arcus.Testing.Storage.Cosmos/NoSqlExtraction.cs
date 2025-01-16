@@ -16,7 +16,7 @@ namespace Arcus.Testing
         /// </summary>
         internal static string ExtractIdFromItem(JObject item, Type itemType = null)
         {
-            string typeDescription = itemType is null ? "type" : $"'{itemType.Name }' type";
+            string typeDescription = itemType is null ? "type" : $"'{itemType.Name}' type";
             if (!item.TryGetValue("id", out JToken idNode) || idNode is not JValue id)
             {
                 throw new NotSupportedException(

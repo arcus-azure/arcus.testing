@@ -13,8 +13,8 @@ namespace Arcus.Testing
         /// Initializes a new instance of the <see cref="DataFactoryConfig" /> class.
         /// </summary>
         public DataFactoryConfig(
-            string subscriptionId, 
-            string resourceGroupName, 
+            string subscriptionId,
+            string resourceGroupName,
             string resourceName)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionId);

@@ -299,7 +299,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("{\"Products\":[{\"id\":[1]},{\"id\":[2]},{\"id\":[3]}]}", "{\"Products\":[{\"id\":[3]},{\"id\":[2]},{\"id\":[1]}]}")]
         [InlineData("[ { \"id\": 2 }, { \"id\": 1 } ]", "[ { \"id\": 1 }, { \"id\": 2 } ]")]
         [InlineData(
-            "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]", 
+            "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]",
             "[ { \"name\": [ { \"project\": \"arcus\", \"name\": \"testing\" } ] }, { \"id\": 1 } ]")]
         public void Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds(string expected, string actual)
         {
@@ -656,8 +656,8 @@ null         [
             else
             {
                 AssertJson.Equal(
-                    AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
-                    AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
+                    AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null),
+                    AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null),
                     ConfigureOptions);
             }
         }
@@ -667,7 +667,7 @@ null         [
         {
             var exception = Assert.Throws<System.Text.Json.JsonException>(
                 () => AssertJson.Load(Bogus.Random.Utf16String()));
-            
+
             Assert.Contains(nameof(AssertJson), exception.Message);
             Assert.Contains("JSON contents", exception.Message);
         }

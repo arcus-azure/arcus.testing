@@ -30,8 +30,8 @@ namespace Arcus.Testing
         public static string TransformToXml(string xsltTransformer, string inputXml)
         {
             return TransformToXml(
-                xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)), 
-                inputXml ?? throw new ArgumentNullException(nameof(inputXml)), 
+                xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)),
+                inputXml ?? throw new ArgumentNullException(nameof(inputXml)),
                 arguments: null);
         }
 
@@ -68,7 +68,7 @@ namespace Arcus.Testing
         public static XmlDocument TransformToXml(XslCompiledTransform transformer, XmlNode input)
         {
             return TransformToXml(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)), 
+                transformer ?? throw new ArgumentNullException(nameof(transformer)),
                 input ?? throw new ArgumentNullException(nameof(input)),
                 arguments: null);
         }
@@ -204,7 +204,7 @@ namespace Arcus.Testing
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// Transforms the <paramref name="inputXml"/> with the given <paramref name="xsltTransformer"/> to a CSV output.
         /// </summary>
         /// <param name="xsltTransformer">The XSLT stylesheet that describes the transformation of the <paramref name="inputXml"/> XML contents.</param>

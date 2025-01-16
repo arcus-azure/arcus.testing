@@ -18,7 +18,7 @@ namespace Serilog.Configuration
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or <paramref name="outputWriter"/> is <c>null</c>.</exception>
         [Obsolete("Arcus.Testing.Logging.Xunit will stop supporting Serilog by default, please implement Serilog sinks yourself as this extension will be removed in v2.0")]
         public static LoggerConfiguration XunitTestLogging(
-            this LoggerSinkConfiguration config, 
+            this LoggerSinkConfiguration config,
             ITestOutputHelper outputWriter)
         {
             if (config is null)

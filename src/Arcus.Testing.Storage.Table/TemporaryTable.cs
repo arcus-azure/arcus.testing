@@ -274,7 +274,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = client;
         }
 
@@ -422,7 +422,7 @@ namespace Arcus.Testing
                     {
                         throw new RequestFailedException(
                             $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                             new RequestFailedException(response));
                     }
                 }
@@ -440,7 +440,7 @@ namespace Arcus.Testing
                         {
                             throw new RequestFailedException(
                                 $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                 new RequestFailedException(response));
                         }
                     }
@@ -471,13 +471,13 @@ namespace Arcus.Testing
             if (_createdByUs)
             {
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'", Client.Name, Client.AccountName);
-                using Response response = await Client.DeleteAsync(); 
+                using Response response = await Client.DeleteAsync();
 
                 if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
-                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                         new RequestFailedException(response));
                 }
             }
@@ -510,11 +510,11 @@ namespace Arcus.Testing
                         {
                             throw new RequestFailedException(
                                 $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                 new RequestFailedException(response));
                         }
                     }));
-                } 
+                }
             }
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
@@ -531,12 +531,12 @@ namespace Arcus.Testing
                             {
                                 throw new RequestFailedException(
                                     $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                     new RequestFailedException(response));
                             }
                         }
                     }));
-                } 
+                }
             }
         }
     }

@@ -114,7 +114,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Assert
             await context.ShouldNotStoreDocumentAsync<Shipment>(collectionName, matchedId);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedId);
-            
+
             await collection.DisposeAsync();
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedId);
         }

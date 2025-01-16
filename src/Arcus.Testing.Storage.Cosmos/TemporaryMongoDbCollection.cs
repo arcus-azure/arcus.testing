@@ -15,7 +15,7 @@ namespace Arcus.Testing
     /// Represents the available options when the <see cref="TemporaryMongoDbCollection"/> is created.
     /// </summary>
     internal enum OnSetupMongoDbCollection { LeaveExisted = 0, CleanIfExisted, CleanIfMatched }
-    
+
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryMongoDbCollection"/> is deleted.
     /// </summary>
@@ -217,7 +217,7 @@ namespace Arcus.Testing
             _database = database;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Name = collectionName;
         }
 
@@ -268,7 +268,7 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
             logger ??= NullLogger.Instance;
-            
+
             if (string.IsNullOrWhiteSpace(databaseName))
             {
                 throw new ArgumentException(
@@ -409,7 +409,7 @@ namespace Arcus.Testing
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
-                    await _database.DropCollectionAsync(Name); 
+                    await _database.DropCollectionAsync(Name);
                 }));
             }
             else
