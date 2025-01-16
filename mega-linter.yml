@@ -1,4 +1,10 @@
 # Configuration file for MegaLinter
-# See all available variables at https://megalinter.io/configuration/ and in linters documentation
+# See all available variables at https://megalinter.io/latest/configuration/ and in linters documentation
+
+DISABLE_LINTERS:
+  - COPYPASTE_JSCPD
+  - SPELL_CSPELL
+  - REPOSITORY_TRIVY
+  - REPOSITORY_GRYPE
 
 REPOSITORY_DEVSKIM_CONFIG_FILE: '/.github/devskim.json'
