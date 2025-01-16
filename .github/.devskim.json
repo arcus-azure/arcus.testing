@@ -2,6 +2,7 @@
   "Globs": [
     "docs/**"
   ],
+  "BasePath": "./src",
   "IgnoreRuleIds": [
     "DS176209"
   ]
