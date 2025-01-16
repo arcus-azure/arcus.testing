@@ -24,7 +24,6 @@ namespace Arcus.Testing
         Include
     }
 
-
     /// <summary>
     /// Represents the available options when asserting on different XML documents in <see cref="AssertXml"/>.
     /// </summary>

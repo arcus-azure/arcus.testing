@@ -69,7 +69,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToJson_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 $"<xsl:stylesheet xmlns:xsl=\"{NamespaceDefinition}\" version=\"1.0\">" +
                 "<xsl:template match=\"/\"><root/></xsl:template></xsl:stylesheet>";
 
