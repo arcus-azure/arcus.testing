@@ -1,14 +1,10 @@
 {
   "Globs": [
-    "docs/**"
+    "docs/**",
+    "*.yaml"
   ],
   "BasePath": "./src",
   "IgnoreRuleIds": [
     "DS176209"
-  ],
-  "LanguageRuleIgnoreMap": {
-    "yaml": [
-      "DS126858"
-    ]
-  }
+  ]
 }
