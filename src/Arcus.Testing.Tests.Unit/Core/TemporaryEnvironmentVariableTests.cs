@@ -14,7 +14,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         public void CreateEnvVar_WithoutName_Fails(string name)
         {
             Assert.ThrowsAny<ArgumentException>(
-                () => TemporaryEnvironmentVariable.CreateSecretIfNotExists(name, Bogus.Random.Guid().ToString(), NullLogger.Instance));
+                () => TemporaryEnvironmentVariable.SetSecretIfNotExists(name, Bogus.Random.Guid().ToString(), NullLogger.Instance));
         }
     }
 }

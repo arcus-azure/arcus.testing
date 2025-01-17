@@ -38,9 +38,9 @@ namespace Arcus.Testing.Tests.Integration.Fixture
             var logger = NullLogger.Instance;
             var environmentVariables = new[]
             {
-                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_TENANT_ID", servicePrincipal.TenantId, logger),
-                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_CLIENT_ID", servicePrincipal.ClientId, logger),
-                TemporaryEnvironmentVariable.CreateSecretIfNotExists("AZURE_CLIENT_SECRET", servicePrincipal.ClientSecret, logger)
+                TemporaryEnvironmentVariable.SetSecretIfNotExists("AZURE_TENANT_ID", servicePrincipal.TenantId, logger),
+                TemporaryEnvironmentVariable.SetSecretIfNotExists("AZURE_CLIENT_ID", servicePrincipal.ClientId, logger),
+                TemporaryEnvironmentVariable.SetSecretIfNotExists("AZURE_CLIENT_SECRET", servicePrincipal.ClientSecret, logger)
             };
 
             return new TemporaryManagedIdentityConnection(servicePrincipal.ClientId, environmentVariables);

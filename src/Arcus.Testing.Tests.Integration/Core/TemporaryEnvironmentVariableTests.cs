@@ -1,31 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bogus;
-using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Core
 {
-    public class TemporaryEnvironmentVariableTests
+    public class TemporaryEnvironmentVariableTests : IntegrationTest
     {
-        private readonly ILogger _logger;
-        
-        private static readonly Faker Bogus = new();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TemporaryEnvironmentVariableTests" /> class.
         /// </summary>
-        public TemporaryEnvironmentVariableTests(ILogger logger)
+        public TemporaryEnvironmentVariableTests(ITestOutputHelper outputWriter) : base(outputWriter)
         {
-            _logger = logger;
         }
 
         [Fact]
-        public void CreateEnvVar_WithoutExistingVar_SucceedsByRemovingVarAfterwards()
+        public void SetEnvVar_WithoutExistingVar_SucceedsByRemovingVarAfterwards()
         {
             // Arrange
             using var context = new EnvVarTestContext();
@@ -34,7 +24,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             string value = Bogus.Random.Guid().ToString();
 
             // Act
-            TemporaryEnvironmentVariable var = CreateEnvVarIfNotExists(name, value);
+            TemporaryEnvironmentVariable var = SetEnvVarIfNotExists(name, value);
 
             // Assert
             context.ShouldStoreEnvVar(name, value);
@@ -42,11 +32,29 @@ namespace Arcus.Testing.Tests.Integration.Core
             context.ShouldNotStoreEnvVar(name);
         }
 
-        private TemporaryEnvironmentVariable CreateEnvVarIfNotExists(string name, string value)
+        [Fact]
+        public void SetEnvVar_WithExistingVar_SucceedsByLeavingVarAfterwards()
+        {
+            // Arrange
+            using var context = new EnvVarTestContext();
+
+            (string name, string oldValue) = context.WhenExistingEnvVar();
+            string newValue = Bogus.Random.Guid().ToString();
+
+            // Act
+            TemporaryEnvironmentVariable var = SetEnvVarIfNotExists(name, newValue);
+
+            // Assert
+            context.ShouldStoreEnvVar(name, newValue);
+            var.Dispose();
+            context.ShouldStoreEnvVar(name, oldValue);
+        }
+
+        private TemporaryEnvironmentVariable SetEnvVarIfNotExists(string name, string value)
         {
             return Bogus.Random.Bool()
-                ? TemporaryEnvironmentVariable.CreateIfNotExists(name, value, _logger)
-                : TemporaryEnvironmentVariable.CreateSecretIfNotExists(name, value, _logger);
+                ? TemporaryEnvironmentVariable.SetIfNotExists(name, value, Logger)
+                : TemporaryEnvironmentVariable.SetSecretIfNotExists(name, value, Logger);
         }
 
         private class EnvVarTestContext : IDisposable
