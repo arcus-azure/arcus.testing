@@ -69,7 +69,7 @@ namespace Arcus.Testing
         public OnSetupMongoDbCollectionOptions CleanMatchingDocuments<T>(Expression<Func<T, bool>> filter)
         {
             ArgumentNullException.ThrowIfNull(filter);
-            return CleanMatchingDocuments((FilterDefinition<T>)filter);
+            return CleanMatchingDocuments((FilterDefinition<T>) filter);
         }
 
         /// <summary>
@@ -146,7 +146,7 @@ namespace Arcus.Testing
         public OnTeardownMongoDbCollectionOptions CleanMatchingDocuments<TDocument>(Expression<Func<TDocument, bool>> filter)
         {
             ArgumentNullException.ThrowIfNull(filter);
-            return CleanMatchingDocuments((FilterDefinition<TDocument>)filter);
+            return CleanMatchingDocuments((FilterDefinition<TDocument>) filter);
         }
 
         /// <summary>
