@@ -15,7 +15,7 @@ namespace Arcus.Testing
     /// Represents the available options when the <see cref="TemporaryMongoDbCollection"/> is created.
     /// </summary>
     internal enum OnSetupMongoDbCollection { LeaveExisted = 0, CleanIfExisted, CleanIfMatched }
-    
+
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryMongoDbCollection"/> is deleted.
     /// </summary>
@@ -69,7 +69,7 @@ namespace Arcus.Testing
         public OnSetupMongoDbCollectionOptions CleanMatchingDocuments<T>(Expression<Func<T, bool>> filter)
         {
             ArgumentNullException.ThrowIfNull(filter);
-            return CleanMatchingDocuments((FilterDefinition<T>) filter);
+            return CleanMatchingDocuments((FilterDefinition<T>)filter);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Arcus.Testing
 
             IBsonSerializerRegistry serializerRegistry = BsonSerializer.SerializerRegistry;
             IBsonSerializer<TDocument> documentSerializer = serializerRegistry.GetSerializer<TDocument>();
-            BsonDocument doc = filter.Render(documentSerializer, serializerRegistry);
+            BsonDocument doc = filter.Render(new RenderArgs<TDocument>(documentSerializer, serializerRegistry));
 
             IsMatched = Builders<BsonDocument>.Filter.Or(IsMatched, doc);
             Documents = OnSetupMongoDbCollection.CleanIfMatched;
@@ -146,7 +146,7 @@ namespace Arcus.Testing
         public OnTeardownMongoDbCollectionOptions CleanMatchingDocuments<TDocument>(Expression<Func<TDocument, bool>> filter)
         {
             ArgumentNullException.ThrowIfNull(filter);
-            return CleanMatchingDocuments((FilterDefinition<TDocument>) filter);
+            return CleanMatchingDocuments((FilterDefinition<TDocument>)filter);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace Arcus.Testing
 
             IBsonSerializerRegistry serializerRegistry = BsonSerializer.SerializerRegistry;
             IBsonSerializer<TDocument> documentSerializer = serializerRegistry.GetSerializer<TDocument>();
-            BsonDocument doc = filter.Render(documentSerializer, serializerRegistry);
+            BsonDocument doc = filter.Render(new RenderArgs<TDocument>(documentSerializer, serializerRegistry));
 
             IsMatched = Builders<BsonDocument>.Filter.Or(IsMatched, doc);
             Documents = OnTeardownMongoDbCollection.CleanIfMatched;
@@ -217,7 +217,7 @@ namespace Arcus.Testing
             _database = database;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Name = collectionName;
         }
 
@@ -268,7 +268,7 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
             logger ??= NullLogger.Instance;
-            
+
             if (string.IsNullOrWhiteSpace(databaseName))
             {
                 throw new ArgumentException(
@@ -409,7 +409,7 @@ namespace Arcus.Testing
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
-                    await _database.DropCollectionAsync(Name); 
+                    await _database.DropCollectionAsync(Name);
                 }));
             }
             else
