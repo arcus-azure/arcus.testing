@@ -4,6 +4,7 @@ using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Bogus;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.IdGenerators;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -52,7 +53,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BsonValue id = await context.WhenDocumentAvailableAsync(collectionName, original);
 
             Product replacement = CreateProduct();
-            replacement.Id = (ObjectId) id;
+            replacement.Id = (ObjectId)id;
 
             TemporaryMongoDbDocument temp = await WhenTempDocumentCreatedAsync(collectionName, replacement);
             await context.ShouldStoreDocumentAsync<Product>(collectionName, id, stored => AssertProduct(replacement, stored));
@@ -64,7 +65,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldStoreDocumentAsync<Product>(collectionName, id, stored => AssertProduct(original, stored));
         }
 
-        private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc) 
+        private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc)
             where TDoc : class
         {
             return await TemporaryMongoDbDocument.InsertIfNotExistsAsync(
@@ -108,32 +109,32 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
-            var original = DocWithIntId.Generate();
+            var original = DocWithStringId.Generate();
             BsonValue id = await context.WhenDocumentAvailableAsync(collectionName, original);
 
-            var replacement = DocWithIntId.Generate();
-            replacement.Id = (Guid) id;
+            var replacement = DocWithStringId.Generate();
+            replacement.Id = (string)id;
 
             TemporaryMongoDbDocument temp = await WhenTempDocumentCreatedAsync(collectionName, replacement);
-            await context.ShouldStoreDocumentAsync<DocWithIntId>(collectionName, id, stored => Assert.Equal(replacement.Name, stored.Name));
+            await context.ShouldStoreDocumentAsync<DocWithStringId>(collectionName, id, stored => Assert.Equal(replacement.Name, stored.Name));
 
             // Act
             await temp.DisposeAsync();
 
             // Assert
-            await context.ShouldStoreDocumentAsync<DocWithIntId>(collectionName, id, stored => Assert.Equal(original.Name, stored.Name));
+            await context.ShouldStoreDocumentAsync<DocWithStringId>(collectionName, id, stored => Assert.Equal(original.Name, stored.Name));
         }
 
-        public class DocWithIntId
+        public class DocWithStringId
         {
-            [BsonId]
-            public Guid Id { get; set; }
+            [BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
+            public string Id { get; set; }
 
             public string Name { get; set; }
 
-            public static DocWithIntId Generate()
+            public static DocWithStringId Generate()
             {
-                return new DocWithIntId { Name = Bogus.Random.Word() };
+                return new DocWithStringId { Name = Bogus.Random.Word() };
             }
         }
 

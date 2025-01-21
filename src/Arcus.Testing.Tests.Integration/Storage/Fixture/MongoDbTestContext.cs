@@ -67,14 +67,14 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             string cosmosDbName = config["Arcus:Cosmos:MongoDb:Name"];
 
             var listConnectionStringUrl = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{cosmosDbName}/listConnectionStrings?api-version=2021-04-15";
-            
+
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
 
             using HttpResponseMessage response = await HttpClient.SendAsync(request);
             string responseBody = await response.Content.ReadAsStringAsync();
             var connectionStringDic = JsonSerializer.Deserialize<Dictionary<string, List<Dictionary<string, string>>>>(responseBody);
-            
+
             Assert.NotNull(connectionStringDic);
             List<Dictionary<string, string>> connectionStrings = connectionStringDic["connectionStrings"];
             Assert.NotEmpty(connectionStrings);
@@ -127,9 +127,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task<BsonValue> WhenDocumentAvailableAsync<T>(string collectionName, T document)
         {
             IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(collectionName);
-            
+
             var bson = document.ToBsonDocument();
-            
+
             BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(T));
             string elementName = classMap.IdMemberMap.ElementName;
 
@@ -149,7 +149,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task WhenDocumentDeletedAsync<T>(string collectionName, BsonValue id)
         {
             _logger.LogTrace("[Test] delete MongoDb document '{DocId}' in collection '{CollectionName}' outside test fixture's scope", id, collectionName);
-         
+
             IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
             FilterDefinition<T> filter = CreateIdFilter<T>(id);
 
@@ -162,7 +162,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldStoreCollectionAsync(string collectionName)
         {
             Assert.True(
-                await StoresCollectionNameAsync(collectionName), 
+                await StoresCollectionNameAsync(collectionName),
                 $"temporary mongo db collection '{collectionName}' should be available");
         }
 
@@ -172,7 +172,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldNotStoreCollectionAsync(string collectionName)
         {
             Assert.False(
-                await StoresCollectionNameAsync(collectionName), 
+                await StoresCollectionNameAsync(collectionName),
                 $"temporary mongo db collection '{collectionName}' should not be available");
         }
 
