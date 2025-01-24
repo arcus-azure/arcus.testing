@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Core.Fixture;
 using Bogus;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -44,7 +45,7 @@ namespace Arcus.Testing.Tests.Integration.Core
             {
                 options.UseMainJsonFile(mainAppSettingsName)
                        .AddOptionalJsonFile(localAppSettingsName1)
-                       .AddOptionalJsonFile(localAppSettingsName2);
+                       .AddJsonFile(localAppSettingsName2, optional: true);
             });
 
             // Act / Assert
@@ -55,8 +56,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToCustomMain(string fileName, string key, string value, string newMainFile)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToCustomMain(key, newMainFile);
@@ -122,8 +123,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToDefaultMain(string fileName, string key, string value)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToDefaultMain(key);

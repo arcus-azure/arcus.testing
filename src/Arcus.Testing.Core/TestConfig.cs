@@ -9,7 +9,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options for the <see cref="TestConfig"/>.
     /// </summary>
-    public class TestConfigOptions
+    public class TestConfigOptions : ConfigurationBuilder
     {
         private readonly Collection<string> _localAppSettingsNames = new() { "appsettings.local.json" };
 
@@ -47,7 +47,7 @@ namespace Arcus.Testing
         /// Gets the main JSON path to the configuration source.
         /// </summary>
         internal string MainJsonPath { get; private set; } = "appsettings.json";
-        
+
         /// <summary>
         /// Gets all the configured additional JSON paths to files that acts as configuration sources.
         /// </summary>
@@ -78,15 +78,14 @@ namespace Arcus.Testing
             var options = new TestConfigOptions();
             configureOptions?.Invoke(options);
 
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-                .AddJsonFile(options.MainJsonPath, optional: true);
+            options.AddJsonFile(options.MainJsonPath, optional: true);
 
             foreach (string path in options.OptionalJsonPaths)
             {
-                builder.AddJsonFile(path, optional: true);
+                options.AddJsonFile(path, optional: true);
             }
 
-            _implementation = builder.Build();
+            _implementation = options.Build();
             _options = options;
         }
 
@@ -104,7 +103,7 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
         public static TestConfig Create(Action<TestConfigOptions> configureOptions)
         {
-           return new TestConfig(configureOptions);
+            return new TestConfig(configureOptions);
         }
 
         /// <summary>

@@ -64,6 +64,9 @@ var config = TestConfig.Create(options =>
 
     // Adds 'configuration.Dev.json' to local alternatives [ 'appsettings.local.json' ]
     options.AddOptionalJsonFile("configuration.Dev.json");
+
+    // Or other methods for `ConfigurationBuilder`
+    options.AddEnvironmentVariables();
 });
 ```
 
