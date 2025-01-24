@@ -160,7 +160,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 }
                 else
                 {
-                    options.OnTeardown.CleanMatchingItems(item => item.Id == createdMatched.Id)
+                    options.OnTeardown.CleanMatchingItems(item => item.PartitionKey == createdMatched.GetPartitionKey())
                                       .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
                 }
             });
@@ -258,7 +258,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 .RuleFor(s => s.Id, f => header + "item-" + f.Random.Guid())
                 .RuleFor(s => s.BoatName, f => f.Person.FirstName)
                 .RuleFor(s => s.CrewMembers, f => f.Random.Int(1, 10))
-                .RuleFor(s => s.Destination, f => new Destination { Country = f.Address.Country() })
+                .RuleFor(s => s.Destination, f => new Destination { Country = f.Random.Guid() + f.Address.Country() })
                 .Generate();
         }
 
