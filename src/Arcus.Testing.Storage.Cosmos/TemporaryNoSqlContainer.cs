@@ -19,21 +19,55 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using static Arcus.Testing.NoSqlExtraction;
 
+#pragma warning disable CS0618, S1133 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing
 {
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is created.
     /// </summary>
     internal enum OnSetupNoSqlContainer { LeaveExisted = 0, CleanIfExisted, CleanIfMatched }
-    
+
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is deleted.
     /// </summary>
     internal enum OnTeardownNoSqlContainer { CleanIfCreated = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
+    /// Represents a generic dictionary-like type which defines an arbitrary set of properties on a NoSql item as key-value pairs.
+    /// </summary>
+    public class NoSqlItem : JObject
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NoSqlItem" /> class.
+        /// </summary>
+        internal NoSqlItem(
+            string id,
+            PartitionKey partitionKey,
+            JObject properties)
+            : base(properties)
+        {
+            ArgumentNullException.ThrowIfNull(id);
+
+            Id = id;
+            PartitionKey = partitionKey;
+        }
+
+        /// <summary>
+        /// Gets the unique identifier to distinguish items.
+        /// </summary>
+        public string Id { get; }
+
+        /// <summary>
+        /// Gets the key to group items together in partitions.
+        /// </summary>
+        public PartitionKey PartitionKey { get; }
+    }
+
+    /// <summary>
     /// Represents a filter to match against a stored NoSql item in the <see cref="TemporaryNoSqlContainer"/> upon setup or teardown.
     /// </summary>
+    [Obsolete("Additional layer of abstraction will be removed in favor of using a predicate on a '" + nameof(NoSqlItem) + "' function directly")]
     public class NoSqlItemFilter
     {
         private readonly Func<string, PartitionKey, JObject, CosmosClient, bool> _filter;
@@ -104,7 +138,7 @@ namespace Arcus.Testing
                 }
 
                 using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
-                
+
                 var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
                 if (item is null)
                 {
@@ -147,7 +181,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupNoSqlContainerOptions
     {
-        private readonly List<NoSqlItemFilter> _filters = new();
+        private readonly List<NoSqlItemFilter> _typedFilters = new();
+        private readonly List<Func<NoSqlItem, bool>> _genericFilters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture creation.
@@ -183,6 +218,8 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match NoSql items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(NoSqlItem) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnSetupNoSqlContainerOptions CleanMatchingItems(params NoSqlItemFilter[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
@@ -193,7 +230,58 @@ namespace Arcus.Testing
             }
 
             Items = OnSetupNoSqlContainer.CleanIfMatched;
-            _filters.AddRange(filters);
+            _typedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Multiple calls will be aggregated together in an OR expression.
+        /// </remarks>
+        /// <param name="filters">The filters to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        public OnSetupNoSqlContainerOptions CleanMatchingItems(params Func<NoSqlItem, bool>[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnSetupNoSqlContainer.CleanIfMatched;
+            _genericFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Multiple calls will be aggregated together in an OR expression.
+        /// </remarks>
+        /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
+        /// <param name="filters">The filters to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        public OnSetupNoSqlContainerOptions CleanMatchingItems<TItem>(params Func<TItem, bool>[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnSetupNoSqlContainer.CleanIfMatched;
+            _typedFilters.AddRange(filters.Select(NoSqlItemFilter.Where).ToArray());
 
             return this;
         }
@@ -203,7 +291,10 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
         {
-            return _filters.Exists(filter => filter.IsMatch(itemId, partitionKey, itemStream, client));
+            var item = new NoSqlItem(itemId, partitionKey, itemStream);
+
+            return _typedFilters.Exists(filter => filter.IsMatch(itemId, partitionKey, itemStream, client))
+                || _genericFilters.Exists(filter => filter(item));
         }
     }
 
@@ -212,7 +303,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownNoSqlContainerOptions
     {
-        private readonly List<NoSqlItemFilter> _filters = new();
+        private readonly List<NoSqlItemFilter> _typedFilters = new();
+        private readonly List<Func<NoSqlItem, bool>> _genericFilters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture deletion.
@@ -250,6 +342,8 @@ namespace Arcus.Testing
         /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(NoSqlItem) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnTeardownNoSqlContainerOptions CleanMatchingItems(params NoSqlItemFilter[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
@@ -260,7 +354,62 @@ namespace Arcus.Testing
             }
 
             Items = OnTeardownNoSqlContainer.CleanIfMatched;
-            _filters.AddRange(filters);
+            _typedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        /// </remarks>
+        /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        public OnTeardownNoSqlContainerOptions CleanMatchingItems(params Func<NoSqlItem, bool>[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnTeardownNoSqlContainer.CleanIfMatched;
+            _genericFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
+        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        /// </remarks>
+        /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
+        /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        public OnTeardownNoSqlContainerOptions CleanMatchingItems<TItem>(params Func<TItem, bool>[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Items = OnTeardownNoSqlContainer.CleanIfMatched;
+            _typedFilters.AddRange(filters.Select(NoSqlItemFilter.Where).ToArray());
 
             return this;
         }
@@ -270,7 +419,10 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
         {
-            return _filters.Exists(filter => filter.IsMatch(itemId, partitionKey, itemStream, client));
+            var item = new NoSqlItem(itemId, partitionKey, itemStream);
+
+            return _typedFilters.Exists(filter => filter.IsMatch(itemId, partitionKey, itemStream, client))
+                   || _genericFilters.Exists(filter => filter(item));
         }
     }
 
@@ -501,7 +653,7 @@ namespace Arcus.Testing
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
                 CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
-                
+
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: true, options, logger);
             }
         }
@@ -532,7 +684,7 @@ namespace Arcus.Testing
         {
             var arm = new ArmClient(credential);
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(cosmosDbAccountResourceId);
-            
+
             return await cosmosDb.GetAsync();
         }
 
@@ -542,14 +694,14 @@ namespace Arcus.Testing
             {
                 return;
             }
-            
+
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
                 await ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
                     logger.LogDebug("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
                     using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
-                    
+
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
@@ -605,7 +757,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
                     await _container.DeleteAsync(WaitUntil.Completed);
-                })); 
+                }));
             }
             else
             {
@@ -632,7 +784,7 @@ namespace Arcus.Testing
                     {
                         _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                         using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                        
+
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException(
@@ -654,7 +806,7 @@ namespace Arcus.Testing
                         {
                             _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                             using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                            
+
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
                                 throw new RequestFailedException(

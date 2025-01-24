@@ -8,12 +8,14 @@ using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing.Tests.Integration.Storage
 {
     [Collection(TestCollections.NoSql)]
     public class TemporaryNoSqlContainerTests : IntegrationTest
     {
-        private string[] PartitionKeyPaths => new[]
+        private static string[] PartitionKeyPaths => new[]
         {
             "/" + nameof(Ship.Destination) + "/" + nameof(Destination.Country)
         };
@@ -120,9 +122,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                options.OnSetup.CleanMatchingItems(CreateMatchingFilter(createdMatched))
-                               .CleanMatchingItems(CreateMatchingFilter(createdMatched))
-                               .CleanMatchingItems(CreateMatchingFilter(CreateShip()));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnSetup.CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
+                                   .CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
+                                   .CleanMatchingItems(CreateDeprecatedMatchingFilter(CreateShip()));
+                }
+                else
+                {
+                    options.OnSetup.CleanMatchingItems(item => item.Id == createdMatched.Id)
+                                   .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdNotMatched.GetPartitionKey());
+                }
             });
 
             // Assert
@@ -142,9 +152,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                options.OnTeardown.CleanMatchingItems(CreateMatchingFilter(createdMatched))
-                                  .CleanMatchingItems(CreateMatchingFilter(createdMatched))
-                                  .CleanMatchingItems(CreateMatchingFilter(CreateShip()));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnTeardown.CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
+                                      .CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
+                                      .CleanMatchingItems(CreateDeprecatedMatchingFilter(CreateShip()));
+                }
+                else
+                {
+                    options.OnTeardown.CleanMatchingItems(item => item.Id == createdMatched.Id)
+                                      .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
+                }
             });
 
             Ship createdByUs = await AddItemAsync(container);
@@ -161,7 +179,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldStoreItemAsync(containerName, createdNotMatched);
         }
 
-        private static NoSqlItemFilter CreateMatchingFilter(Ship item)
+        private static NoSqlItemFilter CreateDeprecatedMatchingFilter(Ship item)
         {
             return Bogus.Random.Int(1, 5) switch
             {
@@ -182,7 +200,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip("before"));
-            
+
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName);
             container.OnTeardown.CleanAllItems();
             await context.ShouldStoreItemAsync(containerName, createdBefore);
@@ -206,7 +224,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             return NoSqlTestContext.Given(Configuration, Logger);
         }
 
-        private async Task<string> WhenContainerAlreadyAvailableAsync(NoSqlTestContext context)
+        private static async Task<string> WhenContainerAlreadyAvailableAsync(NoSqlTestContext context)
         {
             return await context.WhenContainerNameAvailableAsync(PartitionKeyPaths.Single());
         }
@@ -215,7 +233,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             string containerName,
             Action<TemporaryNoSqlContainerOptions> configureOptions = null)
         {
-            var container = 
+            var container =
                 configureOptions is null
                     ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
                     : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
