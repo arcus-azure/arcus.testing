@@ -294,7 +294,7 @@ namespace Arcus.Testing
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
 
             return _typedFilters.Exists(filter => filter.IsMatch(itemId, partitionKey, itemStream, client))
-                || _genericFilters.Exists(filter => filter(item));
+                   || _genericFilters.Exists(filter => filter(item));
         }
     }
 
