@@ -10,11 +10,13 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a logging sink that collects the emitted log events in-memory.
     /// </summary>
+#pragma warning disable S1133
     [Obsolete("Arcus.Testing.Logging.Core will stop supporting Serilog by default, please implement Serilog sinks yourself as this sink will be removed in v2.0")]
+#pragma warning restore
     public class InMemoryLogSink : ILogEventSink
     {
         private readonly ConcurrentQueue<LogEvent> _logEmits = new ConcurrentQueue<LogEvent>();
-        
+
         /// <summary>
         /// Gets the current log emits available on the sink.
         /// </summary>
@@ -24,7 +26,7 @@ namespace Arcus.Testing
         /// Gets the current messages of the log emits available on the sink.
         /// </summary>
         public IEnumerable<string> CurrentLogMessages => CurrentLogEmits.Select(emit => emit.RenderMessage());
-        
+
         /// <summary>
         /// Emit the provided log event to the sink.
         /// </summary>

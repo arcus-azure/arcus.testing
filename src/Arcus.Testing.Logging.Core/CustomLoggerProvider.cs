@@ -6,6 +6,9 @@ namespace Arcus.Testing
     /// <summary>
     /// Custom <see cref="ILoggerProvider"/> that creates a custom <see cref="ILogger"/> provider.
     /// </summary>
+#pragma warning disable S1133
+    [Obsolete("Will be removed in v2.0, use the specific logging packages (Xunit, NUnit, MSTest) instead")]
+#pragma warning restore
     public class CustomLoggerProvider : ILoggerProvider
     {
         private readonly ILogger _logger;

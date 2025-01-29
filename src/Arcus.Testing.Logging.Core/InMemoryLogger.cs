@@ -9,6 +9,9 @@ namespace Arcus.Testing
     /// <summary>
     /// Spy (stub) <see cref="ILogger"/> implementation to track the logged messages in-memory.
     /// </summary>
+#pragma warning disable S1133
+    [Obsolete("Will be removed in v2.0, use the specific logging packages (Xunit, NUnit, MSTest) instead")]
+#pragma warning restore
     public class InMemoryLogger : ILogger
     {
         private readonly ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();

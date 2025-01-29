@@ -22,10 +22,27 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(testContext);
 
-            var logger = new MSTestLogger(testContext);
-            var provider = new CustomLoggerProvider(logger);
-
+            var provider = new MSTestLoggerProvider(testContext);
             return builder.AddProvider(provider);
+        }
+
+        private sealed class MSTestLoggerProvider : ILoggerProvider
+        {
+            private readonly ILogger _logger;
+
+            public MSTestLoggerProvider(TestContext context)
+            {
+                _logger = new MSTestLogger(context);
+            }
+
+            public ILogger CreateLogger(string categoryName)
+            {
+                return _logger;
+            }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }

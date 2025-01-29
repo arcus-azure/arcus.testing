@@ -22,10 +22,27 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
-            var logger = new XunitTestLogger(outputWriter);
-            var provider = new CustomLoggerProvider(logger);
-
+            var provider = new XunitLoggerProvider(outputWriter);
             return builder.AddProvider(provider);
+        }
+
+        private sealed class XunitLoggerProvider : ILoggerProvider
+        {
+            private readonly ILogger _logger;
+
+            public XunitLoggerProvider(ITestOutputHelper outputWriter)
+            {
+                _logger = new XunitTestLogger(outputWriter);
+            }
+
+            public ILogger CreateLogger(string categoryName)
+            {
+                return _logger;
+            }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }

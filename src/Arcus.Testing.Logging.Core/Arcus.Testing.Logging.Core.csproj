@@ -7,10 +7,10 @@
     <Company>Arcus</Company>
     <Description>Provides logging capabilities during Arcus testing</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904;CS6018</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

@@ -6,6 +6,9 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a logged message by a <see cref="ILogger"/> instance.
     /// </summary>
+#pragma warning disable S1133
+    [Obsolete("Will be removed in v2.0, use the specific logging packages (Xunit, NUnit, MSTest) instead")]
+#pragma warning restore
     public class LogEntry
     {
         /// <summary>
