@@ -28,7 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- TODO: reference will be removed in v2.0 -->
     <ProjectReference Include="..\Arcus.Testing.Logging.Core\Arcus.Testing.Logging.Core.csproj" />
-  </ItemGroup>
+    <!-- TODO: reference will be removed in v2.0 -->  </ItemGroup>
 
 </Project>

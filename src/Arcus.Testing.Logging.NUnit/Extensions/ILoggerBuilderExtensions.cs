@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter);
-            var provider = new CustomLoggerProvider(logger);
+            var provider = new NUnitLoggerProvider(logger);
 
             return builder.AddProvider(provider);
         }
@@ -41,9 +41,28 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter, errorWriter);
-            var provider = new CustomLoggerProvider(logger);
+            var provider = new NUnitLoggerProvider(logger);
 
             return builder.AddProvider(provider);
+        }
+
+        private sealed class NUnitLoggerProvider : ILoggerProvider
+        {
+            private readonly NUnitTestLogger _logger;
+
+            public NUnitLoggerProvider(NUnitTestLogger logger)
+            {
+                _logger = logger;
+            }
+
+            public ILogger CreateLogger(string categoryName)
+            {
+                return _logger;
+            }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }
