@@ -139,7 +139,11 @@ module eventHubsNamespace 'br/public:avm/res/event-hub/namespace:0.9.1' = {
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId
-        roleDefinitionIdOrName: 'Event Hubs Data Owner'
+        roleDefinitionIdOrName: 'Azure Event Hubs Data Sender'
+      }
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'Azure Event Hubs Data Receiver'
       }
     ]
   }
