@@ -28,7 +28,7 @@ Describe 'Storage account' {
         -DatabaseName $env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME `
         -Name $collectionName
     }
-    catch {
+    finally {
       Remove-AzCosmosDBMongoDBCollection `
         -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
         -AccountName $env:ARCUS_TESTING_COSMOS_MONGODB_NAME `
@@ -44,14 +44,43 @@ Describe 'Storage account' {
         -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
         -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
         -Name $containerName `
-        -PartitionKeyPath '/pk'
+        -PartitionKeyPath '/pk' `
+        -PartitionKeyKind Hash
     }
-    catch {
+    finally {
       Remove-AzCosmosDBSqlContainer `
-      -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
-      -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
-      -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
-      -Name $containerName
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -AccountName $env:ARCUS_TESTING_COSMOS_NOSQL_NAME `
+        -DatabaseName $env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME `
+        -Name $containerName
+    }
+  }
+  It "Service principal can create Service bus queue" {
+    $queueName = 'test-queue'
+    try {
+      New-AzServiceBusQueue `
+          -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+          -NamespaceName $env:ARCUS_TESTING_SERVICEBUS_NAMESPACE `
+          -Name $queueName
+    } finally {
+      Remove-AzServiceBusQueue `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -NamespaceName $env:ARCUS_TESTING_SERVICEBUS_NAMESPACE `
+        -Name $queueName
+    }
+  }
+  It "Service principal can create Service bus topic" {
+    $topicName = 'test-topic'
+    try {
+      New-AzServiceBusTopic `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -NamespaceName $env:ARCUS_TESTING_SERVICEBUS_NAMESPACE `
+        -Name $topicName
+    } finally {
+      Remove-AzServiceBusTopic `
+        -ResourceGroupName $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
+        -NamespaceName $env:ARCUS_TESTING_SERVICEBUS_NAMESPACE `
+        -Name $topicName
     }
   }
 }
