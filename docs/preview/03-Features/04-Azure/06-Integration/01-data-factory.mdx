@@ -25,14 +25,19 @@ The test fixture instance is meant to be used across tests. By all using the sam
 ```csharp
 using Arcus.Testing;
 
-var dataFactoryResourceId = new ResourceIdentifier(
-    ".../Microsoft.DataFactory/factories/<dataFactoryName>")
+ResourceIdentifier dataFactoryResourceId =
+    DataFactoryResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<factory-name>");
 
 await using var session = 
   await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactoryResourceId, logger);
 ```
 
-> ⚡ Uses by default the `DefaultAzureCredential` but other type of authentication mechanisms are supported with overloads that take in the `DataFactoryResource` directly.
+> ⚡ Uses by default the `DefaultAzureCredential` but other type of authentication mechanisms are supported with overloads that take in the `DataFactoryResource` directly:
+> ```csharp
+>  var credential = new DefaultAzureCredential();
+>  var arm = new ArmClient(credential);
+>  DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+> ```
 
 ### Customization
 The setup of the `TemporaryDataFlowDebugSession` test fixture can be customized with the following options: 
