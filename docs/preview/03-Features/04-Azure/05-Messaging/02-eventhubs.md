@@ -23,7 +23,15 @@ await using var hub = await TemporaryEventHub.CreateIfNotExistsAsync(
     eventHubsNamespaceResourceId, consumerGroup: "$Default", "<event-hub-name>", logger);
 ```
 
-> ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
+> ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads that take in the `EventHubsNamespaceResource` directly:
+> ```csharp
+>  var credential = new DefaultAzureCredential();
+>  var arm = new ArmClient(credential);
+>  
+>  EventHubsNamespaceResource eventHubsNamespace =
+>      await arm.GetEventHubsNamespaceResource(eventHubNamespaceResourceId)
+>               .GetAsync();
+> ```
 
 ### Customization
 The `TemporaryEventHub` allows testers to configure setup operations to manipulate the test fixture's behavior.
