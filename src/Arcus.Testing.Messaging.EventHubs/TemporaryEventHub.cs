@@ -121,7 +121,8 @@ namespace Arcus.Testing
         ///           EventHubsNamespaceResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;namespace-name&gt;");
         ///     </code>
         ///   </example>
-        /// </param>        /// <param name="consumerGroup">The name of the consumer group this consumer is associated with. Events are read in the context of this group.</param>
+        /// </param>
+        /// <param name="consumerGroup">The name of the consumer group this consumer is associated with. Events are read in the context of this group.</param>
         /// <param name="eventHubName">The name of the specific Azure Event Hub to associate the consumer with.</param>
         /// <param name="logger">The instance to log diagnostic information during the lifetime of the test fixture.</param>
         /// <param name="configureOptions">The function to manipulate the test fixture's lifetime behavior.</param>
