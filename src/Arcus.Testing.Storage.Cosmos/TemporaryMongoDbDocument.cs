@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Azure.Core;
+using Azure.ResourceManager.CosmosDB;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
@@ -52,7 +53,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Inserts a temporary document to an Azure Cosmos MongoDb collection.
         /// </summary>
-        /// <param name="cosmosDbResourceId">The resource ID pointing towards the Azure CosmosDb account.</param>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="databaseName">The name of the MongoDb database in which the collection resides where the document should be created.</param>
         /// <param name="collectionName">The name of the MongoDb collection in which the document should be created.</param>
         /// <param name="document">The document that should be temporarily inserted into the MongoDb collection.</param>
@@ -87,7 +97,7 @@ namespace Arcus.Testing
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
             IMongoDatabase database = client.GetDatabase(databaseName);
             IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
-            
+
             return await InsertIfNotExistsAsync(collection, document, logger);
         }
 
@@ -149,7 +159,7 @@ namespace Arcus.Testing
                     $"as the passed document type '{typeof(TDocument).Name}' has no member map defined for the '_id' property, " +
                     $"please see the MongoDb documentation for more information on this required property: https://www.mongodb.com/docs/drivers/csharp/current/fundamentals/crud/write-operations/insert/#the-_id-field");
             }
-            
+
             return classMap.IdMemberMap;
         }
 
@@ -157,7 +167,7 @@ namespace Arcus.Testing
         {
             BsonValue id = bson[idMemberMap.ElementName];
             object idValue = BsonTypeMapper.MapToDotNetValue(id);
-         
+
             if (idMemberMap.IdGenerator.IsEmpty(idValue))
             {
                 object newId = idMemberMap.IdGenerator.GenerateId(collection, bson);
