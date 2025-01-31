@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
 using Azure.Core;
@@ -50,6 +51,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             _config = config;
             _logger = logger;
 
+            var env = config.GetAzureEnvironment();
+            SubscriptionId = env.SubscriptionId;
+            ResourceGroupName = env.ResourceGroupName;
+
             Name = RandomizeWith("dataFlow");
             SourceName = RandomizeWith("sourceName");
             SinkName = RandomizeWith("sinkName");
@@ -57,8 +62,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             SourceDataSetName = RandomizeWith("sourceDataSet");
         }
 
-        private string SubscriptionId => _config["Arcus:SubscriptionId"];
-        private string ResourceGroupName => _config["Arcus:ResourceGroup:Name"];
+        private string SubscriptionId { get; }
+        private string ResourceGroupName { get; }
         private DataFactoryConfig DataFactory => _config.GetDataFactory();
         private StorageAccount StorageAccount => _config.GetStorageAccount();
 

@@ -6,13 +6,12 @@ using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Azure;
 using Azure.Identity;
-using Azure.ResourceManager.CosmosDB.Models;
-using Azure.ResourceManager.CosmosDB;
 using Azure.ResourceManager;
+using Azure.ResourceManager.CosmosDB;
+using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 {
@@ -35,7 +34,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     public class NoSqlTestContext : IAsyncDisposable
     {
         private readonly TemporaryManagedIdentityConnection _connection;
-        private readonly NoSqlConfig _config;
+        private readonly CosmosDbConfig _config;
         private readonly CosmosClient _client;
         private readonly Collection<string> _containerNames = new();
         private readonly ILogger _logger;
@@ -44,7 +43,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             TemporaryManagedIdentityConnection connection,
             CosmosClient client,
             Database database,
-            NoSqlConfig config,
+            CosmosDbConfig config,
             ILogger logger)
         {
             _connection = connection;
@@ -65,16 +64,16 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public static NoSqlTestContext Given(TestConfig config, ILogger logger)
         {
             var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
-            NoSqlConfig noSql = config.GetNoSql();
+            CosmosDbConfig noSql = config.GetNoSql();
 
-            var client = new CosmosClient(noSql.Endpoint, new DefaultAzureCredential());
+            var client = new CosmosClient(noSql.AccountEndpoint.ToString(), new DefaultAzureCredential());
             Database database = client.GetDatabase(noSql.DatabaseName);
 
             return new NoSqlTestContext(connection, client, database, noSql, logger);
         }
 
         /// <summary>
-        /// Provides a new container name that does not exists in the NoSql database.
+        /// Provides a new container name that does not exist in the NoSql database.
         /// </summary>
         public string WhenContainerNameUnavailable()
         {
@@ -85,7 +84,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
-        /// Provides a new container name that does exists in the NoSql database.
+        /// Provides a new container name that does exist in the NoSql database.
         /// </summary>
         public async Task<string> WhenContainerNameAvailableAsync(string partitionKeyPath = "/pk")
         {
@@ -93,13 +92,13 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             _logger.LogTrace("[Test] create NoSql container '{ContainerName}' outside the fixture's scope", containerName);
 
             var arm = new ArmClient(new DefaultAzureCredential());
-            CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.ResourceId);
+            CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
             CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
 
             CosmosDBAccountResource resource = await cosmosDb.GetAsync();
             var newContainer = new CosmosDBSqlContainerResourceInfo(containerName)
             {
-                PartitionKey = new CosmosDBContainerPartitionKey { Paths = { partitionKeyPath }}
+                PartitionKey = new CosmosDBContainerPartitionKey { Paths = { partitionKeyPath } }
             };
             var request = new CosmosDBSqlContainerCreateOrUpdateContent(resource.Data.Location, newContainer);
             await database.GetCosmosDBSqlContainers()
@@ -116,7 +115,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             _logger.LogTrace("[Test] delete NoSql container '{ContainerName}' outside test fixture's scope", containerName);
 
             var arm = new ArmClient(new DefaultAzureCredential());
-            CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.ResourceId);
+            CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
             CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
 
             CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName);
@@ -183,7 +182,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
-        /// Verifies that n item does not exists in a NoSql container.
+        /// Verifies that n item does not exist in a NoSql container.
         /// </summary>
         public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem
         {
@@ -206,7 +205,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             disposables.Add(AsyncDisposable.Create(async () =>
             {
                 var arm = new ArmClient(new DefaultAzureCredential());
-                CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.ResourceId);
+                CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
                 CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
 
                 foreach (var containerName in _containerNames)
@@ -219,7 +218,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                     }
                     catch (CosmosException exception) when (exception.StatusCode is HttpStatusCode.NotFound)
                     {
-                        // Ignore when the container does not exists.
+                        // Ignore when the container does not exist.
                     }
                     catch (RequestFailedException exception) when (exception.Status is 404)
                     {
