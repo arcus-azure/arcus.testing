@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
     [Collection(TestCollections.NoSql)]
     public class TemporaryNoSqlContainerTests : IntegrationTest
     {
-        private string[] PartitionKeyPaths => new[]
+        private static string[] PartitionKeyPaths => new[]
         {
             "/" + nameof(Ship.Destination) + "/" + nameof(Destination.Country)
         };
@@ -25,7 +25,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
         }
 
-        private NoSqlConfig NoSql => Configuration.GetNoSql();
+        private CosmosDbConfig NoSql => Configuration.GetNoSql();
 
         [Fact]
         public async Task CreateTempNoSqlContainer_WithNonExistingContainer_SucceedsByExistingDuringLifetimeFixture()
@@ -182,7 +182,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
             Ship createdBefore = await context.WhenItemAvailableAsync(containerName, CreateShip("before"));
-            
+
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName);
             container.OnTeardown.CleanAllItems();
             await context.ShouldStoreItemAsync(containerName, createdBefore);
@@ -206,7 +206,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             return NoSqlTestContext.Given(Configuration, Logger);
         }
 
-        private async Task<string> WhenContainerAlreadyAvailableAsync(NoSqlTestContext context)
+        private static async Task<string> WhenContainerAlreadyAvailableAsync(NoSqlTestContext context)
         {
             return await context.WhenContainerNameAvailableAsync(PartitionKeyPaths.Single());
         }
@@ -215,10 +215,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
             string containerName,
             Action<TemporaryNoSqlContainerOptions> configureOptions = null)
         {
-            var container = 
+            var container =
                 configureOptions is null
-                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
-                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
+                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
+                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
 
             Assert.Equal(NoSql.DatabaseName, container.Client.Database.Id);
             Assert.Equal(containerName, container.Name);
