@@ -2,6 +2,7 @@
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
 using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Consumer;
 using Azure.ResourceManager.EventHubs.Models;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,6 +31,14 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             // Assert
             await eventHubs.ShouldHaveHubAsync(eventHubName);
+
+            string partitionId = "0";
+            EventData expected = await eventHubs.WhenEventAvailableOnHubAsync(eventHubName, partitionId);
+
+            await temp.Events.FromPartition(partitionId, EventPosition.Earliest)
+                             .Where(ev => ev.Data.MessageId == expected.MessageId)
+                             .ShouldHaveSingleAsync();
+
             await temp.DisposeAsync();
             await eventHubs.ShouldNotHaveHubAsync(eventHubName);
         }
@@ -48,7 +57,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             // Assert
             await eventHubs.ShouldHaveHubAsync(eventHubName);
-            Assert.Single(await temp.Events.Where(ev => ev.Data.MessageId == expected.MessageId).ToListAsync());
+
+            await temp.Events.Where(ev => ev.Data.MessageId == expected.MessageId)
+                             .ShouldHaveSingleAsync();
 
             await temp.DisposeAsync();
             await eventHubs.ShouldHaveHubAsync(eventHubName);
@@ -59,10 +70,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             EventHubsConfig config = Configuration.GetEventHubs();
 
             return await TemporaryEventHub.CreateIfNotExistsAsync(
-                config.NamespaceResourceId, "$Default", eventHubName, Logger, options =>
+                config.NamespaceResourceId, consumerGroup: "$Default", eventHubName, Logger, options =>
                 {
                     options.OnSetup.CreateHubWith(hub =>
                     {
+                        hub.PartitionCount = 1;
                         hub.RetentionDescription = new RetentionDescription
                         {
                             CleanupPolicy = CleanupPolicyRetentionDescription.Delete,
