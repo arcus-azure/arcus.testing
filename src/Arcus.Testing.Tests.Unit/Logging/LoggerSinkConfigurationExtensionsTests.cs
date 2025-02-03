@@ -20,7 +20,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Arrange
             var config = new LoggerConfiguration();
             var testOutput = new InMemoryTestOutputWriter();
-            
+
             // Act
             config.WriteTo.XunitTestLogging(testOutput);
 

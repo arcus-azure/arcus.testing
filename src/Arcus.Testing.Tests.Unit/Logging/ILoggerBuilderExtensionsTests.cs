@@ -149,7 +149,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var builder = new HostBuilder();
-            
+
             // Act
             builder.ConfigureLogging(logging => logging.AddXunitTestLogging(outputWriter: null));
 

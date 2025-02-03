@@ -105,7 +105,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TableClient client = await context.WhenTableAvailableAsync();
             TableEntity createdBefore = await context.WhenTableEntityAvailableAsync(client);
-            
+
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
                 options.OnTeardown.CleanAllEntities();

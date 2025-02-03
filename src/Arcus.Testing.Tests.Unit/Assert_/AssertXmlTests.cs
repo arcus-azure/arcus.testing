@@ -163,9 +163,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Arrange
             var expected = TestXml.Generate();
             TestXml actual = expected.Copy();
-            
+
             actual.InsertAttribute(TestXml.GenNodeName() + Guid.NewGuid().ToString("N"));
-            
+
             // Act / Assert
             CompareShouldFailWithDifference(expected, actual, "has", "attribute(s)", "instead of");
         }
@@ -232,7 +232,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
         private static string Whitespace()
         {
-            return string.Concat(Bogus.Make(Bogus.Random.Int(5, 10), () => Bogus.PickRandom(" ", "\n", "\t", "\r" )));
+            return string.Concat(Bogus.Make(Bogus.Random.Int(5, 10), () => Bogus.PickRandom(" ", "\n", "\t", "\r")));
         }
 
         public static IEnumerable<object[]> FailingBeEquivalentCases
@@ -475,7 +475,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             InsertDiffNodes(actual, diffActualNames);
 
             // Act / Assert
-            EqualXml(expected, actual, 
+            EqualXml(expected, actual,
                 options => Assert.All(diffActualNames.Concat(diffExpectedNames), name =>
                 {
                     options.IgnoreNode(name);

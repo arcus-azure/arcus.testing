@@ -118,7 +118,7 @@ namespace Arcus.Testing
             var headersTxt = header.GetValue<string>();
             headersTxt = Regex.Replace(headersTxt, "^output\\(", string.Empty);
             headersTxt = headersTxt.Remove(headersTxt.Length - 1, 1);
-            headersTxt = 
+            headersTxt =
                 headersTxt.Replace("\\n", "")
                           .Replace(", ", ",")
                           .Replace(" as string[]", " as string")
@@ -131,7 +131,7 @@ namespace Arcus.Testing
                     $"[Test] Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersTxt}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
-                
+
             (int _, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(startIndex: 0, headersTxt);
             return parsed;
         }
@@ -212,17 +212,17 @@ namespace Arcus.Testing
             return (-1, headers.ToArray());
         }
 
-         private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
-         {
-             JsonArray dataArray = ParseDataAsArray(outputObj);
-             JsonNode[] results =
-                dataArray.Where(elem => elem is JsonArray)
-                         .Cast<JsonArray>()
-                         .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
-                         .ToArray();
+        private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
+        {
+            JsonArray dataArray = ParseDataAsArray(outputObj);
+            JsonNode[] results =
+               dataArray.Where(elem => elem is JsonArray)
+                        .Cast<JsonArray>()
+                        .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
+                        .ToArray();
 
-            return results.Length == 1 
-                ? results[0] 
+            return results.Length == 1
+                ? results[0]
                 : JsonSerializer.SerializeToNode(results);
         }
 
@@ -246,17 +246,17 @@ namespace Arcus.Testing
                     case PreviewDataType.DirectValue:
                         result[headerName.Name] = ParseDirectValue(headerValue, options);
                         break;
-                    
+
                     case PreviewDataType.Array when headerValue is JsonArray arr:
                         JsonNode[] elements = arr.Cast<JsonArray>().Select(elem => FillJsonDataFromHeaders(headerName.Children, elem, options)).ToArray();
                         result[headerName.Name] = JsonSerializer.SerializeToNode(elements);
                         break;
-                    
+
                     case PreviewDataType.Object when headerValue is JsonArray inner:
                         JsonNode children = FillJsonDataFromHeaders(headerName.Children, inner, options);
                         result[headerName.Name] = JsonSerializer.SerializeToNode(children);
                         break;
-                    
+
                     default:
                         throw new JsonException(
                             $"[Test] Cannot load the content of the DataFactory preview expression as the header and data is not representing the same types: {dataArray}, " +
@@ -417,8 +417,8 @@ namespace Arcus.Testing
 
         private static string[] ParseSchemeAsCsvHeaders(JsonObject outputObj)
         {
-            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
-                || headersNode is not JsonValue headersValue 
+            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
+                || headersNode is not JsonValue headersValue
                 || !headersValue.ToString().StartsWith("output"))
             {
                 throw new CsvException(
@@ -524,7 +524,7 @@ namespace Arcus.Testing
                 string[] headerNames,
                 CsvRow[] rows,
                 string originalCsv,
-                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options) 
+                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options)
             {
             }
 

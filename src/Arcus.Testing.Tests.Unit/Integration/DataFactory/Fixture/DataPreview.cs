@@ -27,7 +27,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture
         {
             headersTxt = headersTxt.StartsWith("output(") ? headersTxt : $"output({headersTxt})";
             var data = Assert.IsType<JsonArray>(JsonNode.Parse(dataTxt));
-            
+
             return new DataPreview(headersTxt, data);
         }
 

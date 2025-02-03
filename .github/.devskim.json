@@ -1,0 +1,10 @@
+{
+  "Globs": [
+    "docs/**",
+    "*.yaml"
+  ],
+  "BasePath": "./src",
+  "IgnoreRuleIds": [
+    "DS176209"
+  ]
+}

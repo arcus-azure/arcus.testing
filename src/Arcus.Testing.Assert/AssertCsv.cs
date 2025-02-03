@@ -718,7 +718,7 @@ namespace Arcus.Testing
             return new CsvTable(headerNames, rows, csv, options);
         }
 
-        
+
         /// <summary>
         /// Parse the incoming <paramref name="rowLines"/> into <see cref="CsvRow"/>s.
         /// </summary>
@@ -740,7 +740,7 @@ namespace Arcus.Testing
 
                 return new CsvRow(cells, rowNumber, options);
             }).ToArray();
-            
+
             return rows;
         }
 

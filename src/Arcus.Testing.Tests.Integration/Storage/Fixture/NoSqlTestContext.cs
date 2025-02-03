@@ -6,9 +6,9 @@ using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Azure;
 using Azure.Identity;
-using Azure.ResourceManager.CosmosDB.Models;
-using Azure.ResourceManager.CosmosDB;
 using Azure.ResourceManager;
+using Azure.ResourceManager.CosmosDB;
+using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -99,7 +99,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             CosmosDBAccountResource resource = await cosmosDb.GetAsync();
             var newContainer = new CosmosDBSqlContainerResourceInfo(containerName)
             {
-                PartitionKey = new CosmosDBContainerPartitionKey { Paths = { partitionKeyPath }}
+                PartitionKey = new CosmosDBContainerPartitionKey { Paths = { partitionKeyPath } }
             };
             var request = new CosmosDBSqlContainerCreateOrUpdateContent(resource.Data.Location, newContainer);
             await database.GetCosmosDBSqlContainers()

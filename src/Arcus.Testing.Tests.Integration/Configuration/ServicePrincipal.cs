@@ -15,7 +15,7 @@
         public string TenantId { get; }
 
         public string ClientId { get; }
-        
+
         public string ClientSecret { get; }
     }
 

@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Storage.Blobs;
@@ -116,7 +116,7 @@ namespace Arcus.Testing
             _originalData = originalData;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = blobClient;
         }
 
@@ -246,9 +246,9 @@ namespace Arcus.Testing
         }
 
         private static async Task<(bool createdByUs, BinaryData originalData)> EnsureBlobContentCreatedAsync(
-            BlobClient client, 
+            BlobClient client,
             BinaryData newContent,
-            TemporaryBlobFileOptions options, 
+            TemporaryBlobFileOptions options,
             ILogger logger)
         {
             if (await client.ExistsAsync())
@@ -266,7 +266,7 @@ namespace Arcus.Testing
 
             logger.LogDebug("[Test:Setup] Upload Azure Blob file '{BlobName}' to container '{AccountName}/{ContainerName}'", client.Name, client.AccountName, client.BlobContainerName);
             await client.UploadAsync(newContent);
-            
+
             return (createdByUs: true, originalData: null);
         }
 
@@ -279,7 +279,7 @@ namespace Arcus.Testing
             if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != OnTeardownBlob.DeleteIfExisted)
             {
                 _logger.LogDebug("[Test:Teardown] Revert replaced Azure Blob file '{BlobName}' to original content in container '{AccountName}/{ContainerName}'", Client.Name, Client.AccountName, Client.BlobContainerName);
-                await Client.UploadAsync(_originalData, overwrite: true); 
+                await Client.UploadAsync(_originalData, overwrite: true);
             }
 
             if (_createdByUs || _options.OnTeardown.Content is OnTeardownBlob.DeleteIfExisted)

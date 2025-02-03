@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Azure;
 using Azure.Core;
 using Azure.Identity;
-using Azure;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 
@@ -40,10 +40,10 @@ namespace Arcus.Testing
         }
 
         private static async Task<string> RequestConnectionStringsAsync(
-            ResourceIdentifier cosmosDbResourceId, 
-            string databaseName, 
-            string collectionName, 
-            AccessToken accessToken, 
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            AccessToken accessToken,
             ILogger logger)
         {
             var listConnectionStringUrl = $"https://management.azure.com/{cosmosDbResourceId}/listConnectionStrings?api-version=2021-04-15";
@@ -51,10 +51,10 @@ namespace Arcus.Testing
 
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
-            
+
             using HttpResponseMessage response = await HttpClient.SendAsync(request);
             string responseBody = await response.Content.ReadAsStringAsync();
-            
+
             if (!response.IsSuccessStatusCode)
             {
                 throw new RequestFailedException(

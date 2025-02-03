@@ -87,7 +87,7 @@ namespace Arcus.Testing
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
             IMongoDatabase database = client.GetDatabase(databaseName);
             IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
-            
+
             return await InsertIfNotExistsAsync(collection, document, logger);
         }
 
@@ -149,7 +149,7 @@ namespace Arcus.Testing
                     $"as the passed document type '{typeof(TDocument).Name}' has no member map defined for the '_id' property, " +
                     $"please see the MongoDb documentation for more information on this required property: https://www.mongodb.com/docs/drivers/csharp/current/fundamentals/crud/write-operations/insert/#the-_id-field");
             }
-            
+
             return classMap.IdMemberMap;
         }
 
@@ -157,7 +157,7 @@ namespace Arcus.Testing
         {
             BsonValue id = bson[idMemberMap.ElementName];
             object idValue = BsonTypeMapper.MapToDotNetValue(id);
-         
+
             if (idMemberMap.IdGenerator.IsEmpty(idValue))
             {
                 object newId = idMemberMap.IdGenerator.GenerateId(collection, bson);

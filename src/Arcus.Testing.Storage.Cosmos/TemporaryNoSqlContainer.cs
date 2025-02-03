@@ -25,7 +25,7 @@ namespace Arcus.Testing
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is created.
     /// </summary>
     internal enum OnSetupNoSqlContainer { LeaveExisted = 0, CleanIfExisted, CleanIfMatched }
-    
+
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is deleted.
     /// </summary>
@@ -104,7 +104,7 @@ namespace Arcus.Testing
                 }
 
                 using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
-                
+
                 var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
                 if (item is null)
                 {
@@ -501,7 +501,7 @@ namespace Arcus.Testing
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
                 CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
-                
+
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: true, options, logger);
             }
         }
@@ -532,7 +532,7 @@ namespace Arcus.Testing
         {
             var arm = new ArmClient(credential);
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(cosmosDbAccountResourceId);
-            
+
             return await cosmosDb.GetAsync();
         }
 
@@ -542,14 +542,14 @@ namespace Arcus.Testing
             {
                 return;
             }
-            
+
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
                 await ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
                     logger.LogDebug("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
                     using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
-                    
+
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
@@ -605,7 +605,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
                     await _container.DeleteAsync(WaitUntil.Completed);
-                })); 
+                }));
             }
             else
             {
@@ -632,7 +632,7 @@ namespace Arcus.Testing
                     {
                         _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                         using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                        
+
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException(
@@ -654,7 +654,7 @@ namespace Arcus.Testing
                         {
                             _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                             using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                            
+
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
                                 throw new RequestFailedException(

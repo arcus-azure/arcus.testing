@@ -32,7 +32,7 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// Gets the raw contents of the temporary file.
         /// </summary>
         public byte[] Contents { get; }
-        
+
         /// <summary>
         /// Gets the raw contents as text of the temporary file.
         /// </summary>

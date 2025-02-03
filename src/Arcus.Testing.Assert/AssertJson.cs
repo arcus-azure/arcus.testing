@@ -249,7 +249,7 @@ namespace Arcus.Testing
                 if (expectedChildren.OfType<JsonValue>().Any())
                 {
                     expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
-                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray(); 
+                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
                 }
                 else if (expectedChildren.OfType<JsonObject>().Any())
                 {

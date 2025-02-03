@@ -89,7 +89,7 @@ namespace Arcus.Testing
         {
             string subscriptionId = config["Arcus:SubscriptionId"];
             string resourceGroupName = config["Arcus:ResourceGroup:Name"];
-            
+
             return ResourceIdentifier.Parse($"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{accountName}");
         }
     }

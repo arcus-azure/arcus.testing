@@ -92,7 +92,7 @@ namespace Arcus.Testing
         {
             logger.LogTrace("[Test:Setup] Try replacing Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'...", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
             ItemResponse<TItem> response = await container.ReadItemAsync<TItem>(itemId, partitionKey);
-            
+
             CosmosSerializer serializer = container.Database.Client.ClientOptions.Serializer;
             if (serializer is null)
             {
@@ -142,7 +142,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.DeleteItemStreamAsync(Id, PartitionKey);
-                    
+
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
@@ -157,7 +157,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Revert replaced Azure Cosmos NoSql '{ItemType}' item '{ItemId}' in container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.ReplaceItemStreamAsync(_originalItemStream, Id, PartitionKey);
-                    
+
                     if (!response.IsSuccessStatusCode)
                     {
                         throw new RequestFailedException(

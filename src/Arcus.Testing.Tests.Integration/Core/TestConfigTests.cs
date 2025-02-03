@@ -55,8 +55,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToCustomMain(string fileName, string key, string value, string newMainFile)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToCustomMain(key, newMainFile);
@@ -122,8 +122,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToDefaultMain(string fileName, string key, string value)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToDefaultMain(key);

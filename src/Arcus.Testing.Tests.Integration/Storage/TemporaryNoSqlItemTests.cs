@@ -100,7 +100,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             item.Id = null;
 
             string containerName = await context.WhenContainerNameAvailableAsync(item.PartitionKeyPath);
-            
+
             // Act / Assert
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => WhenTempItemCreatedAsync(context, containerName, item));

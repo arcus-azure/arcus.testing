@@ -13,7 +13,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
     public class InMemoryLogSinkTests
     {
         private static readonly Faker BogusGenerator = new Faker();
-        
+
         [Fact]
         public void LogsEvent_WithTestSink_CollectsEmits()
         {
@@ -42,13 +42,13 @@ namespace Arcus.Testing.Tests.Unit.Logging
             Exception exception = BogusGenerator.System.Exception();
             string errorMessage = BogusGenerator.Lorem.Sentence();
             string traceMessage = BogusGenerator.Lorem.Sentence();
-            
+
             var spySink = new InMemoryLogSink();
-            var configuration = 
+            var configuration =
                 new LoggerConfiguration()
                     .MinimumLevel.Verbose()
                     .WriteTo.Sink(spySink);
-            
+
             using (Logger logger = configuration.CreateLogger())
             {
                 // Act
@@ -69,9 +69,9 @@ namespace Arcus.Testing.Tests.Unit.Logging
                     Assert.Equal(LogEventLevel.Verbose, emit.Level);
                     Assert.Equal(traceMessage, emit.RenderMessage());
                 });
-            
-            Assert.Collection(spySink.CurrentLogMessages, 
-                message => Assert.Equal(errorMessage, message), 
+
+            Assert.Collection(spySink.CurrentLogMessages,
+                message => Assert.Equal(errorMessage, message),
                 message => Assert.Equal(traceMessage, message));
         }
 
@@ -80,7 +80,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var sink = new InMemoryLogSink();
-            
+
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => sink.Emit(logEvent: null));
         }

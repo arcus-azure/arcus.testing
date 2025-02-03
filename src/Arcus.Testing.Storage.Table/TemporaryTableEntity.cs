@@ -98,7 +98,7 @@ namespace Arcus.Testing
             if (entityExists.HasValue)
             {
                 ITableEntity originalEntity = entityExists.Value;
-                
+
                 logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
 
@@ -126,7 +126,7 @@ namespace Arcus.Testing
                         new RequestFailedException(response));
                 }
 
-                return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger); 
+                return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger);
             }
         }
 

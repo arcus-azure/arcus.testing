@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace Arcus.Testing
     /// </summary>
     public class BlobNameFilter
     {
-        private readonly Func<string, bool>_isMatch;
+        private readonly Func<string, bool> _isMatch;
 
         private BlobNameFilter(Func<string, bool> isMatch)
         {
@@ -370,7 +370,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = containerClient;
         }
 
@@ -397,7 +397,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
         public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger)
-        { 
+        {
             return await CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null);
         }
 
@@ -542,7 +542,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Blob container '{ContainerName}' from account '{AccountName}'", Client.Name, Client.AccountName);
                     await Client.DeleteIfExistsAsync();
-                })); 
+                }));
             }
 
             GC.SuppressFinalize(this);

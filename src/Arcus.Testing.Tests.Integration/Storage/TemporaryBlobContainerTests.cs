@@ -76,7 +76,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             // Assert
             await context.ShouldDeleteBlobFileAsync(containerClient, blobOutsideOurScope.Name);
-            
+
             string blobCreatedByUs = await UploadBlobAsync(context, container);
             await container.DisposeAsync();
             await context.ShouldDeleteBlobFileAsync(containerClient, blobCreatedByUs);
@@ -91,7 +91,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            
+
             BlobClient matchingBlob = await context.WhenBlobAvailableAsync(containerClient);
             BlobClient notMatchingBlob = await context.WhenBlobAvailableAsync(containerClient);
 
