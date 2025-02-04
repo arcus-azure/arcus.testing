@@ -190,9 +190,8 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
 
     // Delete all NoSql items that matches any of the configured filters,
     // upon the test fixture creation, when there was already a NoSql container available.
-    options.OnSetup.CleanMatchingItems(
-        NoSqlItemFilter.Where(ship => ship["BoatName"] == "The Alice"),
-        NoSqlItemFilter.ItemIdEqual("123"));
+    options.OnSetup.CleanMatchingItems((NoSqlItem item) => item.Id == "123");
+    options.OnSetup.CleanMatchingItems((Shipment item) => item.BoatName == "The Alice");
     
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
@@ -207,9 +206,8 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
     // Delete all NoSql items that matches any of the configured filters,
     // upon the test fixture disposal, even if the test fixture didn't inserted them.
     // ⚠️ NoSql items inserted by the test fixture will always be deleted, regardless of the configured filters.
-    options.OnTeardown.CleanMatchingItems(
-        NoSqlItemFilter.Where((Shipment s) => s.BoatName == "The Alice"),
-        NoSqlItemFilter.IdEqual("123"));
+    options.OnTeardown.CleanMatchingItems((NoSqlItem item) => item.Id == "123"); 
+    options.OnTeardown.CleanMatchingItems((Shipment item) => item.BoatName == "The Alice");
 });
 
 // `OnTeardown` is also still available after the temporary container is created:

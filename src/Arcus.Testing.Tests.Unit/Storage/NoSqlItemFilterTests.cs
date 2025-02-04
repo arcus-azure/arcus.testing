@@ -2,6 +2,8 @@
 using Bogus;
 using Xunit;
 
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing.Tests.Unit.Storage
 {
     public class NoSqlItemFilterTests
