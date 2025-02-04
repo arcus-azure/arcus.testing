@@ -38,6 +38,15 @@ namespace Arcus.Testing
     /// </summary>
     public class DataFlowRunResult
     {
+        private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
+
+        private static readonly Regex OutputOpenParenthesisRegex = new("^output\\(", RegexOptions.Compiled, FiveSeconds),
+                                      InvalidHeaderParenthesisRegex = new(",( )*,", RegexOptions.Compiled, FiveSeconds),
+                                      AsStringParenthesisComma = new(@" as string(\[\])?, ", RegexOptions.Compiled, FiveSeconds),
+                                      AsStringParenthesis = new(@" as string(\[\])?$", RegexOptions.Compiled, FiveSeconds),
+                                      AsOpenParenthesis = new(" as \\(", RegexOptions.Compiled, FiveSeconds),
+                                      EscapedComma = new("\\,", RegexOptions.Compiled, FiveSeconds);
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DataFlowRunResult" /> class.
         /// </summary>
@@ -116,22 +125,22 @@ namespace Arcus.Testing
             }
 
             var headersTxt = header.GetValue<string>();
-            headersTxt = Regex.Replace(headersTxt, "^output\\(", string.Empty);
+            headersTxt = OutputOpenParenthesisRegex.Replace(headersTxt, string.Empty);
             headersTxt = headersTxt.Remove(headersTxt.Length - 1, 1);
-            headersTxt = 
+            headersTxt =
                 headersTxt.Replace("\\n", "")
                           .Replace(", ", ",")
                           .Replace(" as string[]", " as string")
                           .Replace("{", "")
                           .Replace("}", "");
 
-            if (Regex.IsMatch(headersTxt, ",( )*,"))
+            if (InvalidHeaderParenthesisRegex.IsMatch(headersTxt))
             {
                 throw new JsonException(
                     $"[Test] Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersTxt}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
-                
+
             (int _, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(startIndex: 0, headersTxt);
             return parsed;
         }
@@ -212,17 +221,17 @@ namespace Arcus.Testing
             return (-1, headers.ToArray());
         }
 
-         private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
-         {
-             JsonArray dataArray = ParseDataAsArray(outputObj);
-             JsonNode[] results =
-                dataArray.Where(elem => elem is JsonArray)
-                         .Cast<JsonArray>()
-                         .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
-                         .ToArray();
+        private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
+        {
+            JsonArray dataArray = ParseDataAsArray(outputObj);
+            JsonNode[] results =
+               dataArray.Where(elem => elem is JsonArray)
+                        .Cast<JsonArray>()
+                        .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
+                        .ToArray();
 
-            return results.Length == 1 
-                ? results[0] 
+            return results.Length == 1
+                ? results[0]
                 : JsonSerializer.SerializeToNode(results);
         }
 
@@ -246,17 +255,17 @@ namespace Arcus.Testing
                     case PreviewDataType.DirectValue:
                         result[headerName.Name] = ParseDirectValue(headerValue, options);
                         break;
-                    
+
                     case PreviewDataType.Array when headerValue is JsonArray arr:
                         JsonNode[] elements = arr.Cast<JsonArray>().Select(elem => FillJsonDataFromHeaders(headerName.Children, elem, options)).ToArray();
                         result[headerName.Name] = JsonSerializer.SerializeToNode(elements);
                         break;
-                    
+
                     case PreviewDataType.Object when headerValue is JsonArray inner:
                         JsonNode children = FillJsonDataFromHeaders(headerName.Children, inner, options);
                         result[headerName.Name] = JsonSerializer.SerializeToNode(children);
                         break;
-                    
+
                     default:
                         throw new JsonException(
                             $"[Test] Cannot load the content of the DataFactory preview expression as the header and data is not representing the same types: {dataArray}, " +
@@ -303,8 +312,8 @@ namespace Arcus.Testing
         /// </summary>
         private sealed class PreviewHeader
         {
-            private static readonly Regex DirectValueTrail = new(" as string$", RegexOptions.Compiled),
-                                          ArrayOrObjectTrail = new(" as $", RegexOptions.Compiled);
+            private static readonly Regex DirectValueTrail = new(" as string$", RegexOptions.Compiled, FiveSeconds),
+                                          ArrayOrObjectTrail = new(" as $", RegexOptions.Compiled, FiveSeconds);
 
             private PreviewHeader(string name, PreviewDataType type, PreviewHeader[] children)
             {
@@ -417,8 +426,8 @@ namespace Arcus.Testing
 
         private static string[] ParseSchemeAsCsvHeaders(JsonObject outputObj)
         {
-            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
-                || headersNode is not JsonValue headersValue 
+            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
+                || headersNode is not JsonValue headersValue
                 || !headersValue.ToString().StartsWith("output"))
             {
                 throw new CsvException(
@@ -426,7 +435,7 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            string headersTxt = Regex.Replace(headersValue.GetValue<string>(), "^output\\(", string.Empty).TrimEnd(')');
+            string headersTxt = OutputOpenParenthesisRegex.Replace(headersValue.GetValue<string>(), string.Empty).TrimEnd(')');
             if (string.IsNullOrWhiteSpace(headersTxt))
             {
                 throw new CsvException(
@@ -434,10 +443,10 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?, ", ", ");
-            headersTxt = Regex.Replace(headersTxt, " as string(\\[\\])?$", "");
-            headersTxt = Regex.Replace(headersTxt, " as \\(", " (");
-            headersTxt = Regex.Replace(headersTxt, "\\,", ",");
+            headersTxt = AsStringParenthesisComma.Replace(headersTxt, ", ");
+            headersTxt = AsStringParenthesis.Replace(headersTxt, "");
+            headersTxt = AsOpenParenthesis.Replace(headersTxt, " (");
+            headersTxt = EscapedComma.Replace(headersTxt, ",");
 
             var headers = new List<string>();
             var header = new StringBuilder();
@@ -524,7 +533,7 @@ namespace Arcus.Testing
                 string[] headerNames,
                 CsvRow[] rows,
                 string originalCsv,
-                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options) 
+                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options)
             {
             }
 
