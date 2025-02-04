@@ -2,9 +2,10 @@
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
-using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
+
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -92,7 +93,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            
+
             BinaryData originalContent = context.CreateBlobContent();
             BlobClient existingBlob = await context.WhenBlobAvailableAsync(containerClient, blobContent: originalContent);
             BinaryData newContent = context.CreateBlobContent();
@@ -164,13 +165,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
             blobName ??= $"test-{Guid.NewGuid():N}";
             blobContent ??= BinaryData.FromBytes(Bogus.Random.Bytes(100));
 
+#pragma warning disable S3358 // Sonar suggests extracting nested condition, but methods are now deprecated and will be removed with v2.0 anyway.
+
             TemporaryBlobFile temp = configureOptions is null
-                ? Bogus.Random.Bool() 
+                ? Bogus.Random.Bool()
                     ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
                     : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger)
                 : Bogus.Random.Bool()
                     ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger, configureOptions)
                     : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger, configureOptions);
+
+#pragma warning disable
 
             Assert.Equal(blobName, temp.Name);
             Assert.Equal(client.Name, temp.ContainerName);
