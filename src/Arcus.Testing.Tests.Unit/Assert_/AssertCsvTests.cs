@@ -5,11 +5,11 @@ using System.Linq;
 using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Bogus;
-using FsCheck.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 using static System.DateTimeOffset;
 using static System.Environment;
+using static Arcus.Testing.Tests.Unit.Properties;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -27,82 +27,80 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             _outputWriter = outputWriter;
         }
 
-        [Property]
-        public void Compare_WithSameCsv_Succeeds()
+        [Fact]
+        public void Compare_WithSameCsv_Succeeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                // Act / Assert
+                EqualCsv(expected, actual);
+            });
+
+        [Fact]
+        public void Compare_WithoutRows_Succeeds() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate();
+            TestCsv expected = genCsv(opt => opt.RowCount = 0);
             TestCsv actual = expected.Copy();
 
             // Act / Assert
             EqualCsv(expected, actual);
-        }
+        });
 
-        [Property]
-        public void Compare_WithoutRows_Succeeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.RowCount = 0);
-            TestCsv actual = expected.Copy();
-
-            // Act / Assert
-            EqualCsv(expected, actual);
-        }
-
-        [Property]
+        [Fact]
         public void Compare_WithDiffCsv_FailsWithDescription()
         {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = TestCsv.Generate();
-
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual);
+            Property((expectedCsv, actualCsv) =>
+            {
+                CompareShouldFailWithDescription(expectedCsv, actualCsv);
+            });
         }
 
-        [Property]
-        public void CompareWithoutHeader_WithSameCsv_Succeeds()
+        [Fact]
+        public void CompareWithoutHeader_WithSameCsv_Succeeds() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
 
             // Act / Assert
             EqualCsv(expected, actual, opt => opt.Header = AssertCsvHeader.Missing);
-        }
+        });
 
-        [Property]
-        public void Compare_WithDifferentColumnName_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void Compare_WithDifferentColumnName_FailsWithDescription() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            string originalValue = actual.ChangeColumnValue();
+                string originalValue = actual.ChangeColumnValue();
 
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual, "missing", "column", originalValue);
-        }
+                // Act / Assert
+                CompareShouldFailWithDescription(expected, actual, "missing", "column", originalValue);
+            });
 
-        [Property]
-        public void CompareWithIgnoreRowOrder_WithShuffledActual_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void CompareWithIgnoreRowOrder_WithShuffledActual_StillSucceeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            actual.ShuffleRows();
+                actual.ShuffleRows();
 
-            // Act / Assert
-            EqualCsv(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Ignore);
-        }
+                // Act / Assert
+                EqualCsv(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Ignore);
+            });
 
-        [Property]
-        public void CompareWithFloatWithTrailingZeros_WithEscapedComma_StillSucceeds()
+        [Fact]
+        public void CompareWithFloatWithTrailingZeros_WithEscapedComma_StillSucceeds() => Property(genCsv =>
         {
             // Arrange
             var commaFloatCulture = CultureInfo.GetCultureInfo("nl-NL");
-            TestCsv expected = TestCsv.Generate(opt =>
+            TestCsv expected = genCsv(opt =>
             {
                 opt.CultureInfo = commaFloatCulture;
                 opt.Separator = ',';
@@ -122,162 +120,161 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 opt.CultureInfo = commaFloatCulture;
                 opt.Separator = ',';
             });
-        }
+        });
 
-        [Property]
-        public void CompareWithInteger_WithSameTrailingSpaces_StillSucceedsByHandlingLikeText()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void CompareWithInteger_WithSameTrailingSpaces_StillSucceedsByHandlingLikeText() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            (int row, int col) = expected.GetRandomCellIndex();
-            string value = Bogus.Random.Int().ToString();
+                (int row, int col) = expected.GetRandomCellIndex();
+                string value = Bogus.Random.Int().ToString();
 
-            string spaces = RandomSpaces();
-            expected.ChangeCellValue(row, col, value + spaces);
-            actual.ChangeCellValue(row, col, value + spaces);
+                string spaces = RandomSpaces();
+                expected.ChangeCellValue(row, col, value + spaces);
+                actual.ChangeCellValue(row, col, value + spaces);
 
-            // Act / Assert
-            EqualCsv(expected, actual, opt => opt.CultureInfo = CultureInfo.InvariantCulture);
-        }
+                // Act / Assert
+                EqualCsv(expected, actual, opt => opt.CultureInfo = CultureInfo.InvariantCulture);
+            });
 
-        [Property]
-        public void CompareWithInteger_WithDiffTrailingSpaces_FailsSinceHandledLikeText()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void CompareWithInteger_WithDiffTrailingSpaces_FailsSinceHandledLikeText() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            (int row, int col) = expected.GetRandomCellIndex();
-            string value = Bogus.Random.Int().ToString();
+                (int row, int col) = expected.GetRandomCellIndex();
+                string value = Bogus.Random.Int().ToString();
 
-            expected.ChangeCellValue(row, col, value + RandomSpaces(1, 5));
-            actual.ChangeCellValue(row, col, value + RandomSpaces(6, 10));
+                expected.ChangeCellValue(row, col, value + RandomSpaces(1, 5));
+                actual.ChangeCellValue(row, col, value + RandomSpaces(6, 10));
 
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual, "different", "value", value);
-        }
+                // Act / Assert
+                CompareShouldFailWithDescription(expected, actual, "different", "value", value);
+            });
 
         private static string RandomSpaces(int min = 1, int max = 20)
         {
             return string.Concat(Bogus.Make(Bogus.Random.Int(min, max), () => " "));
         }
 
-        [Property]
-        public void CompareWithIgnoreRowOrder_WithDifferentCellValue_FailsWithDescription()
+        [Fact]
+        public void CompareWithIgnoreRowOrder_WithDifferentCellValue_FailsWithDescription() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.RowCount = Bogus.Random.Int(2, 10));
+            TestCsv expected = genCsv(opt => opt.RowCount = Bogus.Random.Int(2, 10));
             TestCsv actual = expected.Copy();
 
             (_, string changeValue) = actual.ChangeCellValue();
 
             // Act / Assert
             CompareShouldFailWithDescription(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Ignore, "does not contain a row", changeValue);
-        }
+        });
 
-        [Property]
-        public void CompareWithIncludeRowOrder_WithDifferentCellValue_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            (_, string changeValue) = actual.ChangeCellValue();
-
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Include, "different value", changeValue);
-        }
-
-        [Property]
-        public void CompareWithIgnoredColumnOrder_WithShuffledActual_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            actual.ShuffleColumns();
-
-            // Act / Assert
-            EqualCsv(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore);
-        }
-
-        [Property]
-        public void CompareWithIgnoredOrder_WithShuffledActual_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            actual.ShuffleRows();
-            actual.ShuffleColumns();
-
-            // Act / Assert
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIncludeRowOrder_WithDifferentCellValue_FailsWithDescription() => Property(
+            (TestCsv expected) =>
             {
-                options.ColumnOrder = AssertCsvOrder.Ignore;
-                options.RowOrder = AssertCsvOrder.Ignore;
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                (_, string changeValue) = actual.ChangeCellValue();
+
+                // Act / Assert
+                CompareShouldFailWithDescription(expected, actual, opt => opt.RowOrder = AssertCsvOrder.Include, "different value", changeValue);
             });
-        }
 
-        [Property]
-        public void CompareWithIgnoredRowAndColumnOrder_WithShuffledCsv_Succeeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-            string[] ignoredHeaderNames = ChangeDifferentCellValues(actual);
-
-            actual.ShuffleRows();
-            actual.ShuffleColumns();
-
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIgnoredColumnOrder_WithShuffledActual_StillSucceeds() => Property(
+            (TestCsv expected) =>
             {
-                options.ColumnOrder = AssertCsvOrder.Ignore;
-                options.RowOrder = AssertCsvOrder.Ignore;
-                Assert.All(ignoredHeaderNames, n => options.IgnoreColumn(n));
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                actual.ShuffleColumns();
+
+                // Act / Assert
+                EqualCsv(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore);
             });
-        }
 
-        [Property]
-        public void CompareWithIgnoredColumnOrderAndColumnIndexes_WithShuffledCsv_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void CompareWithIgnoredOrder_WithShuffledActual_StillSucceeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            actual.ShuffleColumns();
+                actual.ShuffleRows();
+                actual.ShuffleColumns();
 
-            CompareShouldFailWithDescription(
-                expected,
-                actual,
-                options =>
+                // Act / Assert
+                EqualCsv(expected, actual, options =>
                 {
                     options.ColumnOrder = AssertCsvOrder.Ignore;
-                    options.IgnoreColumn(expected.IgnoredIndex);
-                },
-                "cannot compare", "indexes", "column order", "included",
-                nameof(AssertCsvOptions.IgnoreColumn), AssertCsvOrder.Ignore.ToString()
-            );
-        }
+                    options.RowOrder = AssertCsvOrder.Ignore;
+                });
+            });
 
-        [Property]
-        public void CompareWithIgnoredColumnIndex_WithSameCsv_Succeeds()
+        [Fact]
+        public void CompareWithIgnoredRowAndColumnOrder_WithShuffledCsv_Succeeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
+                string[] ignoredHeaderNames = ChangeDifferentCellValues(actual);
+
+                actual.ShuffleRows();
+                actual.ShuffleColumns();
+
+                EqualCsv(expected, actual, options =>
+                {
+                    options.ColumnOrder = AssertCsvOrder.Ignore;
+                    options.RowOrder = AssertCsvOrder.Ignore;
+                    Assert.All(ignoredHeaderNames, n => options.IgnoreColumn(n));
+                });
+            });
+
+        [Fact]
+        public void CompareWithIgnoredColumnOrderAndColumnIndexes_WithShuffledCsv_FailsWithDescription() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                actual.ShuffleColumns();
+
+                CompareShouldFailWithDescription(
+                    expected,
+                    actual,
+                    options =>
+                    {
+                        options.ColumnOrder = AssertCsvOrder.Ignore;
+                        options.IgnoreColumn(expected.IgnoredIndex);
+                    },
+                    "cannot compare", "indexes", "column order", "included", nameof(AssertCsvOptions.IgnoreColumn), AssertCsvOrder.Ignore.ToString()
+                );
+            });
+
+        [Fact]
+        public void CompareWithIgnoredColumnIndex_WithSameCsv_Succeeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                // Act / Assert
+                EqualCsv(expected, actual, options => options.IgnoreColumn(expected.IgnoredIndex));
+            });
+
+        [Fact]
+        public void CompareWithIgnoredColumnIndexAndMissingHeaders_WithSameCsv_StillSucceeds() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            // Act / Assert
-            EqualCsv(expected, actual, options => options.IgnoreColumn(expected.IgnoredIndex));
-        }
-
-        [Property]
-        public void CompareWithIgnoredColumnIndexAndMissingHeaders_WithSameCsv_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
 
             // Act / Assert
@@ -286,96 +283,96 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 options.IgnoreColumn(expected.IgnoredIndex);
                 options.Header = AssertCsvHeader.Missing;
             });
-        }
+        });
 
-        [Property]
-        public void CompareWithIgnoredColumnIndexAndIgnoredColumnHeader_WithSameCsvAndIndexIsSameAsHeader_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            var ignoredIndex = expected.IgnoredIndex;
-            var headerName = expected.HeaderNames[ignoredIndex];
-
-            // Act / Assert
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIgnoredColumnIndexAndIgnoredColumnHeader_WithSameCsvAndIndexIsSameAsHeader_StillSucceeds() => Property(
+            (TestCsv expected) =>
             {
-                options.IgnoreColumn(ignoredIndex);
-                options.IgnoreColumn(headerName);
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                var ignoredIndex = expected.IgnoredIndex;
+                var headerName = expected.HeaderNames[ignoredIndex];
+
+                // Act / Assert
+                EqualCsv(expected, actual, options =>
+                {
+                    options.IgnoreColumn(ignoredIndex);
+                    options.IgnoreColumn(headerName);
+                });
             });
-        }
 
-        [Property]
-        public void CompareWithIgnoredColumn_WithDuplicateColumn_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            string duplicateColumn = Bogus.PickRandom(expected.HeaderNames);
-            actual.AddColumn(duplicateColumn);
-            expected.AddColumn(duplicateColumn);
-
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIgnoredColumn_WithDuplicateColumn_StillSucceeds() => Property(
+            (TestCsv expected) =>
             {
-                options.ColumnOrder = AssertCsvOrder.Ignore;
-                options.IgnoreColumn(duplicateColumn);
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                string duplicateColumn = Bogus.PickRandom(expected.HeaderNames);
+                actual.AddColumn(duplicateColumn);
+                expected.AddColumn(duplicateColumn);
+
+                EqualCsv(expected, actual, options =>
+                {
+                    options.ColumnOrder = AssertCsvOrder.Ignore;
+                    options.IgnoreColumn(duplicateColumn);
+                });
             });
-        }
 
-        [Property]
-        public void CompareWithIgnoredColumnOrder_WithIgnoredColumn_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            string extraColumn = Bogus.PickRandom(expected.HeaderNames);
-            actual.AddColumn(extraColumn);
-            expected.AddColumn(extraColumn);
-
-            CompareShouldFailWithDescription(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore,
-                "cannot compare", AssertCsvOrder.Ignore.ToString(), "duplicate", "columns", extraColumn);
-        }
-
-        [Property]
-        public void CompareWithIgnoredColumn_WithDifferentColumn_StillSucceeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            string[] ignoredHeaderNames = ChangeDifferentCellValues(actual);
-
-            // Act / Assert
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIgnoredColumnOrder_WithIgnoredColumn_FailsWithDescription() => Property(
+            (TestCsv expected) =>
             {
-                Assert.All(ignoredHeaderNames, name => options.IgnoreColumn(name));
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                string extraColumn = Bogus.PickRandom(expected.HeaderNames);
+                actual.AddColumn(extraColumn);
+                expected.AddColumn(extraColumn);
+
+                CompareShouldFailWithDescription(expected, actual, options => options.ColumnOrder = AssertCsvOrder.Ignore,
+                    "cannot compare", AssertCsvOrder.Ignore.ToString(), "duplicate", "columns", extraColumn);
             });
-        }
 
-        [Property]
-        public void Compare_WithIgnoreAllColumns_Succeeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
-
-            ChangeDifferentCellValues(actual);
-
-            // Act / Assert
-            EqualCsv(expected, actual, options =>
+        [Fact]
+        public void CompareWithIgnoredColumn_WithDifferentColumn_StillSucceeds() => Property(
+            (TestCsv expected) =>
             {
-                Assert.All(expected.HeaderNames, n => options.IgnoreColumn(n));
-            });
-        }
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-        [Property]
-        public void Compare_WithPresentExpectedHeaderAndMissingActualHeader_FailsWithDescription()
+                string[] ignoredHeaderNames = ChangeDifferentCellValues(actual);
+
+                // Act / Assert
+                EqualCsv(expected, actual, options =>
+                {
+                    Assert.All(ignoredHeaderNames, name => options.IgnoreColumn(name));
+                });
+            });
+
+        [Fact]
+        public void Compare_WithIgnoreAllColumns_Succeeds() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
+
+                ChangeDifferentCellValues(actual);
+
+                // Act / Assert
+                EqualCsv(expected, actual, options =>
+                {
+                    Assert.All(expected.HeaderNames, n => options.IgnoreColumn(n));
+                });
+            });
+
+        [Fact]
+        public void Compare_WithPresentExpectedHeaderAndMissingActualHeader_FailsWithDescription() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(options => options.Header = AssertCsvHeader.Present);
+            TestCsv expected = genCsv(options => options.Header = AssertCsvHeader.Present);
             CsvTable expectedCsv = LoadCsv(expected);
 
             TestCsv actual = expected.Copy();
@@ -384,13 +381,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
             // Act / Assert
             CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, "CSV header", "configured");
-        }
+        });
 
-        [Property]
-        public void CompareWithMissingHeader_WithIgnoredColumn_FailsWithDescription()
+        [Fact]
+        public void CompareWithMissingHeader_WithIgnoredColumn_FailsWithDescription() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
 
             // Act / Assert
@@ -399,7 +396,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 opt.Header = AssertCsvHeader.Missing;
                 opt.IgnoreColumn(Bogus.Database.Column());
             }, "ignore", "column", "header names", "present");
-        }
+        });
 
         private static string[] ChangeDifferentCellValues(TestCsv csv)
         {
@@ -408,11 +405,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                              .ToArray();
         }
 
-        [Property]
-        public void CompareWithoutHeader_WithIgnoredColumn_FailsWithMissingHeadersDescription()
+        [Fact]
+        public void CompareWithoutHeader_WithIgnoredColumn_FailsWithMissingHeadersDescription() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
 
             actual.ShuffleRows();
@@ -424,13 +421,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 options.Header = AssertCsvHeader.Missing;
                 options.ColumnOrder = AssertCsvOrder.Ignore;
             }, "columns can only be ignored", "header names", "present");
-        }
+        });
 
-        [Property]
-        public void CompareWithoutHeader_WithIgnoredRow_FailsWithMissingHeadersDescription()
+        [Fact]
+        public void CompareWithoutHeader_WithIgnoredRow_FailsWithMissingHeadersDescription() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
             TestCsv actual = expected.Copy();
 
             actual.ShuffleRows();
@@ -441,33 +438,33 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 options.Header = AssertCsvHeader.Missing;
                 options.RowOrder = AssertCsvOrder.Ignore;
             });
-        }
+        });
 
-        [Property]
-        public void Compare_WithDifferentRowLength_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void Compare_WithDifferentRowLength_FailsWithDescription() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            actual.AddRow();
+                actual.AddRow();
 
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual, "has", actual.RowCount.ToString(), "rows", expected.RowCount.ToString());
-        }
+                // Act / Assert
+                CompareShouldFailWithDescription(expected, actual, "has", actual.RowCount.ToString(), "rows", expected.RowCount.ToString());
+            });
 
-        [Property]
-        public void Compare_WithDifferentColumnLength_FailsWithDescription()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-            TestCsv actual = expected.Copy();
+        [Fact]
+        public void Compare_WithDifferentColumnLength_FailsWithDescription() => Property(
+            (TestCsv expected) =>
+            {
+                // Arrange
+                TestCsv actual = expected.Copy();
 
-            actual.AddColumn();
+                actual.AddColumn();
 
-            // Act / Assert
-            CompareShouldFailWithDescription(expected, actual, "has", actual.ColumnCount.ToString(), "columns", expected.ColumnCount.ToString());
-        }
+                // Act / Assert
+                CompareShouldFailWithDescription(expected, actual, "has", actual.ColumnCount.ToString(), "columns", expected.ColumnCount.ToString());
+            });
 
         public static IEnumerable<object[]> SucceedingBeEquivalentCases
         {
@@ -730,49 +727,47 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             });
         }
 
-        [Property]
-        public void Load_WithRowWithDiffLength_FailsWithDescription()
-        {
-            // Arrange
-            var csv = TestCsv.Generate();
-            csv.AddInvalidRow();
-
-            // Act / Assert
-            LoadShouldFailWithDescription(csv, csv.ColumnCount.ToString(), "columns", "amount");
-        }
-
-        [Property]
-        public void Load_WithRandomCsvWithHeader_Succeeds()
-        {
-            // Arrange
-            TestCsv expected = TestCsv.Generate();
-
-            // Act
-            CsvTable actual = LoadCsv(expected, opt =>
+        [Fact]
+        public void Load_WithRowWithDiffLength_FailsWithDescription() => Property(
+            (TestCsv csv) =>
             {
-                opt.Separator = expected.Separator;
-                opt.NewLine = expected.NewLine;
+                // Arrange
+                csv.AddInvalidRow();
+
+                // Act / Assert
+                LoadShouldFailWithDescription(csv, csv.ColumnCount.ToString(), "columns", "amount");
             });
 
-            // Assert
-            Assert.Equal(expected.ColumnCount, actual.ColumnCount);
-            Assert.Equal(expected.HeaderNames, actual.HeaderNames);
-            Assert.Equal(expected.RowCount, actual.Rows.Count);
-
-            Assert.All(expected.Rows.Skip(1).Zip(actual.Rows), line =>
+        [Fact]
+        public void Load_WithRandomCsvWithHeader_Succeeds() => Property(
+            (TestCsv expected) =>
             {
-                Assert.All(line.First.Zip(line.Second.Cells), cell =>
+                // Act
+                CsvTable actual = LoadCsv(expected, opt =>
                 {
-                    EqualCellValue(cell.First, cell.Second.Value);
+                    opt.Separator = expected.Separator;
+                    opt.NewLine = expected.NewLine;
+                });
+
+                // Assert
+                Assert.Equal(expected.ColumnCount, actual.ColumnCount);
+                Assert.Equal(expected.HeaderNames, actual.HeaderNames);
+                Assert.Equal(expected.RowCount, actual.Rows.Count);
+
+                Assert.All(expected.Rows.Skip(1).Zip(actual.Rows), line =>
+                {
+                    Assert.All(line.First.Zip(line.Second.Cells), cell =>
+                    {
+                        EqualCellValue(cell.First, cell.Second.Value);
+                    });
                 });
             });
-        }
 
-        [Property]
-        public void Load_WithRandomCsvWithoutHeader_Succeeds()
+        [Fact]
+        public void Load_WithRandomCsvWithoutHeader_Succeeds() => Property(genCsv =>
         {
             // Arrange
-            TestCsv expected = TestCsv.Generate(opt => opt.Header = AssertCsvHeader.Missing);
+            TestCsv expected = genCsv(opt => opt.Header = AssertCsvHeader.Missing);
 
             // Act
             CsvTable actual = LoadCsv(expected, opt =>
@@ -794,7 +789,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                     EqualCellValue(cell.First, cell.Second.Value);
                 });
             });
-        }
+        });
 
         private static void EqualCellValue(string expected, string actual)
         {
@@ -829,11 +824,11 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Equal(cols, table.ColumnCount);
         }
 
-        [Property]
-        public void LoadWithExpectingHeader_WithRandomCsvWithoutHeader_SucceedsWithEmptyRows()
+        [Fact]
+        public void LoadWithExpectingHeader_WithRandomCsvWithoutHeader_SucceedsWithEmptyRows() => Property(genCsv =>
         {
             // Arrange
-            TestCsv csv = TestCsv.Generate(opt =>
+            TestCsv csv = genCsv(opt =>
             {
                 opt.Header = AssertCsvHeader.Missing;
                 opt.RowCount = 1;
@@ -845,7 +840,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             // Assert
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
             Assert.Equal(0, doc.RowCount);
-        }
+        });
 
         [Theory]
         [ClassData(typeof(Blanks))]

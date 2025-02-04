@@ -5,7 +5,7 @@ using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
 using Bogus;
 using FsCheck;
-using FsCheck.Xunit;
+using FsCheck.Fluent;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -46,7 +46,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 
                 // Assert
                 AssertCsv.Equal(expected, actual);
-            }).QuickCheckThrowOnFailure(_outputWriter);
+            }).QuickCheckThrowOnFailure();
         }
 
         [Theory]
