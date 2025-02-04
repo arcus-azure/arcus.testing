@@ -10,6 +10,8 @@ using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CS0618, S1133 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing
 {
     /// <summary>
@@ -25,6 +27,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a filter to match against a stored Azure Table entity in the <see cref="TemporaryTable"/> upon setup or teardown.
     /// </summary>
+    [Obsolete("Additional layer of abstraction will be removed in favor of using a predicate on a '" + nameof(TableEntity) + "' function directly")]
     public class TableEntityFilter
     {
         private readonly Func<TableEntity, bool> _filter;
@@ -111,7 +114,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupTemporaryTableOptions
     {
-        private readonly List<TableEntityFilter> _filters = new();
+        private readonly List<TableEntityFilter> _deprecatedFilters = new();
+        private readonly List<Func<TableEntity, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing entities in the Azure Table upon the test fixture creation.
@@ -147,7 +151,34 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match entities that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(TableEntity) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnSetupTemporaryTableOptions CleanMatchingEntities(params TableEntityFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Entities = OnSetupTable.CleanIfMatched;
+            _deprecatedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryTable"/> to delete the Azure Table entities
+        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Multiple calls will be aggregated together in an OR expression.
+        /// </remarks>
+        /// <param name="filters">The filters to match entities that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
+        public OnSetupTemporaryTableOptions CleanMatchingEntities(params Func<TableEntity, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
 
@@ -167,7 +198,7 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatch(TableEntity entity)
         {
-            return _filters.Exists(filter => filter.IsMatch(entity));
+            return _deprecatedFilters.Exists(filter => filter.IsMatch(entity)) || _filters.Exists(filter => filter(entity));
         }
     }
 
@@ -176,7 +207,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryTableOptions
     {
-        private readonly List<TableEntityFilter> _filters = new();
+        private readonly List<TableEntityFilter> _deprecatedFilters = new();
+        private readonly List<Func<TableEntity, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing entities in the Azure Table upon the test fixture deletion.
@@ -214,7 +246,36 @@ namespace Arcus.Testing
         /// <param name="filters">The filters  to match entities that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(TableEntity) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnTeardownTemporaryTableOptions CleanMatchingEntities(params TableEntityFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Entities = OnTeardownTable.CleanIfMatched;
+            _deprecatedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryTable"/> to delete the Azure Table entities
+        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     The matching of documents only happens on entities that were created outside the scope of the test fixture.
+        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        /// </remarks>
+        /// <param name="filters">The filters  to match entities that should be removed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
+        public OnTeardownTemporaryTableOptions CleanMatchingEntities(params Func<TableEntity, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
 
@@ -234,7 +295,7 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatch(TableEntity entity)
         {
-            return _filters.Exists(filter => filter.IsMatch(entity));
+            return _deprecatedFilters.Exists(filter => filter.IsMatch(entity)) || _filters.Exists(filter => filter(entity));
         }
     }
 
@@ -274,7 +335,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = client;
         }
 
@@ -422,14 +483,16 @@ namespace Arcus.Testing
                     {
                         throw new RequestFailedException(
                             $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                             new RequestFailedException(response));
                     }
                 }
             }
             else if (options.OnSetup.Entities is OnSetupTable.CleanIfMatched)
             {
+#pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
                 await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
+#pragma warning restore
                 {
                     if (options.OnSetup.IsMatch(item))
                     {
@@ -440,7 +503,7 @@ namespace Arcus.Testing
                         {
                             throw new RequestFailedException(
                                 $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                 new RequestFailedException(response));
                         }
                     }
@@ -471,13 +534,13 @@ namespace Arcus.Testing
             if (_createdByUs)
             {
                 _logger.LogDebug("[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'", Client.Name, Client.AccountName);
-                using Response response = await Client.DeleteAsync(); 
+                using Response response = await Client.DeleteAsync();
 
                 if (response.IsError && response.Status != NotFound)
                 {
                     throw new RequestFailedException(
                         $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
-                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                         new RequestFailedException(response));
                 }
             }
@@ -510,11 +573,11 @@ namespace Arcus.Testing
                         {
                             throw new RequestFailedException(
                                 $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                 new RequestFailedException(response));
                         }
                     }));
-                } 
+                }
             }
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
@@ -531,12 +594,12 @@ namespace Arcus.Testing
                             {
                                 throw new RequestFailedException(
                                     $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}", 
+                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                                     new RequestFailedException(response));
                             }
                         }
                     }));
-                } 
+                }
             }
         }
     }
