@@ -1,0 +1,5 @@
+{
+  "extends": ["config:base"],
+  "prCreation": "not-pending",
+  "dependencyDashboard": true
+}
