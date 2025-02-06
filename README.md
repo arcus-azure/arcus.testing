@@ -7,7 +7,7 @@ Arcus Testing is an umbrella term for a set of NuGet packages `Arcus.Testing.*` 
 
 > 🎖️ Specifically designed to help with integration testing against Azure resources, but also helps with tech-independent infrastructure.
 
-In short: Arcus Testing is a set of libraries that make tests more fun to write!
+In short: Arcus Testing is a set of libraries that makes tests more fun to write!
 
 ![Arcus](https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png)
 
