@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Messaging.ServiceBus\Arcus.Testing.Messaging.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj" />
