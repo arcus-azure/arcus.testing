@@ -1,19 +1,20 @@
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-  - task: InvokeRESTAPI@1
-    displayName: 'Trigger new feature docs version'
-    inputs:
-      connectionType: 'connectedServiceName'
-      serviceConnection: 'GitHub (arcus-automation - OAuth)'
-      method: 'POST'
-      headers: '{"Accept": "application/vnd.github.v3+json"}'
-      urlSuffix: 'repos/arcus-azure/arcus.testing/actions/workflows/bump-docs-version.yml/dispatches'
-      body: '{
-        "ref": "main",
-        "inputs": {
-          "version": "v1.3.0"
-        }
-       }'
+jobs:
+ - job: Trigger
+   pool:
+     vmImage: 'ubuntu-latest'
+   steps:
+     - task: InvokeRESTAPI@1
+       displayName: 'Trigger new feature docs version'
+       inputs:
+         connectionType: 'connectedServiceName'
+         serviceConnection: 'GitHub (arcus-automation - OAuth)'
+         method: 'POST'
+         headers: '{"Accept": "application/vnd.github.v3+json"}'
+         urlSuffix: 'repos/arcus-azure/arcus.testing/actions/workflows/bump-docs-version.yml/dispatches'
+         body: '{
+           "ref": "main",
+           "inputs": {
+             "version": "v1.3.0"
+           }
+          }'
     
