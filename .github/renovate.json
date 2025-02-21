@@ -1,6 +1,10 @@
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:base"],
   "prCreation": "not-pending",
-  "rangeStrategy": "increase",
-  "dependencyDashboard": true
+  "rangeStrategy": "widen",
+  "separateMajorMinor": true,
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "📦 [Renovate] dependency dashboard",
+  "labels": ["dependencies", "management"]
 }
