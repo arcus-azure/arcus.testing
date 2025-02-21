@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Bogus" Version="29.0.2" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
   </ItemGroup>
 
   <ItemGroup>
