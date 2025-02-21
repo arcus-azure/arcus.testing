@@ -7,24 +7,14 @@ using Arcus.Testing.Tests.Core.Integration.DataFactory;
 using Arcus.Testing.Tests.Unit.Integration.DataFactory.Fixture;
 using Bogus;
 using FsCheck;
-using FsCheck.Xunit;
+using FsCheck.Fluent;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 {
     public class DataFlowRunResultAsJsonTests
     {
-        private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataFlowRunResultAsJsonTests" /> class.
-        /// </summary>
-        public DataFlowRunResultAsJsonTests(ITestOutputHelper outputWriter)
-        {
-            _outputWriter = outputWriter;
-        }
 
         [Fact]
         public void GetDataAsJson_WithJsonObject_SucceedsByParsing()
@@ -42,7 +32,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 // Assert
                 AssertJson.Equal(expected, actual.ToString(), opt => opt.MaxInputCharacters = int.MaxValue);
 
-            }).QuickCheckThrowOnFailure(_outputWriter);
+            }).QuickCheckThrowOnFailure();
         }
 
         [Fact]
@@ -61,7 +51,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 // Assert
                 AssertJson.Equal(expected, actual.ToString(), opt => opt.MaxInputCharacters = int.MaxValue);
 
-            }).QuickCheckThrowOnFailure(_outputWriter);
+            }).QuickCheckThrowOnFailure();
         }
 
         public static IEnumerable<object[]> SucceededSampleDataForSingleDocument
@@ -117,13 +107,13 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 };
                 yield return new object[]
                 {
-                    "movie as (name as string, director as string, genre as string)", 
+                    "movie as (name as string, director as string, genre as string)",
                     "[ [ \"Beetlejuice\", \"Tim Burton\", \"horror-comedy\" ] ]",
                     "{ \"movie\": { \"name\": \"Beetlejuice\", \"director\": \"Tim Burton\", \"genre\": \"horror-comedy\" } }"
                 };
                 yield return new object[]
                 {
-                    "{X-Files} as (firstName as string, lastName as string)[]", 
+                    "{X-Files} as (firstName as string, lastName as string)[]",
                     "[ [ [ \"Dana\", \"Scully\" ], [ \"Fox\", \"Mulder\" ] ] ]",
                     "{ \"X-Files\": [ { \"firstName\": \"Dana\", \"lastName\": \"Scully\" }, { \"firstName\": \"Fox\", \"lastName\": \"Mulder\" } ] }"
                 };
@@ -228,7 +218,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
                 };
                 yield return new object[]
                 {
-                    "movie as (name as string, director as string, genre as string)", 
+                    "movie as (name as string, director as string, genre as string)",
                     "[ [ { \"this\": \"that\" }, \"Tim Burton\", \"horror-comedy\" ] ]",
                 };
             }
@@ -252,7 +242,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         [InlineData(" ")]
         [InlineData("   ")]
         public void GetDataAsJson_WithBlankInput_Fails(string input)
-        { 
+        {
             ShouldFailToGetDataAsJson(input);
         }
 

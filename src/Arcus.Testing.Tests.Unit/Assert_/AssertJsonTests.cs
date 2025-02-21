@@ -4,12 +4,13 @@ using System.Linq;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using FsCheck;
-using FsCheck.Xunit;
+using FsCheck.Fluent;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using static System.Environment;
+using static Arcus.Testing.Tests.Unit.Properties;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -28,88 +29,92 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             _resourceDir = ResourceDirectory.CurrentDirectory.WithSubDirectory(nameof(Assert_)).WithSubDirectory("Resources");
         }
 
-        [Property]
-        public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds()
-        {
-            // Arrange
-            TestJson expected = TestJson.Generate();
-            TestJson actual = expected.Copy();
-
-            expected.Shuffle();
-
-            // Act
-            EqualJson(expected, actual);
-        }
-
-        [Property]
-        public Property CompareWithIncludeOrderOption_WithDifferentOrder_FailsWithDescription()
-        {
-            // Arrange
-            TestJson expected = TestJson.GenerateArray();
-            TestJson actual = expected.Copy();
-
-            expected.Shuffle();
-
-            // Act / Assert
-            return Prop.When(expected != actual, () => CompareShouldFailWithDifference(actual, expected, options => options.Order = AssertJsonOrder.Include));
-        }
-
-        [Property]
-        public void Compare_WithDifferentPropertyName_FailsWithDescription()
-        {
-            // Arrange
-            TestJson expected = TestJson.GenerateObject();
-            TestJson actual = expected.Copy();
-
-            string newName = Bogus.Lorem.Word();
-            actual.InsertProperty(newName);
-
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "misses property", newName);
-        }
-
-        [Property]
-        public void Compare_SameJson_Succeeds()
-        {
-            TestJson expected = TestJson.Generate();
-            TestJson actual = expected.Copy();
-
-            AssertJson.Equal(expected.ToString(), actual.ToString());
-        }
-
-        [Property]
-        public void Compare_WithIgnoreDiff_StillSucceeds()
-        {
-            // Arrange
-            string[] diffExpectedNames = CreateNodeNames("diff-");
-            TestJson expected = TestJson.GenerateObject();
-            TestJson actual = expected.Copy();
-
-            Assert.All(diffExpectedNames, expected.InsertProperty);
-
-            string[] diffActualNames = CreateNodeNames("diff-");
-            Assert.All(diffActualNames, actual.InsertProperty);
-
-            // Act / Assert
-            EqualJson(expected.ToString(), actual.ToString(), options =>
+        [Fact]
+        public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds() => Property(
+            (TestJson expected) =>
             {
-                Assert.All(diffExpectedNames.Concat(diffActualNames), name => options.IgnoreNode(name));
+                // Arrange
+                TestJson actual = expected.Copy();
+
+                expected.Shuffle();
+
+                // Act
+                EqualJson(expected, actual);
             });
+
+        [Fact]
+        public void CompareWithIncludeOrderOption_WithDifferentOrder_FailsWithDescription()
+        {
+            // Arrange
+            Prop.ForAll(Gen.Fresh(TestJson.GenerateArray).ToArbitrary(),
+                (TestJson expected) =>
+                {
+                    TestJson actual = expected.Copy();
+
+                    // Act
+                    expected.Shuffle();
+
+                    return Prop.When(expected != actual,
+                        // Assert
+                        () => CompareShouldFailWithDifference(actual, expected, options => options.Order = AssertJsonOrder.Include));
+
+                }).QuickCheckThrowOnFailure();
         }
+
+        [Fact]
+        public void Compare_WithDifferentPropertyName_FailsWithDescription() => Property(TestJsonType.Object,
+            (TestJson expected) =>
+            {
+                // Arrange
+                TestJson actual = expected.Copy();
+
+                string newName = Bogus.Lorem.Word();
+                actual.InsertProperty(newName);
+
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "misses property", newName);
+            });
+
+        [Fact]
+        public void Compare_SameJson_Succeeds() => Property(
+            (TestJson expected) =>
+            {
+                TestJson actual = expected.Copy();
+
+                AssertJson.Equal(expected.ToString(), actual.ToString());
+            });
+
+        [Fact]
+        public void Compare_WithIgnoreDiff_StillSucceeds() => Property(TestJsonType.Object,
+            (TestJson expected) =>
+            {
+                // Arrange
+                string[] diffExpectedNames = CreateNodeNames("diff-");
+                TestJson actual = expected.Copy();
+
+                Assert.All(diffExpectedNames, expected.InsertProperty);
+
+                string[] diffActualNames = CreateNodeNames("diff-");
+                Assert.All(diffActualNames, actual.InsertProperty);
+
+                // Act / Assert
+                EqualJson(expected.ToString(), actual.ToString(), options =>
+                {
+                    Assert.All(diffExpectedNames.Concat(diffActualNames), name => options.IgnoreNode(name));
+                });
+            });
 
         private static string[] CreateNodeNames(string prefix)
         {
             return Bogus.Make(Bogus.Random.Int(5, 10), () => prefix + CreateNodeName()).ToArray();
         }
 
-        [Property]
-        public void Compare_DiffJson_Fails()
-        {
-            TestJson expected = TestJson.Generate();
-            TestJson actual = TestJson.Generate();
-
-            Assert.Throws<EqualAssertionException>(() => EqualJson(expected.ToString(), actual.ToString()));
-        }
+        [Fact]
+        public void Compare_DiffJson_Fails() => Property(
+            (TestJson expected, TestJson actual) =>
+            {
+                Assert.Throws<EqualAssertionException>(() => EqualJson(expected.ToString(), actual.ToString()));
+            });
 
         private static string CreateNodeName()
         {
@@ -299,7 +304,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         [InlineData("{\"Products\":[{\"id\":[1]},{\"id\":[2]},{\"id\":[3]}]}", "{\"Products\":[{\"id\":[3]},{\"id\":[2]},{\"id\":[1]}]}")]
         [InlineData("[ { \"id\": 2 }, { \"id\": 1 } ]", "[ { \"id\": 1 }, { \"id\": 2 } ]")]
         [InlineData(
-            "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]", 
+            "[ { \"id\": 1 }, { \"name\": [ { \"name\": \"testing\", \"project\": \"arcus\" } ] } ]",
             "[ { \"name\": [ { \"project\": \"arcus\", \"name\": \"testing\" } ] }, { \"id\": 1 } ]")]
         public void Compare_ArraysWithSameValuesInDifferentOrder_StillSucceeds(string expected, string actual)
         {
@@ -656,8 +661,8 @@ null         [
             else
             {
                 AssertJson.Equal(
-                    AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
-                    AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null), 
+                    AssertJson.Load(expected, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null),
+                    AssertJson.Load(actual, opt => opt.PropertyNameCaseInsensitive = true, configureDocOptions: null),
                     ConfigureOptions);
             }
         }
@@ -667,7 +672,7 @@ null         [
         {
             var exception = Assert.Throws<System.Text.Json.JsonException>(
                 () => AssertJson.Load(Bogus.Random.Utf16String()));
-            
+
             Assert.Contains(nameof(AssertJson), exception.Message);
             Assert.Contains("JSON contents", exception.Message);
         }
