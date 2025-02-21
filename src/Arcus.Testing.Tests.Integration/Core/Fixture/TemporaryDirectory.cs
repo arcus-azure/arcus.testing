@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Bogus;
-using GuardNet;
 
 namespace Arcus.Testing.Tests.Integration.Core.Fixture
 {
@@ -16,10 +15,6 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
 
         private TemporaryDirectory(DirectoryInfo dir, string[] subDirNames)
         {
-            Guard.NotNull(dir, nameof(dir));
-            Guard.NotNull(subDirNames, nameof(subDirNames));
-            Guard.NotAny(subDirNames, nameof(subDirNames));
-
             _dir = dir;
             SubDirNames = subDirNames;
         }
@@ -39,7 +34,7 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryDirectory GenerateAt(DirectoryInfo root)
         {
-            Guard.NotNull(root, nameof(root));
+            ArgumentNullException.ThrowIfNull(root);
 
             string[] subDirNames = Bogus.Lorem.Words();
             string path = System.IO.Path.Combine(subDirNames.Prepend(root.FullName).ToArray());

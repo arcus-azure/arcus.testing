@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using Bogus;
-using GuardNet;
 
 namespace Arcus.Testing.Tests.Integration.Core.Fixture
 {
@@ -16,9 +15,6 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
 
         private TemporaryFile(FileInfo file, byte[] fileContents)
         {
-            Guard.NotNull(file, nameof(file));
-            Guard.NotNull(fileContents, nameof(fileContents));
-
             _file = file;
             Contents = fileContents;
         }
@@ -32,7 +28,7 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// Gets the raw contents of the temporary file.
         /// </summary>
         public byte[] Contents { get; }
-        
+
         /// <summary>
         /// Gets the raw contents as text of the temporary file.
         /// </summary>
@@ -43,7 +39,7 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryFile GenerateAt(DirectoryInfo directory)
         {
-            Guard.NotNull(directory, nameof(directory));
+            ArgumentNullException.ThrowIfNull(directory);
 
             string fileName = Bogus.System.FileName();
             byte[] fileContents = Bogus.Random.Bytes(Bogus.Random.Int(10, 20));
@@ -56,9 +52,9 @@ namespace Arcus.Testing.Tests.Integration.Core.Fixture
         /// </summary>
         public static TemporaryFile CreateAt(DirectoryInfo directory, string fileName, byte[] fileContents)
         {
-            Guard.NotNull(directory, nameof(directory));
-            Guard.NotNullOrWhitespace(fileName, nameof(fileContents));
-            Guard.NotNull(fileContents, nameof(fileContents));
+            ArgumentNullException.ThrowIfNull(directory);
+            ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+            ArgumentNullException.ThrowIfNull(fileName);
 
             string filePath = Path.Combine(directory.FullName, fileName);
             File.WriteAllBytes(filePath, fileContents);
