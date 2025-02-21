@@ -3,6 +3,7 @@
   "extends": ["config:base"],
   "prCreation": "not-pending",
   "rangeStrategy": "widen",
+  "ignoreDeps": ["Codit.Testing.*"],
   "separateMajorMinor": true,
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "📦 [Renovate] dependency dashboard",
