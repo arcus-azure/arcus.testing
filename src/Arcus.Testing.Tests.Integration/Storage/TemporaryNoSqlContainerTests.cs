@@ -27,7 +27,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
         }
 
-        private NoSqlConfig NoSql => Configuration.GetNoSql();
+        private CosmosDbConfig NoSql => Configuration.GetNoSql();
 
         [Fact]
         public async Task CreateTempNoSqlContainer_WithNonExistingContainer_SucceedsByExistingDuringLifetimeFixture()
@@ -235,8 +235,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             var container =
                 configureOptions is null
-                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
-                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.ResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
+                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
+                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
 
             Assert.Equal(NoSql.DatabaseName, container.Client.Database.Id);
             Assert.Equal(containerName, container.Name);

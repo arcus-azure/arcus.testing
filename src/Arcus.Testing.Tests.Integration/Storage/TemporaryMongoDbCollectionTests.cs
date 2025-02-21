@@ -19,7 +19,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
         }
 
-        private MongoDbConfig MongoDb => Configuration.GetMongoDb();
+        private CosmosDbConfig MongoDb => Configuration.GetMongoDb();
 
         [Fact]
         public async Task CreateTempMongoDbCollection_OnNonExistingCollection_SucceedsByExistingDuringLifetimeFixture()
@@ -114,7 +114,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Assert
             await context.ShouldNotStoreDocumentAsync<Shipment>(collectionName, matchedId);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedId);
-            
+
             await collection.DisposeAsync();
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedId);
         }
@@ -236,8 +236,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
             var collection = configureOptions is null
-                ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger)
-                : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.ResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
+                ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger)
+                : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
 
             Assert.Equal(collectionName, collection.Name);
             return collection;
