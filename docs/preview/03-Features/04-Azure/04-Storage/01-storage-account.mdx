@@ -175,10 +175,7 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
 
     // Delete Azure Table entities that matches any of the configured filters, 
     // upon the test fixture creation, when there was already an Azure Table available.
-    options.OnSetup.CleanMatchingEntities(
-      TableEntityFilter.RowKeyEqual("<row-key>"),
-      TableEntityFilter.PartitionKeyEqual("<partition-key>"),
-      TableEntityFilter.EntityEqual((TableEntity entity) => entity["Key"] == "Value"));
+    options.OnSetup.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
 
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
@@ -194,10 +191,7 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
     // Delete additional Azure Table entities that matches any of the configured filters, 
     // upon the test fixture disposal.
     // ⚠️ Entities added by the test fixture itself will always be deleted.
-    options.OnTeardown.CleanMatchingEntities(
-      TableEntityFilter.RowKeyEqual("<row-key>"),
-      TableEntityFilter.PartitionKeyEqual("<partition-key>"),
-      TableEntityFilter.EntityEqual((TableEntity entity) => entity["Key"] == "Value"));
+    options.OnTeardown.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
 });
 
 // `OnTeardown` is also still available after the temporary table is created:
