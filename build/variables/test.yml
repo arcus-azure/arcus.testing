@@ -1,14 +1,12 @@
 variables:
   Arcus.Testing.ResourceGroup.Name: 'arcus-testing-dev-we-rg'
-  Arcus.Testing.DataFactory.Name: 'arcus-testing-adf'
-  
+  Arcus.Testing.DataFactory.Name: 'arcus-testing-adf'  
   Arcus.Testing.Cosmos.MongoDb.Name: 'arcus-testing-cosmos-mongo'
   Arcus.Testing.Cosmos.MongoDb.DatabaseName: 'arcus-testing-cosmos-mongo-db'
   Arcus.Testing.Cosmos.NoSql.Name: 'arcus-testing-cosmos-nosql'
-  Arcus.Testing.Cosmos.NoSql.DatabaseName: 'arcus-testing-cosmos-nosql-db'
-  
+  Arcus.Testing.Cosmos.NoSql.DatabaseName: 'arcus-testing-cosmos-nosql-db'  
   Arcus.Testing.EventHubs.Namespace: 'arcus-testing-eventhubs'
-
+  Arcus.Testing.ServiceBus.Namespace: 'arcus-testing-servicebus'
   Arcus.Testing.KeyVault.Name: 'arcus-testing-kv'
   Arcus.Testing.StorageAccount.Name: 'arcustestingstorage'
   Arcus.Testing.StorageAccount.Key.SecretName: 'Arcus-Testing-StorageAccount-Key'

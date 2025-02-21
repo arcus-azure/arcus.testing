@@ -24,7 +24,8 @@ The `TemporaryMongoDbCollection` provides a solution when the integration tes re
 ```csharp
 using Arcus.Testing;
 
-ResourceIdentifier cosmosDbAccountResourceId = ...
+ResourceIdentifier cosmosDbAccountResourceId =
+    CosmosDBAccountResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<account-name>");
 
 await using var collection = await TemporaryMongoDbCollection.CreateIfNotExistsAsync(
     cosmosDbAccountResourceId,
@@ -109,7 +110,8 @@ When the document already existed (already a document with a same configured doc
 ```csharp
 using Arcus.Testing;
 
-ResourceIdentifier cosmosDbAccountResourceId = ...
+ResourceIdentifier cosmosDbAccountResourceId =
+    CosmosDBAccountResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<account-name>");
 
 var shipment = new Shipment { BoatName = "The Alice" };
 
@@ -130,7 +132,7 @@ BsonValue documentId = document.Id;
 > 
 > **This role is not a built-in Azure RBAC, but a role specific for NoSql**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
 > ```powershell
-> az cosmosdb sql role assignment create `
+> PS> az cosmosdb sql role assignment create `
 >   --account-name "CosmosDBAccountName" `
 >   --resource-group "ResourceGroupName" `
 >   --role-definition-name "Cosmos DB Built-in Data Contributor" `
@@ -146,7 +148,8 @@ The `TemporaryNoSqlContainer` provides a solution when the integration tes requi
 ```csharp
 using Arcus.Testing;
 
-ResourceIdentifier cosmosDbAccountResourceId = ...
+ResourceIdentifier cosmosDbAccountResourceId =
+    CosmosDBAccountResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<account-name>");
 
 await using var container = await TemporaryNoSqlContainer.CreateIfNotExistsAsync(
     cosmosDbAccountResourceId,
@@ -190,9 +193,8 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
 
     // Delete all NoSql items that matches any of the configured filters,
     // upon the test fixture creation, when there was already a NoSql container available.
-    options.OnSetup.CleanMatchingItems(
-        NoSqlItemFilter.Where(ship => ship["BoatName"] == "The Alice"),
-        NoSqlItemFilter.ItemIdEqual("123"));
+    options.OnSetup.CleanMatchingItems((NoSqlItem item) => item.Id == "123");
+    options.OnSetup.CleanMatchingItems((Shipment item) => item.BoatName == "The Alice");
     
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
@@ -207,9 +209,8 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
     // Delete all NoSql items that matches any of the configured filters,
     // upon the test fixture disposal, even if the test fixture didn't inserted them.
     // ⚠️ NoSql items inserted by the test fixture will always be deleted, regardless of the configured filters.
-    options.OnTeardown.CleanMatchingItems(
-        NoSqlItemFilter.Where((Shipment s) => s.BoatName == "The Alice"),
-        NoSqlItemFilter.IdEqual("123"));
+    options.OnTeardown.CleanMatchingItems((NoSqlItem item) => item.Id == "123"); 
+    options.OnTeardown.CleanMatchingItems((Shipment item) => item.BoatName == "The Alice");
 });
 
 // `OnTeardown` is also still available after the temporary container is created:
@@ -233,9 +234,7 @@ Container containerClient = ...
 var shipment = new Shipment { Id = "123", BoatName = "The Alice" };
 
 await using var item = await TemporaryNoSqlItem.InsertIfNotExistsAsync(
-    containerClient,
-    shipment,
-    logger);
+    containerClient, shipment, logger);
 
 string itemId = item.Id;
 PartitionKey partitionKey = item.PartitionKey;

@@ -22,6 +22,9 @@ param cosmosDb_noSql_databaseName string
 // Define the name of the Azure EventHubs namespace that will be created.
 param eventHubsNamespaceName string
 
+// Define the name of the Service bus namespace resource that will be created.
+param serviceBusNamespaceName string
+
 // Define the name of the key vault where the necessary secrets will be stored to access the deployed test resources.
 param keyVaultName string
 
@@ -144,6 +147,26 @@ module eventHubsNamespace 'br/public:avm/res/event-hub/namespace:0.9.1' = {
       {
         principalId: servicePrincipal_objectId
         roleDefinitionIdOrName: 'Azure Event Hubs Data Receiver'
+      }
+    ]
+  }
+}
+
+module serviceBusNamespace 'br/public:avm/res/service-bus/namespace:0.10.1' = {
+  name: 'serviceBusNamespaceDeployment'
+  params: {
+    name: serviceBusNamespaceName
+    location: location
+    enableTelemetry: false
+    publicNetworkAccess: 'Enabled'
+    skuObject: {
+      name: 'Standard'
+    }
+    zoneRedundant: false
+    roleAssignments: [
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
       }
     ]
   }

@@ -62,9 +62,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             var tokenProvider = new DefaultAzureCredential();
             AccessToken accessToken = await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: new[] { scope }));
 
-            string subscriptionId = config["Arcus:SubscriptionId"];
-            string resourceGroupName = config["Arcus:ResourceGroup:Name"];
-            string cosmosDbName = config["Arcus:Cosmos:MongoDb:Name"];
+            AzureEnvironment env = config.GetAzureEnvironment();
+            string subscriptionId = env.SubscriptionId;
+            string resourceGroupName = env.ResourceGroupName;
+            string cosmosDbName = config.GetMongoDb().AccountName;
 
             var listConnectionStringUrl = $"https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DocumentDB/databaseAccounts/{cosmosDbName}/listConnectionStrings?api-version=2021-04-15";
 
@@ -201,7 +202,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
-        /// Verifies that a document does not exists in the MongoDb collection.
+        /// Verifies that a document does not exist in the MongoDb collection.
         /// </summary>
         public async Task ShouldNotStoreDocumentAsync<T>(string collectionName, BsonValue id)
         {

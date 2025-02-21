@@ -6,6 +6,8 @@ using Azure.Data.Tables;
 using Xunit;
 using Xunit.Abstractions;
 
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing.Tests.Integration.Storage
 {
     public class TemporaryTableTests : IntegrationTest
@@ -88,7 +90,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TableEntity createdBefore = await context.WhenTableEntityAvailableAsync(client);
 
             // Act
-            TemporaryTable _ = await CreateTempTableAsync(client, options =>
+            _ = await CreateTempTableAsync(client, options =>
             {
                 options.OnSetup.CleanAllEntities();
             });
@@ -105,7 +107,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TableClient client = await context.WhenTableAvailableAsync();
             TableEntity createdBefore = await context.WhenTableEntityAvailableAsync(client);
-            
+
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
                 options.OnTeardown.CleanAllEntities();
@@ -136,7 +138,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
-                options.OnSetup.CleanMatchingEntities(CreateMatchFilter(matchedEntity));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnSetup.CleanMatchingEntities(CreateDeprecatedMatchFilter(matchedEntity));
+                }
+                else
+                {
+                    options.OnSetup.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
+                }
             });
 
             // Assert
@@ -162,7 +171,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
-                options.OnTeardown.CleanMatchingEntities(CreateMatchFilter(matchedEntity));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnTeardown.CleanMatchingEntities(CreateDeprecatedMatchFilter(matchedEntity));
+                }
+                else
+                {
+                    options.OnTeardown.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
+                }
             });
 
             // Assert
@@ -194,7 +210,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TableEntity createdByUs = await AddTableEntityAsync(context, temp);
             TableEntity matched = await context.WhenTableEntityAvailableAsync(client);
             TableEntity notMatched = await context.WhenTableEntityAvailableAsync(client);
-            temp.OnTeardown.CleanMatchingEntities(CreateMatchFilter(matched));
+            temp.OnTeardown.CleanMatchingEntities(CreateDeprecatedMatchFilter(matched));
 
             // Act
             await temp.DisposeAsync();
@@ -205,7 +221,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldStoreTableEntityAsync(client, notMatched);
         }
 
-        private static TableEntityFilter CreateMatchFilter(TableEntity entity)
+        private static TableEntityFilter CreateDeprecatedMatchFilter(TableEntity entity)
         {
             return Bogus.Random.Int(1, 3) switch
             {

@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Azure.Core;
+using Azure.ResourceManager.CosmosDB;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Bson;
@@ -234,7 +235,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbResourceId">The resource ID pointing towards the Azure Cosmos account.</param>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="databaseName">The name of the MongoDb database in which the collection should be created.</param>
         /// <param name="collectionName">The unique name of the MongoDb collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>
@@ -252,7 +262,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbResourceId">The resource ID pointing towards the Azure Cosmos account.</param>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="databaseName">The name of the MongoDb database in which the collection should be created.</param>
         /// <param name="collectionName">The unique name of the MongoDb collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>

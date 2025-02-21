@@ -5,6 +5,7 @@ using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
 using static Arcus.Testing.BlobNameFilter;
 
 namespace Arcus.Testing.Tests.Integration.Storage
@@ -76,7 +77,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             // Assert
             await context.ShouldDeleteBlobFileAsync(containerClient, blobOutsideOurScope.Name);
-            
+
             string blobCreatedByUs = await UploadBlobAsync(context, container);
             await container.DisposeAsync();
             await context.ShouldDeleteBlobFileAsync(containerClient, blobCreatedByUs);
@@ -91,13 +92,20 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using var context = await GivenBlobStorageAsync();
 
             BlobContainerClient containerClient = await context.WhenBlobContainerAvailableAsync();
-            
+
             BlobClient matchingBlob = await context.WhenBlobAvailableAsync(containerClient);
             BlobClient notMatchingBlob = await context.WhenBlobAvailableAsync(containerClient);
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                options.OnSetup.CleanMatchingBlobs(Matching(matchingBlob.Name));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnSetup.CleanMatchingBlobs(DeprecatedMatching(matchingBlob.Name));
+                }
+                else
+                {
+                    options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
+                }
             });
 
             await context.ShouldDeleteBlobFileAsync(containerClient, matchingBlob.Name);
@@ -123,7 +131,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                options.OnTeardown.CleanMatchingBlobs(Matching(matchingBlob.Name));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnTeardown.CleanMatchingBlobs(DeprecatedMatching(matchingBlob.Name));
+                }
+                else
+                {
+                    options.OnTeardown.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
+                }
             });
             string blobCreatedByUs = await UploadBlobAsync(context, container);
 
@@ -149,9 +164,16 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                options.OnSetup.CleanMatchingBlobs(Matching(matchingCreationBlob.Name));
+                if (Bogus.Random.Bool())
+                {
+                    options.OnSetup.CleanMatchingBlobs(DeprecatedMatching(matchingCreationBlob.Name));
+                }
+                else
+                {
+                    options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingCreationBlob.Name);
+                }
             });
-            container.OnTeardown.CleanMatchingBlobs(Matching(matchingDeletionBlobName));
+            container.OnTeardown.CleanMatchingBlobs(DeprecatedMatching(matchingDeletionBlobName));
 
             await context.ShouldDeleteBlobFileAsync(containerClient, matchingCreationBlob.Name);
             BlobClient matchingDeletionBlob = await context.WhenBlobAvailableAsync(containerClient, matchingDeletionBlobName);
@@ -189,7 +211,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldDeleteBlobContainerAsync(containerClient);
         }
 
-        private static BlobNameFilter Matching(string name)
+        private static BlobNameFilter DeprecatedMatching(string name)
         {
             return Bogus.Random.Int(1, 4) switch
             {
@@ -262,6 +284,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BlobContainerClient client,
             Action<TemporaryBlobContainerOptions> configureOptions = null)
         {
+#pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with  readability.
+
             TemporaryBlobContainer temp = configureOptions is null
                 ? Bogus.Random.Bool()
                     ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger)
@@ -269,6 +293,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 : Bogus.Random.Bool()
                     ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger, configureOptions)
                     : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, Logger, configureOptions);
+
+#pragma warning restore
 
             Assert.Equal(client.Name, temp.Name);
             Assert.Equal(client.Name, temp.Client.Name);

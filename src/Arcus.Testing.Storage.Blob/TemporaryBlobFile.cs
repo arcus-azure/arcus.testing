@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Storage.Blobs;
@@ -6,11 +6,15 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CS0618, S1133 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
+
 namespace Arcus.Testing
 {
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryBlobFile"/>.
     /// </summary>
+    [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+              "whether or not existing/non-existing files should be cleaned during setup/teardown, options will be removed in v2.0")]
     public class OnSetupBlobFileOptions
     {
         /// <summary>
@@ -49,6 +53,8 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when deleting a <see cref="TemporaryBlobFile"/>.
     /// </summary>
+    [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+              "whether or not existing/non-existing files should be cleaned during setup/teardown, options will be removed in v2.0")]
     public class OnTeardownBlobFileOptions
     {
         /// <summary>
@@ -79,6 +85,8 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when uploading a <see cref="TemporaryBlobFile"/>.
     /// </summary>
+    [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+              "whether or not existing/non-existing files should be cleaned during setup/teardown, options will be removed in v2.0")]
     public class TemporaryBlobFileOptions
     {
         /// <summary>
@@ -116,7 +124,7 @@ namespace Arcus.Testing
             _originalData = originalData;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = blobClient;
         }
 
@@ -138,6 +146,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobFile"/>.
         /// </summary>
+        [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+                  "whether or not existing/non-existing files should be cleaned during setup/teardown")]
         public OnTeardownBlobFileOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
@@ -186,6 +196,8 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the additional options of how the blob should be uploaded.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+                  "whether or not existing/non-existing files should be cleaned during setup/teardown, this overload with options will be removed in v2.0")]
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(
             Uri blobContainerUri,
             string blobName,
@@ -227,6 +239,8 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <param name="configureOptions">The function to configure the additional options of how the blob should be uploaded.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        [Obsolete("Use the '" + nameof(TemporaryBlobContainerOptions) + "' instead on Azure Blob storage container-level to control " +
+                  "whether or not existing/non-existing files should be cleaned during setup/teardown, this overload with options will be removed in v2.0")]
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(
             BlobClient blobClient,
             BinaryData blobContent,
@@ -246,9 +260,9 @@ namespace Arcus.Testing
         }
 
         private static async Task<(bool createdByUs, BinaryData originalData)> EnsureBlobContentCreatedAsync(
-            BlobClient client, 
+            BlobClient client,
             BinaryData newContent,
-            TemporaryBlobFileOptions options, 
+            TemporaryBlobFileOptions options,
             ILogger logger)
         {
             if (await client.ExistsAsync())
@@ -266,7 +280,7 @@ namespace Arcus.Testing
 
             logger.LogDebug("[Test:Setup] Upload Azure Blob file '{BlobName}' to container '{AccountName}/{ContainerName}'", client.Name, client.AccountName, client.BlobContainerName);
             await client.UploadAsync(newContent);
-            
+
             return (createdByUs: true, originalData: null);
         }
 
@@ -279,7 +293,7 @@ namespace Arcus.Testing
             if (!_createdByUs && _originalData != null && _options.OnTeardown.Content != OnTeardownBlob.DeleteIfExisted)
             {
                 _logger.LogDebug("[Test:Teardown] Revert replaced Azure Blob file '{BlobName}' to original content in container '{AccountName}/{ContainerName}'", Client.Name, Client.AccountName, Client.BlobContainerName);
-                await Client.UploadAsync(_originalData, overwrite: true); 
+                await Client.UploadAsync(_originalData, overwrite: true);
             }
 
             if (_createdByUs || _options.OnTeardown.Content is OnTeardownBlob.DeleteIfExisted)

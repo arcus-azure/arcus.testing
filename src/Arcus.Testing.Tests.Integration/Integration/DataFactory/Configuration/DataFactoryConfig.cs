@@ -1,5 +1,7 @@
 ﻿using System;
+using Arcus.Testing.Tests.Integration.Configuration;
 using Azure.Core;
+using Azure.ResourceManager.DataFactory;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.Testing
@@ -13,16 +15,14 @@ namespace Arcus.Testing
         /// Initializes a new instance of the <see cref="DataFactoryConfig" /> class.
         /// </summary>
         public DataFactoryConfig(
-            string subscriptionId, 
-            string resourceGroupName, 
-            string resourceName)
+            string factoryName,
+            ResourceIdentifier factoryResourceId)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionId);
-            ArgumentException.ThrowIfNullOrWhiteSpace(resourceGroupName);
-            ArgumentException.ThrowIfNullOrWhiteSpace(resourceName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(factoryName);
+            ArgumentNullException.ThrowIfNull(factoryResourceId);
 
-            Name = resourceName;
-            ResourceId = ResourceIdentifier.Parse($"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.DataFactory/factories/{resourceName}");
+            Name = factoryName;
+            ResourceId = factoryResourceId;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Extensions on the <see cref="TestConfig"/> for more easier access to the <see cref="DataFactoryConfig"/>.
+    /// Extensions on the <see cref="TestConfig"/> for easier access to the <see cref="DataFactoryConfig"/>.
     /// </summary>
     public static class TestConfigExtensions
     {
@@ -46,10 +46,15 @@ namespace Arcus.Testing
         /// </summary>
         public static DataFactoryConfig GetDataFactory(this TestConfig config)
         {
+            AzureEnvironment env = config.GetAzureEnvironment();
+
+            string factoryName = config["Arcus:DataFactory:Name"];
+            ResourceIdentifier factoryResourceId =
+                DataFactoryResource.CreateResourceIdentifier(env.SubscriptionId, env.ResourceGroupName, factoryName);
+
             return new DataFactoryConfig(
-                config["Arcus:SubscriptionId"],
-                config["Arcus:ResourceGroup:Name"],
-                config["Arcus:DataFactory:Name"]);
+                factoryName,
+                factoryResourceId);
         }
     }
 }

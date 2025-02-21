@@ -162,6 +162,24 @@ byte[] img = sub.ReadFileBytesByPattern("*.png");
 //    Resource directory: /bin/net8.0/resources
 ```
 
+## Temporary environment variable
+The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is fairly common when testing locally and spinning up the application on your own system. It can also be used for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.
+
+> ⚡ By using one of the exposed methods, you can specify if you want the original/new environment variables to be written to the test output. With secrets, only the names will be written.
+
+```csharp
+using Arcus.Testing;
+
+// Set a public known application value.
+using var tenantId = TemporaryEnvironmentVariable.SetIfNotExists("AZURE_TENANT_ID", "<tenant-id>");
+// > [Test:Setup] Set new environment variable 'AZURE_TENANT_ID' with '<tenant-id>'
+
+// Set private application secret.
+using var clientSecret = TemporaryEnvironmentVariable.SetSecretIfNotExits("AZURE_CLIENT_SECRET", "<client-secret>");
+// > [Test:Setup] Set new secret environment variable 'AZURE_CLIENT_SECRET'
+
+```
+
 ## Disposable collection
 The `DisposableCollection` provides a solution for when multiple temporary/disposable test fixtures need to be teared down independently from each other, meaning: when one test fixture fails, it should not stop another fixture from tearing down. Multiple synchronous/asynchronous test fixtures can be added to the collection. Upon disposing the collection itself, it will try to dispose each registered test fixture. When one or more failures occur, it will collect them and throw an `AggregateException`.
 
