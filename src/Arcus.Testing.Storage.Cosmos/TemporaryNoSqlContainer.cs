@@ -25,7 +25,7 @@ namespace Arcus.Testing
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is created.
     /// </summary>
     internal enum OnSetupNoSqlContainer { LeaveExisted = 0, CleanIfExisted, CleanIfMatched }
-    
+
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is deleted.
     /// </summary>
@@ -104,7 +104,7 @@ namespace Arcus.Testing
                 }
 
                 using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
-                
+
                 var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
                 if (item is null)
                 {
@@ -342,7 +342,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
         /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
         /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
@@ -370,7 +379,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
         /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
         /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
@@ -401,7 +419,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos resource.</param>
         /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
         /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
@@ -434,7 +461,16 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
         /// </summary>
-        /// <param name="cosmosDbAccountResourceId">The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</param>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos resource.</param>
         /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
         /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
@@ -501,7 +537,7 @@ namespace Arcus.Testing
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
                 CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
-                
+
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: true, options, logger);
             }
         }
@@ -532,7 +568,7 @@ namespace Arcus.Testing
         {
             var arm = new ArmClient(credential);
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(cosmosDbAccountResourceId);
-            
+
             return await cosmosDb.GetAsync();
         }
 
@@ -542,14 +578,14 @@ namespace Arcus.Testing
             {
                 return;
             }
-            
+
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
                 await ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
                     logger.LogDebug("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
                     using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
-                    
+
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
@@ -605,7 +641,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
                     await _container.DeleteAsync(WaitUntil.Completed);
-                })); 
+                }));
             }
             else
             {
@@ -632,7 +668,7 @@ namespace Arcus.Testing
                     {
                         _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                         using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                        
+
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException(
@@ -654,7 +690,7 @@ namespace Arcus.Testing
                         {
                             _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                             using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
-                            
+
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
                                 throw new RequestFailedException(
