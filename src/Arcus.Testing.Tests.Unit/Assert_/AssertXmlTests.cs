@@ -4,11 +4,11 @@ using System.Linq;
 using System.Xml;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
-using FsCheck.Xunit;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using static System.Environment;
+using static Arcus.Testing.Tests.Unit.Properties;
 
 namespace Arcus.Testing.Tests.Unit.Assert_
 {
@@ -25,59 +25,59 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             _outputWriter = outputWriter;
         }
 
-        [Property]
-        public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds()
-        {
-            // Arrange
-            TestXml expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void CompareWithDefaultIgnoredOrderOption_WithDifferentOrderInput_Succeeds() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            expected.Shuffle();
+                expected.Shuffle();
 
-            // Act
-            EqualXml(expected, actual);
-        }
+                // Act
+                EqualXml(expected, actual);
+            });
 
-        [Property]
-        public void CompareWithInclude_WithDifferentOrder_FailsWithDescription()
-        {
-            // Arrange
-            TestXml expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void CompareWithInclude_WithDifferentOrder_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            expected.Shuffle();
+                expected.Shuffle();
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, opt => opt.Order = AssertXmlOrder.Include);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, opt => opt.Order = AssertXmlOrder.Include);
+            });
 
-        [Property]
-        public void Compare_WithoutAttribute_FailsWithDescription()
-        {
-            // Arrange
-            TestXml expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_WithoutAttribute_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            string newName = Bogus.Lorem.Word();
-            actual.ChangeAttributeName(newName);
+                string newName = Bogus.Lorem.Word();
+                actual.ChangeAttributeName(newName);
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "misses an attribute", newName);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "misses an attribute", newName);
+            });
 
-        [Property]
-        public void Compare_DiffElementName_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_DiffElementName_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            string newName = TestXml.GenNodeName() + Guid.NewGuid().ToString("N");
-            actual.ChangeElementName(newName);
+                string newName = TestXml.GenNodeName() + Guid.NewGuid().ToString("N");
+                actual.ChangeElementName(newName);
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "different name", "element", newName);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "different name", "element", newName);
+            });
 
         [Fact]
         public void Compare_DiffElementType_FailsWithDescription()
@@ -90,19 +90,19 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expected, actual, "has a different value at", "while actual");
         }
 
-        [Property]
-        public void Compare_DiffElementValue_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_DiffElementValue_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            string newValue = Bogus.Random.AlphaNumeric(Bogus.Random.Int(10, 20));
-            actual.ChangeRandomlyElementValue(newValue);
+                string newValue = Bogus.Random.AlphaNumeric(Bogus.Random.Int(10, 20));
+                actual.ChangeRandomlyElementValue(newValue);
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "different value", newValue);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "different value", newValue);
+            });
 
         [Fact]
         public void Compare_WithDiffElementNamespace_FailsWithDescription()
@@ -115,74 +115,74 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expected, actual, "different namespace");
         }
 
-        [Property]
-        public void Compare_DiffElementCount_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_DiffElementCount_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            actual.InsertElement(TestXml.GenNodeName());
+                actual.InsertElement(TestXml.GenNodeName());
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "has", "element(s)", "instead of");
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "has", "element(s)", "instead of");
+            });
 
-        [Property]
-        public void Compare_WithDiffAttributeName_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_WithDiffAttributeName_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            string newName = TestXml.GenNodeName();
-            actual.ChangeAttributeName("diff" + newName);
+                string newName = TestXml.GenNodeName();
+                actual.ChangeAttributeName("diff" + newName);
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
-                "different name", "attribute", newName);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
+                    "different name", "attribute", newName);
+            });
 
-        [Property]
-        public void Compare_WithDiffAttributeValue_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+        [Fact]
+        public void Compare_WithDiffAttributeValue_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-            string newValue = Bogus.Random.Word();
-            actual.ChangeAttributeValue("diff" + newValue);
+                string newValue = Bogus.Random.Word();
+                actual.ChangeAttributeValue("diff" + newValue);
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "different value", "@", newValue);
-        }
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "different value", "@", newValue);
+            });
 
-        [Property]
-        public void Compare_WithDiffAttributeCount_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
-            
-            actual.InsertAttribute(TestXml.GenNodeName() + Guid.NewGuid().ToString("N"));
-            
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, "has", "attribute(s)", "instead of");
-        }
+        [Fact]
+        public void Compare_WithDiffAttributeCount_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
 
-        [Property]
-        public void Compare_WithDiffAttributeNamespace_FailsWithDescription()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            TestXml actual = expected.Copy();
+                actual.InsertAttribute(TestXml.GenNodeName() + Guid.NewGuid().ToString("N"));
 
-            actual.ChangeAttributeNamespace(Bogus.Internet.Url());
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, "has", "attribute(s)", "instead of");
+            });
 
-            // Act / Assert
-            CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
-                "different namespace", "@");
-        }
+        [Fact]
+        public void Compare_WithDiffAttributeNamespace_FailsWithDescription() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                TestXml actual = expected.Copy();
+
+                actual.ChangeAttributeNamespace(Bogus.Internet.Url());
+
+                // Act / Assert
+                CompareShouldFailWithDifference(expected, actual, options => options.Order = AssertXmlOrder.Include,
+                    "different namespace", "@");
+            });
 
         public static IEnumerable<object[]> SucceedingBeEquivalentCases
         {
@@ -232,7 +232,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
         private static string Whitespace()
         {
-            return string.Concat(Bogus.Make(Bogus.Random.Int(5, 10), () => Bogus.PickRandom(" ", "\n", "\t", "\r" )));
+            return string.Concat(Bogus.Make(Bogus.Random.Int(5, 10), () => Bogus.PickRandom(" ", "\n", "\t", "\r")));
         }
 
         public static IEnumerable<object[]> FailingBeEquivalentCases
@@ -452,35 +452,36 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             CompareShouldFailWithDifference(expected, actual, configureOptions, expectedDifferences);
         }
 
-        [Property]
-        public void Compare_SameXml_Succeeds()
-        {
-            string expected = TestXml.Generate().ToString();
-            string actual = expected;
+        [Fact]
+        public void Compare_SameXml_Succeeds() => Property(
+            (TestXml expectedXml) =>
+            {
+                string expected = expectedXml.ToString();
+                string actual = expected;
 
-            EqualXml(expected, actual);
-        }
+                EqualXml(expected, actual);
+            });
 
-        [Property]
-        public void Compare_WithIgnoreDiff_StillSucceeds()
-        {
-            // Arrange
-            var expected = TestXml.Generate();
-            string[] diffExpectedNames = CreateNodeNames("diff");
-            InsertDiffNodes(expected, diffExpectedNames);
+        [Fact]
+        public void Compare_WithIgnoreDiff_StillSucceeds() => Property(
+            (TestXml expected) =>
+            {
+                // Arrange
+                string[] diffExpectedNames = CreateNodeNames("diff");
+                InsertDiffNodes(expected, diffExpectedNames);
 
-            TestXml actual = expected.Copy();
+                TestXml actual = expected.Copy();
 
-            string[] diffActualNames = CreateNodeNames("diff-");
-            InsertDiffNodes(actual, diffActualNames);
+                string[] diffActualNames = CreateNodeNames("diff-");
+                InsertDiffNodes(actual, diffActualNames);
 
-            // Act / Assert
-            EqualXml(expected, actual, 
-                options => Assert.All(diffActualNames.Concat(diffExpectedNames), name =>
-                {
-                    options.IgnoreNode(name);
-                }));
-        }
+                // Act / Assert
+                EqualXml(expected, actual,
+                    options => Assert.All(diffActualNames.Concat(diffExpectedNames), name =>
+                    {
+                        options.IgnoreNode(name);
+                    }));
+            });
 
         private static void InsertDiffNodes(TestXml xml, string[] names)
         {
@@ -514,13 +515,13 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return Bogus.Make(Bogus.Random.Int(5, 10), () => prefix + TestXml.GenNodeName()).ToArray();
         }
 
-        [Property]
+        [Fact]
         public void Compare_DiffXml_Fails()
         {
-            string expected = TestXml.Generate().ToString();
-            string actual = TestXml.Generate().ToString();
-
-            Assert.ThrowsAny<AssertionException>(() => EqualXml(expected, actual));
+            Property((TestXml expected, TestXml actual) =>
+            {
+                Assert.ThrowsAny<AssertionException>(() => EqualXml(expected, actual));
+            });
         }
 
         private void CompareShouldFailWithDifference(TestXml expected, TestXml actual, params string[] expectedDifferences)

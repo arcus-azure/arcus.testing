@@ -1,13 +1,14 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
 
 namespace Arcus.Testing
 {
@@ -29,9 +30,10 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a filter to match the name of a blob in the Azure Blob container.
     /// </summary>
+    [Obsolete("Additional layer of abstraction will be removed in favor of using a predicate on a '" + nameof(BlobItem) + "' function directly")]
     public class BlobNameFilter
     {
-        private readonly Func<string, bool>_isMatch;
+        private readonly Func<string, bool> _isMatch;
 
         private BlobNameFilter(Func<string, bool> isMatch)
         {
@@ -167,7 +169,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupBlobContainerOptions
     {
-        private readonly List<BlobNameFilter> _filters = new();
+        private readonly List<BlobNameFilter> _deprecatedFilters = new();
+        private readonly List<Func<BlobItem, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing Azure Blobs in the Azure Blob container upon the test fixture creation.
@@ -190,7 +193,30 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(BlobItem) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnSetupBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Blobs = OnSetupContainer.CleanIfMatched;
+            _deprecatedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryBlobContainer"/> to delete the Azure Blobs upon the test fixture creation that matched the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
+        public OnSetupBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
 
@@ -228,7 +254,7 @@ namespace Arcus.Testing
             {
                 OnSetupContainer.LeaveExisted => false,
                 OnSetupContainer.CleanIfExisted => true,
-                OnSetupContainer.CleanIfMatched => _filters.Exists(filter => filter.IsMatch(blob)),
+                OnSetupContainer.CleanIfMatched => _deprecatedFilters.Exists(filter => filter.IsMatch(blob)) || _filters.Exists(filter => filter(blob)),
                 _ => false
             };
         }
@@ -239,7 +265,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownBlobContainerOptions
     {
-        private readonly List<BlobNameFilter> _filters = new();
+        private readonly List<BlobNameFilter> _deprecatedFilters = new();
+        private readonly List<Func<BlobItem, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable option on what to do with unlinked Azure Blobs in the Azure Blob container upon the disposal of the test fixture.
@@ -281,7 +308,35 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
+        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(BlobItem) + "' directly, " +
+                  "this overload will be removed in v2.0")]
         public OnTeardownBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
+        {
+            ArgumentNullException.ThrowIfNull(filters);
+
+            if (Array.Exists(filters, f => f is null))
+            {
+                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
+            }
+
+            Blobs = OnTeardownBlobs.CleanIfMatched;
+            _deprecatedFilters.AddRange(filters);
+
+            return this;
+        }
+
+        /// <summary>
+        /// Configures the <see cref="TemporaryBlobContainer"/> to delete the blobs upon disposal that matched the configured <paramref name="filters"/>.
+        /// </summary>
+        /// <remarks>
+        ///     The matching of blobs only happens on Azure Blobs instances that were created outside the scope of the test fixture.
+        ///     All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        /// </remarks>
+        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
+        public OnTeardownBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
 
@@ -326,7 +381,7 @@ namespace Arcus.Testing
             return Blobs switch
             {
                 OnTeardownBlobs.CleanAll => true,
-                OnTeardownBlobs.CleanIfMatched => _filters.Exists(filter => filter.IsMatch(blob)),
+                OnTeardownBlobs.CleanIfMatched => _deprecatedFilters.Exists(filter => filter.IsMatch(blob)) || _filters.Exists(filter => filter(blob)),
                 _ => false
             };
         }
@@ -370,7 +425,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
-            
+
             Client = containerClient;
         }
 
@@ -397,7 +452,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
         public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger)
-        { 
+        {
             return await CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null);
         }
 
@@ -507,6 +562,9 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the additional options of how the blob should be uploaded.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        [Obsolete(
+            "Use the " + nameof(TemporaryBlobContainerOptions) + " instead on Azure Blob storage container-level to control " +
+            "whether or not existing/non-existing files should be cleaned during setup/teardown, overload with options will be removed in v2.0")]
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent, Action<TemporaryBlobFileOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(blobContent);
@@ -542,7 +600,7 @@ namespace Arcus.Testing
                 {
                     _logger.LogDebug("[Test:Teardown] Delete Azure Blob container '{ContainerName}' from account '{AccountName}'", Client.Name, Client.AccountName);
                     await Client.DeleteIfExistsAsync();
-                })); 
+                }));
             }
 
             GC.SuppressFinalize(this);
@@ -555,7 +613,9 @@ namespace Arcus.Testing
                 return;
             }
 
+#pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
+#pragma warning restore
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
@@ -572,7 +632,9 @@ namespace Arcus.Testing
                 return;
             }
 
+#pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
             await foreach (BlobItem blob in containerClient.GetBlobsAsync())
+#pragma warning restore
             {
                 if (options.OnTeardown.IsMatched(blob))
                 {

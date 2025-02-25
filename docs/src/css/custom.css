@@ -94,7 +94,7 @@ html[data-theme='dark'] .footer--dark {
 }
 
 html {
-  font-family: 'Inter';
+  font-family: 'Inter', sans-serif;
   font-weight: normal;
 }
 
@@ -103,7 +103,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: 'Bitter';
+  font-family: 'Bitter', sans-serif;
   line-height: 110%;
 }
 
@@ -119,7 +119,7 @@ p,
 
 strong,
 .navbar__title {
-  font-family: 'Bitter';
+  font-family: 'Bitter', sans-serif;
 }
 
 .navbar__title {

@@ -64,11 +64,7 @@ await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
 
     // Delete Azure Blobs that matches any of the configured filters, 
     // upon the test fixture creation, when there was already an Azure Blob container available.
-    options.OnSetup.CleanMatchingBlobs(
-      BlobNameFilter.NameEqual("test-blob-1"),
-      BlobNameFilter.NameStartsWith("test-"),
-      BlobNameFilter.NameEndsWith("-123"),
-      BlobNameFilter.NameContains("test"));
+    options.OnSetup.CleanMatchingBlobs((BlobItem blob) => blob.Name.StartsWith("test-"));
 
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
@@ -84,11 +80,7 @@ await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
     // Delete additional Azure Blobs that matches any of the configured filters, 
     // upon the test fixture disposal.
     // ⚠️ Blobs uploaded by the test fixture itself will always be deleted.
-    options.OnTeardown.CleanMatchingBlobs(
-      BlobNameFilter.NameEqual("test-blob-1"),
-      BlobNameFilter.NameStartsWith("test-"),
-      BlobNameFilter.NameEndsWith("-123"),
-      BlobNameFilter.NameContains("test"));
+    options.OnTeardown.CleanMatchingBlobs((BlobItem blob) => blob.Name.StartsWith("test-"));
 
     // (Default for deleting container)
     // Delete Azure Blob container if the test fixture created the container.
@@ -109,8 +101,6 @@ container.OnTeardown.CleanAllBlobs();
 ## Temporary Blob file
 The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
 
-> ⚡ Whether or not the test fixture should use an existing file is configurable.
-
 ```csharp
 using Arcus.Testing;
 
@@ -122,43 +112,6 @@ await using var file = await TemporaryBlobFile.UploadIfNotExistsAsync(
 
 // Interact with the blob during the lifetime of the fixture.
 BlobClient client = file.Client;
-```
-
-### Customization
-The setup and teardown process of the temporary file is configurable. **By default, any setup that was changed by the test fixture, is always teared down.**
-
-```csharp
-using Arcus.Testing;
-
-await TemporaryBlobFile.UploadIfNotExistsAsync(..., options =>
-{
-    // Options related to when the test fixture is set up.
-    // ---------------------------------------------------
-
-    // (Default) Use the existing Azure Blob's content when it already exists.
-    // Nothing is being uploaded, only a link to the existing file is made.
-    options.OnSetup.UseExistingBlob();
-
-    // Override any existing Azure Blob's content when it already exists.
-    // ⚡ The original content will be reverted upon disposal, if the blob already existed upon setup.
-    options.OnSetup.OverrideExistingBlob();
-
-    // Options related to when the test fixture is teared down.
-    // --------------------------------------------------------
-
-    // (Default) Delete the Azure Blob file upon disposal,
-    // if the test fixture created the blob.
-    options.OnTeardown.DeleteCreatedBlob();
-
-    // Delete the Azure Blob file upon disposal,
-    // regardless if the test fixture created the blob.
-    options.OnTeardown.DeleteExistingBlob();
-});
-
-// `OnTeardown` is also still available after the temporary file is created.
-await using TemporaryBlobFile file = ...
-
-file.OnTeardown.DeleteExistingBlob();
 ```
 
 </TabItem>
@@ -222,10 +175,7 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
 
     // Delete Azure Table entities that matches any of the configured filters, 
     // upon the test fixture creation, when there was already an Azure Table available.
-    options.OnSetup.CleanMatchingEntities(
-      TableEntityFilter.RowKeyEqual("<row-key>"),
-      TableEntityFilter.PartitionKeyEqual("<partition-key>"),
-      TableEntityFilter.EntityEqual((TableEntity entity) => entity["Key"] == "Value"));
+    options.OnSetup.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
 
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
@@ -241,10 +191,7 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
     // Delete additional Azure Table entities that matches any of the configured filters, 
     // upon the test fixture disposal.
     // ⚠️ Entities added by the test fixture itself will always be deleted.
-    options.OnTeardown.CleanMatchingEntities(
-      TableEntityFilter.RowKeyEqual("<row-key>"),
-      TableEntityFilter.PartitionKeyEqual("<partition-key>"),
-      TableEntityFilter.EntityEqual((TableEntity entity) => entity["Key"] == "Value"));
+    options.OnTeardown.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
 });
 
 // `OnTeardown` is also still available after the temporary table is created:

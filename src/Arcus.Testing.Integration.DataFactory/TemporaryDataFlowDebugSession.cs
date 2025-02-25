@@ -99,7 +99,16 @@ namespace Arcus.Testing
         ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
         ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger)"/> overload to provide a custom authentication mechanism.
         /// </remarks>
-        /// <param name="dataFactoryResourceId">The resource ID to the DataFactory instance where to start the active DataFlow debug session.</param>
+        /// <param name="dataFactoryResourceId">
+        ///   <para>The resource ID to the DataFactory instance where to start the active DataFlow debug session.</para>
+        ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier dataFactoryResourceId =
+        ///           DataFactoryResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;factory-name&gt;");
+        ///     </code>
+        ///   </example>  
+        /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
@@ -115,8 +124,16 @@ namespace Arcus.Testing
         ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
         ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,Action{TemporaryDataFlowDebugSessionOptions})"/> overload to provide a custom authentication mechanism.
         /// </remarks>
-        /// <param name="dataFactoryResourceId">The resource ID to the DataFactory instance where to start the active DataFlow debug session.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
+        /// <param name="dataFactoryResourceId">
+        ///   <para>The resource ID to the DataFactory instance where to start the active DataFlow debug session.</para>
+        ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier dataFactoryResourceId =
+        ///           DataFactoryResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;factory-name&gt;");
+        ///     </code>
+        ///   </example>  
+        /// </param>        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
@@ -136,7 +153,17 @@ namespace Arcus.Testing
         /// <summary>
         /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="resource"/>.
         /// </summary>
-        /// <param name="resource">The resource to start the active DataFlow debug session for.</param>
+        /// <param name="resource">
+        ///   <para>The resource to start the active DataFlow debug session for.</para>
+        ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       var credential = new DefaultAzureCredential();
+        ///       var arm = new ArmClient(credential);
+        ///       DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
@@ -148,7 +175,17 @@ namespace Arcus.Testing
         /// <summary>
         /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="resource"/>.
         /// </summary>
-        /// <param name="resource">The resource to start the active DataFlow debug session for.</param>
+        /// <param name="resource">
+        ///   <para>The resource to start the active DataFlow debug session for.</para>
+        ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       var credential = new DefaultAzureCredential();
+        ///       var arm = new ArmClient(credential);
+        ///       DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+        ///     </code>
+        ///   </example>
+        /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
@@ -426,7 +463,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The <paramref name="sourceOrSinkName"/> should be the "Output stream name" of the source or sink dataset in the DataFlow, not than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings" />.
-        /// </remarks>///
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="sourceOrSinkName"/> or the <paramref name="parameterName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
         public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)

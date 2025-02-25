@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Azure.Data.Tables;
-using Azure.Identity;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+
+#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
 
 namespace Arcus.Testing.Tests.Unit.Storage
 {
@@ -35,7 +36,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
             var options = new TemporaryTableOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingEntities(null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingEntities((Func<TableEntity, bool>) null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingEntities((TableEntityFilter) null));
             Assert.ThrowsAny<ArgumentException>(() => options.OnSetup.CleanMatchingEntities(TableEntityFilter.RowKeyEqual("<row-key>"), null));
         }
 
@@ -46,7 +48,8 @@ namespace Arcus.Testing.Tests.Unit.Storage
             var options = new TemporaryTableOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingEntities(null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingEntities((Func<TableEntity, bool>) null));
+            Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingEntities((TableEntityFilter) null));
             Assert.ThrowsAny<ArgumentException>(() => options.OnTeardown.CleanMatchingEntities(TableEntityFilter.PartitionKeyEqual("<partition-key>"), null));
         }
 
