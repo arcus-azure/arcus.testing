@@ -131,7 +131,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 else
                 {
                     options.OnSetup.CleanMatchingItems(item => item.Id == createdMatched.Id)
-                                   .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdNotMatched.GetPartitionKey());
+                                   .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
                 }
             });
 
