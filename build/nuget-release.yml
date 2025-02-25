@@ -19,6 +19,7 @@ resources:
       endpoint: arcus-azure
 
 variables:
+  - group: 'GitHub Configuration'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
@@ -107,3 +108,6 @@ stages:
                 ### Removal
                 None.
           - template: nuget/publish-official-package.yml@templates
+          - template: templates/trigger-bump-docs-version.yml
+            parameters:
+              gitHubToken: $(GITHUB_TOKEN)
