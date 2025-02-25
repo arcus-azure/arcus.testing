@@ -4,6 +4,9 @@
   "prCreation": "not-pending",
   "rangeStrategy": "widen",
   "ignoreDeps": ["Codit.Testing.*"],
+  "ignorePaths": [
+    "**/Arcus.Testing.Sample.*/**",
+  ],
   "separateMajorMinor": true,
   "dependencyDashboard": true,
   "dependencyDashboardTitle": "📦 [Renovate] dependency dashboard",
