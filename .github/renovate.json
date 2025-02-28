@@ -7,7 +7,7 @@
     "Codit.Testing.Xslt.Helper"
   ],
   "ignorePaths": [
-    "**/samples/**",
+    "samples/**",
   ],
   "separateMajorMinor": true,
   "dependencyDashboard": true,
