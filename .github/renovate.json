@@ -1,11 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:base", ":dependencyDashboardApproval"],
+  "extends": ["config:recommended"],
   "prCreation": "not-pending",
   "rangeStrategy": "widen",
-  "ignoreDeps": ["Codit.Testing.*"],
+  "ignoreDeps": [
+    "Codit.Testing.Xslt.Helper"
+  ],
   "ignorePaths": [
-    "**/Arcus.Testing.Sample.*/**",
+    "**/samples/**",
   ],
   "separateMajorMinor": true,
   "dependencyDashboard": true,
