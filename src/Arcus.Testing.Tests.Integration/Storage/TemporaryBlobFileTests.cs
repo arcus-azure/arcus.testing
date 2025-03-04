@@ -37,7 +37,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         }
 
         [Fact]
-        public async Task UploadTempBlobFileDefault_WithAlreadyUploadedBlob_SucceedsByUsingExistingBlob()
+        public async Task UploadTempBlobFileDefault_WithAlreadyUploadedBlob_SucceedsByUsingOverridingContentDuringLifetimeFixture()
         {
             // Arrange
             await using var context = await GivenBlobStorageAsync();
@@ -50,7 +50,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TemporaryBlobFile sut = await WhenBlobUploadedAsync(containerClient, existingBlob.Name, newContent);
 
             // Assert
-            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
+            await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, newContent);
             await sut.DisposeAsync();
             await context.ShouldStoreBlobFileAsync(containerClient, existingBlob.Name, originalContent);
         }
