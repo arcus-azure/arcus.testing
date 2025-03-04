@@ -26,6 +26,7 @@ namespace Microsoft.Extensions.Logging
             return builder.AddProvider(provider);
         }
 
+        [ProviderAlias("Xunit")]
         private sealed class XunitLoggerProvider : ILoggerProvider
         {
             private readonly ILogger _logger;
