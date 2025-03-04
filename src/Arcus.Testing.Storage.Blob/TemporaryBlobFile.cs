@@ -64,10 +64,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
-            if (string.IsNullOrWhiteSpace(blobName))
-            {
-                throw new ArgumentException("Requires a non-blank name for the Azure Blob file name for it to be uploaded to Azure Blob storage", nameof(blobName));
-            }
+            ArgumentNullException.ThrowIfNull(blobContainerUri);
 
             if (string.IsNullOrWhiteSpace(blobName))
             {
