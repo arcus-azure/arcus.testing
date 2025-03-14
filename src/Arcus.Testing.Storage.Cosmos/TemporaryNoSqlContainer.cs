@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -140,24 +139,9 @@ namespace Arcus.Testing
 
             Items = OnSetupNoSqlContainer.CleanIfMatched;
 
-
             _filters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
             {
-                if (client.ClientOptions.Serializer is null)
-                {
-                    throw new InvalidOperationException(
-                        "[Test:Setup] Cannot match the NoSql item because the Cosmos client used has no JSON item serializer configured");
-                }
-
-                using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
-
-                var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
-                if (item is null)
-                {
-                    throw new InvalidOperationException(
-                        $"[Test:Setup] Cannot match the NoSql item because the configured JSON item serializer returned 'null' when deserializing '{typeof(TItem).Name}'");
-                }
-
+                var item = NoSqlItemParser.Parse<TItem>(client, json, TestPhase.Setup);
                 return itemFilter(item);
 
             })));
@@ -259,23 +243,8 @@ namespace Arcus.Testing
 
             _filters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
             {
-                if (client.ClientOptions.Serializer is null)
-                {
-                    throw new InvalidOperationException(
-                        "[Test:Teardown] Cannot match the NoSql item because the Cosmos client used has no JSON item serializer configured");
-                }
-
-                using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
-
-                var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
-                if (item is null)
-                {
-                    throw new InvalidOperationException(
-                        $"[Test:Teardown] Cannot match the NoSql item because the configured JSON item serializer returned 'null' when deserializing '{typeof(TItem).Name}'");
-                }
-
+                var item = NoSqlItemParser.Parse<TItem>(client, json, TestPhase.Teardown);
                 return itemFilter(item);
-
             })));
 
             return this;
@@ -290,6 +259,8 @@ namespace Arcus.Testing
             return _filters.Exists(filter => filter(client, item));
         }
     }
+
+    internal enum TestPhase { Setup, Teardown }
 
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryNoSqlContainer"/>.
