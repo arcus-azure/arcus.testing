@@ -46,6 +46,7 @@ namespace Microsoft.Extensions.Logging
             return builder.AddProvider(provider);
         }
 
+        [ProviderAlias("NUnit")]
         private sealed class NUnitLoggerProvider : ILoggerProvider
         {
             private readonly NUnitTestLogger _logger;
