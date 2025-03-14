@@ -15,23 +15,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
         private static readonly Faker Bogus = new();
 
         [Fact]
-        public void AddXunitTestLogging_WithXunitOutputWriter_Succeeds()
-        {
-            // Arrange
-            var config = new LoggerConfiguration();
-            var testOutput = new InMemoryTestOutputWriter();
-            
-            // Act
-            config.WriteTo.XunitTestLogging(testOutput);
-
-            // Assert
-            ILogger logger = config.CreateLogger();
-            string expected = Bogus.Lorem.Sentence();
-            logger.Information(expected);
-            Assert.Single(testOutput.Contents, expected);
-        }
-
-        [Fact]
         public void AddNUnitTestLogging_WithMessage_LogsMessage()
         {
             // Arrange
@@ -83,17 +66,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
-        public void AddXunitTestLogging_WithoutOutputWriter_Fails()
-        {
-            // Arrange
-            var config = new LoggerConfiguration();
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => config.WriteTo.XunitTestLogging(outputWriter: null));
-        }
-
-        [Fact]
         public void AddNUnitTestLogging_WithoutOutputWriter_Fails()
         {
             // Arrange
@@ -141,12 +113,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
         public void MsTestLogSink_WithoutTestContext_Fails()
         {
             Assert.ThrowsAny<ArgumentException>(() => new MSTestLogEventSink(context: null));
-        }
-
-        [Fact]
-        public void XunitLogSink_WithoutOutputWriter_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(() => new XunitLogEventSink(outputWriter: null));
         }
     }
 }
