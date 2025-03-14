@@ -67,7 +67,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupNoSqlContainerOptions
     {
-        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _genericFilters = new();
+        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture creation.
@@ -113,7 +113,7 @@ namespace Arcus.Testing
             }
 
             Items = OnSetupNoSqlContainer.CleanIfMatched;
-            _genericFilters.AddRange(filters.Select(f => new Func<CosmosClient, NoSqlItem, bool>((_, item) => f(item))));
+            _filters.AddRange(filters.Select(f => new Func<CosmosClient, NoSqlItem, bool>((_, item) => f(item))));
 
             return this;
         }
@@ -141,7 +141,7 @@ namespace Arcus.Testing
             Items = OnSetupNoSqlContainer.CleanIfMatched;
 
 
-            _genericFilters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
+            _filters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
             {
                 if (client.ClientOptions.Serializer is null)
                 {
@@ -159,6 +159,7 @@ namespace Arcus.Testing
                 }
 
                 return itemFilter(item);
+
             })));
 
             return this;
@@ -170,7 +171,7 @@ namespace Arcus.Testing
         internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
-            return _genericFilters.Exists(filter => filter(client, item));
+            return _filters.Exists(filter => filter(client, item));
         }
     }
 
@@ -179,7 +180,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownNoSqlContainerOptions
     {
-        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _genericFilters = new();
+        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = new();
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture deletion.
@@ -227,7 +228,7 @@ namespace Arcus.Testing
             }
 
             Items = OnTeardownNoSqlContainer.CleanIfMatched;
-            _genericFilters.AddRange(filters.Select(f => new Func<CosmosClient, NoSqlItem, bool>((_, item) => f(item))));
+            _filters.AddRange(filters.Select(f => new Func<CosmosClient, NoSqlItem, bool>((_, item) => f(item))));
 
             return this;
         }
@@ -256,7 +257,7 @@ namespace Arcus.Testing
 
             Items = OnTeardownNoSqlContainer.CleanIfMatched;
 
-            _genericFilters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
+            _filters.AddRange(filters.Select(itemFilter => new Func<CosmosClient, NoSqlItem, bool>((client, json) =>
             {
                 if (client.ClientOptions.Serializer is null)
                 {
@@ -274,6 +275,7 @@ namespace Arcus.Testing
                 }
 
                 return itemFilter(item);
+
             })));
 
             return this;
@@ -285,7 +287,7 @@ namespace Arcus.Testing
         internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
-            return _genericFilters.Exists(filter => filter(client, item));
+            return _filters.Exists(filter => filter(client, item));
         }
     }
 
