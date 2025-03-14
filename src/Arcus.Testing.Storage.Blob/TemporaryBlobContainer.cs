@@ -551,22 +551,6 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
-            return await UploadBlobAsync(blobName, blobContent, configureOptions: null);
-        }
-
-        /// <summary>
-        /// Uploads a temporary blob to the Azure Blob container.
-        /// </summary>
-        /// <param name="blobName">The name of the blob to upload.</param>
-        /// <param name="blobContent">The content of the blob to upload.</param>
-        /// <param name="configureOptions">The function to configure the additional options of how the blob should be uploaded.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        [Obsolete(
-            "Use the " + nameof(TemporaryBlobContainerOptions) + " instead on Azure Blob storage container-level to control " +
-            "whether or not existing/non-existing files should be cleaned during setup/teardown, overload with options will be removed in v2.0")]
-        public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent, Action<TemporaryBlobFileOptions> configureOptions)
-        {
             ArgumentNullException.ThrowIfNull(blobContent);
 
             if (string.IsNullOrWhiteSpace(blobName))
@@ -575,7 +559,7 @@ namespace Arcus.Testing
             }
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
-            _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger, configureOptions));
+            _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger));
 
             return blobClient;
         }
