@@ -8,8 +8,6 @@ using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
-#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
-
 namespace Arcus.Testing.Tests.Integration.Storage
 {
     [Collection(TestCollections.NoSql)]
@@ -122,17 +120,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnSetup.CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
-                                   .CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
-                                   .CleanMatchingItems(CreateDeprecatedMatchingFilter(CreateShip()));
-                }
-                else
-                {
-                    options.OnSetup.CleanMatchingItems(item => item.Id == createdMatched.Id)
-                                   .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
-                }
+                options.OnSetup.CleanMatchingItems(item => item.Id == createdMatched.Id)
+                               .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
             });
 
             // Assert
@@ -152,17 +141,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryNoSqlContainer container = await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnTeardown.CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
-                                      .CleanMatchingItems(CreateDeprecatedMatchingFilter(createdMatched))
-                                      .CleanMatchingItems(CreateDeprecatedMatchingFilter(CreateShip()));
-                }
-                else
-                {
-                    options.OnTeardown.CleanMatchingItems(item => item.PartitionKey == createdMatched.GetPartitionKey())
-                                      .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
-                }
+                options.OnTeardown.CleanMatchingItems(item => item.PartitionKey == createdMatched.GetPartitionKey())
+                                  .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
             });
 
             Ship createdByUs = await AddItemAsync(container);
@@ -177,19 +157,6 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldNotStoreItemAsync(containerName, createdByUs);
             await context.ShouldNotStoreItemAsync(containerName, createdMatched);
             await context.ShouldStoreItemAsync(containerName, createdNotMatched);
-        }
-
-        private static NoSqlItemFilter CreateDeprecatedMatchingFilter(Ship item)
-        {
-            return Bogus.Random.Int(1, 5) switch
-            {
-                1 => NoSqlItemFilter.IdEqual(item.Id),
-                2 => NoSqlItemFilter.IdEqual(item.Id, StringComparison.OrdinalIgnoreCase),
-                3 => NoSqlItemFilter.PartitionKeyEqual(item.GetPartitionKey()),
-                4 => NoSqlItemFilter.Where<Ship>(x => x.BoatName == item.BoatName),
-                5 => NoSqlItemFilter.Where(x => x["BoatName"].ToString() == item.BoatName),
-                _ => throw new ArgumentOutOfRangeException(nameof(item), "Unknown filter type")
-            };
         }
 
         [Fact]
