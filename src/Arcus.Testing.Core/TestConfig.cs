@@ -68,7 +68,7 @@ namespace Arcus.Testing
     /// </summary>
     public class TestConfig : IConfiguration
     {
-        private readonly IConfigurationRoot _implementation;
+        private readonly IConfiguration _implementation;
         private readonly TestConfigOptions _options;
 
         /// <summary>
