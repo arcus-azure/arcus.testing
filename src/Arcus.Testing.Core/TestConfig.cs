@@ -47,19 +47,28 @@ namespace Arcus.Testing
         /// Gets the main JSON path to the configuration source.
         /// </summary>
         internal string MainJsonPath { get; private set; } = "appsettings.json";
-        
+
         /// <summary>
-        /// Gets all the configured additional JSON paths to files that acts as configuration sources.
+        /// Adds the current user-configured options to the current configuration <paramref name="builder"/>.
         /// </summary>
-        internal IEnumerable<string> OptionalJsonPaths => _localAppSettingsNames;
+        internal void ApplyOptions(IConfigurationBuilder builder)
+        {
+            builder.AddJsonFile(MainJsonPath, optional: true);
+
+            foreach (string path in _localAppSettingsNames)
+            {
+                builder.AddJsonFile(path, optional: true);
+            }
+        }
     }
 
     /// <summary>
-    /// Represents a set of key/value test application configuration properties, used during throughout the test suite.
+    /// <para>Represents a set of key/value test application configuration properties, used during throughout the test suite.</para>
+    /// <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
     /// </summary>
     public class TestConfig : IConfiguration
     {
-        private readonly IConfiguration _implementation;
+        private readonly IConfigurationRoot _implementation;
         private readonly TestConfigOptions _options;
 
         /// <summary>
@@ -74,24 +83,44 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
         protected TestConfig(Action<TestConfigOptions> configureOptions)
-        {
-            var options = new TestConfigOptions();
-            configureOptions?.Invoke(options);
-
-            IConfigurationBuilder builder = new ConfigurationBuilder()
-                .AddJsonFile(options.MainJsonPath, optional: true);
-
-            foreach (string path in options.OptionalJsonPaths)
+            : this((options, builder) =>
             {
-                builder.AddJsonFile(path, optional: true);
-            }
+                configureOptions?.Invoke(options);
+                options.ApplyOptions(builder);
+            })
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TestConfig"/> class with custom 'appsettings.json' files based on the configured options.
+        /// </summary>
+        /// <param name="configureConfig">
+        ///   <para>The function to configure the options that describe where the test configuration should be retrieved from, for example:</para>
+        ///   <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
+        ///   <example>
+        ///     <code>
+        ///       var config = TestConfig.Create((options, builder) =>
+        ///       {
+        ///           builder.AddEnvironmentVariables();
+        ///       });
+        ///     </code>
+        ///   </example>
+        /// </param>
+        protected TestConfig(Action<TestConfigOptions, IConfigurationBuilder> configureConfig)
+        {
+            ArgumentNullException.ThrowIfNull(configureConfig);
+
+            var options = new TestConfigOptions();
+            var builder = new ConfigurationBuilder();
+            configureConfig(options, builder);
 
             _implementation = builder.Build();
             _options = options;
         }
 
         /// <summary>
-        /// Creates an <see cref="TestConfig"/> instance with default 'appsettings.json' and 'appsettings.local.json' variant as configuration sources.
+        /// <para>Creates an <see cref="TestConfig"/> instance with default 'appsettings.json' and 'appsettings.local.json' variant as configuration sources.</para>
+        /// <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
         /// </summary>
         public static TestConfig Create()
         {
@@ -99,22 +128,47 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates an <see cref="TestConfig"/> instance with custom 'appsettings.json' files based on the configured options.
+        /// <para>Creates an <see cref="TestConfig"/> instance with custom 'appsettings.json' files based on the configured options.</para>
         /// </summary>
-        /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
+        /// <param name="configureOptions">
+        ///     <para>The function to configure the options that describe where the test configuration should be retrieved from.</para>
+        ///     <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
+        /// </param>
         public static TestConfig Create(Action<TestConfigOptions> configureOptions)
         {
-           return new TestConfig(configureOptions);
+            return new TestConfig(configureOptions);
         }
 
         /// <summary>
-        /// Gets a configuration sub-section with the specified key.
+        /// <para>Creates an <see cref="TestConfig"/> instance with custom 'appsettings.json' files based on the configured options.</para>
+        /// </summary>
+        /// <param name="configureConfig">
+        ///   <para>The function to configure the options that describe where the test configuration should be retrieved from, for example:</para>
+        ///   <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
+        ///   <example>
+        ///     <code>
+        ///       var config = TestConfig.Create((options, builder) =>
+        ///       {
+        ///           builder.AddEnvironmentVariables();
+        ///       });
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configureConfig"/> is <c>null</c>.</exception>
+        public static TestConfig Create(Action<TestConfigOptions, IConfigurationBuilder> configureConfig)
+        {
+            ArgumentNullException.ThrowIfNull(configureConfig);
+            return new TestConfig(configureConfig);
+        }
+
+        /// <summary>
+        /// Gets a test configuration subsection with the specified key.
         /// </summary>
         /// <param name="key">The key of the configuration section.</param>
-        /// <returns>The <see cref="T:Microsoft.Extensions.Configuration.IConfigurationSection" />.</returns>
+        /// <returns>The <see cref="IConfigurationSection"/>.</returns>
         /// <remarks>
-        ///     This method will never return <c>null</c>. If no matching sub-section is found with the specified key,
-        ///     an empty <see cref="T:Microsoft.Extensions.Configuration.IConfigurationSection" /> will be returned.
+        ///     This method will never return <c>null</c>. If no matching subsection is found with the specified key,
+        ///     an empty <see cref="IConfigurationSection"/> will be returned.
         /// </remarks>
         public IConfigurationSection GetSection(string key)
         {
@@ -122,28 +176,25 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the immediate descendant configuration sub-sections.
+        /// Gets the immediate descendant test configuration subsections.
         /// </summary>
-        /// <returns>The configuration sub-sections.</returns>
         public IEnumerable<IConfigurationSection> GetChildren()
         {
             return _implementation.GetChildren();
         }
 
         /// <summary>
-        /// Returns a <see cref="T:Microsoft.Extensions.Primitives.IChangeToken" /> that can be used to observe when this configuration is reloaded.
+        /// Returns a <see cref="IChangeToken" /> that can be used to observe when this test configuration is reloaded.
         /// </summary>
-        /// <returns>A <see cref="T:Microsoft.Extensions.Primitives.IChangeToken" />.</returns>
         public IChangeToken GetReloadToken()
         {
             return _implementation.GetReloadToken();
         }
 
         /// <summary>
-        /// Gets or sets a configuration value.
+        /// Gets or sets a test configuration value.
         /// </summary>
         /// <param name="key">The configuration key.</param>
-        /// <returns>The configuration value.</returns>
         /// <exception cref="KeyNotFoundException">Thrown when no value is available for the given <paramref name="key"/>.</exception>
         public string this[string key]
         {
@@ -154,7 +205,8 @@ namespace Arcus.Testing
                 {
                     throw new KeyNotFoundException(
                         $"Cannot find any test configuration value for the blank key: '{key}', " +
-                        $"please make sure that you use a non-blank key and that has a corresponding value specified in your (local or remote) '{mainFile}' file");
+                        $"please make sure that you use a non-blank key and that has a corresponding value specified in your (local or remote) '{mainFile}' file " +
+                        $"and/or custom configuration sources, more info: https://testing.arcus-azure.net/features/core");
                 }
 
                 string value = _implementation[key];
@@ -163,7 +215,9 @@ namespace Arcus.Testing
                     throw new KeyNotFoundException(
                         $"Cannot find any non-blank test configuration value for the key: '{key}', " +
                         $"please make sure that this key is specified in your (local or remote) '{mainFile}' file and it is copied to the build output in your .csproj/.fsproj project file: " +
-                        $"<CopyToOutputDirectory>Always/CopyToOutputDirectory>");
+                        $"<CopyToOutputDirectory>Always/CopyToOutputDirectory>" +
+                        Environment.NewLine +
+                        "Alternatively, check your custom provided configuration sources, more info: https://testing.arcus-azure.net/features/core");
                 }
 
                 if (value.StartsWith("#{", StringComparison.InvariantCulture)
@@ -171,7 +225,9 @@ namespace Arcus.Testing
                 {
                     throw new KeyNotFoundException(
                         $"Cannot find test configuration value for the key '{key}', as it is still having the token '{value}' and is not being replaced by the real value, " +
-                        $"please make sure to add a local alternative in the (ex: 'appsettings.{{Env}}.local.json') for the token with the real value required for this key");
+                        $"please make sure to add a local alternative in the (ex: 'appsettings.{{Env}}.local.json') for the token with the real value required for this key." +
+                        Environment.NewLine +
+                        "Alternatively, check your custom provided configuration sources, more info: https://testing.arcus-azure.net/features/core");
                 }
 
                 return value;
