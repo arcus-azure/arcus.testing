@@ -49,23 +49,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
-        public void AddMSTestLogging_WithMessage_LogsMessage()
-        {
-            // Arrange
-            var mockContext = new MockTestContext();
-            var config = new LoggerConfiguration();
-
-            // Act
-            config.WriteTo.MSTestLogging(mockContext);
-
-            // Assert
-            ILogger logger = config.CreateLogger();
-            string expected = Bogus.Lorem.Sentence();
-            logger.Information(expected);
-            mockContext.VerifyWritten(expected);
-        }
-
-        [Fact]
         public void AddNUnitTestLogging_WithoutOutputWriter_Fails()
         {
             // Arrange
@@ -96,23 +79,6 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => config.WriteTo.NUnitTestLogging(TextWriter.Null, errorWriter: null));
-        }
-
-        [Fact]
-        public void AddMSTestTestLogging_WithoutTestContext_Fails()
-        {
-            // Arrange
-            var config = new LoggerConfiguration();
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => config.WriteTo.MSTestLogging(testContext: null));
-        }
-
-        [Fact]
-        public void MsTestLogSink_WithoutTestContext_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(() => new MSTestLogEventSink(context: null));
         }
     }
 }
