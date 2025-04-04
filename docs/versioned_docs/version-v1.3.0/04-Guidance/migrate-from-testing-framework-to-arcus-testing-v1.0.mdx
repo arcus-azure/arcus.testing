@@ -420,8 +420,7 @@ The testing framework separated storage operations, which are now collected in a
 +     "<account-name>", "<table-name>", logger, options =>
 + {
 +      options.OnSetup/OnTeardown.CleanMatchingEntities(
-+          TableEntityFilter.PartitionKeyEqual("<partition-key>"));
-);
++          entity => entity.PartitionKey == "<partition-key>");
 + });
 
 + await table.AddEntityAsync(<model>);
@@ -466,7 +465,7 @@ The testing framework separated storage operations, which are now collected in a
 +     options =>
 +     {
 +         options.OnSetup/Teardown.CleanMatchingItems(
-+             NoSqlItemFilter.PartitionKeyEqual("<partition-key>"));
++             item => item.PartitionKey.Equals("<partition-key>"));
 +     });
 
 + await container.AddItemAsync(<model>);
