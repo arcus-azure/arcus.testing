@@ -26,6 +26,7 @@ namespace Microsoft.Extensions.Logging
             return builder.AddProvider(provider);
         }
 
+        [ProviderAlias("MSTest")]
         private sealed class MSTestLoggerProvider : ILoggerProvider
         {
             private readonly ILogger _logger;
