@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Migrate your test suite from Testing Framework to Arcus.Testing v1
+# Migrate your test suite from Testing Framework to Arcus.Testing
 This guide will walk you through the process of migrating your test suite from using the Testing Framework to `Arcus.Testing`.
 
 > ⚠️ **IMPORTANT** to note that the `Arcus.Testing` approach uses the files in the build output in any of its functionality (`TestConfig`, `ResourceDirectory`...). It uses this approach for more easily access to the actual files used (instead of hidden as an embedded resource). It is best to add your files needed in your test project either as links ([see how](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html)) or as actual files if only used for testing. **In both cases, they need to be copied to the output.**:
@@ -420,8 +420,7 @@ The testing framework separated storage operations, which are now collected in a
 +     "<account-name>", "<table-name>", logger, options =>
 + {
 +      options.OnSetup/OnTeardown.CleanMatchingEntities(
-+          TableEntityFilter.PartitionKeyEqual("<partition-key>"));
-);
++          entity => entity.PartitionKey == "<partition-key>");
 + });
 
 + await table.AddEntityAsync(<model>);
@@ -466,7 +465,7 @@ The testing framework separated storage operations, which are now collected in a
 +     options =>
 +     {
 +         options.OnSetup/Teardown.CleanMatchingItems(
-+             NoSqlItemFilter.PartitionKeyEqual("<partition-key>"));
++             item => item.PartitionKey.Equals("<partition-key>"));
 +     });
 
 + await container.AddItemAsync(<model>);
