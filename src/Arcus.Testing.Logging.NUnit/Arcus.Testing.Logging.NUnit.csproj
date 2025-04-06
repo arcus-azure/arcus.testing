@@ -28,8 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- TODO: reference will be removed in v2.0 -->
-    <ProjectReference Include="..\Arcus.Testing.Logging.Core\Arcus.Testing.Logging.Core.csproj" />
-    <!-- TODO: reference will be removed in v2.0 -->  </ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="[8.0.1,10.0.0)" />
+  </ItemGroup>
 
 </Project>
