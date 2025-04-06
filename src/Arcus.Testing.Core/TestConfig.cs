@@ -83,11 +83,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
         protected TestConfig(Action<TestConfigOptions> configureOptions)
-            : this((options, builder) =>
-            {
-                configureOptions?.Invoke(options);
-                options.ApplyOptions(builder);
-            })
+            : this((options, _) => configureOptions?.Invoke(options))
         {
         }
 
@@ -113,6 +109,7 @@ namespace Arcus.Testing
             var options = new TestConfigOptions();
             var builder = new ConfigurationBuilder();
             configureConfig(options, builder);
+            options.ApplyOptions(builder);
 
             _implementation = builder.Build();
             _options = options;
