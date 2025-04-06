@@ -1,8 +1,7 @@
 ﻿using System;
 using Bogus;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
+
 using Xunit;
 
 #pragma warning disable CS0618 // Serilog dependency is deprecated in implementation, but still tested here.
