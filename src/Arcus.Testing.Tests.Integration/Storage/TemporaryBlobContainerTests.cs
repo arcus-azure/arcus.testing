@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
 using Xunit;
 using Xunit.Abstractions;
-#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
-using static Arcus.Testing.BlobNameFilter;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -98,14 +95,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnSetup.CleanMatchingBlobs(DeprecatedMatching(matchingBlob.Name));
-                }
-                else
-                {
-                    options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
-                }
+                options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
             });
 
             await context.ShouldDeleteBlobFileAsync(containerClient, matchingBlob.Name);
@@ -131,14 +121,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnTeardown.CleanMatchingBlobs(DeprecatedMatching(matchingBlob.Name));
-                }
-                else
-                {
-                    options.OnTeardown.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
-                }
+                options.OnTeardown.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
             });
             string blobCreatedByUs = await UploadBlobAsync(context, container);
 
@@ -164,16 +147,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, containerClient, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnSetup.CleanMatchingBlobs(DeprecatedMatching(matchingCreationBlob.Name));
-                }
-                else
-                {
-                    options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingCreationBlob.Name);
-                }
+                options.OnSetup.CleanMatchingBlobs(blob => blob.Name == matchingCreationBlob.Name);
+
             });
-            container.OnTeardown.CleanMatchingBlobs(DeprecatedMatching(matchingDeletionBlobName));
+            container.OnTeardown.CleanMatchingBlobs(blob => blob.Name == matchingDeletionBlobName);
 
             await context.ShouldDeleteBlobFileAsync(containerClient, matchingCreationBlob.Name);
             BlobClient matchingDeletionBlob = await context.WhenBlobAvailableAsync(containerClient, matchingDeletionBlobName);
@@ -209,23 +186,6 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Assert
             await context.ShouldDeleteBlobFileAsync(containerClient, blobDeletionOutsideScope.Name);
             await context.ShouldDeleteBlobContainerAsync(containerClient);
-        }
-
-        private static BlobNameFilter DeprecatedMatching(string name)
-        {
-            return Bogus.Random.Int(1, 4) switch
-            {
-                1 => Bogus.Random.Bool() ? NameEqual(name) : NameEqual(RandomCase(name), StringComparison.OrdinalIgnoreCase),
-                2 => Bogus.Random.Bool() ? NameStartsWith(name[..10]) : NameStartsWith(RandomCase(name[..10]), StringComparison.OrdinalIgnoreCase),
-                3 => Bogus.Random.Bool() ? NameEndsWith(name[^10..]) : NameEndsWith(RandomCase(name[^10..]), StringComparison.OrdinalIgnoreCase),
-                4 => Bogus.Random.Bool() ? NameContains(name[1..10]) : NameContains(RandomCase(name[1..10]), StringComparison.OrdinalIgnoreCase),
-                _ => throw new InvalidOperationException($"Unsupported '{nameof(BlobNameFilter)}' method, please provide one in the switch expression")
-            };
-        }
-
-        private static string RandomCase(string value)
-        {
-            return new string(value.Select(c => Bogus.Random.Bool() ? char.ToUpper(c) : char.ToLower(c)).ToArray());
         }
 
         [Fact]
