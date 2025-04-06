@@ -47,7 +47,7 @@ namespace Arcus.Testing
         /// Gets the main JSON path to the configuration source.
         /// </summary>
         internal string MainJsonPath { get; private set; } = "appsettings.json";
-        
+
         /// <summary>
         /// Gets all the configured additional JSON paths to files that acts as configuration sources.
         /// </summary>
@@ -104,7 +104,7 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the options that describe where the test configuration should be retrieved from.</param>
         public static TestConfig Create(Action<TestConfigOptions> configureOptions)
         {
-           return new TestConfig(configureOptions);
+            return new TestConfig(configureOptions);
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace Arcus.Testing
                 if (string.IsNullOrWhiteSpace(key))
                 {
                     throw new KeyNotFoundException(
-                        $"Cannot find any test configuration value for the blank key: '{key}', " +
+                        $"[Test] Cannot find any test configuration value for the blank key: '{key}', " +
                         $"please make sure that you use a non-blank key and that has a corresponding value specified in your (local or remote) '{mainFile}' file");
                 }
 
@@ -161,7 +161,7 @@ namespace Arcus.Testing
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     throw new KeyNotFoundException(
-                        $"Cannot find any non-blank test configuration value for the key: '{key}', " +
+                        $"[Test] Cannot find any non-blank test configuration value for the key: '{key}', " +
                         $"please make sure that this key is specified in your (local or remote) '{mainFile}' file and it is copied to the build output in your .csproj/.fsproj project file: " +
                         $"<CopyToOutputDirectory>Always/CopyToOutputDirectory>");
                 }
@@ -170,7 +170,7 @@ namespace Arcus.Testing
                     && value.EndsWith("}#", StringComparison.InvariantCulture))
                 {
                     throw new KeyNotFoundException(
-                        $"Cannot find test configuration value for the key '{key}', as it is still having the token '{value}' and is not being replaced by the real value, " +
+                        $"[Test] Cannot find test configuration value for the key '{key}', as it is still having the token '{value}' and is not being replaced by the real value, " +
                         $"please make sure to add a local alternative in the (ex: 'appsettings.{{Env}}.local.json') for the token with the real value required for this key");
                 }
 
