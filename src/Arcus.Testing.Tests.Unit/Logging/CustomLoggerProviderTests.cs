@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
+
 namespace Arcus.Testing.Tests.Unit.Logging
 {
     [Trait(name: "Category", value: "Unit")]
