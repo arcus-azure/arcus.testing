@@ -8,8 +8,6 @@ using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
-
 namespace Arcus.Testing
 {
     /// <summary>
@@ -28,148 +26,10 @@ namespace Arcus.Testing
     internal enum OnTeardownContainer { DeleteIfCreated = 0, DeleteIfExists = 1 }
 
     /// <summary>
-    /// Represents a filter to match the name of a blob in the Azure Blob container.
-    /// </summary>
-    [Obsolete("Additional layer of abstraction will be removed in favor of using a predicate on a '" + nameof(BlobItem) + "' function directly")]
-    public class BlobNameFilter
-    {
-        private readonly Func<string, bool> _isMatch;
-
-        private BlobNameFilter(Func<string, bool> isMatch)
-        {
-            ArgumentNullException.ThrowIfNull(isMatch);
-            _isMatch = isMatch;
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the exact name of a blob in the Azure Blob container.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
-        public static BlobNameFilter NameEqual(string blobName)
-        {
-            if (string.IsNullOrWhiteSpace(blobName))
-            {
-                throw new ArgumentException("Requires a non-blank blob name to create a filter to match the exact name of a blob in the Azure Blob container", nameof(blobName));
-            }
-
-            return new BlobNameFilter(name => string.Equals(name, blobName));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the exact name of a blob in the Azure Blob container.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
-        public static BlobNameFilter NameEqual(string blobName, StringComparison comparison)
-        {
-            if (string.IsNullOrWhiteSpace(blobName))
-            {
-                throw new ArgumentException("Requires a non-blank blob name to create a filter to match the exact name of a blob in the Azure Blob container", nameof(blobName));
-            }
-
-            return new BlobNameFilter(name => string.Equals(name, blobName, comparison));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that contain the given sub-string.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="subString"/> is blank.</exception>
-        public static BlobNameFilter NameContains(string subString)
-        {
-            if (string.IsNullOrWhiteSpace(subString))
-            {
-                throw new ArgumentException("Requires a non-blank sub-string to create a filter to match the blobs in the Azure Blob container that contain the given sub-string", nameof(subString));
-            }
-
-            return new BlobNameFilter(name => name.Contains(subString));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that contain the given sub-string.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="subString"/> is blank.</exception>
-        public static BlobNameFilter NameContains(string subString, StringComparison comparison)
-        {
-            if (string.IsNullOrWhiteSpace(subString))
-            {
-                throw new ArgumentException("Requires a non-blank sub-string to create a filter to match the blobs in the Azure Blob container that contain the given sub-string", nameof(subString));
-            }
-
-            return new BlobNameFilter(name => name.Contains(subString, comparison));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that start with the given prefix.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="prefix"/> is blank.</exception>
-        public static BlobNameFilter NameStartsWith(string prefix)
-        {
-            if (string.IsNullOrWhiteSpace(prefix))
-            {
-                throw new ArgumentException("Requires a non-blank prefix to create a filter to match the blobs in the Azure Blob container that start with the given prefix", nameof(prefix));
-            }
-
-            return new BlobNameFilter(name => name.StartsWith(prefix));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that start with the given prefix.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="prefix"/> is blank.</exception>
-        public static BlobNameFilter NameStartsWith(string prefix, StringComparison comparison)
-        {
-            if (string.IsNullOrWhiteSpace(prefix))
-            {
-                throw new ArgumentException("Requires a non-blank prefix to create a filter to match the blobs in the Azure Blob container that start with the given prefix", nameof(prefix));
-            }
-
-            return new BlobNameFilter(name => name.StartsWith(prefix, comparison));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that end with the given suffix.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="suffix"/> is blank.</exception>
-        public static BlobNameFilter NameEndsWith(string suffix)
-        {
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                throw new ArgumentException("Requires a non-blank suffix to create a filter to match the blobs in the Azure Blob container that end with the given suffix", nameof(suffix));
-            }
-
-            return new BlobNameFilter(name => name.EndsWith(suffix));
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="BlobNameFilter"/> to match the blobs in the Azure Blob container that end with the given suffix.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="suffix"/> is blank.</exception>
-        public static BlobNameFilter NameEndsWith(string suffix, StringComparison comparison)
-        {
-            if (string.IsNullOrWhiteSpace(suffix))
-            {
-                throw new ArgumentException("Requires a non-blank suffix to create a filter to match the blobs in the Azure Blob container that end with the given suffix", nameof(suffix));
-            }
-
-            return new BlobNameFilter(name => name.EndsWith(suffix, comparison));
-        }
-
-        /// <summary>
-        /// Determines whether the given <paramref name="blob"/> matches the configured filter.
-        /// </summary>
-        /// <param name="blob">The blob to match the filter against.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blob"/> is <c>null</c>.</exception>
-        internal bool IsMatch(BlobItem blob)
-        {
-            return _isMatch(blob?.Name ?? throw new ArgumentNullException(nameof(blob)));
-        }
-    }
-
-    /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryBlobContainer"/>.
     /// </summary>
     public class OnSetupBlobContainerOptions
     {
-        private readonly List<BlobNameFilter> _deprecatedFilters = new();
         private readonly List<Func<BlobItem, bool>> _filters = new();
 
         /// <summary>
@@ -184,29 +44,6 @@ namespace Arcus.Testing
         public OnSetupBlobContainerOptions CleanAllBlobs()
         {
             Blobs = OnSetupContainer.CleanIfExisted;
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the <see cref="TemporaryBlobContainer"/> to delete the Azure Blobs upon the test fixture creation that matched the configured <paramref name="filters"/>.
-        /// </summary>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
-        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(BlobItem) + "' directly, " +
-                  "this overload will be removed in v2.0")]
-        public OnSetupBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
-        {
-            ArgumentNullException.ThrowIfNull(filters);
-
-            if (Array.Exists(filters, f => f is null))
-            {
-                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
-            }
-
-            Blobs = OnSetupContainer.CleanIfMatched;
-            _deprecatedFilters.AddRange(filters);
-
             return this;
         }
 
@@ -254,7 +91,7 @@ namespace Arcus.Testing
             {
                 OnSetupContainer.LeaveExisted => false,
                 OnSetupContainer.CleanIfExisted => true,
-                OnSetupContainer.CleanIfMatched => _deprecatedFilters.Exists(filter => filter.IsMatch(blob)) || _filters.Exists(filter => filter(blob)),
+                OnSetupContainer.CleanIfMatched => _filters.Exists(filter => filter(blob)),
                 _ => false
             };
         }
@@ -265,7 +102,6 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownBlobContainerOptions
     {
-        private readonly List<BlobNameFilter> _deprecatedFilters = new();
         private readonly List<Func<BlobItem, bool>> _filters = new();
 
         /// <summary>
@@ -294,34 +130,6 @@ namespace Arcus.Testing
         public OnTeardownBlobContainerOptions CleanAllBlobs()
         {
             Blobs = OnTeardownBlobs.CleanAll;
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the <see cref="TemporaryBlobContainer"/> to delete the blobs upon disposal that matched the configured <paramref name="filters"/>.
-        /// </summary>
-        /// <remarks>
-        ///     The matching of blobs only happens on Azure Blobs instances that were created outside the scope of the test fixture.
-        ///     All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
-        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
-        /// </remarks>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
-        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(BlobItem) + "' directly, " +
-                  "this overload will be removed in v2.0")]
-        public OnTeardownBlobContainerOptions CleanMatchingBlobs(params BlobNameFilter[] filters)
-        {
-            ArgumentNullException.ThrowIfNull(filters);
-
-            if (Array.Exists(filters, f => f is null))
-            {
-                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
-            }
-
-            Blobs = OnTeardownBlobs.CleanIfMatched;
-            _deprecatedFilters.AddRange(filters);
-
             return this;
         }
 
@@ -381,7 +189,7 @@ namespace Arcus.Testing
             return Blobs switch
             {
                 OnTeardownBlobs.CleanAll => true,
-                OnTeardownBlobs.CleanIfMatched => _deprecatedFilters.Exists(filter => filter.IsMatch(blob)) || _filters.Exists(filter => filter(blob)),
+                OnTeardownBlobs.CleanIfMatched => _filters.Exists(filter => filter(blob)),
                 _ => false
             };
         }
