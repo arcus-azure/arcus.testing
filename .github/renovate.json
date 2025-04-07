@@ -3,12 +3,12 @@
   "extends": ["config:recommended"],
   "prCreation": "not-pending",
   "recreateWhen": "never",
-  "rangeStrategy": "widen",
+  "rangeStrategy": "bump",
   "ignoreDeps": [
     "Codit.Testing.Xslt.Helper"
   ],
   "ignorePaths": [
-    "samples/**",
+    "samples/**"
   ],
   "separateMajorMinor": true,
   "dependencyDashboard": true,
