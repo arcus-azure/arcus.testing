@@ -26,7 +26,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public AssertJsonTests(ITestOutputHelper outputWriter)
         {
             _outputWriter = outputWriter;
-            _resourceDir = ResourceDirectory.CurrentDirectory.WithSubDirectory(nameof(Assert_)).WithSubDirectory("Resources");
+            _resourceDir = ResourceDirectory.CurrentDirectory / nameof(Assert_) / "Resources";
         }
 
         [Fact]
