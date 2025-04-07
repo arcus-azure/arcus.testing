@@ -89,7 +89,11 @@ namespace Arcus.Testing.Tests.Integration.Core
         public static IEnumerable<object[]> DefaultConfigs => new[]
         {
             new object[] { (Func<TestConfig>)(TestConfig.Create) },
-            new object[] { (Func<TestConfig>)(() => new CustomTestConfig()) }
+            new object[] { (Func<TestConfig>)(() => TestConfig.Create(configureOptions: null)) },
+            new object[] { (Func<TestConfig>)(() => TestConfig.Create(configureConfig: null)) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig()) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig(configureOptions: null)) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig(configureConfig: null)) }
         };
 
         [Theory]

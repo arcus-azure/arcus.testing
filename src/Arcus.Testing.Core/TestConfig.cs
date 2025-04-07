@@ -104,11 +104,10 @@ namespace Arcus.Testing
         /// </param>
         protected TestConfig(Action<TestConfigOptions, IConfigurationBuilder> configureConfig)
         {
-            ArgumentNullException.ThrowIfNull(configureConfig);
-
             var options = new TestConfigOptions();
             var builder = new ConfigurationBuilder();
-            configureConfig(options, builder);
+
+            configureConfig?.Invoke(options, builder);
             options.ApplyOptions(builder);
 
             _implementation = builder.Build();
@@ -151,10 +150,8 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configureConfig"/> is <c>null</c>.</exception>
         public static TestConfig Create(Action<TestConfigOptions, IConfigurationBuilder> configureConfig)
         {
-            ArgumentNullException.ThrowIfNull(configureConfig);
             return new TestConfig(configureConfig);
         }
 
