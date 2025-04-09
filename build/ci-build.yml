@@ -97,6 +97,6 @@ stages:
             displayName: 'Push to MyGet.org'
             inputs:
               command: 'custom'
-              custom: 'tool nuget push'
+              custom: 'nuget push'
               arguments: '"src/**/*.nupkg" --skip-duplicate --skip-duplicate --source $(MyGet.SourceUrl) --api-key $(MyGet.ApiKey)'
               
