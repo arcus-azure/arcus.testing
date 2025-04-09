@@ -92,7 +92,6 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - template: nuget/publish-preview-package.yml@templates
           - task: NuGetAuthenticate@1
             displayName: 'Authenticate to MyGet.org'
             inputs:
