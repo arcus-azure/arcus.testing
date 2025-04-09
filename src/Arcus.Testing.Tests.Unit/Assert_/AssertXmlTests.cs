@@ -58,7 +58,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 // Arrange
                 TestXml actual = expected.Copy();
 
-                string newName = Bogus.Lorem.Word();
+                string newName = Bogus.Lorem.Word() + Guid.NewGuid().ToString("N");
                 actual.ChangeAttributeName(newName);
 
                 // Act / Assert
