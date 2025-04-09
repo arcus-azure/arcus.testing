@@ -93,3 +93,14 @@ stages:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
           - template: nuget/publish-preview-package.yml@templates
+          - task: NuGetAuthenticate@1
+            displayName: 'Authenticate to MyGet.org'
+            inputs:
+              nuGetServiceConnections: 'MyGet.org (Push)'
+          - task: DotNetCoreCLI@2
+            displayName: 'Push to MyGet.org'
+            inputs:
+              command: 'custom'
+              custom: 'nuget push'
+              arguments: 'src/**/*.nupkg --skip-duplicate --skip-duplicate --source $(MyGet.SourceUrl)'
+              
