@@ -33,6 +33,7 @@ resources:
 variables:
   - group: 'GitHub Configuration'
   - group: 'Build Configuration'
+  - group: 'MyGet'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
 
@@ -97,5 +98,5 @@ stages:
             inputs:
               command: 'custom'
               custom: 'nuget push'
-              arguments: 'src/**/*.nupkg --skip-duplicate --skip-duplicate --source $(MyGet.SourceUrl) --api-key $(MyGet.ApiKey)'
+              arguments: '"src/**/*.nupkg" --skip-duplicate --skip-duplicate --source $(MyGet.SourceUrl) --api-key $(MyGet.ApiKey)'
               
