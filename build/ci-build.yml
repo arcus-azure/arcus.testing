@@ -98,5 +98,5 @@ stages:
             inputs:
               command: 'custom'
               custom: 'nuget'
-              arguments: 'push src/**/*.nupkg --skip-duplicate --skip-duplicate --source $(MyGet.SourceUrl) --api-key $(MyGet.ApiKey)'
+              arguments: 'push src/**/*.nupkg --skip-duplicate --source $(MyGet.SourceUrl) --api-key $(MyGet.ApiKey)'
               
