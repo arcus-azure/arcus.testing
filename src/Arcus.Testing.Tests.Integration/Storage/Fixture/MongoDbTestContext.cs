@@ -101,14 +101,17 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
-        /// Provides a collection name that does exists in the MongoDb database.
+        /// Provides a collection name that does exist in the MongoDb database.
         /// </summary>
         public async Task<string> WhenCollectionNameAvailableAsync()
         {
             string collectionName = WhenCollectionNameUnavailable();
             _logger.LogTrace("[Test] create MongoDb collection '{CollectionName}' outside the fixture's scope", collectionName);
 
-            await _database.CreateCollectionAsync(collectionName);
+            await Poll.Target<MongoCommandException>(() => _database.CreateCollectionAsync(collectionName))
+                      .When(ex => ex.Message.Contains("high rate") || ex.ErrorMessage.Contains("high rate"))
+                      .Every(TimeSpan.FromMilliseconds(500))
+                      .FailWith($"[Test] cannot create MongoDb collection '{collectionName}' outside the fixture's scope, due to a high-rate failure");
 
             return collectionName;
         }

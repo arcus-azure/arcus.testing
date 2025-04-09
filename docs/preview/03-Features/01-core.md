@@ -118,12 +118,12 @@ using Arcus.Testing;
 // When no exception is specified, all are considered failures.
 string txt = 
     await Poll.UntilAvailableAsync<FileNotFoundException>(
-        () => File.ReadAllTextAsync("..."));
+        () => File.ReadAllTextAsync(...));
 
 // Poll until HTTP status code is `200 OK`:
 // When no 'until' filters are specified, all results are considered valid. 
 HttpResponseMessage response = 
-    await Poll.Target(() => HttpClient.GetAsync("..."))
+    await Poll.Target(() => HttpClient.GetAsync(..))
               .Until(resp => resp.StatusCode == HttpStatusCode.OK)
               .StartAsync();
 ```
@@ -134,26 +134,54 @@ HttpResponseMessage response =
 The `Poll` model can be customized with several options to override existing functionality or to manipulate the polling operations to your needs.
 
 ```csharp
-// Set options directly.
+// Set options directly with the `Poll.UntilAvailableAsync` overloads.
 await Poll.UntilAvailableAsync(..., options =>
 {
     // Sets the interval between each poll operation (default: 1 second).
+    // Same as doing `Poll.Every(...)`
     options.Interval = TimeSpan.FromMilliseconds(500);
 
     // Sets the time frame in which the polling operation has to succeed (default: 30 seconds).
+    // Same as doing `Poll.Timeout(...)`
     options.Timeout = TimeSpan.FromSeconds(5);
 
     // Sets the message that describes the failure of the polling operation.
+    // Same as doing `Poll.FailWith(...)`
     options.FailureMessage = "my polling operation description that gives the test failure more context";
+
+    // Add one or more additional exception filters to specify for which exact exception the polling operation should run.
+    // Same as doing 'Poll.When(ex => ...)`
+    options.AddExceptionFilter((RequestFailedException ex) => ex.Status == 429);
+    options.AddExceptionFilter((MongoCommandException ex) => ex.Message.Contains("high rate"));
 });
 
-// Set options fluently.
-await Poll.Target(...)
-          .Until(...)
-          .Every(TimeSpan.FromMilliseconds(500))
-          .Timeout(TimeSpan.FromSeconds(5))
-          .FailWith("my polling operation description that gives the test failure more context")
-          .StartAsync();
+// Set options fluently by building `Poll.Target(...)` constructs.
+MyResult endResult =
+    await Poll.Target<MyResult, MyException>(() => // Get `MyResult` from somewhere...)
+          
+              // Add one or more additional exception filters to specify for which exact exception the polling operation should run.
+              // Same as doing `options.AddExceptionFilter(...)`
+              .When((MyException exception) => ...)  
+              .When((MyException exception) => ...)
+              
+              // Add one or more additional result filters to specify for what end-result state the polling operation should wait.
+              .Until((MyResult result) => ...)
+              .Until((MyResult result) => ...)
+              
+              // Sets the interval between each poll operation (default: 1 second).
+              // Same as doing `options.Interval = ...`
+              .Every(TimeSpan.FromMilliseconds(500))
+              
+              // Sets the time frame in which the polling operation has to succeed (default: 30 seconds).
+              // Same as doing `options.Timeout = ...`
+              .Timeout(TimeSpan.FromSeconds(5))
+              
+              // Sets the message that describes the failure of the polling operation.
+              // Same as doing `options.FailureMessage = ...`
+              .FailWith("my polling operation description that gives the test failure more context")
+    
+              // Start the polling operation.
+              .StartAsync();
 ```
 
 > 💡 Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
