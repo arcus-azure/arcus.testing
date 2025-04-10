@@ -11,6 +11,9 @@ using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
+    extern alias ArcusXunitV3;
+    extern alias XunitV3;
+
     // ReSharper disable once InconsistentNaming
     [Trait(name: "Category", value: "Unit")]
     public class ILoggerBuilderExtensionsTests
@@ -35,6 +38,26 @@ namespace Arcus.Testing.Tests.Unit.Logging
             logger.LogInformation(exptected);
             Assert.Contains(testOutput.Contents, msg => msg.Contains(exptected));
         }
+
+        [Fact]
+        public void AddXunitV3TestLogging_WithInfoMessage_LogsInfoMessage()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+            var testOutput = new InMemoryTestOutputWriter();
+
+            // Act
+            builder.ConfigureLogging(logging => ArcusXunitV3::Microsoft.Extensions.Logging.ILoggerBuilderExtensions.AddXunitTestLogging(logging, testOutput));
+
+            // Assert
+            IHost host = builder.Build();
+            var logger = host.Services.GetRequiredService<ILogger<ILoggerBuilderExtensionsTests>>();
+
+            string exptected = Bogus.Lorem.Sentence();
+            logger.LogInformation(exptected);
+            Assert.Contains(testOutput.Contents, msg => msg.Contains(exptected));
+        }
+
 
         [Fact]
         public void AddNUnitTestLogging_WithMessage_LogsMessage()
@@ -149,7 +172,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var builder = new HostBuilder();
-            
+
             // Act
             builder.ConfigureLogging(logging => logging.AddXunitTestLogging(outputWriter: null));
 
