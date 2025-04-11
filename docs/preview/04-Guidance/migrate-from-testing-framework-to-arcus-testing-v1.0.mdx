@@ -239,7 +239,9 @@ Here's how XML-CSV now works:
 </Tabs>
 
 #### Sequential transformations
-The original Testing Framework had a `TestXsltSequential` exposed functionality to run multiple XSLT transformation in sequence (output of one transformation becomes input of another). This was using separate input types for file names. Since this is made explicit in the `Arcus.Testing` packages, you can load those files yourself using the `ResourceDirectory` type and do the sequential transformation in a more explicit manner:
+The original Testing Framework had a `XsltHelper.TestXsltSequential` exposed functionality to run multiple XSLT transformation in sequence (output of one transformation becomes input of another). This was using separate input types for file names.
+
+Since transformation is made explicit in the `Arcus.Testing` packages, you can load those files yourself using the `ResourceDirectory` type and do the sequential transformation in a more explicit manner:
 
 ```diff
 - using Codit.Testing.Xslt;
@@ -251,6 +253,29 @@ The original Testing Framework had a `TestXsltSequential` exposed functionality 
 + string[] xsltFileContents = ...
 + string inputContent = ...
 + string output = xsltFileContents.Aggregate(inputContent, (xslt, xml) => AssertXslt.TransformToXml(xslt, xml));
+```
+
+#### Extension objects
+The original Testing Framework had a `XsltHelper.TestXsltSequential` exposed functionality with a `XlstAndArgumentList` parameter to help with adding XSLT extension objects.
+
+XSLT extension objects can still be added to the XSLT transformation, by using one of the `Assert.TransformTo...` overloads. These use Microsoft's `XsltArgumentList` model to manipulate the transformation.
+
+```diff
+- using Codit.Testing.Xslt;
++ using Arcus.Testing;
+
+var arguments = new XsltArgumentList();
+var mapper = new MyCompanyMapper();
+arguments.AddExtensionObject("mycompany.azure.common.extensions.components", mapper);
+
+- var xsltFileNames = new List<XsltAndArgumentList>();
+- xsltFileNames.Add(new() { xsltFile = "file1.xslt", argumentList = arguments });
++ string xsltFileContents = ...
++ string inputFileContents = ...
+
+- bool success = XsltHelper.TestXsltSequential(xsltFileNames, out string message);
++ string outputContents =
++     AssertXslt.TransformToXml(xsltFileContents, inputFileContents, arguments);
 ```
 
 ## Replace `Codit.Testing.DataFactory` with `Arcus.Testing.Integration.DataFactory`
