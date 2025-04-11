@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -71,11 +71,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryTopicOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero, nameof(maxWaitTime));
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.DeadLetterMessages;
             
@@ -122,11 +118,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryTopicOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero, nameof(maxWaitTime));
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.CompleteMessages;
             
@@ -222,11 +214,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryTopicOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero, nameof(maxWaitTime));
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownMessagesTopic.DeadLetterMessages;
 
@@ -289,11 +277,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryTopicOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero, nameof(maxWaitTime));
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownMessagesTopic.CompleteMessages;
             

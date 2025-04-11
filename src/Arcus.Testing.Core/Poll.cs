@@ -158,11 +158,7 @@ namespace Arcus.Testing
             get => _interval;
             set
             {
-                if (value < TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Interval between polling operations cannot be negative");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, TimeSpan.Zero, nameof(value));
                 _interval = value;
             }
         }
@@ -176,11 +172,7 @@ namespace Arcus.Testing
             get => _timeout;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Timeout of polling operation cannot be negative or zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero, nameof(value));
                 _timeout = value;
             }
         }

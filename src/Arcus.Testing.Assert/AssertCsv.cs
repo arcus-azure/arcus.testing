@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -76,11 +76,7 @@ namespace Arcus.Testing
         /// <param name="index">The zero-based index of the column that should be ignored.</param>
         public AssertCsvOptions IgnoreColumn(int index)
         {
-            if (index < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), $"Requires a positive '{nameof(index)}' value when adding an ignored column of a CSV table");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0, nameof(index));
             _ignoredColumnIndexes.Add(index);
             return this;
         }
@@ -204,11 +200,7 @@ namespace Arcus.Testing
             get => _maxInputCharacters;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
                 _maxInputCharacters = value;
             }
         }

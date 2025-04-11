@@ -31,11 +31,7 @@ namespace Arcus.Testing
             get => _timeToLiveInMinutes;
             set
             {
-                if (value < 1)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Time to live in minutes must be at least 1 minute");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1, nameof(value));
                 _timeToLiveInMinutes = value;
             }
         }
@@ -498,12 +494,7 @@ namespace Arcus.Testing
             get => _maxRows;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(
-                        nameof(value), value, "Requires a maximum row limit greater than zero for the preview response of the DataFlow run");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0, nameof(value));
                 _maxRows = value;
             }
         }

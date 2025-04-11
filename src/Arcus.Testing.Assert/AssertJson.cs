@@ -81,11 +81,7 @@ namespace Arcus.Testing
             get => _maxInputCharacters;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0, nameof(value));
                 _maxInputCharacters = value;
             }
         }

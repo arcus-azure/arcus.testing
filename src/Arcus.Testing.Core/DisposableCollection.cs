@@ -25,11 +25,7 @@ namespace Arcus.Testing
             get => _retryCount;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Require a greater than zero retry count for the test fixture disposals");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0, nameof(value));
                 _retryCount = value;
             }
         }
@@ -42,11 +38,7 @@ namespace Arcus.Testing
             get => _retryInterval;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Require a positive retry interval for the test fixture disposals");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, TimeSpan.Zero, nameof(value));
                 _retryInterval = value;
             }
         }
