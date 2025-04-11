@@ -235,12 +235,16 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
-            var collection = configureOptions is null
-                ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger)
-                : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
+            return await MongoDbTestContext.WhenMongoDbAvailableAsync(async () =>
+            {
+                var collection = configureOptions is null
+                    ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger)
+                    : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
 
-            Assert.Equal(collectionName, collection.Name);
-            return collection;
+                Assert.Equal(collectionName, collection.Name);
+                return collection;
+
+            }, $"Cannot create temporary MongoDb fixture collection '{collectionName}', due to a high-rate failure");
         }
 
         private async Task<MongoDbTestContext> GivenCosmosMongoDbAsync()

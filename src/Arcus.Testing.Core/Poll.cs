@@ -14,10 +14,11 @@ namespace Arcus.Testing
     /// <typeparam name="TException">The type of exception that is expected to be thrown by the target.</typeparam>
     public class Poll<TException> : Poll<int, TException> where TException : Exception
     {
-        internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options) 
+        internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options)
             : base(async () => { await getTargetWithoutResultAsync(); return 0; }, options)
-            {
-            }
+        {
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultAsync);
+        }
     }
 
     /// <summary>
@@ -33,6 +34,9 @@ namespace Arcus.Testing
 
         internal Poll(Func<Task<TResult>> getTargetWithResultAsync, PollOptions options)
         {
+            ArgumentNullException.ThrowIfNull(getTargetWithResultAsync);
+            ArgumentNullException.ThrowIfNull(options);
+
             _getTargetWithResultAsync = getTargetWithResultAsync;
             _options = options;
         }
@@ -47,12 +51,9 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="untilTarget"/> is <c>null</c>.</exception>
         public Poll<TResult, TException> Until(Func<TResult, bool> untilTarget)
         {
-            if (untilTarget is null)
-            {
-                throw new ArgumentNullException(nameof(untilTarget));
-            }
-
+            ArgumentNullException.ThrowIfNull(untilTarget);
             _untilTargets.Add(untilTarget);
+
             return this;
         }
 
@@ -61,6 +62,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="interval">The interval between each polling operation to the target.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="interval"/>"> represents a negative time frame.</exception>
+        /// Same as <seealso cref="PollOptions.Interval"/>
         public Poll<TResult, TException> Every(TimeSpan interval)
         {
             _options.Interval = interval;
@@ -72,6 +74,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="timeout">The time frame in which the entire polling should succeed.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="timeout"/>"> represents a negative or zero time frame.</exception>
+        /// Same as <seealso cref="PollOptions.Timeout"/>
         public Poll<TResult, TException> Timeout(TimeSpan timeout)
         {
             _options.Timeout = timeout;
@@ -79,12 +82,38 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        ///   <para>
+        ///     Adds a filter to the polling operation to only run the polling operation
+        ///     when the <typeparamref name="TException"/> represents a specific certain failure.
+        ///   </para>
+        ///   <para>Usually being used to describe 'transient' exceptions.</para>
+        ///   <example>
+        ///     <code>
+        ///       Poll.Target(() => ...)
+        ///           .When((RequestFailedException ex) => ex.StatusCode == 429);
+        ///     </code>
+        ///   </example>
+        /// </summary>
+        /// <param name="exceptionFilter">The custom filter to only select a subset of the given exceptions that needs to be polled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="exceptionFilter"/> is <c>null</c>.</exception>
+        /// Same as <seealso cref="PollOptions.AddExceptionFilter{TException}"/>
+        public Poll<TResult, TException> When(Func<TException, bool> exceptionFilter)
+        {
+            ArgumentNullException.ThrowIfNull(exceptionFilter);
+            _options.AddExceptionFilter(exceptionFilter);
+
+            return this;
+        }
+
+        /// <summary>
         /// Sets the message that describes the failure of the polling operation.
         /// </summary>
         /// <param name="errorMessage">
-        ///     The message that will be used as the final failure message of the <see cref="TimeoutException"/> when the polling operation fails to succeed within the configured time frame.
+        ///     The message that will be used as the final failure message of the <see cref="TimeoutException"/>
+        ///     when the polling operation fails to succeed within the configured time frame.
         /// </param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="errorMessage"/> is blank.</exception>
+        /// Same as <seealso cref="PollOptions.FailureMessage"/>
         public Poll<TResult, TException> FailWith(string errorMessage)
         {
             _options.FailureMessage = errorMessage;
@@ -113,10 +142,11 @@ namespace Arcus.Testing
                       {
                           results.Add(r);
                           return !_untilTargets.All(untilTarget => untilTarget(r));
+
                       }).Or<TException>(ex =>
                       {
                           exceptions.Add(ex);
-                          return true;
+                          return _options.IsMatch(ex);
                       })
                       .WaitAndRetryForeverAsync(_ => _options.Interval);
 
@@ -136,13 +166,15 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents the available user-configurable options for the <see cref="Poll"/> operation.
+    /// <para>Represents the available user-configurable options for the <see cref="Poll"/> operation.</para>
+    /// <para>See: <a href="https://testing.arcus-azure.net/features/core" /> for more information.</para>
     /// </summary>
     public class PollOptions
     {
         private TimeSpan _interval = TimeSpan.FromSeconds(1);
         private TimeSpan _timeout = TimeSpan.FromSeconds(30);
         private string _failureMessage = "operation did not succeed within the given time frame";
+        private readonly Collection<Func<Exception, bool>> _exceptionFilters = new();
 
         /// <summary>
         /// Gets the default set of polling options.
@@ -158,11 +190,7 @@ namespace Arcus.Testing
             get => _interval;
             set
             {
-                if (value < TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Interval between polling operations cannot be negative");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, TimeSpan.Zero);
                 _interval = value;
             }
         }
@@ -176,11 +204,7 @@ namespace Arcus.Testing
             get => _timeout;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Timeout of polling operation cannot be negative or zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 _timeout = value;
             }
         }
@@ -194,18 +218,42 @@ namespace Arcus.Testing
             get => $"{nameof(Poll)}: {_failureMessage} (interval: {_interval:g}, timeout: {_timeout:g})";
             set
             {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("Failure message for polling operation cannot be blank");
-                }
-
+                ArgumentException.ThrowIfNullOrWhiteSpace(value);
                 _failureMessage = value;
             }
+        }
+
+        /// <summary>
+        ///   <para>
+        ///     Adds a filter to the polling operation to only run the polling operation
+        ///     when the <typeparamref name="TException"/> represents a specific certain failure.
+        ///   </para>
+        ///   <para>Usually being used to describe 'transient' exceptions.</para>
+        ///   <example>
+        ///     <code>
+        ///       options.AddExceptionFilter((RequestFailedException ex) => ex.StatusCode == 429);
+        ///     </code>
+        ///   </example>
+        /// </summary>
+        /// <typeparam name="TException">The type of exception expected to throw during the polling operation.</typeparam>
+        /// <param name="exceptionFilter">The custom filter to only select a subset of the given exceptions that needs to be polled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="exceptionFilter"/> is <c>null</c>.</exception>
+        /// Same as doing <seealso cref="Poll{TResut,TException}.When"/>
+        public void AddExceptionFilter<TException>(Func<TException, bool> exceptionFilter)
+        {
+            ArgumentNullException.ThrowIfNull(exceptionFilter);
+            _exceptionFilters.Add(ex => ex is TException typed && exceptionFilter(typed));
+        }
+
+        internal bool IsMatch(Exception exception)
+        {
+            return _exceptionFilters.Count is 0 || _exceptionFilters.Any(filter => filter(exception));
         }
     }
 
     /// <summary>
-    /// Represents a polling operation that will run until the target is available.
+    /// <para>Represents a polling operation that will run until the target is available.</para>
+    /// <para>See: <a href="https://testing.arcus-azure.net/features/core" /> for more information.</para>
     /// </summary>
     public static class Poll
     {
@@ -217,9 +265,7 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Task UntilAvailableAsync(Func<Task> getTargetWithoutResultAsync)
         {
-            return UntilAvailableAsync<Exception>(
-                getTargetWithoutResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithoutResultAsync)),
-                configureOptions: null);
+            return UntilAvailableAsync<Exception>(getTargetWithoutResultAsync);
         }
 
         /// <summary>
@@ -232,9 +278,7 @@ namespace Arcus.Testing
         public static Task UntilAvailableAsync<TException>(Func<Task> getTargetWithoutResultAsync)
             where TException : Exception
         {
-            return UntilAvailableAsync<TException>(
-                getTargetWithoutResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithoutResultAsync)),
-                configureOptions: null);
+            return UntilAvailableAsync<TException>(getTargetWithoutResultAsync, configureOptions: null);
         }
 
         /// <summary>
@@ -260,10 +304,7 @@ namespace Arcus.Testing
         public static Task UntilAvailableAsync<TException>(Func<Task> getTargetWithoutResultAsync, Action<PollOptions> configureOptions)
             where TException : Exception
         {
-            if (getTargetWithoutResultAsync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithoutResultAsync));
-            }
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultAsync);
 
             var options = new PollOptions();
             configureOptions?.Invoke(options);
@@ -281,9 +322,7 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Task<TResult> UntilAvailableAsync<TResult>(Func<Task<TResult>> getTargetWithResultAsync)
         {
-            return UntilAvailableAsync<TResult, Exception>(
-                getTargetWithResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithResultAsync)),
-                configureOptions: null);
+            return UntilAvailableAsync(getTargetWithResultAsync, configureOptions: null);
         }
 
         /// <summary>
@@ -297,9 +336,7 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Task<TResult> UntilAvailableAsync<TResult>(Func<Task<TResult>> getTargetWithResultAsync, Action<PollOptions> configureOptions)
         {
-            return UntilAvailableAsync<TResult, Exception>(
-                getTargetWithResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithResultAsync)),
-                configureOptions);
+            return UntilAvailableAsync<TResult, Exception>(getTargetWithResultAsync, configureOptions);
         }
 
         /// <summary>
@@ -330,12 +367,12 @@ namespace Arcus.Testing
         public static Task<TResult> UntilAvailableAsync<TResult, TException>(Func<Task<TResult>> getTargetWithResultAsync, Action<PollOptions> configureOptions)
             where TException : Exception
         {
+            ArgumentNullException.ThrowIfNull(getTargetWithResultAsync);
+
             var options = new PollOptions();
             configureOptions?.Invoke(options);
 
-            return new Poll<TResult, TException>(
-                getTargetWithResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithResultAsync)),
-                options).StartAsync();
+            return new Poll<TResult, TException>(getTargetWithResultAsync, options).StartAsync();
         }
 
         /// <summary>
@@ -346,10 +383,7 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Poll<Exception> Target(Action getTargetWithoutResultSync)
         {
-            if (getTargetWithoutResultSync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
-            }
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultSync);
 
             return Target<Exception>(() =>
             {
@@ -378,12 +412,8 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Poll<TResult, Exception> Target<TResult>(Func<TResult> getTargetWithoutResultSync)
         {
-            if (getTargetWithoutResultSync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
-            }
-
-            return Target<TResult, Exception>(() => Task.FromResult(getTargetWithoutResultSync()));
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultSync);
+            return Target(() => Task.FromResult(getTargetWithoutResultSync()));
         }
 
         /// <summary>
@@ -395,11 +425,6 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Poll<TResult, Exception> Target<TResult>(Func<Task<TResult>> getTargetWithResultAsync)
         {
-            if (getTargetWithResultAsync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithResultAsync));
-            }
-
             return Target<TResult, Exception>(getTargetWithResultAsync);
         }
 
@@ -412,16 +437,13 @@ namespace Arcus.Testing
         /// <exception cref="TimeoutException">Thrown when the target was not available (meaning: did not throw any exceptions) in the configured time frame.</exception>
         public static Poll<TException> Target<TException>(Action getTargetWithoutResultSync) where TException : Exception
         {
-            if (getTargetWithoutResultSync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithoutResultSync));
-            }
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultSync);
 
-            return new Poll<TException>(() =>
+            return Target<TException>(() =>
             {
                 getTargetWithoutResultSync();
                 return Task.CompletedTask;
-            }, PollOptions.Default);
+            });
         }
 
         /// <summary>
@@ -434,9 +456,8 @@ namespace Arcus.Testing
         public static Poll<TException> Target<TException>(Func<Task> getTargetWithoutResultAsync)
             where TException : Exception
         {
-            return new Poll<TException>(
-                getTargetWithoutResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithoutResultAsync)),
-                PollOptions.Default);
+            ArgumentNullException.ThrowIfNull(getTargetWithoutResultAsync);
+            return new Poll<TException>(getTargetWithoutResultAsync, PollOptions.Default);
         }
 
         /// <summary>
@@ -452,11 +473,7 @@ namespace Arcus.Testing
         public static Poll<TResult, TException> Target<TResult, TException>(Func<TResult> getTargetWithResultSync)
             where TException : Exception
         {
-            if (getTargetWithResultSync is null)
-            {
-                throw new ArgumentNullException(nameof(getTargetWithResultSync));
-            }
-
+            ArgumentNullException.ThrowIfNull(getTargetWithResultSync);
             return Target<TResult, TException>(() => Task.FromResult(getTargetWithResultSync()));
         }
 
@@ -473,9 +490,8 @@ namespace Arcus.Testing
         public static Poll<TResult, TException> Target<TResult, TException>(Func<Task<TResult>> getTargetWithResultAsync)
             where TException : Exception
         {
-            return new Poll<TResult, TException>(
-                getTargetWithResultAsync ?? throw new ArgumentNullException(nameof(getTargetWithResultAsync)),
-                PollOptions.Default);
+            ArgumentNullException.ThrowIfNull(getTargetWithResultAsync);
+            return new Poll<TResult, TException>(getTargetWithResultAsync, PollOptions.Default);
         }
     }
 }
