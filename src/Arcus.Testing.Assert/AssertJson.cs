@@ -40,12 +40,9 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="nodeName"/> is blank.</exception>
         public AssertJsonOptions IgnoreNode(string nodeName)
         {
-            if (string.IsNullOrWhiteSpace(nodeName))
-            {
-                throw new ArgumentException($"Requires a non-blank '{nameof(nodeName)}' when adding an ignored name of a JSON node", nameof(nodeName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(nodeName);
             _ignoredNodeNames.Add(nodeName);
+
             return this;
         }
 
@@ -81,11 +78,7 @@ namespace Arcus.Testing
             get => _maxInputCharacters;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
                 _maxInputCharacters = value;
             }
         }
@@ -249,7 +242,7 @@ namespace Arcus.Testing
                 if (expectedChildren.OfType<JsonValue>().Any())
                 {
                     expectedChildren = expectedChildren.OrderBy(ch => ch.ToString()).ToArray();
-                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray(); 
+                    actualChildren = actualChildren.OrderBy(ch => ch.ToString()).ToArray();
                 }
                 else if (expectedChildren.OfType<JsonObject>().Any())
                 {
@@ -368,7 +361,6 @@ namespace Arcus.Testing
                 return new(ActualOtherType, expected, actualValue);
             }
 
-#if  NET8_0
             if (actualValue.GetValueKind() != expectedValue.GetValueKind())
             {
                 return new(ActualOtherType, expectedValue, actualValue);
@@ -386,24 +378,6 @@ namespace Arcus.Testing
                 _ => false
             };
 
-#elif NET6_0
-            bool identicalFloats =
-                expectedValue.TryGetValue(out float expectedFloat)
-                && actualValue.TryGetValue(out float actualFloat)
-                && expectedFloat.Equals(actualFloat);
-            
-            bool identicalBool =
-                expectedValue.TryGetValue(out bool expectedBool)
-                && actualValue.TryGetValue(out bool actualBool)
-                && expectedBool == actualBool;
-
-            bool identicalString =
-                expectedValue.TryGetValue(out string expectedString)
-                && actualValue.TryGetValue(out string actualString)
-                && expectedString.Equals(actualString);
-
-            bool identical = identicalFloats || identicalBool || identicalString;
-#endif
             if (!identical)
             {
                 return new(ActualOtherValue, expectedValue, actualValue)
@@ -439,6 +413,8 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the <paramref name="json"/> could not be successfully loaded into a structured JSON document.</exception>
         public static JsonNode Load(string json, Action<JsonNodeOptions> configureNodeOptions, Action<JsonDocumentOptions> configureDocOptions)
         {
+            ArgumentNullException.ThrowIfNull(json);
+
             var nodeOptions = new JsonNodeOptions { PropertyNameCaseInsensitive = true };
             configureNodeOptions?.Invoke(nodeOptions);
 
@@ -447,7 +423,7 @@ namespace Arcus.Testing
 
             try
             {
-                return JsonNode.Parse(json ?? throw new ArgumentNullException(nameof(json)), nodeOptions, docOptions);
+                return JsonNode.Parse(json, nodeOptions, docOptions);
             }
             catch (JsonException exception)
             {
@@ -499,7 +475,6 @@ namespace Arcus.Testing
             }
 
             string nodeTxt = node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
-#if NET8_0
 
             JsonValueKind type = node.GetValueKind();
             return type switch
@@ -514,30 +489,6 @@ namespace Arcus.Testing
                 JsonValueKind.Null => "type null",
                 _ => throw new ArgumentOutOfRangeException(nameof(node), type, "Unknown JSON value type")
             };
-#elif NET6_0
-            string DescribeJsonValue(JsonValue jsonValue)
-            {
-                if (jsonValue.TryGetValue(out float _))
-                {
-                    return $"a number: {node}";
-                }
-
-                if (jsonValue.TryGetValue(out bool b))
-                {
-                    return $"{b} boolean";
-                }
-
-                return $"a string: {node}";
-            }
-
-            return node switch
-            {
-                JsonObject _ => $"an object: {nodeTxt}",
-                JsonArray _ => $"an array: {node}",
-                JsonValue value => DescribeJsonValue(value),
-                _ => throw new ArgumentOutOfRangeException(nameof(node), node, "Unknown JSON value type")
-            };
-#endif
         }
 
         /// <summary>

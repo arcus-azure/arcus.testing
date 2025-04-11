@@ -41,12 +41,9 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="localNodeName"/> is blank.</exception>
         public AssertXmlOptions IgnoreNode(string localNodeName)
         {
-            if (string.IsNullOrWhiteSpace(localNodeName))
-            {
-                throw new ArgumentException($"Requires a non-blank '{nameof(localNodeName)}' when adding an ignored local name of a XML element", nameof(localNodeName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(localNodeName);
             _ignoredNodeNames.Add(localNodeName);
+
             return this;
         }
 
@@ -86,11 +83,7 @@ namespace Arcus.Testing
             get => _maxInputCharacters;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
                 _maxInputCharacters = value;
             }
         }
@@ -125,9 +118,7 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(string expectedXml, string actualXml)
         {
-            Equal(expectedXml ?? throw new ArgumentNullException(nameof(expectedXml)), 
-                  actualXml ?? throw new ArgumentNullException(nameof(actualXml)), 
-                  configureOptions: null);
+            Equal(expectedXml, actualXml, configureOptions: null);
         }
 
         /// <summary>
@@ -156,9 +147,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> is <c>null</c>.</exception>
         public static void Equal(XmlDocument expected, XmlDocument actual)
         {
-            Equal(expected ?? throw new ArgumentNullException(nameof(expected)), 
-                  actual ?? throw new ArgumentNullException(nameof(actual)), 
-                  configureOptions: null);
+            Equal(expected, actual, configureOptions: null);
         }
 
         /// <summary>
@@ -170,13 +159,16 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="expected"/> or the <paramref name="actual"/> is <c>null</c>.</exception>
         public static void Equal(XmlDocument expected, XmlDocument actual, Action<AssertXmlOptions> configureOptions)
         {
+            ArgumentNullException.ThrowIfNull(expected);
+            ArgumentNullException.ThrowIfNull(actual);
+
             var options = new AssertXmlOptions();
             configureOptions?.Invoke(options);
 
             XPathXmlNode expectedNode = XPathXmlNode.Root(expected, options);
             XPathXmlNode actualNode = XPathXmlNode.Root(actual, options);
             XmlDifference diff = CompareNode(expectedNode, actualNode, options);
-            
+
             if (diff != null)
             {
                 string expectedXml = diff.ExpectedNodeDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedNodeDiff : ReadXml(expected);
@@ -215,7 +207,7 @@ namespace Arcus.Testing
 
                 return output.ToString();
             }
-            catch (Exception exception) when(exception is InvalidOperationException or XmlException)
+            catch (Exception exception) when (exception is InvalidOperationException or XmlException)
             {
                 return doc.OuterXml;
             }
@@ -322,11 +314,11 @@ namespace Arcus.Testing
                 XmlAttribute expectedAttr = expected.Attributes[index];
                 var path = $"{expected.Path}[@{expectedAttr.LocalName}]";
 
-                XmlAttribute actualAttr = 
+                XmlAttribute actualAttr =
                     options.Order is AssertXmlOrder.Ignore
                         ? Array.Find(actual.Attributes, a => a.LocalName == expectedAttr.LocalName && a.NamespaceURI == expectedAttr.NamespaceURI)
                         : actual.Attributes[index];
-                
+
                 if (actualAttr is null)
                 {
                     return new(ActualMissingAttribute, XmlDifference.Describe(expectedAttr), actual: "", path)
@@ -338,8 +330,8 @@ namespace Arcus.Testing
 
                 if (expectedAttr.NamespaceURI != actualAttr.NamespaceURI)
                 {
-                    return new(ActualOtherNamespace, 
-                        expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI, 
+                    return new(ActualOtherNamespace,
+                        expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI,
                         actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path)
                     {
                         ExpectedNodeDiff = expected.ToString(),
@@ -381,10 +373,12 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the <paramref name="xml"/> could not be successfully loaded into a structured XML document.</exception>
         public static XmlDocument Load(string xml)
         {
+            ArgumentNullException.ThrowIfNull(xml);
+
             try
             {
                 var doc = new XmlDocument();
-                doc.LoadXml(xml ?? throw new ArgumentNullException(nameof(xml)));
+                doc.LoadXml(xml);
 
                 return doc;
             }
@@ -407,13 +401,14 @@ namespace Arcus.Testing
 
         private XPathXmlNode(Node node, AssertXmlOptions options)
         {
-            _node = node ?? throw new ArgumentNullException(nameof(node));
+            ArgumentNullException.ThrowIfNull(node);
+            _node = node;
 
             const string namespaceDefinition = "http://www.w3.org/2000/xmlns/";
-            Attributes = 
+            Attributes =
                 _node.Current.Attributes
                     ?.OfType<XmlAttribute>()
-                    .Where(a => a.NamespaceURI != namespaceDefinition 
+                    .Where(a => a.NamespaceURI != namespaceDefinition
                                 && !options.IgnoredNodeNames.Contains(a.LocalName))
                     .ToArray() ?? Array.Empty<XmlAttribute>();
         }
@@ -480,7 +475,7 @@ namespace Arcus.Testing
 
         private static Node CreateNode(XmlNode xml, string path, AssertXmlOptions options)
         {
-            XmlElement[] children = 
+            XmlElement[] children =
                 xml.ChildNodes.OfType<XmlElement>()
                    .Where(n => !options.IgnoredNodeNames.Contains(n.LocalName))
                    .ToArray();
@@ -568,10 +563,14 @@ namespace Arcus.Testing
         /// </summary>
         public XmlDifference(XmlDifferenceKind kind, string expected, string actual, string path)
         {
+            ArgumentNullException.ThrowIfNull(expected);
+            ArgumentNullException.ThrowIfNull(actual);
+            ArgumentNullException.ThrowIfNull(path);
+
             _kind = kind;
-            _expected = expected ?? throw new ArgumentNullException(nameof(expected));
-            _actual = actual ?? throw new ArgumentNullException(nameof(actual));
-            _path = path ?? throw new ArgumentNullException(nameof(path));
+            _expected = expected;
+            _actual = actual;
+            _path = path;
         }
 
         /// <summary>
@@ -579,10 +578,12 @@ namespace Arcus.Testing
         /// </summary>
         public XmlDifference(XmlDifferenceKind kind, int expected, int actual, string path)
         {
+            ArgumentNullException.ThrowIfNull(path);
+
             _kind = kind;
             _expected = expected.ToString();
             _actual = actual.ToString();
-            _path = path ?? throw new ArgumentNullException(nameof(path));
+            _path = path;
         }
 
         private static string Describe(XPathXmlNode node)
@@ -604,8 +605,8 @@ namespace Arcus.Testing
             {
                 XmlNodeType.Element => $"an element: <{node.LocalName}>",
                 XmlNodeType.Attribute => $"an attribute: {node.LocalName}",
-                XmlNodeType.Text =>  int.TryParse(node.Value, out int _) 
-                    ? $"a number: {node.Value}" 
+                XmlNodeType.Text => int.TryParse(node.Value, out int _)
+                    ? $"a number: {node.Value}"
                     : $"a string: {node.Value}",
                 _ => node.OuterXml
             };

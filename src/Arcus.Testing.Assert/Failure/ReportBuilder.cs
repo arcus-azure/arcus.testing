@@ -18,7 +18,7 @@ namespace Arcus.Testing
         ///     Also note that a bigger 'context' of the input document will be included in case the difference itself is too narrow to make decisions (ex. integer difference without the name of element or tag).
         /// </remarks>
         Limited = 0,
-        
+
         /// <summary>
         /// Include the complete input document in the failure report.
         /// </summary>
@@ -38,7 +38,7 @@ namespace Arcus.Testing
         /// Useful for documents that expand in length instead of width to see the difference more clearly (i.e. XML, JSON...).
         /// </summary>
         Horizontal = 0,
-        
+
         /// <summary>
         /// Place the expected-actual documents vertically below each other.
         /// Useful for documents that expand in the width instead of length to see the difference more clearly (i.e. CSV, ...).
@@ -81,15 +81,8 @@ namespace Arcus.Testing
 
         private ReportBuilder(string methodName, string generalMessage)
         {
-            if (string.IsNullOrWhiteSpace(methodName))
-            {
-                throw new ArgumentException("Requires a non-blank method name for the test assertion report", nameof(methodName));
-            }
-
-            if (string.IsNullOrWhiteSpace(generalMessage))
-            {
-                throw new ArgumentException("Requires a non-blank general message for the test assertion report", nameof(generalMessage));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(methodName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(generalMessage);
 
             _report = new StringBuilder();
             _report.AppendLine($"{methodName} failure: {generalMessage}");
@@ -200,7 +193,7 @@ namespace Arcus.Testing
 
             const string spaceBetween = "    ";
             string[] diff = expectedLines.Zip(actualLines, (expectedLine, actualLine) => expectedLine + spaceBetween + actualLine).ToArray();
-            
+
             return diff;
         }
 
@@ -240,7 +233,7 @@ namespace Arcus.Testing
 
                     result.AppendLine(suffix);
                     return result.ToString();
-                
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(options), options.Scope, "Cannot create failure report as an unknown report scope is configured in the assert options");
             }
