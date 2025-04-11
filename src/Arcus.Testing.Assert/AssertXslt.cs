@@ -46,6 +46,9 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> or output could not be successfully loaded into a structured XML document.</exception>
         public static string TransformToXml(string xsltTransformer, string inputXml, XsltArgumentList arguments)
         {
+            ArgumentNullException.ThrowIfNull(xsltTransformer);
+            ArgumentNullException.ThrowIfNull(inputXml);
+
             XslCompiledTransform transformer = Load(xsltTransformer);
             XmlNode input = AssertXml.Load(inputXml);
 
