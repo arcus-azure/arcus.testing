@@ -65,22 +65,44 @@ var config = TestConfig.Create(options =>
     // Adds 'configuration.Dev.json' to local alternatives [ 'appsettings.local.json' ]
     options.AddOptionalJsonFile("configuration.Dev.json");
 });
+
+var config = TestConfig.Create((options, IConfigurationBuilder builder) =>
+{
+    // Add additional configuration sources.
+    builder.AddEnvironmentVariables();
+});
 ```
+
+> 💡 By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
 
 It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:
 
 ```csharp
+using Arcus.Testing;
+
 public class MyTestConfig : TestConfig
 {
     // Uses default 'appsettings.json' and 'appsettings.local.json' as local alternative.
     // Same as doing `TestConfig.Create()`
-    public MyTestConfig()
+    public MyTestConfig() { }
 
-    public MyTestConfig() : base(options => options.UseMainJsonFile("configuration.json")) { }
+    // Add built-in options in your test configuration.
+    // Same as doing `TestConfig.Create(options => ...)`
+    public MyTestConfig() 
+        : base(options => options.UseMainJsonFile("configuration.json")) { }
+
+    // Add custom configuration sources in your test configuration.
+    // Same as doing `TestConfig.Create((options, builder) => ...)`
+    public MyTestConfig()
+        : base((options, IConfigurationBuilder builder) =>
+        {
+            builder.AddEnvironmentVariables();
+        })
+
 }
 ```
 
-💡 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, without exposing Arcus functionality directly to your tests.
+> 💡 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
 
 ## Polling
 Writing integration tests interacts by definition with external resources. These resources might not always be available at the time the test needs them. Because of this, polling until the target resource is available is a common practice. An example is polling for a health endpoint until the application response 'healthy'.
@@ -149,7 +171,9 @@ string txt = root.ReadFileTextByName("file.txt");
 byte[] img = root.ReadFileBytesByName("file.png");
 
 // Path: /bin/net8.0/resources
-ResourceDirectory sub = root.WithSubDirectory("resources");
+ResourceDirectory sub = 
+    root.WithSubDirectory("resources")
+        .WithSubDirectory("component");
 
 string txt = sub.ReadFileTextByName("file.txt");
 byte[] img = sub.ReadFileBytesByPattern("*.png");
@@ -161,6 +185,12 @@ byte[] img = sub.ReadFileBytesByPattern("*.png");
 //    File path: /bin/net8.0/resources/file.txt
 //    Resource directory: /bin/net8.0/resources
 ```
+
+> 🚀 The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
+> ```csharp
+> ResourceDirectory sub = 
+>     ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";
+> ``` 
 
 ## Temporary environment variable
 The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is fairly common when testing locally and spinning up the application on your own system. It can also be used for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.

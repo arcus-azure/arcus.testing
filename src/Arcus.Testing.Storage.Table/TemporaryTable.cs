@@ -10,8 +10,6 @@ using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#pragma warning disable CS0618, S1133 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
-
 namespace Arcus.Testing
 {
     /// <summary>
@@ -25,96 +23,10 @@ namespace Arcus.Testing
     internal enum OnTeardownTable { CleanIfCreated = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
-    /// Represents a filter to match against a stored Azure Table entity in the <see cref="TemporaryTable"/> upon setup or teardown.
-    /// </summary>
-    [Obsolete("Additional layer of abstraction will be removed in favor of using a predicate on a '" + nameof(TableEntity) + "' function directly")]
-    public class TableEntityFilter
-    {
-        private readonly Func<TableEntity, bool> _filter;
-
-        private TableEntityFilter(Func<TableEntity, bool> filter)
-        {
-            _filter = filter;
-        }
-
-        /// <summary>
-        /// Creates a <see cref="TableEntityFilter"/> to match an Azure Table entity by its unique row key.
-        /// </summary>
-        /// <param name="rowKey">The expected unique identifier of the entity.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="rowKey"/> is blank.</exception>
-        public static TableEntityFilter RowKeyEqual(string rowKey)
-        {
-            return RowKeyEqual(rowKey, StringComparison.Ordinal);
-        }
-
-        /// <summary>
-        /// Creates a <see cref="TableEntityFilter"/> to match an Azure Table entity by its unique row key.
-        /// </summary>
-        /// <param name="rowKey">The expected unique identifier of the entity.</param>
-        /// <param name="comparisonType">The value that specifies how the strings will be compared.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="rowKey"/> is blank.</exception>
-        public static TableEntityFilter RowKeyEqual(string rowKey, StringComparison comparisonType)
-        {
-            if (string.IsNullOrWhiteSpace(rowKey))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Table entity row key to match against stored entities");
-            }
-
-            return EntityEqual(e => rowKey.Equals(e.RowKey, comparisonType));
-        }
-
-        /// <summary>
-        /// Creates a <see cref="TableEntityFilter"/> to match an Azure Table entity by its partition key.
-        /// </summary>
-        /// <param name="partitionKey">The expected partition key of the entity.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="partitionKey"/> is blank.</exception>
-        public static TableEntityFilter PartitionKeyEqual(string partitionKey)
-        {
-            return PartitionKeyEqual(partitionKey, StringComparison.Ordinal);
-        }
-
-        /// <summary>
-        /// Creates a <see cref="TableEntityFilter"/> to match an Azure Table entity by its partition key.
-        /// </summary>
-        /// <param name="partitionKey">The expected partition key of the entity.</param>
-        /// <param name="comparisonType">The value that specifies how the strings will be compared.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="partitionKey"/> is blank.</exception>
-        public static TableEntityFilter PartitionKeyEqual(string partitionKey, StringComparison comparisonType)
-        {
-            if (string.IsNullOrWhiteSpace(partitionKey))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Table entity partition key to match against stored entities");
-            }
-
-            return EntityEqual(e => partitionKey.Equals(e.PartitionKey, comparisonType));
-        }
-
-        /// <summary>
-        /// Creates a <see cref="TableEntityFilter"/> to match an Azure Table entity by its unique row key.
-        /// </summary>
-        /// <param name="filter">The custom filter to match against an entity.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filter"/> is <c>null</c>.</exception>
-        public static TableEntityFilter EntityEqual(Func<TableEntity, bool> filter)
-        {
-            ArgumentNullException.ThrowIfNull(filter);
-            return new TableEntityFilter(filter);
-        }
-
-        /// <summary>
-        /// Match the current Azure Table entity with the user configured filter.
-        /// </summary>
-        internal bool IsMatch(TableEntity entity)
-        {
-            return _filter(entity);
-        }
-    }
-
-    /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryTable"/>.
     /// </summary>
     public class OnSetupTemporaryTableOptions
     {
-        private readonly List<TableEntityFilter> _deprecatedFilters = new();
         private readonly List<Func<TableEntity, bool>> _filters = new();
 
         /// <summary>
@@ -151,33 +63,6 @@ namespace Arcus.Testing
         /// <param name="filters">The filters to match entities that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
-        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(TableEntity) + "' directly, " +
-                  "this overload will be removed in v2.0")]
-        public OnSetupTemporaryTableOptions CleanMatchingEntities(params TableEntityFilter[] filters)
-        {
-            ArgumentNullException.ThrowIfNull(filters);
-
-            if (Array.Exists(filters, f => f is null))
-            {
-                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
-            }
-
-            Entities = OnSetupTable.CleanIfMatched;
-            _deprecatedFilters.AddRange(filters);
-
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the <see cref="TemporaryTable"/> to delete the Azure Table entities
-        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
-        /// </summary>
-        /// <remarks>
-        ///     Multiple calls will be aggregated together in an OR expression.
-        /// </remarks>
-        /// <param name="filters">The filters to match entities that should be removed.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
         public OnSetupTemporaryTableOptions CleanMatchingEntities(params Func<TableEntity, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
@@ -198,7 +83,7 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatch(TableEntity entity)
         {
-            return _deprecatedFilters.Exists(filter => filter.IsMatch(entity)) || _filters.Exists(filter => filter(entity));
+            return _filters.Exists(filter => filter(entity));
         }
     }
 
@@ -207,7 +92,6 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryTableOptions
     {
-        private readonly List<TableEntityFilter> _deprecatedFilters = new();
         private readonly List<Func<TableEntity, bool>> _filters = new();
 
         /// <summary>
@@ -246,35 +130,6 @@ namespace Arcus.Testing
         /// <param name="filters">The filters  to match entities that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
-        [Obsolete("Use the other overload that takes in the predicate function on a '" + nameof(TableEntity) + "' directly, " +
-                  "this overload will be removed in v2.0")]
-        public OnTeardownTemporaryTableOptions CleanMatchingEntities(params TableEntityFilter[] filters)
-        {
-            ArgumentNullException.ThrowIfNull(filters);
-
-            if (Array.Exists(filters, f => f is null))
-            {
-                throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
-            }
-
-            Entities = OnTeardownTable.CleanIfMatched;
-            _deprecatedFilters.AddRange(filters);
-
-            return this;
-        }
-
-        /// <summary>
-        /// Configures the <see cref="TemporaryTable"/> to delete the Azure Table entities
-        /// upon disposal that match any of the configured <paramref name="filters"/>.
-        /// </summary>
-        /// <remarks>
-        ///     The matching of documents only happens on entities that were created outside the scope of the test fixture.
-        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
-        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
-        /// </remarks>
-        /// <param name="filters">The filters  to match entities that should be removed.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
         public OnTeardownTemporaryTableOptions CleanMatchingEntities(params Func<TableEntity, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
@@ -295,7 +150,7 @@ namespace Arcus.Testing
         /// </summary>
         internal bool IsMatch(TableEntity entity)
         {
-            return _deprecatedFilters.Exists(filter => filter.IsMatch(entity)) || _filters.Exists(filter => filter(entity));
+            return _filters.Exists(filter => filter(entity));
         }
     }
 
@@ -380,12 +235,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTableOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Table test fixture," +
-                    " used in container URI: 'https://{account_name}.table.core.windows.net'", nameof(accountName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
 
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var serviceClient = new TableServiceClient(tableEndpoint, new DefaultAzureCredential());
@@ -422,13 +272,7 @@ namespace Arcus.Testing
             Action<TemporaryTableOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(serviceClient);
-            ArgumentNullException.ThrowIfNull(tableName);
-
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Table nme to create a temporary Azure Table test fixture", nameof(tableName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
             logger ??= NullLogger.Instance;
             var options = new TemporaryTableOptions();

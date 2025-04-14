@@ -1,6 +1,17 @@
 {
-  "extends": ["config:base"],
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
   "prCreation": "not-pending",
-  "rangeStrategy": "increase",
-  "dependencyDashboard": true
+  "recreateWhen": "never",
+  "rangeStrategy": "bump",
+  "ignoreDeps": [
+    "Codit.Testing.Xslt.Helper"
+  ],
+  "ignorePaths": [
+    "samples/**"
+  ],
+  "separateMajorMinor": true,
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "📦 [Renovate] dependency dashboard",
+  "labels": ["dependencies", "management"]
 }

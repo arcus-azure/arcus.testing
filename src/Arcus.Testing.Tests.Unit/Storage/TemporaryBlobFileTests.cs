@@ -18,14 +18,6 @@ namespace Arcus.Testing.Tests.Unit.Storage
                     "<blob-name>",
                     BinaryData.FromString("<blob-content>"),
                     NullLogger.Instance));
-
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryBlobFile.UploadIfNotExistsAsync(
-                    blobContainerUri: null,
-                    "<blob-name>",
-                    BinaryData.FromString("<blob-content>"),
-                    NullLogger.Instance,
-                    configureOptions: opt => { }));
         }
 
         [Theory]
@@ -38,14 +30,6 @@ namespace Arcus.Testing.Tests.Unit.Storage
                     blobName,
                     BinaryData.FromString("<blob-content>"),
                     NullLogger.Instance));
-
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryBlobFile.UploadIfNotExistsAsync(
-                    new Uri("https://some-url"),
-                    blobName,
-                    BinaryData.FromString("<blob-content>"),
-                    NullLogger.Instance,
-                    configureOptions: opt => { }));
         }
 
         [Fact]
@@ -57,14 +41,6 @@ namespace Arcus.Testing.Tests.Unit.Storage
                     "<blob-name>",
                     blobContent: null,
                     NullLogger.Instance));
-
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryBlobFile.UploadIfNotExistsAsync(
-                    new Uri("https://some-url"),
-                    "<blob-name>",
-                    blobContent: null,
-                    NullLogger.Instance,
-                    configureOptions: opt => { }));
         }
 
         [Fact]
@@ -75,13 +51,6 @@ namespace Arcus.Testing.Tests.Unit.Storage
                     blobClient: null,
                     BinaryData.FromString("<blob-content>"),
                     NullLogger.Instance));
-
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryBlobFile.UploadIfNotExistsAsync(
-                    blobClient: null,
-                    BinaryData.FromString("<blob-content>"),
-                    NullLogger.Instance,
-                    configureOptions: opt => { }));
         }
 
         [Fact]
@@ -93,13 +62,6 @@ namespace Arcus.Testing.Tests.Unit.Storage
                     client,
                     blobContent: null,
                     NullLogger.Instance));
-
-            await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryBlobFile.UploadIfNotExistsAsync(
-                    client,
-                    blobContent: null,
-                    NullLogger.Instance,
-                    opt => { }));
         }
     }
 }

@@ -6,20 +6,26 @@ using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Core.Fixture;
 using Bogus;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json.Linq;
 using Xunit;
+using Xunit.Abstractions;
 using static Arcus.Testing.ResourceDirectory;
 
 namespace Arcus.Testing.Tests.Integration.Core
 {
-    public class TestConfigTests : IAsyncLifetime
+    public class TestConfigTests : IntegrationTest, IAsyncLifetime
     {
         private const string DefaultAppSettingsName = "appsettings.json",
                              DefaultLocalAppSettingsName = "appsettings.local.json";
 
         private static readonly Faker Bogus = new();
         private readonly DisposableCollection _disposables = new(NullLogger.Instance);
+
+        public TestConfigTests(ITestOutputHelper outputWriter) : base(outputWriter)
+        {
+        }
 
         public static IEnumerable<object[]> CustomConfigs => new[]
         {
@@ -55,8 +61,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToCustomMain(string fileName, string key, string value, string newMainFile)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToCustomMain(key, newMainFile);
@@ -83,7 +89,11 @@ namespace Arcus.Testing.Tests.Integration.Core
         public static IEnumerable<object[]> DefaultConfigs => new[]
         {
             new object[] { (Func<TestConfig>)(TestConfig.Create) },
-            new object[] { (Func<TestConfig>)(() => new CustomTestConfig()) }
+            new object[] { (Func<TestConfig>)(() => TestConfig.Create(configureOptions: null)) },
+            new object[] { (Func<TestConfig>)(() => TestConfig.Create(configureConfig: null)) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig()) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig(configureOptions: null)) },
+            new object[] { (Func<TestConfig>)(() => new CustomTestConfig(configureConfig: null)) }
         };
 
         [Theory]
@@ -122,8 +132,8 @@ namespace Arcus.Testing.Tests.Integration.Core
         private void AddLocalValueToDefaultMain(string fileName, string key, string value)
         {
             _disposables.Add(TemporaryFile.CreateAt(
-                CurrentDirectory.Path, 
-                fileName, 
+                CurrentDirectory.Path,
+                fileName,
                 Encoding.UTF8.GetBytes($"{{ \"{key}\": \"{value}\" }}")));
 
             AddTokenToDefaultMain(key);
@@ -163,6 +173,25 @@ namespace Arcus.Testing.Tests.Integration.Core
 
                     return jObject.ToString();
                 }));
+        }
+
+        [Fact]
+        public void GetConfigValue_FromEnvironmentVariable_SucceedsByApplyingCustomConfig()
+        {
+            // Arrange
+            var key = Bogus.Random.Guid().ToString();
+            var value = Bogus.Random.Guid().ToString();
+
+            using var envVar = TemporaryEnvironmentVariable.SetIfNotExists(key, value, Logger);
+
+            // Act
+            var config =
+                Bogus.Random.Bool()
+                    ? new CustomTestConfig((_, builder) => builder.AddEnvironmentVariables())
+                    : TestConfig.Create((_, builder) => builder.AddEnvironmentVariables());
+
+            // Assert
+            Assert.Equal(value, config[key]);
         }
 
         [Fact]

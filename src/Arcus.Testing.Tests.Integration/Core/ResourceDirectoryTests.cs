@@ -24,6 +24,22 @@ namespace Arcus.Testing.Tests.Integration.Core
 
             // Act / Assert
             AssertContainsFile(tempFile, subDir);
+            Assert.True(Root != subDir, $"sub resource directory should not be equal to root, but it is ({Root.Path} != {subDir.Path})");
+        }
+
+        [Fact]
+        public void Directory_WithSamePath_Equals()
+        {
+            // Arrange
+            using var tempDir = TemporaryDirectory.GenerateAt(Root.Path);
+            var dir1 = WithSubDirectories(Root, tempDir);
+            var dir2 = WithSubDirectories(Root, tempDir);
+
+            // Act
+            bool isEqual = dir1 == dir2;
+
+            // Assert
+            Assert.True(isEqual, $"two resource directories pointing to the same path should be equal, but they aren't ({dir1.Path} == {dir2.Path})");
         }
 
         [Fact]

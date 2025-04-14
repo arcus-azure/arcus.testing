@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Logging.Core", "Arcus.Testing.Logging.Core\Arcus.Testing.Logging.Core.csproj", "{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Integration", "Arcus.Testing.Tests.Integration\Arcus.Testing.Tests.Integration.csproj", "{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Testing.Tests.Unit", "Arcus.Testing.Tests.Unit\Arcus.Testing.Tests.Unit.csproj", "{3D66B14F-2CC7-44E6-A53F-1E45F9A6BCF6}"
@@ -43,6 +41,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Storage.Cosmo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Storage.Table", "Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj", "{74AB9F6E-791F-4609-96BD-15420C25AA72}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A2E34D15-F081-478D-A17E-EB61BB5C0511}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Messaging", "Messaging", "{321D9EE7-3A59-49E5-91D2-68BE8631FD09}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Messaging.EventHubs", "Arcus.Testing.Messaging.EventHubs\Arcus.Testing.Messaging.EventHubs.csproj", "{01449C8F-3400-488E-B6D3-561B78B15310}"
@@ -53,10 +56,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -120,7 +119,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D0484271-ABA1-4C2F-B0ED-E207130C1DE8} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
 		{4DCD1626-66B4-4396-9CD6-951E9CE7BDE8} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 		{3D66B14F-2CC7-44E6-A53F-1E45F9A6BCF6} = {64013B91-7B1E-4F88-8FD7-CCF583D4A4CA}
 		{19A63ECA-029D-46B3-A252-445570AD7D82} = {057BBCFA-D72F-473E-AB38-5A628A47D56D}

@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Data.Tables;
 using Xunit;
 using Xunit.Abstractions;
-
-#pragma warning disable CS0618 // Ignore obsolete warnings that we added ourselves, should be removed upon releasing v2.0.
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -138,14 +135,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnSetup.CleanMatchingEntities(CreateDeprecatedMatchFilter(matchedEntity));
-                }
-                else
-                {
-                    options.OnSetup.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
-                }
+                options.OnSetup.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
             });
 
             // Assert
@@ -171,14 +161,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Act
             TemporaryTable temp = await CreateTempTableAsync(client, options =>
             {
-                if (Bogus.Random.Bool())
-                {
-                    options.OnTeardown.CleanMatchingEntities(CreateDeprecatedMatchFilter(matchedEntity));
-                }
-                else
-                {
-                    options.OnTeardown.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
-                }
+                options.OnTeardown.CleanMatchingEntities(entity => entity.RowKey == matchedEntity.RowKey);
             });
 
             // Assert
@@ -210,7 +193,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TableEntity createdByUs = await AddTableEntityAsync(context, temp);
             TableEntity matched = await context.WhenTableEntityAvailableAsync(client);
             TableEntity notMatched = await context.WhenTableEntityAvailableAsync(client);
-            temp.OnTeardown.CleanMatchingEntities(CreateDeprecatedMatchFilter(matched));
+            temp.OnTeardown.CleanMatchingEntities(entity => entity.RowKey == matched.RowKey);
 
             // Act
             await temp.DisposeAsync();
@@ -219,21 +202,6 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldNotStoreTableEntityAsync(client, matched);
             await context.ShouldNotStoreTableEntityAsync(client, createdByUs);
             await context.ShouldStoreTableEntityAsync(client, notMatched);
-        }
-
-        private static TableEntityFilter CreateDeprecatedMatchFilter(TableEntity entity)
-        {
-            return Bogus.Random.Int(1, 3) switch
-            {
-                1 => TableEntityFilter.RowKeyEqual(entity.RowKey),
-                2 => TableEntityFilter.PartitionKeyEqual(entity.PartitionKey),
-                3 => TableEntityFilter.EntityEqual(e => e.ContainsKey(Bogus.PickRandom(entity.Keys.Where(k =>
-                {
-                    return k != nameof(TableEntity.RowKey) && k != nameof(TableEntity.PartitionKey);
-                })))),
-
-                _ => throw new NotSupportedException("[Test:Setup] not-supported yet matching Azure Table entity filter type")
-            };
         }
 
         private async Task<TemporaryTable> CreateTempTableAsync(TableClient client, Action<TemporaryTableOptions> configureOptions = null)
