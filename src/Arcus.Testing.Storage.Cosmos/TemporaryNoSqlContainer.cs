@@ -482,25 +482,10 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(cosmosDbAccountResourceId);
             ArgumentNullException.ThrowIfNull(credential);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(partitionKeyPath);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(databaseName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank name for the NoSql database in the Azure Cosmos resource", nameof(databaseName));
-            }
-
-            if (string.IsNullOrWhiteSpace(containerName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank name for the temporary NoSql container in the Azure Cosmos resource", nameof(containerName));
-            }
-
-            if (string.IsNullOrWhiteSpace(partitionKeyPath))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank path to the partition key for the temporary NoSql container", nameof(partitionKeyPath));
-            }
 
             var options = new TemporaryNoSqlContainerOptions();
             configureOptions?.Invoke(options);

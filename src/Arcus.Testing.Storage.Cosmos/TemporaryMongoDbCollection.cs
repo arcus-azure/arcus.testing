@@ -286,19 +286,9 @@ namespace Arcus.Testing
             Action<TemporaryMongoDbCollectionOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(databaseName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Cosmos MongoDb database name to create a temporary collection");
-            }
-
-            if (string.IsNullOrWhiteSpace(collectionName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Cosmos MongoDb collection name to create a temporary collection");
-            }
 
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
             IMongoDatabase database = client.GetDatabase(databaseName);
@@ -335,13 +325,8 @@ namespace Arcus.Testing
             Action<TemporaryMongoDbCollectionOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(database);
+            ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(collectionName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Cosmos MongoDb collection name to create a temporary collection");
-            }
 
             var options = new TemporaryMongoDbCollectionOptions();
             configureOptions?.Invoke(options);
