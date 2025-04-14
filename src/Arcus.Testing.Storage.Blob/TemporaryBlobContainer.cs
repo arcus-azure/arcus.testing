@@ -56,7 +56,6 @@ namespace Arcus.Testing
         public OnSetupBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
-
             if (Array.Exists(filters, f => f is null))
             {
                 throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
@@ -278,19 +277,8 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryBlobContainerOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Blob container test fixture," +
-                    " used in container URI: 'https://{account_name}.blob.core.windows.net/{container_name}'", nameof(accountName));
-            }
-
-            if (string.IsNullOrWhiteSpace(containerName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Blob container name to create a temporary Azure Blob container test fixture," +
-                    " used in container URI: 'https://{account_name}.blob.core.windows.net/{container_name}'", nameof(containerName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
 
             var blobContainerUri = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}");
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
@@ -359,12 +347,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
-
-            if (string.IsNullOrWhiteSpace(blobName))
-            {
-                throw new ArgumentException($"Requires a non-blank blob name to upload a temporary blob in the temporary '{Name}' container", nameof(blobName));
-            }
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
             _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger));
