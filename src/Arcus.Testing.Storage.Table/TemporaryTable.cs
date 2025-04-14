@@ -235,12 +235,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTableOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Table test fixture," +
-                    " used in container URI: 'https://{account_name}.table.core.windows.net'", nameof(accountName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
 
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var serviceClient = new TableServiceClient(tableEndpoint, new DefaultAzureCredential());
@@ -277,13 +272,7 @@ namespace Arcus.Testing
             Action<TemporaryTableOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(serviceClient);
-            ArgumentNullException.ThrowIfNull(tableName);
-
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Table nme to create a temporary Azure Table test fixture", nameof(tableName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
             logger ??= NullLogger.Instance;
             var options = new TemporaryTableOptions();

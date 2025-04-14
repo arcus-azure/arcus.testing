@@ -57,18 +57,8 @@ namespace Arcus.Testing
             ILogger logger)
             where TEntity : class, ITableEntity
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Table entity test fixture," +
-                    " used in container URI: 'https://{account_name}.table.core.windows.net'", nameof(accountName));
-            }
-
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Table nme to create a temporary Azure Table entity test fixture", nameof(tableName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var tableClient = new TableClient(tableEndpoint, tableName, new DefaultAzureCredential());
