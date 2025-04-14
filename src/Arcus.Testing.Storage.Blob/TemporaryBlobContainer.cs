@@ -348,8 +348,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
-            ArgumentNullException.ThrowIfNull(blobContent);
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
+            ArgumentNullException.ThrowIfNull(blobContent);
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
             _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger));
