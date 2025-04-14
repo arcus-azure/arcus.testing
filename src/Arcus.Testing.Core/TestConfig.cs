@@ -30,7 +30,7 @@ namespace Arcus.Testing
         /// Adds the JSON configuration provider at <paramref name="path" /> the configuration.
         /// </summary>
         /// <param name="path">The path relative to the project output folder of the test suite project.</param>
-        /// <exception cref="path">Thrown when the <paramref name="path"/> is blank.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="path"/> is blank.</exception>
         public TestConfigOptions AddOptionalJsonFile(string path)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(path);
