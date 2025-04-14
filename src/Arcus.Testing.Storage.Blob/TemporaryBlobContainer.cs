@@ -56,7 +56,6 @@ namespace Arcus.Testing
         public OnSetupBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
         {
             ArgumentNullException.ThrowIfNull(filters);
-            
             if (Array.Exists(filters, f => f is null))
             {
                 throw new ArgumentException("Requires all filters to be non-null", nameof(filters));
