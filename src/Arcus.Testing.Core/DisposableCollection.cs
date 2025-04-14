@@ -19,41 +19,36 @@ namespace Arcus.Testing
 
         /// <summary>
         /// Gets or sets the amount of times a failed test fixture's disposal should be retried.
+        /// (Default: 3 times)
         /// </summary>
         public int RetryCount
         {
             get => _retryCount;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Require a greater than zero retry count for the test fixture disposals");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
                 _retryCount = value;
             }
         }
 
         /// <summary>
         /// Gets or sets the time interval between each failed test fixture's disposal retry.
+        /// (Default: 3 seconds)
         /// </summary>
         public TimeSpan RetryInterval
         {
             get => _retryInterval;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Require a positive retry interval for the test fixture disposals");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 _retryInterval = value;
             }
         }
     }
 
     /// <summary>
-    /// Represents a collection of <see cref="IAsyncDisposable"/> which are handled as a single disposable.
+    /// <para>Represents a collection of <see cref="IAsyncDisposable"/> which are handled as a single disposable.</para>
+    /// <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
     /// </summary>
     public sealed class DisposableCollection : IAsyncDisposable
     {
@@ -81,30 +76,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public void Add(IAsyncDisposable disposable)
         {
-            if (disposable is null)
-            {
-                throw new ArgumentNullException(nameof(disposable));
-            }
-
+            ArgumentNullException.ThrowIfNull(disposable);
             _disposables.Add(disposable);
-        }
-
-        /// <summary>
-        /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
-        /// </summary>
-        /// <param name="disposables">The disposable instances to add to the collection.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
-        public void AddRange(IEnumerable<IAsyncDisposable> disposables)
-        {
-            if (disposables is null)
-            {
-                throw new ArgumentNullException(nameof(disposables));
-            }
-
-            foreach (IAsyncDisposable disposable in disposables)
-            {
-                Add(disposable);
-            }
         }
 
         /// <summary>
@@ -114,12 +87,23 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public void Add(IDisposable disposable)
         {
-            if (disposable is null)
-            {
-                throw new ArgumentNullException(nameof(disposable));
-            }
-
+            ArgumentNullException.ThrowIfNull(disposable);
             Add(AsyncDisposable.Create(disposable));
+        }
+
+        /// <summary>
+        /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
+        /// </summary>
+        /// <param name="disposables">The disposable instances to add to the collection.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
+        public void AddRange(IEnumerable<IAsyncDisposable> disposables)
+        {
+            ArgumentNullException.ThrowIfNull(disposables);
+
+            foreach (IAsyncDisposable disposable in disposables)
+            {
+                Add(disposable);
+            }
         }
 
         /// <summary>
@@ -129,10 +113,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
         public void AddRange(IEnumerable<IDisposable> disposables)
         {
-            if (disposables is null)
-            {
-                throw new ArgumentNullException(nameof(disposables));
-            }
+            ArgumentNullException.ThrowIfNull(disposables);
 
             foreach (IDisposable disposable in disposables)
             {
@@ -152,7 +133,7 @@ namespace Arcus.Testing
                           _logger.LogError(ex, "[Test:Teardown] Test fixture failed to be tear down: '{Message}', retrying in {RetryInterval:g}...", ex.Message, Options.RetryInterval);
                           return true;
                       })
-                      .WaitAndRetryAsync(Options.RetryCount, index => Options.RetryInterval);
+                      .WaitAndRetryAsync(Options.RetryCount, _ => Options.RetryInterval);
 
             var exceptions = new Collection<Exception>();
             foreach (IAsyncDisposable fixture in _disposables)
@@ -176,7 +157,7 @@ namespace Arcus.Testing
             if (exceptions.Count > 1)
             {
                 throw new AggregateException(
-                    "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information", 
+                    "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information",
                     exceptions);
             }
         }
