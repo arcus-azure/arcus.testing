@@ -240,7 +240,7 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(ruleName);
             ArgumentNullException.ThrowIfNull(ruleFilter);
-            
+
             if (ruleName == CreateRuleOptions.DefaultRuleName)
             {
                 throw new ArgumentException(
