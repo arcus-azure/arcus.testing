@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Assert = Xunit.Assert;
 
 namespace Arcus.Testing.Tests.Unit.Logging.Fixture
 {
@@ -37,9 +36,13 @@ namespace Arcus.Testing.Tests.Unit.Logging.Fixture
             _messages.Add(string.Format(format, args));
         }
 
+        public override void DisplayMessage(MessageLevel messageLevel, string message)
+        {
+        }
+
         public void VerifyWritten(string expected)
         {
-            Assert.Contains(_messages, m => m.Contains(expected));
+            Xunit.Assert.Contains(_messages, m => m.Contains(expected));
         }
     }
 }
