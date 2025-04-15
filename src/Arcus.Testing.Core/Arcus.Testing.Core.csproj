@@ -30,7 +30,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[8.*,10.0.0)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="[8.*,10.0.0)" />
-    <PackageReference Include="Polly" Version="[8.*,9.0.0)" />
+    <PackageReference Include="Polly" Version="[8.*,9.0.0)">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
