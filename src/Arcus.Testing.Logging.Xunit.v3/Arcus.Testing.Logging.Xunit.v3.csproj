@@ -14,7 +14,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Testing</PackageTags>
-    <PackageId>Arcus.Testing.Logging.Xunit</PackageId>
+    <PackageId>Arcus.Testing.Logging.Xunit.v3</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
