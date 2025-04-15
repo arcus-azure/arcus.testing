@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Assert\Arcus.Testing.Assert.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Logging.TUnit\Arcus.Testing.Logging.TUnit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.NUnit\Arcus.Testing.Logging.NUnit.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.MSTest\Arcus.Testing.Logging.MSTest.csproj" />
