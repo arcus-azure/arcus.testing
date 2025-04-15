@@ -83,7 +83,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         [Fact]
         public void CreateV3_WithoutWriter_Fails()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new ArcusXunitV3::Arcus.Testing.XunitTestLogger(testOutput: null));
+            Assert.ThrowsAny<ArgumentException>(() => new ArcusXunitV3::Arcus.Testing.XunitTestLogger(outputWriter: null));
         }
 
         private class SpyTestWriter : ITestOutputHelper, XunitV3::Xunit.ITestOutputHelper

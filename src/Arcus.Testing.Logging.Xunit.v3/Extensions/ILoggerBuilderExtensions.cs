@@ -22,8 +22,7 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
-            var provider = new XunitLoggerProvider(outputWriter);
-            return builder.AddProvider(provider);
+            return builder.AddProvider(new XunitLoggerProvider(outputWriter));
         }
 
         [ProviderAlias("Xunit")]
@@ -31,16 +30,21 @@ namespace Microsoft.Extensions.Logging
         {
             private readonly ILogger _logger;
 
-            public XunitLoggerProvider(ITestOutputHelper outputWriter)
+            internal XunitLoggerProvider(ITestOutputHelper outputWriter)
             {
                 _logger = new XunitTestLogger(outputWriter);
             }
 
-            public ILogger CreateLogger(string categoryName)
-            {
-                return _logger;
-            }
+            /// <summary>
+            /// Creates a new <see cref="ILogger" /> instance.
+            /// </summary>
+            /// <param name="categoryName">The category name for messages produced by the logger.</param>
+            /// <returns>The instance of <see cref="ILogger" /> that was created.</returns>
+            public ILogger CreateLogger(string categoryName) => _logger;
 
+            /// <summary>
+            /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            /// </summary>
             public void Dispose()
             {
             }
