@@ -14,7 +14,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             string expectedMessage = Bogus.Lorem.Sentence();
-            var expectedLevel = Bogus.PickRandom<Microsoft.Extensions.Logging.LogLevel>();
+            var expectedLevel = Bogus.PickRandom<LogLevel>();
 
             var mockLogger = new MockTUnitTestLogger();
             var logger = new TUnitTestLogger(mockLogger);
