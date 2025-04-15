@@ -19,6 +19,7 @@ This page describes functionality related to logging in tests.
     
     ```powershell
     PM> Install-Package -Name Arcus.Testing.Logging.Xunit
+    PM> Install-Package -Name Arcus.Testing.Logging.Xunit.v3
     ```
     
     **Example**
@@ -28,7 +29,7 @@ This page describes functionality related to logging in tests.
     ```csharp
     using Arcus.Testing;
     using Microsoft.Extensions.Logging;
-    using Xunit.Abstractions;
+    using Xunit;
     
     public class TestClass
     {
