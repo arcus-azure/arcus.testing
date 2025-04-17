@@ -15,13 +15,10 @@ namespace Arcus.Testing
         /// Initializes a new instance of the <see cref="XunitTestLogger"/> class.
         /// </summary>
         /// <param name="testOutput">The xUnit test output logger.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testOutput"/> is <c>null</c>.</exception>
         public XunitTestLogger(ITestOutputHelper testOutput)
         {
-            if (testOutput is null)
-            {
-                throw new ArgumentNullException(nameof(testOutput));
-            }
-
+            ArgumentNullException.ThrowIfNull(testOutput);
             _testOutput = testOutput;
         }
 
@@ -66,7 +63,7 @@ namespace Arcus.Testing
     /// <summary>
     /// <see cref="ILogger"/> representation of a xUnit <see cref="ITestOutputHelper"/> logger.
     /// </summary>
-    /// <typeparam name="TCategoryName">The type who's name is used for the logger category name.</typeparam>
+    /// <typeparam name="TCategoryName">The type whose name is used for the logger category name.</typeparam>
     public class XunitTestLogger<TCategoryName> : XunitTestLogger, ILogger<TCategoryName>
     {
         /// <summary>

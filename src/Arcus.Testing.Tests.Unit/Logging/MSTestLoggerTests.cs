@@ -15,7 +15,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var mockContext = new MockTestContext();
-            var logger = new MSTestLogger(mockContext);
+            var logger = new MSTestLogger<MSTestLoggerTests>(mockContext);
             string message = Bogus.Lorem.Sentence();
 
             // Act
@@ -30,7 +30,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var mockContext = new MockTestContext();
-            var logger = new MSTestLogger(mockContext);
+            var logger = new MSTestLogger<int>(mockContext);
             Exception exception = Bogus.System.Exception();
             string message = Bogus.Lorem.Sentence();
 

@@ -18,7 +18,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testContext"/> is <c>null</c>.</exception>
         public MSTestLogger(TestContext testContext)
         {
-            _testContext = testContext ?? throw new ArgumentNullException(nameof(testContext));
+            ArgumentNullException.ThrowIfNull(testContext);
+            _testContext = testContext;
         }
 
         /// <summary>
@@ -67,6 +68,22 @@ namespace Arcus.Testing
         public IDisposable BeginScope<TState>(TState state)
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// <see cref="ILogger"/> representation of a MSTest <see cref="TestContext"/>.
+    /// </summary>
+    /// <typeparam name="TCategoryName">The type whose name is used for the logger category name.</typeparam>
+    public class MSTestLogger<TCategoryName> : MSTestLogger, ILogger<TCategoryName>
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MSTestLogger" /> class.
+        /// </summary>
+        /// <param name="testContext">The MSTest context to write custom test output.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testContext"/> is <c>null</c>.</exception>
+        public MSTestLogger(TestContext testContext) : base(testContext)
+        {
         }
     }
 }
