@@ -52,7 +52,7 @@ namespace Arcus.Testing
     /// </summary>
     public sealed class DisposableCollection : IAsyncDisposable
     {
-        private readonly Collection<IAsyncDisposable> _disposables = new();
+        private readonly Collection<IAsyncDisposable> _disposables = [];
         private readonly ILogger _logger;
 
         /// <summary>
