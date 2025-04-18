@@ -12,7 +12,8 @@ namespace Arcus.Testing
 
         private AsyncDisposable(Func<ValueTask> disposeAsync)
         {
-            _disposeAsync = disposeAsync ?? throw new ArgumentNullException(nameof(disposeAsync));
+            ArgumentNullException.ThrowIfNull(disposeAsync);
+            _disposeAsync = disposeAsync;
         }
 
         /// <summary>
@@ -22,11 +23,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public static AsyncDisposable Create(IDisposable disposable)
         {
-            if (disposable is null)
-            {
-                throw new ArgumentNullException(nameof(disposable));
-            }
-
+            ArgumentNullException.ThrowIfNull(disposable);
             return Create(disposable.Dispose);
         }
 
@@ -37,10 +34,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dispose"/> is <c>null</c>.</exception>
         public static AsyncDisposable Create(Action dispose)
         {
-            if (dispose is null)
-            {
-                throw new ArgumentNullException(nameof(dispose));
-            }
+            ArgumentNullException.ThrowIfNull(dispose);
 
             return Create(() =>
             {
@@ -56,11 +50,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposeAsync"/> is <c>null</c>.</exception>
         public static AsyncDisposable Create(Func<Task> disposeAsync)
         {
-            if (disposeAsync is null)
-            {
-                throw new ArgumentNullException(nameof(disposeAsync));
-            }
-
+            ArgumentNullException.ThrowIfNull(disposeAsync);
             return new AsyncDisposable(async () => await disposeAsync());
         }
 
@@ -71,6 +61,7 @@ namespace Arcus.Testing
         public async ValueTask DisposeAsync()
         {
             await _disposeAsync();
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -17,14 +17,12 @@ namespace Arcus.Testing
         /// Override the default 'appsettings.json' JSON path where the test configuration values are retrieved from.
         /// </summary>
         /// <param name="path">The new default path (currently: 'appsettings.json').</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="path"/> is blank.</exception>
         public TestConfigOptions UseMainJsonFile(string path)
         {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException("Requires a non-blank relative path to the '*.json' file used as the default for the test configuration", nameof(path));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
             MainJsonPath = path;
+
             return this;
         }
 
@@ -32,14 +30,12 @@ namespace Arcus.Testing
         /// Adds the JSON configuration provider at <paramref name="path" /> the configuration.
         /// </summary>
         /// <param name="path">The path relative to the project output folder of the test suite project.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="path"/> is blank.</exception>
         public TestConfigOptions AddOptionalJsonFile(string path)
         {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                throw new ArgumentException("Requires a non-blank relative path to the '*.json' file used for the test configuration", nameof(path));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(path);
             _localAppSettingsNames.Add(path);
+
             return this;
         }
 
