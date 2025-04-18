@@ -217,4 +217,115 @@ await using var entity = await TemporaryTableEntity.AddIfNotExistsAsync(
 > 🎖️ Overloads are available to fully control the authentication mechanism to Azure Table storage. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
 </TabItem>
+<TabItem value="file-share" label="File share storage">
+
+The `Arcus.Testing.Storage.File.Share` package provides test fixtures related to Azure File share storage. By using the common testing practice 'clean environment', it provides a temporary Share directory and Share file.
+
+## Installation
+The following functionality is available when installing this package:
+
+```powershell
+PM> Install-Package -Name Arcus.Testing.Storage.File.Share
+```
+
+> ⚠️ When using `TokenCredential` overloads (recommended: managed-identity), make sure to:
+> * 🛡️ enable [Identity-based access for file shares](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-identity-auth-domain-services-enable?tabs=azure-portal) to make sure that the file shares can be accessed via Entra ID.
+>* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor)-rights if the test needs to create/update/delete share directories/files.
+> * 🛡️ include the [Share token intent](https://learn.microsoft.com/en-us/azure/storage/files/authorize-oauth-rest?tabs=portal#authorize-access-to-file-data-in-application-code), otherwise the file operations won't get authorized correctly.
+
+## Temporary share directory
+The `TemporaryShareDirectory` provides a solution when the integration test requires a storage system (file share) during the test run. An Azure Share directory is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+```csharp
+using Arcus.Testing;
+using Azure.Storage.Files.Shares;
+
+var shareClient = new ShareClient(...);
+
+await using var directory = await TemporaryShareDirectory.CreateIfNotExistsAsync(
+    shareClient, "<directory-name", logger);
+
+// Interact with the directory during the lifetime of the fixture.
+ShareDirectoryClient client = directory.Client;
+```
+
+Uploading files to the directory can also be done via the test fixture. It always make sure that any uploaded files will be deleted afterwards upon disposal.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryShareDirectory directory = ...
+
+string fileName = "TestFile";
+await using Stream fileContents = File.OpenRead(...);
+
+await directory.UploadFileAsync(fileName, fileContents);
+```
+
+### Customization
+The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
+
+> ❔ Both files and subdirectories are meant by 'Azure Share items':
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryShareDirectory.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Leaves all Azure Share items untouched that already existed,
+    // upon the test fixture creation, when there was already an Azure Share available.
+    options.OnSetup.LeaveAllItems();
+
+    // Delete all Azure Share items upon the test fixture creation, 
+    // when there was already an Azure Share available.
+    options.OnSetup.CleanAllItems();
+
+    // Delete Azure Share items that matches any of the configured filters, 
+    // upon the test fixture creation, when there was already an Azure Share available.
+    options.OnSetup.CleanMatchingItems((ShareFileItem item) => item.Name == "TestFile");
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default for cleaning items)
+    // Delete Azure Share items upon the test fixture disposal that were added by the fixture.
+    options.OnTeardown.CleanCreatedItems();
+
+    // Delete all Azure Share items upon the test fixture disposal, 
+    // even if the test fixture didn't added them.
+    options.OnTeardown.CleanAllItems();
+
+    // Delete additional Azure Share items that matches any of the configured filters, 
+    // upon the test fixture disposal.
+    // ⚠️ Items added by the test fixture itself will always be deleted.
+    options.OnTeardown.CleanMatchingItems((ShareFileItem item) => item.Name == "TestFile");
+});
+
+// `OnTeardown` is also still available after the temporary directory is created:
+await using TemporaryShareDirectory directory = ...
+
+directory.OnTeardown.CleanAllItems();
+```
+
+> 🎖️ The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+
+## Temporary share file
+The `TemporaryShareFile` provides a solution when the integration test requires data (file share) during the test run. An Azure Share file item is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+```csharp
+using Arcus.Testing;
+
+ShareDirectoryClient client = ...
+
+string fileName = "TestFile";
+await using Stream fileContents = File.OpenRead(...);
+
+await using var file = await TemporaryShareFile.CreateIfNotExistsAsync(
+    client, fileName, fileContents, logger);
+```
+
+</TabItem>
 </Tabs>

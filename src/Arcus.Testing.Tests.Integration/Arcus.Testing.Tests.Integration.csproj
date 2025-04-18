@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Arcus.Testing.Messaging.ServiceBus\Arcus.Testing.Messaging.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Storage.File.Share\Arcus.Testing.Storage.File.Share.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj" />
   </ItemGroup>
