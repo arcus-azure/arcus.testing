@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents a temporary file share on an Azure Storage file share directory.
+    /// Represents a file that is temporary available on an Azure Storage file share directory.
     /// </summary>
     public class TemporaryShareFile : IAsyncDisposable
     {
@@ -36,7 +36,7 @@ namespace Arcus.Testing
         public ShareFileClient Client { get; }
 
         /// <summary>
-        /// Creates a temporary file on an Azure Storage file share directory.
+        /// Creates a new or replace an existing file on an Azure Storage file share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileContents"/>'s <see cref="Stream.Length"/> is accessible,
@@ -48,21 +48,17 @@ namespace Arcus.Testing
         /// <param name="logger">The instance to log diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> or the <paramref name="fileContents"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
-        public static async Task<TemporaryShareFile> CreateIfNotExistsAsync(
-            ShareDirectoryClient directoryClient,
-            string fileName,
-            Stream fileContents,
-            ILogger logger)
+        public static async Task<TemporaryShareFile> UpsertFileAsync(ShareDirectoryClient directoryClient, string fileName, Stream fileContents, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(directoryClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
             ShareFileClient fileClient = directoryClient.GetFileClient(fileName);
-            return await CreateIfNotExistsAsync(fileClient, fileContents, logger);
+            return await UpsertFileAsync(fileClient, fileContents, logger);
         }
 
         /// <summary>
-        /// Creates a temporary file on an Azure Storage file share directory.
+        /// Creates a new or replace an existing file on an Azure Storage file share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileStream"/>'s <see cref="Stream.Length"/> is accessible,
@@ -72,10 +68,7 @@ namespace Arcus.Testing
         /// <param name="fileStream">The contents of the file to upload to the share directory.</param>
         /// <param name="logger">The instance to log diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="fileClient"/> or the <paramref name="fileStream"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryShareFile> CreateIfNotExistsAsync(
-            ShareFileClient fileClient,
-            Stream fileStream,
-            ILogger logger)
+        public static async Task<TemporaryShareFile> UpsertFileAsync(ShareFileClient fileClient, Stream fileStream, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(fileClient);
             ArgumentNullException.ThrowIfNull(fileStream);

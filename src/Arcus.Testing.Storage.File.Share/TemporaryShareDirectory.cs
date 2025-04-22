@@ -298,7 +298,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="fileContents"/> is <c>null</c>.</exception>
         public async Task UploadFileAsync(string fileName, Stream fileContents)
         {
-            _files.Add(await TemporaryShareFile.CreateIfNotExistsAsync(Client, fileName, fileContents, _logger));
+            _files.Add(await TemporaryShareFile.UpsertFileAsync(Client, fileName, fileContents, _logger));
         }
 
         /// <summary>

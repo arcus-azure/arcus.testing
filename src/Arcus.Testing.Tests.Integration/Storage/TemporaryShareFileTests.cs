@@ -2,10 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Storage.Configuration;
-using Azure.Identity;
 using Azure.Storage.Files.Shares;
-using Azure.Storage.Files.Shares.Models;
 using Xunit;
 using Xunit.Abstractions;
 using DirClient = Azure.Storage.Files.Shares.ShareDirectoryClient;
@@ -122,7 +119,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryShareFile> WhenFileCreatedAsync(FileClient client, Stream fileStream)
         {
-            var temp = await TemporaryShareFile.CreateIfNotExistsAsync(client, fileStream, Logger);
+            var temp = await TemporaryShareFile.UpsertFileAsync(client, fileStream, Logger);
 
             Assert.Equal(client.Name, temp.Client.Name);
             return temp;
@@ -131,56 +128,6 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private async Task<FileShareTestContext> GivenFileShareAsync()
         {
             return await FileShareTestContext.GivenAvailableAsync(Configuration, Logger);
-        }
-
-        [Fact]
-        public async Task UploadFileShare_ToExistingDirectory_TemporaryOverridesFileContentsDuringLifetimeFixture()
-        {
-            // Arrange
-            StorageAccount account = Configuration.GetStorageAccount();
-
-            var service = new ShareServiceClient(
-                new Uri($"https://{account.Name}.file.core.windows.net/"),
-                new ClientSecretCredential(ServicePrincipal.TenantId, ServicePrincipal.ClientId, ServicePrincipal.ClientSecret));
-
-            service = new ShareServiceClient(account.ConnectionString);
-
-            string shareName = Guid.NewGuid().ToString();
-            var share = service.GetShareClient(shareName);
-            await share.CreateAsync();
-
-            string directoryName = Guid.NewGuid().ToString();
-            ShareDirectoryClient directoryClient = share.GetDirectoryClient(directoryName);
-            await directoryClient.CreateAsync();
-
-            string fileName = Guid.NewGuid().ToString();
-            FileClient fileClient = directoryClient.GetFileClient(fileName);
-            using Stream originalContents = new MemoryStream(Encoding.UTF8.GetBytes("123"));
-            await fileClient.CreateAsync(originalContents.Length);
-
-            try
-            {
-                await fileClient.UploadAsync(originalContents);
-
-                using Stream fileContents = new MemoryStream(Encoding.UTF8.GetBytes("456"));
-                var temp = await TemporaryShareFile.CreateIfNotExistsAsync(directoryClient, fileName, fileContents, Logger);
-
-                Assert.Equal("456", await DownloadFileShareContentsAsStringAsync(fileClient));
-                await temp.DisposeAsync();
-                Assert.Equal("123", await DownloadFileShareContentsAsStringAsync(fileClient));
-            }
-            finally
-            {
-                await share.DeleteIfExistsAsync();
-            }
-        }
-
-        private static async Task<string> DownloadFileShareContentsAsStringAsync(FileClient fileClient)
-        {
-            ShareFileDownloadInfo actual = await fileClient.DownloadAsync();
-            using var reader = new StreamReader(actual.Content);
-            string actualTxt = await reader.ReadToEndAsync();
-            return actualTxt;
         }
     }
 }

@@ -323,7 +323,7 @@ ShareDirectoryClient client = ...
 string fileName = "TestFile";
 await using Stream fileContents = File.OpenRead(...);
 
-await using var file = await TemporaryShareFile.CreateIfNotExistsAsync(
+await using var file = await TemporaryShareFile.UpsertFileAsync(
     client, fileName, fileContents, logger);
 ```
 
