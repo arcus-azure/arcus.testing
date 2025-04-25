@@ -290,9 +290,8 @@ await TemporaryShareDirectory.CreateIfNotExistsAsync(..., options =>
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
 
-    // (Default for cleaning items)
-    // Delete Azure Share items upon the test fixture disposal that were added by the fixture.
-    options.OnTeardown.CleanCreatedItems();
+    // (Default) Delete Azure Share items upon the test fixture disposal that were upserted by the fixture.
+    options.OnTeardown.CleanUpsertedItems();
 
     // Delete all Azure Share items upon the test fixture disposal, 
     // even if the test fixture didn't added them.
@@ -300,7 +299,7 @@ await TemporaryShareDirectory.CreateIfNotExistsAsync(..., options =>
 
     // Delete additional Azure Share items that matches any of the configured filters, 
     // upon the test fixture disposal.
-    // ⚠️ Items added by the test fixture itself will always be deleted.
+    // ⚠️ Items upserted by the test fixture itself will always be deleted/reverted.
     options.OnTeardown.CleanMatchingItems((ShareFileItem item) => item.Name == "TestFile");
 });
 

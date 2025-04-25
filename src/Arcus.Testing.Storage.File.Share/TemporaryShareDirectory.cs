@@ -83,9 +83,9 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryShareDirectory"/> to clean only the items (both files and directories) in the directory share
-        /// that the test fixture was responsible for creating, upon the deletion of the fixture.
+        /// that the test fixture was responsible for upserting (via <see cref="TemporaryShareDirectory.UpsertFileAsync"/>), upon the deletion of the fixture.
         /// </summary>
-        public OnTeardownTemporaryShareDirectoryOptions CleanCreatedItems()
+        public OnTeardownTemporaryShareDirectoryOptions CleanUpsertedItems()
         {
             Items = OnTeardownDirectoryShare.CleanIfCreated;
             return this;
@@ -142,7 +142,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the options to manipulate the deletion of the <see cref="TemporaryShareDirectory"/>.
         /// </summary>
-        public OnTeardownTemporaryShareDirectoryOptions OnTeardown { get; } = new OnTeardownTemporaryShareDirectoryOptions().CleanCreatedItems();
+        public OnTeardownTemporaryShareDirectoryOptions OnTeardown { get; } = new OnTeardownTemporaryShareDirectoryOptions().CleanUpsertedItems();
     }
 
     /// <summary>
