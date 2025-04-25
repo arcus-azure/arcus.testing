@@ -36,7 +36,7 @@ namespace Arcus.Testing
         public ShareFileClient Client { get; }
 
         /// <summary>
-        /// Creates a new or replace an existing file on an Azure Storage file share directory.
+        /// Creates a new or replaces an existing file on an Azure Storage file share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileContents"/>'s <see cref="Stream.Length"/> is accessible,
@@ -58,7 +58,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new or replace an existing file on an Azure Storage file share directory.
+        /// Creates a new or replaces an existing file on an Azure Storage file share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileStream"/>'s <see cref="Stream.Length"/> is accessible,

@@ -287,16 +287,16 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Uploads a file temporary to this directory share.
+        /// Creates a new or replaces an existing file in this directory share (a.k.a. UPSERT).
         /// </summary>
         /// <remarks>
-        ///     Any files uploaded here will be deleted when the <see cref="TemporaryShareDirectory"/> is disposed.
+        ///     Any files uploaded via this call will always be deleted (if new) or reverted (if existing) when this instance is disposed.
         /// </remarks>
         /// <param name="fileName">The name of the file to upload to the share directory.</param>
         /// <param name="fileContents">The contents of the file to upload to the share directory.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="fileContents"/> is <c>null</c>.</exception>
-        public async Task UploadFileAsync(string fileName, Stream fileContents)
+        public async Task UpsertFileAsync(string fileName, Stream fileContents)
         {
             _files.Add(await TemporaryShareFile.UpsertFileAsync(Client, fileName, fileContents, _logger));
         }

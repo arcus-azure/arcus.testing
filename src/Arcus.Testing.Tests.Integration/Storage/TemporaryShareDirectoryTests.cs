@@ -225,7 +225,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         internal static async Task WhenFileFileUploadAsync(this TemporaryShareDirectory dir, FileClient file)
         {
             await using var fileContents = new MemoryStream(Encoding.UTF8.GetBytes(Bogus.Lorem.Sentence()));
-            await dir.UploadFileAsync(file.Name, fileContents);
+            await dir.UpsertFileAsync(file.Name, fileContents);
         }
     }
 
