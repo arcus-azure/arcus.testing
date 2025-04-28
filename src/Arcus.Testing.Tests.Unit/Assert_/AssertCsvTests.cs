@@ -989,7 +989,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         });
 
         [Fact]
-        public void LoadWithEveryColumnIgnored_WithRandomCsv_FailsDueToEmptyCsvResult()
+        public void LoadWithEveryColumnIgnored_WithRandomCsv_SucceedsWithEmptyCsvResult()
         {
             // Arrange
             TestCsv csv = TestCsv.Generate();
