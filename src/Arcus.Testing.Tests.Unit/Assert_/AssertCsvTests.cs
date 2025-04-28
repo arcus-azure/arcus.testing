@@ -424,6 +424,37 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         });
 
         [Fact]
+        public void CompareWithIgnoredColumns_LoadAndEqual_SucceedsComparison() => Property(csv =>
+        {
+            // Arrange
+            TestCsv actualCsv = csv.Copy();
+            string ignoredColumnNameActual = actualCsv.AddColumn();
+            string ignoredColumnNameExpected = Bogus.PickRandom(csv.HeaderNames);
+            string ignoredColumnNameBoth = Bogus.PickRandom(csv.HeaderNames);
+
+            CsvTable expected = LoadCsv(csv, options => options.IgnoreColumn(ignoredColumnNameExpected));
+            CsvTable actual = LoadCsv(csv, options => options.IgnoreColumn(ignoredColumnNameExpected).IgnoreColumn(ignoredColumnNameActual));
+
+            // Act / Assert
+            EqualCsv(expected, actual, options => options.IgnoreColumn(ignoredColumnNameBoth));
+        });
+
+        [Fact]
+        public void CompareWithIgnoredColumnIndexes_LoadAndEqual_SucceedsComparison() => Property(csv =>
+        {
+            // Arrange
+            TestCsv actualCsv = csv.Copy();
+            int ignoredColumnIndexActual = actualCsv.IgnoredIndex;
+            string ignoredColumnNameActual = actualCsv.HeaderNames[ignoredColumnIndexActual];
+
+            CsvTable expected = LoadCsv(csv, options => options.IgnoreColumn(ignoredColumnNameActual));
+            CsvTable actual = LoadCsv(csv, options => options.IgnoreColumn(ignoredColumnIndexActual));
+
+            // Act / Assert
+            EqualCsv(expected, actual, options => options.IgnoreColumn(csv.IgnoredIndex));
+        });
+
+        [Fact]
         public void CompareWithoutHeader_WithIgnoredRow_FailsWithMissingHeadersDescription() => Property(genCsv =>
         {
             // Arrange
@@ -554,6 +585,17 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                         options.RowOrder = AssertCsvOrder.Ignore;
                     }
                 };
+                yield return new object[]
+                {
+                    $"z;a;b;c;b;b{NewLine}x;1;0;1;0;0",
+                    $"z;a;c;d;d{NewLine}x;1;1;0;0",
+                    void (AssertCsvOptions options) =>
+                    {
+                        options.IgnoreColumn("b");
+                        options.IgnoreColumn("d");
+                        options.IgnoreColumn(0);
+                    }
+                };
             }
         }
 
@@ -624,6 +666,77 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Compare_NotEqual_ShouldFailWithDifference(string expectedCsv, string actualCsv, params string[] expectedDifferences)
         {
             CompareShouldFailWithDescription(expectedCsv, actualCsv, configureOptions: null, expectedDifferences);
+        }
+
+        public static IEnumerable<object[]> FailingCasesWithOptions
+        {
+            get
+            {
+                yield return TestCase(
+                    expectedCsv: $"tree;branch;leaf{NewLine}1;2;3",
+                    actualCsv: $"tree;branch{NewLine}2;2",
+                    configureLoadExpectedOptions: options => options.IgnoreColumn(2),
+                    configureLoadActualOptions: null,
+                    configureEqualOptions: null,
+                    "different", "value", "1 while actual 2");
+
+                yield return TestCase(
+                    expectedCsv: $"fruit;color{NewLine}apple;green",
+                    actualCsv: $"fruit;color;origin{NewLine}apple;green;europe",
+                    configureLoadExpectedOptions: null,
+                    configureLoadActualOptions: options => options.IgnoreColumn(1),
+                    configureEqualOptions: null,
+                    "missing", "column", "color");
+
+                yield return TestCase(
+                    expectedCsv: $"show;genre{NewLine}x-files;mystery",
+                    actualCsv: $"show;genre{NewLine}lost;mystery{NewLine}x-files;mystery",
+                    configureLoadExpectedOptions: null,
+                    configureLoadActualOptions: null,
+                    configureEqualOptions: options => options.IgnoreColumn("genre"),
+                    "has 2 rows instead of 1");
+
+                yield return TestCase(
+                    expectedCsv: $"#;movie;genre;year;accepted{NewLine}1;blade runner;sf;1982;yes",
+                    actualCsv: $"#;movie;genre;year{NewLine}1;the thing;sf;1982",
+                    configureLoadExpectedOptions: null,
+                    configureLoadActualOptions: null,
+                    configureEqualOptions: options =>
+                    {
+                        options.IgnoreColumn("accepted");
+                        options.IgnoreColumn(0);
+                    },
+                    "different", "value", "\"blade runner\" while actual \"the thing\"");
+            }
+        }
+
+        private static object[] TestCase(
+            string expectedCsv,
+            string actualCsv,
+            Action<AssertCsvOptions> configureLoadExpectedOptions = null,
+            Action<AssertCsvOptions> configureLoadActualOptions = null,
+            Action<AssertCsvOptions> configureEqualOptions = null,
+            params string[] expectedDifferences)
+        {
+            return [expectedCsv, actualCsv, configureLoadExpectedOptions, configureLoadActualOptions, configureEqualOptions, expectedDifferences];
+        }
+
+        [Theory]
+        [MemberData(nameof(FailingCasesWithOptions))]
+        public void CompareCsv_WithAssertOptions_ShouldFailWithDifference(
+            string expectedCsv,
+            string actualCsv,
+            Action<AssertCsvOptions> configureLoadExpectedOptions = null,
+            Action<AssertCsvOptions> configureLoadActualOptions = null,
+            Action<AssertCsvOptions> configureEqualOptions = null,
+            params string[] expectedDifferences)
+        {
+            // Arrange
+            CsvTable expected = LoadCsv(expectedCsv, configureLoadExpectedOptions, "Expected");
+            CsvTable actual = LoadCsv(actualCsv, configureLoadActualOptions, "Actual");
+
+            // Act
+            CompareShouldFailWithDescription(expected, actual, configureEqualOptions, expectedDifferences);
         }
 
         public static IEnumerable<object[]> FailingCasesWithReportOptions
@@ -841,6 +954,55 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Equal(csv.ColumnCount, doc.ColumnCount);
             Assert.Equal(0, doc.RowCount);
         });
+
+        [Fact]
+        public void LoadWithIgnoredColumn_UsingRandomCsvWithColumn_SucceedsByRemovingColumn() => Property(csv =>
+        {
+            // Arrange
+            string columnName = Bogus.PickRandom(csv.HeaderNames);
+
+            // Act
+            CsvTable withoutIgnoredColumn = LoadCsv(csv, options => options.IgnoreColumn(columnName));
+
+            // Assert
+            Assert.DoesNotContain(columnName, withoutIgnoredColumn.HeaderNames);
+
+            CsvTable withIgnoredColumn = LoadCsv(csv);
+            EqualCsv(withIgnoredColumn, withoutIgnoredColumn, options => options.IgnoreColumn(columnName));
+        });
+
+        [Fact]
+        public void LoadWithIgnoredColumnIndex_WithRandomCsvWithColumn_SucceedsByRemovingColumn() => Property(csv =>
+        {
+            // Arrange
+            (string columnName, int columnNumber) =
+                Bogus.PickRandom(csv.HeaderNames.Select((headerName, columnNumber) => (headerName, columnNumber)));
+
+            // Act
+            CsvTable withoutIgnoredColumn = LoadCsv(csv, options => options.IgnoreColumn(columnNumber));
+
+            // Assert
+            Assert.DoesNotContain(columnName, withoutIgnoredColumn.HeaderNames);
+
+            CsvTable withIgnoredColumn = LoadCsv(csv);
+            EqualCsv(withIgnoredColumn, withoutIgnoredColumn, options => options.IgnoreColumn(columnName));
+        });
+
+        [Fact]
+        public void LoadWithEveryColumnIgnored_WithRandomCsv_FailsDueToEmptyCsvResult()
+        {
+            // Arrange
+            TestCsv csv = TestCsv.Generate();
+
+            // Act
+            CsvTable actual = LoadCsv(csv, options =>
+            {
+                Assert.All(csv.HeaderNames, name => options.IgnoreColumn(name));
+            });
+
+            // Assert
+            Assert.Empty(actual.HeaderNames);
+        }
 
         [Theory]
         [ClassData(typeof(Blanks))]
