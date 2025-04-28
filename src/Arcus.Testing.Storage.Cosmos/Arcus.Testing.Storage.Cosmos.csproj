@@ -19,6 +19,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,12 +33,6 @@
     <PackageReference Include="Azure.ResourceManager.CosmosDB" Version="[1.*,2.0.0)" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="[3.*,4.0.0)" />
     <PackageReference Include="MongoDB.Driver" Version="[3.*,4.0.0)" />
-
-    <!-- Newtonsoft.Json package is required to be included by 'Microsoft.Azure.Cosmos':
-          The Newtonsoft.Json package must be explicitly referenced with version >= 10.0.2. 
-          Please add a reference to Newtonsoft.Json or set the 'AzureCosmosDisableNewtonsoftJsonCheck' property to 'true' to bypass this check. 
-         This requirement should be regularly checked, as future versions of 'Microsoft.Azure.Cosmos' might include this by default. -->
-    <PackageReference Include="Newtonsoft.Json" Version="[13.*,14.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -14,8 +14,6 @@ using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static Arcus.Testing.NoSqlExtraction;
 
 namespace Arcus.Testing
@@ -33,7 +31,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a generic dictionary-like type which defines an arbitrary set of properties on a NoSql item as key-value pairs.
     /// </summary>
-    public class NoSqlItem : JObject
+    public class NoSqlItem
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="NoSqlItem" /> class.
@@ -41,13 +39,13 @@ namespace Arcus.Testing
         internal NoSqlItem(
             string id,
             PartitionKey partitionKey,
-            JObject properties)
-            : base(properties)
+            JsonObject properties)
         {
             ArgumentNullException.ThrowIfNull(id);
 
             Id = id;
             PartitionKey = partitionKey;
+            Content = properties;
         }
 
         /// <summary>
@@ -59,6 +57,11 @@ namespace Arcus.Testing
         /// Gets the key to group items together in partitions.
         /// </summary>
         public PartitionKey PartitionKey { get; }
+
+        /// <summary>
+        /// Gets the complete custom user-defined content of the stored NoSql item.
+        /// </summary>
+        public JsonNode Content { get; }
     }
 
     /// <summary>
@@ -152,7 +155,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Determine if any of the user configured filters matches with the current NoSql item.
         /// </summary>
-        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JsonObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
             return _filters.Exists(filter => filter(client, item));
@@ -253,7 +256,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Determine if any of the user configured filters matches with the current NoSql item.
         /// </summary>
-        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JsonObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
             return _filters.Exists(filter => filter(client, item));
@@ -482,25 +485,10 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(cosmosDbAccountResourceId);
             ArgumentNullException.ThrowIfNull(credential);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(partitionKeyPath);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(databaseName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank name for the NoSql database in the Azure Cosmos resource", nameof(databaseName));
-            }
-
-            if (string.IsNullOrWhiteSpace(containerName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank name for the temporary NoSql container in the Azure Cosmos resource", nameof(containerName));
-            }
-
-            if (string.IsNullOrWhiteSpace(partitionKeyPath))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank path to the partition key for the temporary NoSql container", nameof(partitionKeyPath));
-            }
 
             var options = new TemporaryNoSqlContainerOptions();
             configureOptions?.Invoke(options);
@@ -693,12 +681,12 @@ namespace Arcus.Testing
             }
         }
 
-        private async Task ForEachItemAsync(Func<string, PartitionKey, JObject, Task> deleteItemAsync)
+        private async Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
             await ForEachItemAsync(Client, deleteItemAsync);
         }
 
-        private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JObject, Task> deleteItemAsync)
+        private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
             ContainerResponse resp = await container.ReadContainerAsync();
             ContainerProperties properties = resp.Resource;
@@ -712,18 +700,16 @@ namespace Arcus.Testing
                     continue;
                 }
 
-                using var content = new StreamReader(message.Content);
-                using var reader = new JsonTextReader(content);
+                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions);
 
-                JToken json = await JToken.ReadFromAsync(reader);
-                if (json is not JObject root
-                    || !root.TryGetValue("Documents", out JToken docs)
-                    || docs is not JArray docsArr)
+                if (json is not JsonObject root
+                    || !root.TryGetPropertyValue("Documents", out JsonNode docs)
+                    || docs is not JsonArray docsArr)
                 {
                     continue;
                 }
 
-                foreach (JObject doc in docsArr.Where(d => d is JObject).Cast<JObject>().ToArray())
+                foreach (JsonObject doc in docsArr.OfType<JsonObject>().ToArray())
                 {
                     string id = ExtractIdFromItem(doc);
                     if (string.IsNullOrWhiteSpace(id))

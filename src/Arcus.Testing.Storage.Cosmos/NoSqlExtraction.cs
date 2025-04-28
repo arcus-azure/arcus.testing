@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json.Linq;
 
 namespace Arcus.Testing
 {
@@ -11,21 +12,23 @@ namespace Arcus.Testing
     /// </summary>
     internal static class NoSqlExtraction
     {
+        internal static readonly JsonNodeOptions DeserializeOptions = new() { PropertyNameCaseInsensitive = true };
+        internal static readonly JsonSerializerOptions SerializeToNodeOptions = new() { PropertyNameCaseInsensitive = true };
+
         /// <summary>
-        /// Extracts the unique ID from the <paramref name="item"/>.
+        /// Extracts the unique ID from the <paramref name="node"/>.
         /// </summary>
-        internal static string ExtractIdFromItem(JObject item, Type itemType = null)
+        internal static string ExtractIdFromItem(JsonNode node, Type itemType = null)
         {
-            string typeDescription = itemType is null ? "type" : $"'{itemType.Name }' type";
-            if (!item.TryGetValue("id", out JToken idNode) || idNode is not JValue id)
+            string typeDescription = itemType is null ? "type" : $"'{itemType.Name}' type";
+            if (node is not JsonObject item || !item.TryGetPropertyValue("id", out JsonNode idNode) || idNode is not JsonValue id)
             {
                 throw new NotSupportedException(
                     $"[Test:Setup] Cannot temporary insert/delete NoSql items in NoSql container as no required 'id' JSON property was found for the {typeDescription}, " +
                     $"please make sure that there exists such a property in the type (Microsoft uses Newtonsoft.Json behind the scenes)");
             }
 
-            var itemId = id.Value<string>();
-            if (string.IsNullOrWhiteSpace(itemId))
+            if (!id.TryGetValue(out string itemId) || string.IsNullOrWhiteSpace(itemId))
             {
                 throw new InvalidOperationException(
                     $"[Test:Setup] Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
@@ -38,15 +41,15 @@ namespace Arcus.Testing
         /// <summary>
         /// Extracts the partition key from the <paramref name="item"/>.
         /// </summary>
-        internal static PartitionKey ExtractPartitionKeyFromItem(JObject item, ContainerProperties properties)
+        internal static PartitionKey ExtractPartitionKeyFromItem(JsonNode item, ContainerProperties properties)
         {
             string[][] partitionKeyTokens =
                 properties.PartitionKeyPaths.Select(path => path.Split('/', StringSplitOptions.RemoveEmptyEntries)).ToArray();
 
-            List<(bool isNone, JToken node)> nodeTree = new(partitionKeyTokens.Length);
+            List<(bool isNone, JsonNode node)> nodeTree = new(partitionKeyTokens.Length);
             foreach (string[] token in partitionKeyTokens)
             {
-                bool foundNode = TryParseNodeByToken(item, token, out JToken result);
+                bool foundNode = TryParseNodeByToken(item, token, out JsonNode result);
                 nodeTree.Add((isNone: !foundNode, node: result));
             }
 
@@ -54,24 +57,24 @@ namespace Arcus.Testing
             return partitionKey;
         }
 
-        private static bool TryParseNodeByToken(JToken pathTraversal, IReadOnlyList<string> tokens, out JToken result)
+        private static bool TryParseNodeByToken(JsonNode pathTraversal, IReadOnlyList<string> tokens, out JsonNode result)
         {
             result = null;
             for (var i = 0; i < tokens.Count - 1; i++)
             {
-                if (pathTraversal is not JObject next || !next.TryGetValue(tokens[i], out pathTraversal))
+                if (pathTraversal is not JsonObject next || !next.TryGetPropertyValue(tokens[i], out pathTraversal))
                 {
                     return false;
                 }
             }
 
-            return pathTraversal is JObject last && last.TryGetValue(tokens[^1], out result);
+            return pathTraversal is JsonObject last && last.TryGetPropertyValue(tokens[^1], out result);
         }
 
-        private static PartitionKey CreatePartitionKeyForNodeTree(IEnumerable<(bool isNone, JToken node)> cosmosElementList)
+        private static PartitionKey CreatePartitionKeyForNodeTree(IEnumerable<(bool isNone, JsonNode node)> cosmosElementList)
         {
             var builder = new PartitionKeyBuilder();
-            foreach ((bool isNone, JToken node) in cosmosElementList)
+            foreach ((bool isNone, JsonNode node) in cosmosElementList)
             {
                 if (isNone)
                 {
@@ -79,13 +82,14 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    _ = node?.Type switch
+                    JsonValueKind? kind = node?.GetValueKind();
+                    _ = kind switch
                     {
-                        JTokenType.String or JTokenType.Guid or JTokenType.Uri => builder.Add(node.Value<string>()),
-                        JTokenType.Float or JTokenType.Integer => builder.Add(float.Parse(node.Value<string>())),
-                        JTokenType.Boolean => builder.Add(node.Value<bool>()),
-                        null or JTokenType.Null => builder.AddNullValue(),
-                        _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), node.Type, "Unsupported partition key value"),
+                        JsonValueKind.String => builder.Add(node.GetValue<string>()),
+                        JsonValueKind.Number => builder.Add(float.Parse(node.GetValue<string>())),
+                        JsonValueKind.True or JsonValueKind.False => builder.Add(node.GetValue<bool>()),
+                        null or JsonValueKind.Null => builder.AddNullValue(),
+                        _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), kind, "Unsupported partition key value"),
                     };
                 }
             }
