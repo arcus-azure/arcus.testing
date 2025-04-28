@@ -97,10 +97,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using NoSqlTestContext context = GivenCosmosNoSql();
 
             Product item = CreateProduct();
-            item.Id = null;
+            item.Id = "";
 
             string containerName = await context.WhenContainerNameAvailableAsync(item.PartitionKeyPath);
-            
+
             // Act / Assert
             await Assert.ThrowsAsync<InvalidOperationException>(
                 () => WhenTempItemCreatedAsync(context, containerName, item));

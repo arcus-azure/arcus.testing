@@ -92,7 +92,7 @@ namespace Arcus.Testing
                         _ = kind switch
                         {
                             JsonValueKind.String => builder.Add(node.GetValue<string>()),
-                            JsonValueKind.Number => builder.Add(float.Parse(node.GetValue<string>())),
+                            JsonValueKind.Number => builder.Add(node.GetValue<float>()),
                             JsonValueKind.True or JsonValueKind.False => builder.Add(node.GetValue<bool>()),
                             JsonValueKind.Null => builder.AddNullValue(),
                             _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), kind, "Unsupported partition key value"),
