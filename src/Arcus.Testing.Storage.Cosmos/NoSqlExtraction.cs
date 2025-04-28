@@ -82,15 +82,22 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    JsonValueKind? kind = node?.GetValueKind();
-                    _ = kind switch
+                    if (node is null)
                     {
-                        JsonValueKind.String => builder.Add(node.GetValue<string>()),
-                        JsonValueKind.Number => builder.Add(float.Parse(node.GetValue<string>())),
-                        JsonValueKind.True or JsonValueKind.False => builder.Add(node.GetValue<bool>()),
-                        null or JsonValueKind.Null => builder.AddNullValue(),
-                        _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), kind, "Unsupported partition key value"),
-                    };
+                        builder.AddNullValue();
+                    }
+                    else
+                    {
+                        JsonValueKind kind = node.GetValueKind();
+                        _ = kind switch
+                        {
+                            JsonValueKind.String => builder.Add(node.GetValue<string>()),
+                            JsonValueKind.Number => builder.Add(float.Parse(node.GetValue<string>())),
+                            JsonValueKind.True or JsonValueKind.False => builder.Add(node.GetValue<bool>()),
+                            JsonValueKind.Null => builder.AddNullValue(),
+                            _ => throw new ArgumentOutOfRangeException(nameof(cosmosElementList), kind, "Unsupported partition key value"),
+                        };
+                    }
                 }
             }
 
