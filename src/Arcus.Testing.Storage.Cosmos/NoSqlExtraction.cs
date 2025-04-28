@@ -57,10 +57,10 @@ namespace Arcus.Testing
             return partitionKey;
         }
 
-        private static bool TryParseNodeByToken(JsonNode pathTraversal, IReadOnlyList<string> tokens, out JsonNode result)
+        private static bool TryParseNodeByToken(JsonNode pathTraversal, string[] tokens, out JsonNode result)
         {
             result = null;
-            for (var i = 0; i < tokens.Count - 1; i++)
+            for (var i = 0; i < tokens.Length - 1; i++)
             {
                 if (pathTraversal is not JsonObject next || !next.TryGetPropertyValue(tokens[i], out pathTraversal))
                 {
