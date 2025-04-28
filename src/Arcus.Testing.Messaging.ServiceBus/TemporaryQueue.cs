@@ -73,10 +73,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryQueueOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.DeadLetterMessages;
@@ -127,10 +124,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryQueueOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.CompleteMessages;
@@ -228,10 +222,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryQueueOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownQueue.DeadLetterMessages;
@@ -295,10 +286,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryQueueOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownQueue.CompleteMessages;
@@ -467,11 +455,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryQueueOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank fully-qualified Azure Service bus namespace to set up a temporary queue", nameof(fullyQualifiedNamespace));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
 
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
@@ -537,13 +521,8 @@ namespace Arcus.Testing
             Action<TemporaryQueueOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(adminClient);
+            ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Service bus queue name to set up a temporary queue", nameof(queueName));
-            }
 
             var options = new TemporaryQueueOptions();
             configureOptions?.Invoke(options);

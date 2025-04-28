@@ -65,11 +65,7 @@ namespace Arcus.Testing
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(blobContainerUri);
-
-            if (string.IsNullOrWhiteSpace(blobName))
-            {
-                throw new ArgumentException("Requires a non-blank name for the Azure Blob file name for it to be uploaded to Azure Blob storage", nameof(blobName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
 
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
             BlobClient blobClient = containerClient.GetBlobClient(blobName);

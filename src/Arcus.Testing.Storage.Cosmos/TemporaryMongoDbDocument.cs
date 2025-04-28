@@ -79,20 +79,9 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
             ArgumentNullException.ThrowIfNull(document);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(databaseName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank MongoDb database name to insert a temporary document in a collection", nameof(databaseName));
-            }
-
-            if (string.IsNullOrWhiteSpace(collectionName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank MongoDb collection name to insert a temporary document", nameof(collectionName));
-            }
-
 
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
             IMongoDatabase database = client.GetDatabase(databaseName);
