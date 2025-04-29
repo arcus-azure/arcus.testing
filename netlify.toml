@@ -22,7 +22,10 @@ ID = "96f20cf8-244d-45c5-86ba-e158d16ade7b"
 
 [build.environment]
   NODE_VERSION = "18.19"
-
+  # cache Cypress binary in local "node_modules" folder
+  # so Netlify caches it
+  CYPRESS_CACHE_FOLDER = "./node_modules/CypressBinary"
+  
 # Production context: all deploys from the Production branch set in your site's
 # deploy settings will inherit these settings.
 # [context.production]
@@ -34,3 +37,13 @@ ID = "96f20cf8-244d-45c5-86ba-e158d16ade7b"
 # inherit these settings.
 # [context.deploy-preview]
   # publish = "dist/"
+
+# run Cypress E2E tests
+[[plugins]]
+package = "netlify-plugin-cypress"
+  [plugins.inputs]
+    # skip the default tests before the deploy
+    skip = true
+  [plugins.inputs.onSuccess]
+    # run tests after the deploy
+    enable = true
