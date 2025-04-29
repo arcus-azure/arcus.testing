@@ -62,13 +62,6 @@ module.exports = {
       theme: lightCodeTheme,
       darkTheme: darkCodeTheme,
       additionalLanguages: ['csharp', 'fsharp', 'diff', 'json', 'powershell'],
-    },
-    algolia: {
-      appId: process.env.ALGOLIA_APP_ID,
-      apiKey: process.env.ALGOLIA_API_KEY,
-      indexName: 'testing-arcus-azure',
-      // Set `contextualSearch` to `true` when having multiple versions!
-      contextualSearch: true
     }
   },
   presets: [
