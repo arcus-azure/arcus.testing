@@ -44,3 +44,4 @@ ID = "96f20cf8-244d-45c5-86ba-e158d16ade7b"
 package = "netlify-plugin-cypress"
   [plugins.inputs]
     spec = "/docs/cypress/e2e/index.cy.js"
+    browser = "electron"
