@@ -9,7 +9,7 @@ module.exports = {
       apiKey: process.env.ALGOLIA_API_KEY,
       indexName: 'testing-arcus-azure',
       // Set `contextualSearch` to `true` when having multiple versions!!!
-      contextualSearch: true,
+      contextualSearch: false,
       searchParameters: {
         facetFilters: ['tags:testing'],
       },
