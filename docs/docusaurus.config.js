@@ -62,7 +62,7 @@ module.exports = {
       theme: lightCodeTheme,
       darkTheme: darkCodeTheme,
       additionalLanguages: ['csharp', 'fsharp', 'diff', 'json', 'powershell'],
-    }
+    },
   },
   presets: [
     [
