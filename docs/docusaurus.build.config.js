@@ -7,7 +7,7 @@ module.exports = {
     algolia: {
       appId: process.env.ALGOLIA_APP_ID,
       apiKey: process.env.ALGOLIA_API_KEY,
-      indexName: 'arcus-azure',
+      indexName: 'testing-arcus-azure',
       // Set `contextualSearch` to `true` when having multiple versions!!!
       contextualSearch: true,
       searchParameters: {
