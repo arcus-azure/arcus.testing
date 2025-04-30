@@ -34,6 +34,7 @@ variables:
   - group: 'GitHub Configuration'
   - group: 'Build Configuration'
   - group: 'MyGet'
+  - group: 'Cypress'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
 
