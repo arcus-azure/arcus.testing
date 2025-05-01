@@ -48,33 +48,6 @@ namespace Arcus.Testing
         public BlobClient Client { get; }
 
         /// <summary>
-        /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
-        /// </summary>
-        /// <remarks>
-        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob storage.</para>
-        ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
-        /// </remarks>
-        /// <param name="blobContainerUri">
-        ///     A <see cref="BlobContainerClient.Uri" /> referencing the blob container that includes the name of the account and the name of the container.
-        ///     This is likely to be similar to "https://{account_name}.blob.core.windows.net/{container_name}".
-        /// </param>
-        /// <param name="blobName">The name of the blob to upload.</param>
-        /// <param name="blobContent">The content of the blob to upload.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryBlobFile> UpsertFileAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
-        {
-            ArgumentNullException.ThrowIfNull(blobContainerUri);
-            ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
-
-            var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
-            BlobClient blobClient = containerClient.GetBlobClient(blobName);
-
-            return await UpsertFileAsync(blobClient, blobContent, logger);
-        }
-
-        /// <summary>
         /// Uploads a temporary blob to the Azure Blob container.
         /// </summary>
         /// <remarks>
@@ -93,6 +66,19 @@ namespace Arcus.Testing
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
             return await UpsertFileAsync(blobContainerUri, blobName, blobContent, logger);
+        }
+
+        /// <summary>
+        /// Uploads a temporary blob to the Azure Blob container.
+        /// </summary>
+        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob storage.</param>
+        /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
+        public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
+        {
+            return await UpsertFileAsync(blobClient, blobContent, logger);
         }
 
         /// <summary>
@@ -118,15 +104,29 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Uploads a temporary blob to the Azure Blob container.
+        /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
         /// </summary>
-        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob storage.</param>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob storage.</para>
+        ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
+        /// </remarks>
+        /// <param name="blobContainerUri">
+        ///     <para>The <see cref="BlobContainerClient.Uri" /> referencing the blob container that includes the name of the account and the name of the container.</para>
+        ///     <para>This is likely to be similar to <a href="">https://{account_name}.blob.core.windows.net/{container_name}</a>.</para>
+        /// </param>
+        /// <param name="blobName">The name of the blob to upload.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
-        public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryBlobFile> UpsertFileAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
+            ArgumentNullException.ThrowIfNull(blobContainerUri);
+            ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
+
+            var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
+            BlobClient blobClient = containerClient.GetBlobClient(blobName);
+
             return await UpsertFileAsync(blobClient, blobContent, logger);
         }
 
