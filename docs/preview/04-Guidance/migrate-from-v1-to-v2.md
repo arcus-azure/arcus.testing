@@ -6,7 +6,6 @@ This guide will walk you through the process of migrating your test suite from t
 Starting from v3, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
 
 ## 📦 Arcus.Testing.Logging.*
-
 ### 👋 Arcus.Testing.Logging.Core is archived
 Starting from v3, the `Arcus.Testing.Logging.Core` package of the set of logging packages is being archived and is not included anymore as a transient reference in any of the testing framework-specific packages.
 
@@ -21,7 +20,6 @@ This also means that the following packages will not be transiently available an
 * **Serilog**
 
 ## 📦 Arcus.Testing.Storage.Blob
-
 ### `BlobNameFilter` ➡️ `Func<BlobItem, bool>`
 Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type has been removed in v3 in favor of a built-in delegation.
 
@@ -65,7 +63,6 @@ Previous versions had additional options on the `TemporaryBlobFile` test fixture
     ```
 
 ## 📦 Arcus.Testing.Storage.Cosmos
-
 ### `Newtonsoft.Json` ➡️ `System.Text.Json`
 Starting from v2, the `Newtonsoft.Json` package is not included by default anymore, since Microsoft has removed this from its transient dependencies (See also [this GitHub issue](https://github.com/Azure/azure-cosmos-dotnet-v3/issues/4900)).
 
@@ -100,7 +97,6 @@ TemporaryNoSqlContainer.CreateIfNoExistsAsync(..., options =>
 ```
 
 ## 📦 Arcus.Testing.Storage.Table
-
 ### `TableEntityFilter` ➡️ `Func<TableEntity, bool>`
 Previous versions had a dedicated type called `TableEntityFilter` to filter out certain Azure Table entities subject for deletion during the setup/teardown of the table. The type has been removed in v3 in favor of a built-in delegation.
 
