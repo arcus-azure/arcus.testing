@@ -99,12 +99,12 @@ container.OnTeardown.CleanMatchingBlobs(...);
 > 🎖️ The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UploadBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 
 ## Temporary Blob file
-The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created (if new) or replaced (if existing) upon the setup of the test fixture and is deleted (if new) or reverted (if exsiting) again when the test fixture is disposed.
 
 ```csharp
 using Arcus.Testing;
 
-await using var file = await TemporaryBlobFile.UploadIfNotExistsAsync(
+await using var file = await TemporaryBlobFile.UpsertFileAsync(
     blobContainerUri: new Uri("<blob-container-uri">),
     blobName: "<blob-name>",
     blobContent: BinaryData.FromString("<blob-content">),
