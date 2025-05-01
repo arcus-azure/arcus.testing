@@ -244,7 +244,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BlobContainerClient client,
             Action<TemporaryBlobContainerOptions> configureOptions = null)
         {
-#pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with  readability.
+#pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with readability.
 
             TemporaryBlobContainer temp = configureOptions is null
                 ? Bogus.Random.Bool()

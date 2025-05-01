@@ -115,7 +115,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync(string, BinaryData)"/>).
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
         /// </summary>
         [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality")]
         public OnTeardownBlobContainerOptions CleanCreatedBlobs()
@@ -125,7 +125,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync(string, BinaryData)"/>).
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
         /// </summary>
         public OnTeardownBlobContainerOptions CleanUpsertedBlobs()
         {
@@ -355,7 +355,7 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + " instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality")]
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
             return await UpsertBlobFileAsync(blobName, blobContent);
@@ -365,7 +365,7 @@ namespace Arcus.Testing
         /// Uploads a new or replaces an existing blob in the Azure Blob container (a.k.a. UPSERT).
         /// </summary>
         /// <remarks>
-        ///     Any blob files upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     ⚡ Any blob files upserted via this call will always be deleted (if new) or reverted (if existing)
         ///     when the <see cref="TemporaryBlobContainer"/> is disposed.
         /// </remarks>
         /// <param name="blobName">The name of the blob to upload.</param>
@@ -378,7 +378,7 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(blobContent);
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
-            _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger));
+            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger));
 
             return blobClient;
         }
