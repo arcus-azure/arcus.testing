@@ -69,7 +69,7 @@ await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
 
-    // (Default for cleaning blobs)
+    // (Default for cleaning blob files)
     // Delete/revert Azure Blob files upon the test fixture disposal that were upserted by the fixture.
     options.OnTeardown.CleanUpsertedBlobs();
 
