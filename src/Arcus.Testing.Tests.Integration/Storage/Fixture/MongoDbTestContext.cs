@@ -101,16 +101,46 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         }
 
         /// <summary>
-        /// Provides a collection name that does exists in the MongoDb database.
+        /// Provides a collection name that does exist in the MongoDb database.
         /// </summary>
         public async Task<string> WhenCollectionNameAvailableAsync()
         {
             string collectionName = WhenCollectionNameUnavailable();
             _logger.LogTrace("[Test] create MongoDb collection '{CollectionName}' outside the fixture's scope", collectionName);
 
-            await _database.CreateCollectionAsync(collectionName);
+            await WhenMongoDbAvailableAsync(
+                () => _database.CreateCollectionAsync(collectionName),
+                $"[Test] cannot create MongoDb collection '{collectionName}' outside the fixture's scope, due to a high-rate failure");
 
             return collectionName;
+        }
+
+        /// <summary>
+        /// Runs an <paramref name="mongoDbOperationAsync"/> within a MongoDb connection, with transient-failure retry.
+        /// </summary>
+        /// <param name="mongoDbOperationAsync">The operation to run against a MongoDb database.</param>
+        /// <param name="errorMessage">The custom user message that describes the <paramref name="mongoDbOperationAsync"/>.</param>
+        internal static async Task WhenMongoDbAvailableAsync(Func<Task> mongoDbOperationAsync, string errorMessage)
+        {
+            await WhenMongoDbAvailableAsync(async () =>
+            {
+                await mongoDbOperationAsync();
+                return 0;
+
+            }, errorMessage);
+        }
+
+        /// <summary>
+        /// Runs an <paramref name="mongoDbOperationAsync"/> within a MongoDb connection, with transient-failure retry.
+        /// </summary>
+        /// <param name="mongoDbOperationAsync">The operation to run against a MongoDb database.</param>
+        /// <param name="errorMessage">The custom user message that describes the <paramref name="mongoDbOperationAsync"/>.</param>
+        internal static async Task<TResult> WhenMongoDbAvailableAsync<TResult>(Func<Task<TResult>> mongoDbOperationAsync, string errorMessage)
+        {
+            return await Poll.Target<TResult, MongoCommandException>(mongoDbOperationAsync)
+                             .When(ex => ex.Message.Contains("high rate") || ex.ErrorMessage.Contains("high rate"))
+                             .Every(TimeSpan.FromMilliseconds(500))
+                             .FailWith(errorMessage);
         }
 
         /// <summary>
