@@ -290,7 +290,7 @@ await TemporaryShareDirectory.CreateIfNotExistsAsync(..., options =>
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
 
-    // (Default) Delete Azure Share items upon the test fixture disposal that were upserted by the fixture.
+    // (Default) Delete/Revert Azure Share items upon the test fixture disposal that were upserted by the fixture.
     options.OnTeardown.CleanUpsertedItems();
 
     // Delete all Azure Share items upon the test fixture disposal, 
