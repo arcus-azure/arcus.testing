@@ -126,7 +126,6 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete or revert the MongoDb documents upon disposal
-
         /// if the document was upserted by the test fixture (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanUpsertedDocuments()
