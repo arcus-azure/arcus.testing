@@ -249,7 +249,7 @@ await using var directory = await TemporaryShareDirectory.CreateIfNotExistsAsync
 ShareDirectoryClient client = directory.Client;
 ```
 
-Uploading files to the directory can also be done via the test fixture. It always make sure that any uploaded files will be deleted (if the file was new) or reverted (if the file already existed) afterwards upon disposal.
+Upserting files to the directory can also be done via the test fixture. It always make sure that any uploaded files will be deleted (if the file was new) or reverted (if the file already existed) afterwards upon disposal.
 
 ```csharp
 using Arcus.Testing;
