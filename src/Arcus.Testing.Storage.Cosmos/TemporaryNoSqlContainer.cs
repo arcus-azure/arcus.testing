@@ -182,7 +182,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSql items upon disposal
+        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete or revert the NoSql items upon disposal
+
         /// if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}"/>).
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanUpsertedItems()
