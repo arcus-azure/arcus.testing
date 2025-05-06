@@ -48,6 +48,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Messaging", "Messaging", "{4992B48D-3C17-45A9-979B-B79CE1E987CB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Testing.Logging.Xunit.v3", "Arcus.Testing.Logging.Xunit.v3\Arcus.Testing.Logging.Xunit.v3.csproj", "{60883A81-B453-4E5C-B53B-B3E357E3AFB3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,6 +110,10 @@ Global
 		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{74AB9F6E-791F-4609-96BD-15420C25AA72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60883A81-B453-4E5C-B53B-B3E357E3AFB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60883A81-B453-4E5C-B53B-B3E357E3AFB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60883A81-B453-4E5C-B53B-B3E357E3AFB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60883A81-B453-4E5C-B53B-B3E357E3AFB3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -125,6 +131,7 @@ Global
 		{4F199527-761E-4F8A-AB44-8DE8D030518F} = {4992B48D-3C17-45A9-979B-B79CE1E987CB}
 		{54A67E0F-270B-4979-9E72-C68EA8222F89} = {FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}
 		{74AB9F6E-791F-4609-96BD-15420C25AA72} = {FA2E21E0-953E-4B84-9C47-C4F0A3833E4E}
+		{60883A81-B453-4E5C-B53B-B3E357E3AFB3} = {45B1870D-C19A-4680-BDD8-2F670C793BC2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E5382820-51FF-4B00-92BE-C78E80EA0841}
