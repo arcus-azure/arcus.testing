@@ -314,6 +314,8 @@ directory.OnTeardown.CleanAllItems();
 ## Temporary share file
 The `TemporaryShareFile` provides a solution when the integration test requires data (file share) during the test run. An Azure Share file item is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
 
+> ⚡ When the file already existed (already a file with a same file name), then the test fixture will revert to the original content of the file upon the test fixture disposal.
+
 ```csharp
 using Arcus.Testing;
 
