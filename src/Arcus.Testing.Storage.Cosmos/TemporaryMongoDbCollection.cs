@@ -149,7 +149,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
@@ -166,7 +166,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
