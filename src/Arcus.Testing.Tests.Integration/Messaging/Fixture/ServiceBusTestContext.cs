@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
@@ -46,10 +45,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public static ServiceBusTestContext Given(TestConfig config, ILogger logger)
         {
-            ServicePrincipal servicePrincipal = config.GetServicePrincipal();
             ServiceBusNamespace serviceBus = config.GetServiceBus();
 
-            var connection = TemporaryManagedIdentityConnection.Create(servicePrincipal);
+            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
             var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
@@ -78,7 +76,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             string queueName = $"queue-{Guid.NewGuid()}";
             _queueNames.Add(queueName);
-            
+
             return queueName;
         }
 
@@ -276,7 +274,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             await ShouldCompletedMessageAsync(entityName, subscriptionName: null, message);
         }
-        
+
         /// <summary>
         /// Verifies that the message is completed on the Azure Service bus entity.
         /// </summary>

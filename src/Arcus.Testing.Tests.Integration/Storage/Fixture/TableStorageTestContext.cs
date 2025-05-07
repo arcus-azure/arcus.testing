@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
@@ -42,8 +41,8 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static Task<TableStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(configuration.GetServicePrincipal());
-            
+            var connection = TemporaryManagedIdentityConnection.Create(configuration, logger);
+
             StorageAccount storageAccount = configuration.GetStorageAccount();
             var serviceClient = new TableServiceClient(
                 new Uri($"https://{storageAccount.Name}.table.core.windows.net"),
