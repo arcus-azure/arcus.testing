@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.default.json">
+    <None Update="appsettings.default.json" Condition="'$(Configuration)' == 'Debug'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="appsettings.local.json">
