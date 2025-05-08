@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.ObjectModel;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Assert = Xunit.Assert;
+using TestContext = Microsoft.VisualStudio.TestTools.UnitTesting.TestContext;
 
 namespace Arcus.Testing.Tests.Unit.Logging.Fixture
 {
