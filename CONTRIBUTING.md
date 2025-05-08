@@ -5,7 +5,7 @@
 This guide helps with newcomers to contribute effectively to Arcus Testing.
 
 * **🐞 I found a bug!** </br>
-Great Scott! Please [report the problem](https://github.com/arcus-azure/arcus.testing/issues/new/choose) so we can have a look, or if you're up to it: you can always fix it yourself and [submit a PR]().
+Great Scott! Please [report the problem](https://github.com/arcus-azure/arcus.testing/issues/new/choose) so we can have a look, or if you're up to it: you can always fix it yourself and [submit a PR](#submitting-a-pr).
 
 * **❔ I have a question or an idea** </br>
 [GitHub discussions](https://github.com/arcus-azure/arcus.testing/discussions/new/choose) is the place to host discussions, questions or ideas related to anything available in the codebase. Ideas can always be transformed in workable [GitHub issues](https://github.com/arcus-azure/arcus.testing/issues) once the team decides to place this on the roadmap.
