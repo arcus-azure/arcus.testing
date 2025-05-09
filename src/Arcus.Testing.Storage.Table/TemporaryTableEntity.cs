@@ -50,6 +50,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or the <paramref name="tableName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
         public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
             string accountName,
             string tableName,
@@ -57,23 +58,7 @@ namespace Arcus.Testing
             ILogger logger)
             where TEntity : class, ITableEntity
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Table entity test fixture," +
-                    " used in container URI: 'https://{account_name}.table.core.windows.net'", nameof(accountName));
-            }
-
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Table nme to create a temporary Azure Table entity test fixture", nameof(tableName));
-            }
-
-            var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
-            var tableClient = new TableClient(tableEndpoint, tableName, new DefaultAzureCredential());
-
-            return await AddIfNotExistsAsync<TEntity>(tableClient, entity, logger);
+            return await UpsertEntityAsync(accountName, tableName, entity, logger);
         }
 
         /// <summary>
@@ -84,7 +69,55 @@ namespace Arcus.Testing
         /// <param name="entity">The entity to add to the Azure Table.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> or the <paramref name="entity"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
         public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
+        {
+            return await UpsertEntityAsync(client, entity, logger);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing entity in an Azure Table.
+        /// </summary>
+        /// <remarks>
+        ///     Based on the entity's <see cref="ITableEntity.PartitionKey" /> and <see cref="ITableEntity.RowKey" />,
+        ///     an existing entity will be replaced or a new entity will be created.
+        /// </remarks>
+        /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
+        /// <param name="accountName">The name of the Azure Storage account where the table for the entity is located.</param>
+        /// <param name="tableName">The name of the Azure Table where the table entity should be added.</param>
+        /// <param name="entity">The entity to add to the Azure Table.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or the <paramref name="tableName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryTableEntity> UpsertEntityAsync<TEntity>(
+            string accountName,
+            string tableName,
+            TEntity entity,
+            ILogger logger)
+            where TEntity : class, ITableEntity
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+
+            var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
+            var tableClient = new TableClient(tableEndpoint, tableName, new DefaultAzureCredential());
+
+            return await UpsertEntityAsync(tableClient, entity, logger);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing entity in an Azure Table.
+        /// </summary>
+        /// <remarks>
+        ///     Based on the entity's <see cref="ITableEntity.PartitionKey" /> and <see cref="ITableEntity.RowKey" />,
+        ///     an existing entity will be replaced or a new entity will be created.
+        /// </remarks>
+        /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
+        /// <param name="client">The client to interact with the Azure Table resource.</param>
+        /// <param name="entity">The entity to add to the Azure Table.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> or the <paramref name="entity"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryTableEntity> UpsertEntityAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
         {
             ArgumentNullException.ThrowIfNull(client);
             ArgumentNullException.ThrowIfNull(entity);
@@ -98,7 +131,7 @@ namespace Arcus.Testing
             if (entityExists.HasValue)
             {
                 ITableEntity originalEntity = entityExists.Value;
-                
+
                 logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
                 using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
 
@@ -126,7 +159,7 @@ namespace Arcus.Testing
                         new RequestFailedException(response));
                 }
 
-                return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger); 
+                return new TemporaryTableEntity(client, entityType, createdByUs: true, entity, logger);
             }
         }
 

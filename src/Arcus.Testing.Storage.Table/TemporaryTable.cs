@@ -20,14 +20,14 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryTable"/> is deleted.
     /// </summary>
-    internal enum OnTeardownTable { CleanIfCreated = 0, CleanAll, CleanIfMatched }
+    internal enum OnTeardownTable { CleanIfUpserted = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryTable"/>.
     /// </summary>
     public class OnSetupTemporaryTableOptions
     {
-        private readonly List<Func<TableEntity, bool>> _filters = new();
+        private readonly List<Func<TableEntity, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing entities in the Azure Table upon the test fixture creation.
@@ -92,7 +92,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryTableOptions
     {
-        private readonly List<Func<TableEntity, bool>> _filters = new();
+        private readonly List<Func<TableEntity, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing entities in the Azure Table upon the test fixture deletion.
@@ -101,11 +101,21 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryTable"/> to only delete the Azure Table entities upon disposal
-        /// if the document was inserted by the test fixture (using <see cref="TemporaryTable.AddEntityAsync{TEntity}"/>).
+        /// if the document was inserted by the test fixture (using <see cref="TemporaryTable.UpsertEntityAsync{TEntity}"/>).
         /// </summary>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CleanUpsertedEntities) + " instead that provides exactly the same functionality")]
         public OnTeardownTemporaryTableOptions CleanCreatedEntities()
         {
-            Entities = OnTeardownTable.CleanIfCreated;
+            return CleanUpsertedEntities();
+        }
+
+        /// <summary>
+        /// (default for cleaning documents) Configures the <see cref="TemporaryTable"/> to only delete or revert the Azure Table entities upon disposal
+        /// if the document was upserted by the test fixture (using <see cref="TemporaryTable.UpsertEntityAsync{TEntity}"/>).
+        /// </summary>
+        public OnTeardownTemporaryTableOptions CleanUpsertedEntities()
+        {
+            Entities = OnTeardownTable.CleanIfUpserted;
             return this;
         }
 
@@ -124,7 +134,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of documents only happens on entities that were created outside the scope of the test fixture.
-        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All items created by the test fixture will be deleted or reverted upon disposal, regardless of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <param name="filters">The filters  to match entities that should be removed.</param>
@@ -167,7 +177,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryTable"/>.
         /// </summary>
-        public OnTeardownTemporaryTableOptions OnTeardown { get; } = new OnTeardownTemporaryTableOptions().CleanCreatedEntities();
+        public OnTeardownTemporaryTableOptions OnTeardown { get; } = new OnTeardownTemporaryTableOptions().CleanUpsertedEntities();
     }
 
     /// <summary>
@@ -178,7 +188,7 @@ namespace Arcus.Testing
         private const int NotFound = 404;
 
         private readonly bool _createdByUs;
-        private readonly Collection<TemporaryTableEntity> _entities = new();
+        private readonly Collection<TemporaryTableEntity> _entities = [];
         private readonly TemporaryTableOptions _options;
         private readonly ILogger _logger;
 
@@ -235,12 +245,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTableOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(accountName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Storage account name to create a temporary Azure Table test fixture," +
-                    " used in container URI: 'https://{account_name}.table.core.windows.net'", nameof(accountName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
 
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var serviceClient = new TableServiceClient(tableEndpoint, new DefaultAzureCredential());
@@ -277,13 +282,7 @@ namespace Arcus.Testing
             Action<TemporaryTableOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(serviceClient);
-            ArgumentNullException.ThrowIfNull(tableName);
-
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Table nme to create a temporary Azure Table test fixture", nameof(tableName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
             logger ??= NullLogger.Instance;
             var options = new TemporaryTableOptions();
@@ -331,16 +330,7 @@ namespace Arcus.Testing
             {
                 await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
                 {
-                    logger.LogDebug("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
-                    using Response response = await tableClient.DeleteEntityAsync(item);
-
-                    if (response.IsError && response.Status != NotFound)
-                    {
-                        throw new RequestFailedException(
-                            $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                            new RequestFailedException(response));
-                    }
+                    await DeleteEntityOnSetupAsync(tableClient, item, logger);
                 }
             }
             else if (options.OnSetup.Entities is OnSetupTable.CleanIfMatched)
@@ -351,16 +341,7 @@ namespace Arcus.Testing
                 {
                     if (options.OnSetup.IsMatch(item))
                     {
-                        logger.LogDebug("[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, tableClient.AccountName, tableClient.Name);
-                        using Response response = await tableClient.DeleteEntityAsync(item);
-
-                        if (response.IsError && response.Status != NotFound)
-                        {
-                            throw new RequestFailedException(
-                                $"[Test:Setup] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {tableClient.AccountName}/{tableClient.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                                new RequestFailedException(response));
-                        }
+                        await DeleteEntityOnSetupAsync(tableClient, item, logger);
                     }
                 }
             }
@@ -372,10 +353,26 @@ namespace Arcus.Testing
         /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
         /// <param name="entity">The entity to temporary add to the table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead that provides exactly the same functionality")]
         public async Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
+            await UpsertEntityAsync(entity);
+        }
+
+        /// <summary>
+        /// Adds a new or replaces an existing item in the Azure Table (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any entities upserted via this call will always be deleted (if new) or reverted (if existing) when the <see cref="TemporaryTable"/> is disposed.
+        ///     Existing entities are found based on their <see cref="ITableEntity.PartitionKey" /> and <see cref="ITableEntity.RowKey" />.
+        /// </remarks>
+        /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
+        /// <param name="entity">The entity to temporary add to the table.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
+        public async Task UpsertEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
+        {
             ArgumentNullException.ThrowIfNull(entity);
-            _entities.Add(await TemporaryTableEntity.AddIfNotExistsAsync(Client, entity, _logger));
+            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger));
         }
 
         /// <summary>
@@ -410,7 +407,7 @@ namespace Arcus.Testing
 
         private async Task CleanTableUponTeardownAsync(DisposableCollection disposables)
         {
-            if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfCreated)
+            if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfUpserted)
             {
                 return;
             }
@@ -419,42 +416,44 @@ namespace Arcus.Testing
             {
                 await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
-                    {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
-                        using Response response = await Client.DeleteEntityAsync(item);
-
-                        if (response.IsError && response.Status != NotFound)
-                        {
-                            throw new RequestFailedException(
-                                $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                                new RequestFailedException(response));
-                        }
-                    }));
+                    disposables.Add(AsyncDisposable.Create(() => DeleteEntityOnTeardownAsync(item)));
                 }
             }
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
+#pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
                 await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
+#pragma warning restore S3267
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    if (_options.OnTeardown.IsMatch(item))
                     {
-                        if (_options.OnTeardown.IsMatch(item))
-                        {
-                            _logger.LogDebug("[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", item.RowKey, item.PartitionKey, Client.AccountName, Client.Name);
-                            using Response response = await Client.DeleteEntityAsync(item);
-
-                            if (response.IsError && response.Status != NotFound)
-                            {
-                                throw new RequestFailedException(
-                                    $"[Test:Teardown] Failed to delete Azure Table entity (rowKey: '{item.RowKey}', partitionKey: '{item.PartitionKey}') from table {Client.AccountName}/{Client.Name}' " +
-                                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                                    new RequestFailedException(response));
-                            }
-                        }
-                    }));
+                        disposables.Add(AsyncDisposable.Create(() => DeleteEntityOnTeardownAsync(item)));
+                    }
                 }
+            }
+        }
+
+        private static async Task DeleteEntityOnSetupAsync(TableClient client, TableEntity entity, ILogger logger)
+        {
+            await DeleteEntityAsync(client, entity, "[Test:Setup]", logger);
+        }
+
+        private async Task DeleteEntityOnTeardownAsync(TableEntity entity)
+        {
+            await DeleteEntityAsync(Client, entity, "[Test:Teardown]", _logger);
+        }
+
+        private static async Task DeleteEntityAsync(TableClient client, TableEntity entity, string testOperation, ILogger logger)
+        {
+            logger.LogDebug("{TestOperation} Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", testOperation, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
+            using Response response = await client.DeleteEntityAsync(entity);
+
+            if (response.IsError && response.Status != NotFound)
+            {
+                throw new RequestFailedException(
+                    $"{testOperation} Failed to delete Azure Table entity (rowKey: '{entity.RowKey}', partitionKey: '{entity.PartitionKey}') from table {client.AccountName}/{client.Name}' " +
+                    $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
+                    new RequestFailedException(response));
             }
         }
     }

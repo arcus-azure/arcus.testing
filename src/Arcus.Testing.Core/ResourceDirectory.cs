@@ -4,12 +4,11 @@ using System.IO;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents a test-friendly resource directory where one or more resource files are located on disk.
+    /// <para>Represents a test-friendly resource directory where one or more resource files are located on disk.</para>
+    /// <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
     /// </summary>
-    public class ResourceDirectory : IEquatable<ResourceDirectory>
+    public sealed class ResourceDirectory : IEquatable<ResourceDirectory>
     {
-        private readonly DirectoryInfo _directory;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ResourceDirectory"/> class.
         /// </summary>
@@ -18,10 +17,7 @@ namespace Arcus.Testing
         /// <exception cref="DirectoryNotFoundException">Thrown when no directory was found on disk for the given <paramref name="directory"/>.</exception>
         public ResourceDirectory(DirectoryInfo directory)
         {
-            if (directory is null)
-            {
-                throw new ArgumentNullException(nameof(directory));
-            }
+            ArgumentNullException.ThrowIfNull(directory);
 
             if (!Directory.Exists(directory.FullName))
             {
@@ -31,13 +27,13 @@ namespace Arcus.Testing
                     $"Resource directory: {directory.FullName}");
             }
 
-            _directory = directory;
+            Path = directory;
         }
 
         /// <summary>
         /// Gets the path of the current resource directory.
         /// </summary>
-        public DirectoryInfo Path => _directory;
+        public DirectoryInfo Path { get; }
 
         /// <summary>
         /// Gets the root application working directory as test resource directory.
@@ -45,23 +41,23 @@ namespace Arcus.Testing
         public static ResourceDirectory CurrentDirectory => new(new DirectoryInfo(Directory.GetCurrentDirectory()));
 
         /// <summary>
-        /// Creates a test resource sub-directory based on the current test resource directory.
+        /// Creates a test resource subdirectory based on the current test resource directory.
         /// </summary>
-        /// <param name="subDirectoryName">The name of the sub-directory within the current test resource directory.</param>
-        /// <returns>The test resource sub-directory.</returns>
+        /// <param name="subDirectoryName">The name of the subdirectory within the current test resource directory.</param>
+        /// <returns>The test resource subdirectory.</returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subDirectoryName"/> is blank.</exception>
         /// <exception cref="DirectoryNotFoundException">
-        ///     Thrown when no test resource sub-directory is found within the current test resource directory with the given <paramref name="subDirectoryName"/>.
+        ///     Thrown when no test resource subdirectory is found within the current test resource directory with the given <paramref name="subDirectoryName"/>.
         /// </exception>
         public ResourceDirectory WithSubDirectory(string subDirectoryName)
         {
             if (string.IsNullOrWhiteSpace(subDirectoryName))
             {
                 throw new ArgumentException(
-                    $"Requires a non-blank sub-directory name to create a test resource sub-directory in the root test directory: '{_directory.FullName}'", nameof(subDirectoryName));
+                    $"Requires a non-blank sub-directory name to create a test resource sub-directory in the root test directory: '{Path.FullName}'", nameof(subDirectoryName));
             }
 
-            string newDirectoryPath = System.IO.Path.Combine(_directory.FullName, subDirectoryName);
+            string newDirectoryPath = System.IO.Path.Combine(Path.FullName, subDirectoryName);
             if (!Directory.Exists(newDirectoryPath))
             {
                 throw new DirectoryNotFoundException(
@@ -143,12 +139,9 @@ namespace Arcus.Testing
 
         private FileInfo GetFileByPattern(string searchPattern)
         {
-            if (string.IsNullOrWhiteSpace(searchPattern))
-            {
-                throw new ArgumentException("Requires a non-blank search pattern to retrieve the contents of a test resource file in the resource directory", nameof(searchPattern));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(searchPattern);
 
-            FileInfo[] files = _directory.GetFiles(searchPattern);
+            FileInfo[] files = Path.GetFiles(searchPattern);
             if (files.Length == 0)
             {
                 throw new FileNotFoundException(
@@ -157,7 +150,7 @@ namespace Arcus.Testing
                     Environment.NewLine +
                     $"Search pattern: {searchPattern}" +
                     Environment.NewLine +
-                    $"Resource directory: {CurrentDirectory.Path.FullName}");
+                    $"Resource directory: {Path.FullName}");
             }
 
             if (files.Length > 1)
@@ -168,7 +161,7 @@ namespace Arcus.Testing
                     Environment.NewLine +
                     $"Search pattern: {searchPattern}" +
                     Environment.NewLine +
-                    $"Resource directory: {CurrentDirectory.Path.FullName}");
+                    $"Resource directory: {Path.FullName}");
             }
 
             return files[0];
@@ -187,7 +180,7 @@ namespace Arcus.Testing
                 return false;
             }
 
-            return _directory.FullName.Equals(other._directory.FullName, StringComparison.InvariantCultureIgnoreCase);
+            return Path.FullName.Equals(other.Path.FullName, StringComparison.InvariantCultureIgnoreCase);
         }
 
         /// <summary>
@@ -207,7 +200,7 @@ namespace Arcus.Testing
         /// <returns>A hash code for the current object.</returns>
         public override int GetHashCode()
         {
-            return _directory.GetHashCode();
+            return Path.GetHashCode();
         }
 
         /// <summary>
@@ -233,13 +226,13 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Appends to the <paramref name="current"/> test resource directory a sub-directory based on the given <paramref name="subDirectoryName"/>.
+        /// Appends to the <paramref name="current"/> test resource directory a subdirectory based on the given <paramref name="subDirectoryName"/>.
         /// </summary>
         /// <param name="current">The subject test resource directory currently.</param>
-        /// <param name="subDirectoryName">The name of the sub-directory within the current test resource directory.</param>
+        /// <param name="subDirectoryName">The name of the subdirectory within the current test resource directory.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subDirectoryName"/> is blank.</exception>
         /// <exception cref="DirectoryNotFoundException">
-        ///     Thrown when no test resource sub-directory is found within the current test resource directory with the given <paramref name="subDirectoryName"/>.
+        ///     Thrown when no test resource subdirectory is found within the current test resource directory with the given <paramref name="subDirectoryName"/>.
         /// </exception>
         public static ResourceDirectory operator /(ResourceDirectory current, string subDirectoryName)
         {
