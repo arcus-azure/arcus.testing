@@ -98,7 +98,7 @@ TemporaryNoSqlContainer.CreateIfNoExistsAsync(..., options =>
 
 ## 📦 Arcus.Testing.Storage.Table
 ### `TableEntityFilter` ➡️ `Func<TableEntity, bool>`
-Previous versions had a dedicated type called `TableEntityFilter` to filter out certain Azure Table entities subject for deletion during the setup/teardown of the table. The type has been removed in v3 in favor of a built-in delegation.
+Previous versions had a dedicated type called `TableEntityFilter` to filter out certain Azure Table entities subject for deletion during the setup/teardown of the table. The type has been removed in v2 in favor of a built-in delegation.
 
 ```diff
 TemporaryTable.CreateIfNotExistsAsync(..., options =>
