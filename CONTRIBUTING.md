@@ -29,7 +29,7 @@ The integration tests make use of real Azure resources, which means that the tes
 1. Make sure you have an **active Azure subscription**.
 
 2. Set up a **valid managed identity connection**: </br>
-   The tests uses [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) to authenticate themselves, which means that you can use your logged-in VisualStudio/AzureCLI user to run the tests locally.
+   The tests use [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) to authenticate themselves, which means that you can use your logged-in VisualStudio/AzureCLI user to run the tests locally.
 
 3. Add the necessary **Azure resources** for your test: </br>
    There exists a [`/build/templates/test-resources.bicep`](https://github.com/arcus-azure/arcus.testing/blob/main/build/templates/test-resources.bicep) file that let's you deploy all the necessary Azure resources that are required to run *all* the tests.
