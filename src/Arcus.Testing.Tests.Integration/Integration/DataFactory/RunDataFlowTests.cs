@@ -13,6 +13,7 @@ using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -173,7 +174,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             // Create new CSV with just expected columns and values from dataflow params
             var lineKeys = string.Join(';', dataFlowParametersWithTypes.Keys);
-            var lineValues = string.Join(';', dataFlowParametersWithValues.Values);
+            var lineValues = string.Join(';', dataFlowParametersWithValues.Values).Replace("\'", string.Empty).Replace("(", string.Empty).Replace(")", string.Empty);
             var expectedString = $"{lineKeys}{Environment.NewLine}";
             // Generate as many lines as we have in actualData
             for (var i = 0; i < actualData.RowCount; i++)
@@ -254,7 +255,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
-            /*
+
             Value = Bogus.Random.Bool()
                 ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance)
                 : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
@@ -262,12 +263,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                     opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15);
                     opt.ActiveSessionId = unknownSessionId;
                 });
-            */
-            Value = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
-            {
-                opt.TimeToLiveInMinutes = 60;
-                opt.ActiveSessionId = Guid.Parse("2709a7f4-661f-49a3-93f4-b7caa2db00ff");
-            });
 
             Assert.NotEqual(unknownSessionId, Value.SessionId);
             SessionId = Value.SessionId;
