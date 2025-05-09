@@ -37,7 +37,7 @@ The integration tests make use of real Azure resources, which means that the tes
     
     * ⚠️ Make sure that you have enough rights on your Azure resources to do CRUD operations (ex. the **Azure Blob Storage** tests require [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights.)
 
-4. Add an `appsettings.local.json` file to your integration test project - this file gets ignored by Git: </br>
+4. Add an `appsettings.local.json` file to your integration test project - this file is ignored in Git by default: </br>
    The local file needs to have the names of your **Azure resources**. If you deployed an **Azure Storage Account**, then you the file will look like this:
    ```json
    {
