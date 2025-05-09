@@ -6,13 +6,13 @@ sidebar_label: Getting started
 **Welcome to Arcus Testing! 🎉**
 
 This page is dedicated to be used as a walkthrough on how to integrate Arcus Testing in new and existing projects.
-Arcus Testing is an umbrella term for a set of NuGet packages that kick-start your code testing. 
+Arcus Testing is an umbrella term for a set of `Arcus.Testing.*` NuGet packages that kick-start your code testing. 
 
 ## The basics
-The libraries in the Arcus Testing space are split up in these main categories:
+The packages in the Arcus Testing space are split into the following categories:
 - **Core infrastructure** (contains tech-independent functionality)
 - **Assertions** (contains ways to verify functionality)
-- **Logging** (contains ways to use Microsoft's `ILogger` in your test project)
+- **Logging** (contains ways to use Microsoft's `ILogger` to write to the test output)
 - **Azure fixtures** (contains ways to interact with technology in your tests)
 
 Depending on the context of your project, you might use one or more libraries in these categories.
@@ -75,7 +75,7 @@ It also helps with passing arguments to implementation code that relies on `ILog
 <details>
   <summary><strong>Do you interact with Azure resources in your test?</strong></summary>
   
-  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need additional test infrastructure to interact with those resources in a test-friendly way. If a resource store a state, you might want to clear the state at the end of the test, for example.
+  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need additional test infrastructure to interact with those resources in a test-friendly way. If a resource stores a state, you might want to clear that state at the end of the test, for example.
 
   ⚡ Arcus Testing provides several Azure technology-specific packages that helps with this interaction. If your system is interacting with Azure Blob storage, you can use the `TemporaryBlobContainer` in the `Arcus.Testing.Storage.Blob` package, which clears up any lingering state before/after the actual test.
 
