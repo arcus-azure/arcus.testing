@@ -22,7 +22,7 @@ When you submit a new pull request, please make sure that:
 ## FAQ
 <details>
 <summary>How to run the integration tests locally?</summary>
-The integration tests make use of real Azure resources, which means that the the test suite need to be aware of what resources you want to use locally.
+The integration tests make use of real Azure resources, which means that the test suite needs to be aware of which resources you want to use locally.
 
 > 👉 If you're a [Codit](http://codit.eu/) employee, we can also provide you with a ready-to-use `appsettings.local.json` that allows for you to run the tests locally.
 
