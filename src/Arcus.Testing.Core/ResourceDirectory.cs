@@ -150,7 +150,7 @@ namespace Arcus.Testing
                     Environment.NewLine +
                     $"Search pattern: {searchPattern}" +
                     Environment.NewLine +
-                    $"Resource directory: {CurrentDirectory.Path.FullName}");
+                    $"Resource directory: {Path.FullName}");
             }
 
             if (files.Length > 1)
@@ -161,7 +161,7 @@ namespace Arcus.Testing
                     Environment.NewLine +
                     $"Search pattern: {searchPattern}" +
                     Environment.NewLine +
-                    $"Resource directory: {CurrentDirectory.Path.FullName}");
+                    $"Resource directory: {Path.FullName}");
             }
 
             return files[0];
