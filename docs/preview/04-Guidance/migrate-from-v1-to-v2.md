@@ -3,13 +3,13 @@ This guide will walk you through the process of migrating your test suite from t
 
 ## General
 * 🗑️ .NET 6 support is removed
-Starting from v3, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
+Starting from v2, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
 
 ## 📦 Arcus.Testing.Logging.*
 ### 👋 Arcus.Testing.Logging.Core is archived
-Starting from v3, the `Arcus.Testing.Logging.Core` package of the set of logging packages is being archived and is not included anymore as a transient reference in any of the testing framework-specific packages.
+Starting from v2, the `Arcus.Testing.Logging.Core` package of the set of logging packages is being archived and is not included anymore as a transient reference in any of the testing framework-specific packages.
 
-This means that the following types are not included anymore when you install v3 via a testing framework package (xUnit, NUnit, MSTest):
+This means that the following types are not included anymore when you install v2 via a testing framework package (xUnit, NUnit, MSTest):
 * `InMemoryLogger`
 * `InMemoryLogger<>`
 * `CustomLoggerProvider`
@@ -21,7 +21,7 @@ This also means that the following packages will not be transiently available an
 
 ## 📦 Arcus.Testing.Storage.Blob
 ### `BlobNameFilter` ➡️ `Func<BlobItem, bool>`
-Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type has been removed in v3 in favor of a built-in delegation.
+Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
 
 ```diff
 TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
@@ -36,7 +36,7 @@ TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
 ```
 
 ### `TemporaryBlobFileOptions` ➡️ `TemporaryBlobContainerOptions`
-Previous versions had additional options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture has been removed in v3 - as it is already implicitly available on the `TemporaryBlobContainerOptions`.
+Previous versions had additional options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture has been removed in v2 - as it is already implicitly available on the `TemporaryBlobContainerOptions`.
 
 1. When you want to 'use an existing blob file instead of overriding it + remove it nonetheless afterwards' you can use either `.CleanAllBlobs` or `.CleanMatchingBlobs` on the container options:
     ```diff
