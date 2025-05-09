@@ -28,7 +28,7 @@ namespace Arcus.Testing
                     $"{prefix} Cannot match the NoSql item because the Cosmos client used has no JSON item serializer configured");
             }
 
-            using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.ToString()));
+            using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.Content.ToString()));
 
             var item = client.ClientOptions.Serializer.FromStream<TItem>(body);
             if (item is null)

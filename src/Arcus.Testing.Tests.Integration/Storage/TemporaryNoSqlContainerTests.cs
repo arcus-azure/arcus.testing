@@ -114,19 +114,21 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using NoSqlTestContext context = GivenCosmosNoSql();
 
             string containerName = await WhenContainerAlreadyAvailableAsync(context);
-            Ship createdMatched = await context.WhenItemAvailableAsync(containerName, CreateShip());
+            Ship createdMatched1 = await context.WhenItemAvailableAsync(containerName, CreateShip());
+            Ship createdMatched2 = await context.WhenItemAvailableAsync(containerName, CreateShip());
             Ship createdNotMatched = await context.WhenItemAvailableAsync(containerName, CreateShip());
 
             // Act
             await WhenTempContainerCreatedAsync(containerName, options =>
             {
-                options.OnSetup.CleanMatchingItems(item => item.Id == createdMatched.Id)
-                               .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched.GetPartitionKey());
+                options.OnSetup.CleanMatchingItems(item => item.Content[nameof(Ship.BoatName)]?.GetValue<string>() == createdMatched1.BoatName)
+                               .CleanMatchingItems((Ship item) => item.GetPartitionKey() == createdMatched2.GetPartitionKey());
             });
 
             // Assert
             await context.ShouldStoreItemAsync(containerName, createdNotMatched);
-            await context.ShouldNotStoreItemAsync(containerName, createdMatched);
+            await context.ShouldNotStoreItemAsync(containerName, createdMatched1);
+            await context.ShouldNotStoreItemAsync(containerName, createdMatched2);
         }
 
         [Fact]
