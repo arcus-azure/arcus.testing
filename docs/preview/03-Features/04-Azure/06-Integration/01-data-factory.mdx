@@ -209,6 +209,8 @@ using Arcus.Testing;
 await session.RunDataFlowAsync(..., options =>
 {
     // Adds a parameter to the data flow upon starting.
+    // Note: For string parameters, enclose your value with single quotes (example: "'myValue'").
+    //       For boolean parameters, values must be "true()" or "false()".
     options.AddDataFlowParameter("<name>", "<value>");
 
     // Adds a dataset parameter to the data flow upon starting.

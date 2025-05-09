@@ -443,6 +443,10 @@ namespace Arcus.Testing
         /// <summary>
         /// Adds a parameter to the DataFlow to run.
         /// </summary>
+        /// <remarks>
+        /// For string parameters, the value must be enclosed in single quotes (example: "'myValue'").
+        /// For boolean parameters, the value must be either "true()" or "false()".
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
         public RunDataFlowOptions AddDataFlowParameter(string name, object value)
