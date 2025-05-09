@@ -352,7 +352,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             filePath = Path.Combine(filePath, RandomizeWith("input") + fileExtension);
 
             _logger.LogTrace("Upload {FileType} file to DataFlow source: {FileContents} with path: {filePath}", _dataType, expected, filePath);
-            await _sourceContainer.UploadBlobAsync(
+            await _sourceContainer.UpsertBlobFileAsync(
                 filePath,
                 BinaryData.FromString(expected));
         }

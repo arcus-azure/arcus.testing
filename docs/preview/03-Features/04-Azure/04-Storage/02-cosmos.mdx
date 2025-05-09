@@ -2,7 +2,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # CosmosDb
-The `Arcus.Testing.Storage.CosmosDb` package provides test fixtures to Azure CosmosDb storage. By using the common test practices 'clean environment', it provides a temporary collections and documents.
+The `Arcus.Testing.Storage.Cosmos` package provides test fixtures to Azure CosmosDb storage. By using the common test practices 'clean environment', it provides a temporary collections and documents.
 
 ## Installation
 The following functionality is available when installing this package:
@@ -39,14 +39,14 @@ IMongoCollection<Shipment> client = collection.GetCollectionClient<Shipment>();
 
 > 🎖️ Overloads are available that takes in the `IMongoDatabase` for custom authentication mechanisms. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
-Inserting documents in the collection can also be done via the test fixture. It always make sure that any inserted documents are removed afterwards.
+Upserting documents in the collection can also be done via the test fixture. It always make sure that any upserted documents are removed (if new) or reverted (if existing) afterwards.
 
 ```csharp
 using Arcus.Testing;
 
 await using TemporaryMongoDbCollection collection = ...
 
-await collection.InsertDocumentAsync(new Shipment { BoatName = "The Alice"  });
+await collection.UpsertDocumentAsync(new Shipment { BoatName = "The Alice"  });
 ```
 
 #### Customization
@@ -76,16 +76,16 @@ await TemporaryMongoDbCollection.CreateIfNotExistsAsync(..., options =>
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
 
-    // (Default) Delete all MongoDb documents that were inserted by the test fixture.
-    options.OnTeardown.CleanCreatedDocuments();
+    // (Default) Delete/Revert all MongoDb documents that were upserted by the test fixture.
+    options.OnTeardown.CleanUpsertedDocuments();
 
     // Delete all MongoDb documents upon the test fixture disposal,
-    // even if the test fixture didn't inserted them.
+    // even if the test fixture didn't upserted them.
     options.OnTeardown.CleanAllDocuments();
 
     // Delete all MongoDb documents that matches any of the configured filters,
-    // upon the test fixture disposal, even if the test fixture didn't inserted them.
-    // ⚠️ MongoDb documents inserted by the test fixture will always be deleted, regardless of the configured filters.
+    // upon the test fixture disposal, even if the test fixture didn't upserted them.
+    // ⚠️ MongoDb documents upserted by the test fixture will be deleted/reverted, even if the documents don't match the configured filters.
     options.OnTeardown.CleanMatchingDocuments(
       Builders<Shipment>.Filter.Eq(s => s.BoatName, "The Alice"));
 
@@ -98,7 +98,7 @@ await using TemporaryMongoDbCollection collection = ...
 collection.OnTeardown.CleanAllDocuments();
 ```
 
-> 🎖️ The `TemporaryMongoDbCollection` will always remove any MongoDb documents that were inserted via the temporary collection itself with the `collection.InsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+> 🎖️ The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 
 ### Temporary MongoDb document
 The `TemporaryMongoDbDocument` provides a solution when the integration test requires a document during the test run. A MongoDb document is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -115,7 +115,7 @@ ResourceIdentifier cosmosDbAccountResourceId =
 
 var shipment = new Shipment { BoatName = "The Alice" };
 
-await using var document = await TemporaryMongoDbDocument.InsertIfNotExistsAsync(
+await using var document = await TemporaryMongoDbDocument.UpsertDocumentAsync(
     cosmosDbAccountResourceId,
     "<database-name>",
     "<collection-name>",
@@ -164,14 +164,14 @@ Container client = container.Client;
 
 > 🎖️ Overloads are available for custom authentication mechanisms. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
-Inserting items in the container can also be done via the test fixture. It always make sure that any inserted items are removed afterwards.
+Upserting items in the container can also be done via the test fixture. It always make sure that any upserted items are removed (if new) or reverted (if existing) afterwards.
 
 ```csharp
 using Arcus.Testing;
 
 await using TemporaryNoSqlContainer container = ...
 
-await container.AddItemAsync(new Shipment { Id = "123", BoatName = "The Alice" });
+await container.UpsertItemAsync(new Shipment { Id = "123", BoatName = "The Alice" });
 ```
 
 #### Customization
@@ -199,16 +199,16 @@ await TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
     // Options related to when the test fixture is teared down.
     // --------------------------------------------------------
 
-    // (Default) Delete all NoSql items that were inserted by the test fixture.
-    options.OnTeardown.CleanCreatedItems();
+    // (Default) Delete/Revert all NoSql items that were upserted by the test fixture.
+    options.OnTeardown.CleanUpsertedItems();
 
     // Delete all NoSql items upon the test fixture disposal,
-    // even if the test fixture didn't inserted them.
+    // even if the test fixture didn't upserted them.
     options.OnTeardown.CleanAllItems();
 
     // Delete all NoSql items that matches any of the configured filters,
-    // upon the test fixture disposal, even if the test fixture didn't inserted them.
-    // ⚠️ NoSql items inserted by the test fixture will always be deleted, regardless of the configured filters.
+    // upon the test fixture disposal, even if the test fixture didn't upserted them.
+    // ⚠️ NoSql items upserted by the test fixture will be deleted/reverted, even if the items don't match the configured filters.
     options.OnTeardown.CleanMatchingItems((NoSqlItem item) => item.Id == "123"); 
     options.OnTeardown.CleanMatchingItems((Shipment item) => item.BoatName == "The Alice");
 });
@@ -219,7 +219,7 @@ await using TemporaryNoSqlContainer container = ...
 container.OnTeardown.CleanAllItems();
 ```
 
-> 🎖️ The `TemporaryNoSqlContainer` will always remove any NoSql items that were inserted via the temporary container itself with the `container.AddItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+> 🎖️ The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 
 ### Temporary NoSql item
 The `TemporaryNoSqlItem` provides a solution when the integration test requires a item during the test run. A NoSql item is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -233,7 +233,7 @@ Container containerClient = ...
 
 var shipment = new Shipment { Id = "123", BoatName = "The Alice" };
 
-await using var item = await TemporaryNoSqlItem.InsertIfNotExistsAsync(
+await using var item = await TemporaryNoSqlItem.UpsertItemAsync(
     containerClient, shipment, logger);
 
 string itemId = item.Id;

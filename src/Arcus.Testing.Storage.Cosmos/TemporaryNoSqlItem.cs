@@ -63,7 +63,23 @@ namespace Arcus.Testing
         /// <param name="item">The item to temporary create in the NoSql container.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " instead which provides the exact same functionality")]
         public static async Task<TemporaryNoSqlItem> InsertIfNotExistsAsync<TItem>(Container container, TItem item, ILogger logger)
+        {
+            return await UpsertItemAsync(container, item, logger);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing NoSql item in an Azure Cosmos NoSql container.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Item will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryNoSqlItem"/> is disposed.
+        /// </remarks>
+        /// <param name="container">The NoSql container where a temporary item should be created.</param>
+        /// <param name="item">The item to temporary create in the NoSql container.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryNoSqlItem> UpsertItemAsync<TItem>(Container container, TItem item, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(container);
             logger ??= NullLogger.Instance;
