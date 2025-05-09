@@ -32,7 +32,7 @@ The integration tests make use of real Azure resources, which means that the tes
    The tests use [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) to authenticate themselves, which means that you can use your logged-in VisualStudio/AzureCLI user to run the tests locally.
 
 3. Add the necessary **Azure resources** for your test: </br>
-   There exists a [`/build/templates/test-resources.bicep`](https://github.com/arcus-azure/arcus.testing/blob/main/build/templates/test-resources.bicep) file that let's you deploy all the necessary Azure resources that are required to run *all* the tests.
+   The file [`/build/templates/test-resources.bicep`](https://github.com/arcus-azure/arcus.testing/blob/main/build/templates/test-resources.bicep) allows you deploy all the necessary Azure resources that are required to run *all* the tests.
     * 💡 Usually, you don't need to run *all* the tests locally. Arcus Testing is very flexible and modular. If you're working on something, like **Azure Blob Storage**-related, than you only need an **Azure Storage Account**.
     
     * ⚠️ Make sure that you have enough rights on your Azure resources to do CRUD operations (ex. the **Azure Blob Storage** tests require [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights.)
