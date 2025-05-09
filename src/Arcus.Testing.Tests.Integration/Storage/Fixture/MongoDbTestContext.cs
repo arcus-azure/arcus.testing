@@ -49,7 +49,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static async Task<MongoDbTestContext> GivenAsync(TestConfig config, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
+            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             MongoClient mongoDbClient = await AuthenticateMongoDbClientAsync(config);
             IMongoDatabase database = mongoDbClient.GetDatabase(config["Arcus:Cosmos:MongoDb:DatabaseName"]);
 
