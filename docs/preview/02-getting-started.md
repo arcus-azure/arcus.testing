@@ -9,7 +9,7 @@ This page is dedicated to be used as a walkthrough on how to integrate Arcus Tes
 Arcus Testing is an umbrella term for a set of `Arcus.Testing.*` NuGet packages that kick-start your code testing. 
 
 ## The basics
-The packages in the Arcus Testing space are split up in these main categories:
+The packages in the Arcus Testing space are split into the following categories:
 - **Core infrastructure** (contains tech-independent functionality)
 - **Assertions** (contains ways to verify functionality)
 - **Logging** (contains ways to use Microsoft's `ILogger` to write to the test output)
