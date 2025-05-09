@@ -16,7 +16,7 @@ In short: Arcus Testing is a set of libraries that makes tests more fun to write
 Checkout our [documentation site](https://testing.arcus-azure.net/) to learn all about Arcus Testing.
 
 ## Contributing?
-Yes please! Please have a look at our [contribution guide](CONTRIBUTING.md) to get you started.
+Yes please! Have a look at our [contribution guide](CONTRIBUTING.md) to get you started.
 
 ## License Information
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.
