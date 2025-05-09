@@ -2,7 +2,7 @@
 > 🎉 First off, **thank you** for taking the time to contribute! </br>
 > We're really glad you're reading this.
 
-This guide helps with newcomers to contribute effectively to Arcus Testing.
+This guide helps newcomers to contribute effectively to Arcus Testing.
 
 * **🐞 I found a bug!** </br>
 Great Scott! Please [report the problem](https://github.com/arcus-azure/arcus.testing/issues/new/choose) so we can have a look, or if you're up to it: you can always fix it yourself and [submit a PR](#submitting-a-pr).
