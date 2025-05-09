@@ -50,7 +50,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete the Azure Blobs upon the test fixture creation that matched the configured <paramref name="filters"/>.
         /// </summary>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <param name="filters">The filters to match the blobs in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
         public OnSetupBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
@@ -150,7 +150,7 @@ namespace Arcus.Testing
         ///     All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <param name="filters">The filters to match the blobs in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
         public OnTeardownBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
