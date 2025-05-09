@@ -66,7 +66,7 @@ Previous versions had additional options on the `TemporaryBlobFile` test fixture
 ### `Newtonsoft.Json` ➡️ `System.Text.Json`
 Starting from v2, the `Newtonsoft.Json` package is not included by default anymore, since Microsoft has removed this from its transient dependencies (See also [this GitHub issue](https://github.com/Azure/azure-cosmos-dotnet-v3/issues/4900)).
 
-Before v1, we also dependent on this transient package when providing NoSql item filters for setup/teardown operations. Now, in v2, the provided item is slightly different as we now built on top of the built-in `System.Text.Json` package.
+Before v1, we depended on a transient package to provide NoSQL item filters for setup and teardown operations. In v2, the provided item differs slightly, as it now builds on top of the built-in System.Text.Json package.
 
 ```diff
 TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
