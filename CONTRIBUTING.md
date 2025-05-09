@@ -33,7 +33,7 @@ The integration tests make use of real Azure resources, which means that the tes
 
 3. Add the necessary **Azure resources** for your test: </br>
    The file [`/build/templates/test-resources.bicep`](https://github.com/arcus-azure/arcus.testing/blob/main/build/templates/test-resources.bicep) allows you deploy all the necessary Azure resources that are required to run *all* the tests.
-    * 💡 Usually, you don't need to run *all* the tests locally. Arcus Testing is very flexible and modular. If you're working on something, like **Azure Blob Storage**-related, than you only need an **Azure Storage Account**.
+    * 💡 Usually, you don't need to run *all* the tests locally. Arcus Testing is very flexible and modular. If you're working on something, like **Azure Blob Storage**-related, then you only need an **Azure Storage Account**.
     
     * ⚠️ Make sure that you have enough rights on your Azure resources to do CRUD operations (ex. the **Azure Blob Storage** tests require [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights.)
 
