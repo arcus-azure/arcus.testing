@@ -143,7 +143,7 @@ TableClient client = table.Client;
 
 > 🎖️ Overloads are available to fully control the authentication mechanism to Azure Table storage. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
-Adding entities to the table can also be done via the test fixture. It always make sure that any added entities will be removed afterwards upon disposal.
+Upserting entities to the table can also be done via the test fixture. It always make sure that any added entities will be removed/reverted afterwards upon disposal.
 
 ```csharp
 using Arcus.Testing;
@@ -151,7 +151,7 @@ using Arcus.Testing;
 await using TemporaryTable table = ...
 
 ITableEntity myEntity = ...
-await table.AddEntityAsync(myEntity);
+await table.UpsertEntityAsync(myEntity);
 ```
 
 ### Customization
@@ -181,8 +181,8 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
     // --------------------------------------------------------
 
     // (Default for cleaning entities)
-    // Delete Azure Table entities upon the test fixture disposal that were added by the fixture.
-    options.OnTeardown.CleanCreatedEntities();
+    // Delete/Revert Azure Table entities upon the test fixture disposal that were upserted by the fixture.
+    options.OnTeardown.CleanUpsertedEntities();
 
     // Delete all Azure Table entities upon the test fixture disposal, 
     // even if the test fixture didn't added them.
@@ -190,7 +190,7 @@ await TemporaryTable.CreateIfNotExistsAsync(..., options =>
 
     // Delete additional Azure Table entities that matches any of the configured filters, 
     // upon the test fixture disposal.
-    // ⚠️ Entities added by the test fixture itself will always be deleted.
+    // ⚠️ Entities upserted by the test fixture itself always be deleted/reverted, even if the entities do not match one of the filters.
     options.OnTeardown.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
 });
 
@@ -200,17 +200,19 @@ await using TemporaryTable table = ...
 table.OnTeardown.CleanAllEntities();
 ```
 
-> 🎖️ The `TemporaryTable` will always remove any Azure Table entities that were added on the temporary table  itself with the `table.AddEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+> 🎖️ The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 
 ## Temporary Table entity
 The `TemporaryTableEntity` provides a solution when the integration test requires data (table) during the test run. An Azure Table entity is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ When the entity already existed (already an entity with a same configured entity row and partition key), then the test fixture will revert to the original content of the entity upon the test fixture disposal.
 
 ```csharp
 using Arcus.Testing;
 
 ITableEntity entity = ...
 
-await using var entity = await TemporaryTableEntity.AddIfNotExistsAsync(
+await using var entity = await TemporaryTableEntity.UpsertEntityAsync(
     "<account-name>", "<table-name>", entity, logger);
 ```
 
