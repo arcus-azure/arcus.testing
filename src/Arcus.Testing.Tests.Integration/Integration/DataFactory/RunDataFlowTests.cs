@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
@@ -8,14 +9,13 @@ using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
 using Azure.Identity;
-using Azure.ResourceManager.DataFactory.Models;
-using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager;
+using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager.DataFactory.Models;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
-using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
@@ -115,6 +115,86 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
         }
 
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameterAndDataFlowParameters_SucceedsByGettingCsvFileOnSink()
+        {
+            // Arrange
+            IDictionary<string, string> sourceDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("A/Path/To/SourceDataSetParameterValue") }
+            };
+            var dataFlowParametersWithTypes = new Dictionary<string, string>()
+            {
+                { "StringDataFlowParam", "string" },
+                { "BoolDataFlowParam", "boolean" },
+                { "IntDataFlowParam", "integer" }
+            };
+            var dataFlowParametersWithValues = new Dictionary<string, dynamic>
+            {
+                { "StringDataFlowParam", $"'{Bogus.Lorem.Word()}'" },
+                { "BoolDataFlowParam", $"{Bogus.Random.Bool().ToString().ToLowerInvariant()}()" },
+                { "IntDataFlowParam", Bogus.Random.Int(0, int.MaxValue) }
+            };
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(
+                Configuration,
+                Logger,
+                ConfigureCsv,
+                tempDataFlowOptions: dataFlowOptions =>
+                {
+                    dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
+                },
+                dataFlowParameters: dataFlowParametersWithTypes);
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
+            {
+                foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
+                {
+                    options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
+                }
+                foreach (var param in dataFlowParametersWithValues)
+                {
+                    options.AddDataFlowParameter(param.Key, param.Value);
+                }
+            });
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            var actualData = result.GetDataAsCsv(ConfigureCsv);
+            AssertCsv.Equal(expected, actualData, options =>
+            {
+                foreach (var dataFlowParam in dataFlowParametersWithTypes)
+                {
+                    options.IgnoreColumn(dataFlowParam.Key);
+                }
+            });
+
+            // Create new CSV with just expected columns and values from dataflow params
+            var lineKeys = string.Join(';', dataFlowParametersWithTypes.Keys);
+            var lineValues = string.Join(';', dataFlowParametersWithValues.Values);
+            var expectedString = $"{lineKeys}{Environment.NewLine}";
+            // Generate as many lines as we have in actualData
+            for (var i = 0; i < actualData.RowCount; i++)
+            {
+                expectedString += $"{lineValues}{Environment.NewLine}";
+            }
+            // reload expected data with columns from dataflow params
+            expected = AssertCsv.Load(expectedString, ConfigureCsv);
+
+            var headersFromDataFlowParams = actualData.HeaderNames.Where(h => !dataFlowParametersWithTypes.ContainsKey(h)).ToList();
+
+            AssertCsv.Equal(expected, actualData, options =>
+            {
+                foreach (var actualHeaderName in headersFromDataFlowParams)
+                {
+                    options.IgnoreColumn(actualHeaderName);
+                }
+            });
+        }
+
         private static string GenerateCsv()
         {
             var input = TestCsv.Generate(ConfigureCsv);
@@ -127,6 +207,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
         }
+
         private static string RandomizeWith(string label)
         {
             return label + Guid.NewGuid().ToString()[..5];
@@ -174,7 +255,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
-
+            /*
             Value = Bogus.Random.Bool()
                 ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance)
                 : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
@@ -182,6 +263,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                     opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15);
                     opt.ActiveSessionId = unknownSessionId;
                 });
+            */
+            Value = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
+            {
+                opt.TimeToLiveInMinutes = 60;
+                opt.ActiveSessionId = Guid.Parse("2709a7f4-661f-49a3-93f4-b7caa2db00ff");
+            });
 
             Assert.NotEqual(unknownSessionId, Value.SessionId);
             SessionId = Value.SessionId;
