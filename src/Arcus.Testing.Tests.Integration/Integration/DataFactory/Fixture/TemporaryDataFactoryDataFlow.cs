@@ -285,7 +285,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            if (dataFlowParameters?.Count > 0)
+            if (dataFlowParameters.Count > 0)
             {
                 properties.Transformations.Add(new DataFlowTransformation("AnArbitraryDerivedColumnName"));
             }
