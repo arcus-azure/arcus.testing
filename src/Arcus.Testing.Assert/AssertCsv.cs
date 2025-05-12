@@ -870,8 +870,8 @@ namespace Arcus.Testing
                 return _originalCsv;
             }
 
-            string headerLine = _options.Header is AssertCsvHeader.Present ? rows.ElementAtOrDefault(0) + _options.NewLine : "";
-            return headerLine + row;
+            string headerLine = _options.Header is AssertCsvHeader.Present ? rows.ElementAtOrDefault(0) : "";
+            return headerLine + _options.NewLine + row;
         }
 
         /// <summary>
