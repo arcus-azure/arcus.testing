@@ -69,6 +69,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
         public static async Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -77,28 +78,7 @@ namespace Arcus.Testing
             ILogger logger)
             where TDocument : class
         {
-            ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
-            ArgumentNullException.ThrowIfNull(document);
-            logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(databaseName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank MongoDb database name to insert a temporary document in a collection", nameof(databaseName));
-            }
-
-            if (string.IsNullOrWhiteSpace(collectionName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank MongoDb collection name to insert a temporary document", nameof(collectionName));
-            }
-
-
-            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
-            IMongoDatabase database = client.GetDatabase(databaseName);
-            IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
-
-            return await InsertIfNotExistsAsync(collection, document, logger);
+            return await UpsertDocumentAsync(cosmosDbResourceId, databaseName, collectionName, document, logger);
         }
 
         /// <summary>
@@ -108,7 +88,66 @@ namespace Arcus.Testing
         /// <param name="document">The document that should be temporarily inserted into the MongoDb collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
         public static async Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
+        {
+            return await UpsertDocumentAsync(collection, document, logger);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing document in an Azure Cosmos MongoDb collection.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Document will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryMongoDbDocument"/> is disposed.
+        /// </remarks>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the MongoDb database in which the collection resides where the document should be created.</param>
+        /// <param name="collectionName">The name of the MongoDb collection in which the document should be created.</param>
+        /// <param name="document">The document that should be temporarily inserted into the MongoDb collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
+        public static async Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            TDocument document,
+            ILogger logger)
+            where TDocument : class
+        {
+            ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
+            ArgumentNullException.ThrowIfNull(document);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
+            logger ??= NullLogger.Instance;
+
+            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
+            IMongoDatabase database = client.GetDatabase(databaseName);
+            IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
+
+            return await UpsertDocumentAsync(collection, document, logger);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing document in an Azure Cosmos MongoDb collection.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Document will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryMongoDbDocument"/> is disposed.
+        /// </remarks>
+        /// <param name="collection">The collection client to interact with the MongoDb collection.</param>
+        /// <param name="document">The document that should be temporarily inserted into the MongoDb collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(collection);
             ArgumentNullException.ThrowIfNull(document);

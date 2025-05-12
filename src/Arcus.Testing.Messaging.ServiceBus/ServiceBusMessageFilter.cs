@@ -72,10 +72,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxMessages"/> is below one.</exception>
         public ServiceBusMessageFilter Take(int maxMessages)
         {
-            if (maxMessages < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxMessages), maxMessages, "Requires at least a single message to be taken from the Azure Service bus");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxMessages, 1);
 
             _maxMessages = maxMessages;
             return this;

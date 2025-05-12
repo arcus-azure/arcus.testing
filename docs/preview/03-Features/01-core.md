@@ -186,7 +186,7 @@ byte[] img = sub.ReadFileBytesByPattern("*.png");
 //    Resource directory: /bin/net8.0/resources
 ```
 
-> 🚀 The `ResourceDirectory` overrides the `/` operator, which points to the `.SubDirectory` call, which means you can create complex paths with ease:
+> 🚀 The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
 > ```csharp
 > ResourceDirectory sub = 
 >     ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";

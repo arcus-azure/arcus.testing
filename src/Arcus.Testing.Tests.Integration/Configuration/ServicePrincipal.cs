@@ -17,6 +17,8 @@
         public string ClientId { get; }
 
         public string ClientSecret { get; }
+
+        public bool IsDefault => TenantId == "default" && ClientId == "default" && ClientSecret == "default";
     }
 
     public static partial class TestConfigExtensions

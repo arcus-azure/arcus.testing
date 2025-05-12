@@ -71,10 +71,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryTopicOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.DeadLetterMessages;
@@ -122,11 +119,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnSetupTemporaryTopicOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
+            
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.CompleteMessages;
             
@@ -222,10 +216,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryTopicOptions DeadLetterMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownMessagesTopic.DeadLetterMessages;
@@ -289,10 +280,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maxWaitTime"/> is a negative duration.</exception>
         public OnTeardownTemporaryTopicOptions CompleteMessages(TimeSpan maxWaitTime)
         {
-            if (maxWaitTime < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(maxWaitTime), maxWaitTime, "Requires positive time duration to represent the maximum wait time for messages");
-            }
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownMessagesTopic.CompleteMessages;
@@ -465,11 +453,7 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTopicOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank fully-qualified Azure Service bus namespace to create a temporary topic", nameof(fullyQualifiedNamespace));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
 
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
@@ -532,13 +516,8 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(adminClient);
             ArgumentNullException.ThrowIfNull(messagingClient);
+            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(topicName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Service Bus topic name to create a temporary topic", nameof(topicName));
-            }
 
             var options = new TemporaryTopicOptions();
             configureOptions?.Invoke(options);

@@ -5,7 +5,7 @@
     <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides capabilities during testing of Azure Cosmos storage interactions</Description>
+    <Description>Provides capabilities during testing of Azure File share storage interactions</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
@@ -13,13 +13,12 @@
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>Git</RepositoryType>
-    <PackageTags>Azure;Testing;Storage;Cosmos</PackageTags>
-    <PackageId>Arcus.Testing.Storage.Cosmos</PackageId>
+    <PackageTags>Azure;Testing;Storage</PackageTags>
+    <PackageId>Arcus.Testing.Storage.File.Share</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
-    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,9 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="[1.*,2.0.0)" />
-    <PackageReference Include="Azure.ResourceManager.CosmosDB" Version="[1.*,2.0.0)" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="[3.*,4.0.0)" />
-    <PackageReference Include="MongoDB.Driver" Version="[3.*,4.0.0)" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="[12.*,13.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

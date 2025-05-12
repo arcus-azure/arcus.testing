@@ -27,7 +27,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, client);
             await context.ShouldStoreBlobContainerAsync(client);
 
-            string blobCreatedByUs = await UploadBlobAsync(context, container);
+            string blobCreatedByUs = await UpsertBlobFileAsync(context, container);
 
             // Act
             await container.DisposeAsync();
@@ -47,7 +47,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             TemporaryBlobContainer container = await WhenTempContainerCreatedAsync(context, client);
 
             await context.ShouldStoreBlobContainerAsync(client);
-            string blobCreatedByUs = await UploadBlobAsync(context, container);
+            string blobCreatedByUs = await UpsertBlobFileAsync(context, container);
 
             // Act
             await container.DisposeAsync();
@@ -75,7 +75,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Assert
             await context.ShouldDeleteBlobFileAsync(containerClient, blobOutsideOurScope.Name);
 
-            string blobCreatedByUs = await UploadBlobAsync(context, container);
+            string blobCreatedByUs = await UpsertBlobFileAsync(context, container);
             await container.DisposeAsync();
             await context.ShouldDeleteBlobFileAsync(containerClient, blobCreatedByUs);
 
@@ -123,7 +123,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             {
                 options.OnTeardown.CleanMatchingBlobs(blob => blob.Name == matchingBlob.Name);
             });
-            string blobCreatedByUs = await UploadBlobAsync(context, container);
+            string blobCreatedByUs = await UpsertBlobFileAsync(context, container);
 
             // Act
             await container.DisposeAsync();
@@ -201,7 +201,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             {
                 options.OnTeardown.CleanAllBlobs();
             });
-            string blobCreatedByUs = await UploadBlobAsync(context, container);
+            string blobCreatedByUs = await UpsertBlobFileAsync(context, container);
 
 
             // Act
@@ -232,10 +232,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldDeleteBlobContainerAsync(client);
         }
 
-        private static async Task<string> UploadBlobAsync(BlobStorageTestContext context, TemporaryBlobContainer container)
+        private static async Task<string> UpsertBlobFileAsync(BlobStorageTestContext context, TemporaryBlobContainer container)
         {
             string blobName = $"test-{Guid.NewGuid()}";
-            BlobClient client = await container.UploadBlobAsync(blobName, context.CreateBlobContent());
+            BlobClient client = await container.UpsertBlobFileAsync(blobName, context.CreateBlobContent());
             return client.Name;
         }
 
@@ -244,7 +244,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BlobContainerClient client,
             Action<TemporaryBlobContainerOptions> configureOptions = null)
         {
-#pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with  readability.
+#pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with readability.
 
             TemporaryBlobContainer temp = configureOptions is null
                 ? Bogus.Random.Bool()
