@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Azure;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json.Linq;
 using static Arcus.Testing.NoSqlExtraction;
 
 namespace Arcus.Testing
@@ -83,7 +84,7 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(container);
             logger ??= NullLogger.Instance;
 
-            JObject json = JObject.FromObject(item);
+            JsonNode json = JsonSerializer.SerializeToNode(item, SerializeToNodeOptions);
             string itemId = ExtractIdFromItem(json, typeof(TItem));
 
             ContainerResponse resp = await container.ReadContainerAsync();
