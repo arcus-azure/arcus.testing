@@ -5,10 +5,11 @@ using Arcus.Testing.Tests.Unit.Core.Fixture;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Core
 {
+    extern alias ArcusXunitV3;
+
     public enum DisposeResult { None, Disposed, Failure }
 
     public class DisposableCollectionTests
@@ -21,7 +22,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         /// </summary>
         public DisposableCollectionTests(ITestOutputHelper outputWriter)
         {
-            _logger = new XunitTestLogger(outputWriter);
+            _logger = new ArcusXunitV3::Arcus.Testing.XunitTestLogger(outputWriter);
         }
 
         [Fact]
@@ -81,7 +82,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                 case IAsyncDisposable d:
                     if (Bogus.Random.Bool())
                     {
-                        collection.Add(d); 
+                        collection.Add(d);
                     }
                     else
                     {
@@ -92,7 +93,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                 case IDisposable d:
                     if (Bogus.Random.Bool())
                     {
-                        collection.Add(d); 
+                        collection.Add(d);
                     }
                     else
                     {

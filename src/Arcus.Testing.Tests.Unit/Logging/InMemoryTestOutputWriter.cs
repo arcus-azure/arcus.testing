@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
-    extern alias ArcusXunitV3;
-    extern alias XunitV3;
-
-    public class InMemoryTestOutputWriter : ITestOutputHelper, XunitV3::Xunit.ITestOutputHelper
+    public class InMemoryTestOutputWriter : ITestOutputHelper, Xunit.Abstractions.ITestOutputHelper
     {
         private readonly Collection<string> _contents = new();
 

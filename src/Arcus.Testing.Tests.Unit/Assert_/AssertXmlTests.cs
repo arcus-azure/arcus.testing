@@ -5,7 +5,6 @@ using System.Xml;
 using Arcus.Testing.Tests.Unit.Assert_.Fixture;
 using Bogus;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 using static System.Environment;
 using static Arcus.Testing.Tests.Unit.Properties;

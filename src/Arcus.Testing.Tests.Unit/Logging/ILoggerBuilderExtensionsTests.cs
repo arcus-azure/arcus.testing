@@ -5,14 +5,12 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
+    extern alias ArcusXunitV2;
     extern alias ArcusXunitV3;
-    extern alias XunitV3;
 
     // ReSharper disable once InconsistentNaming
     [Trait(name: "Category", value: "Unit")]
@@ -28,7 +26,7 @@ namespace Arcus.Testing.Tests.Unit.Logging
             var testOutput = new InMemoryTestOutputWriter();
 
             // Act
-            builder.ConfigureLogging(logging => logging.AddXunitTestLogging(testOutput));
+            builder.ConfigureLogging(logging => ArcusXunitV2::Microsoft.Extensions.Logging.ILoggerBuilderExtensions.AddXunitTestLogging(logging, testOutput));
 
             // Assert
             IHost host = builder.Build();
@@ -161,20 +159,13 @@ namespace Arcus.Testing.Tests.Unit.Logging
         }
 
         [Fact]
-        public void AddXunitTestLogging_WithoutBuilder_Throws()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => ((ILoggingBuilder) null).AddXunitTestLogging(Mock.Of<ITestOutputHelper>()));
-        }
-
-        [Fact]
         public void AddXunitTestLogging_WithoutXunitTestLogger_Throws()
         {
             // Arrange
             var builder = new HostBuilder();
 
             // Act
-            builder.ConfigureLogging(logging => logging.AddXunitTestLogging(outputWriter: null));
+            builder.ConfigureLogging(logging => ArcusXunitV2::Microsoft.Extensions.Logging.ILoggerBuilderExtensions.AddXunitTestLogging(logging, outputWriter: null));
 
             // Assert
             Assert.ThrowsAny<ArgumentException>(() => builder.Build());

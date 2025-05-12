@@ -7,7 +7,6 @@ using FsCheck;
 using FsCheck.Fluent;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 using static System.Environment;
 using static Arcus.Testing.Tests.Unit.Properties;
