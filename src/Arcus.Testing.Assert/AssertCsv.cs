@@ -853,25 +853,25 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the original CSV row at a given <paramref name="index"/>,
+        /// Gets the original CSV row at a given <paramref name="rowNumber"/>,
         /// or the entire table when no such row could be found.
         /// </summary>
         /// <remarks>
         ///     Safely implemented to fallback on the original CSV when the row cannot be found.
         /// </remarks>
-        internal string GetOriginalRowAtOrAll(int index)
+        internal string GetOriginalRowAtOrAll(int rowNumber)
         {
             string[] rows = _originalCsv.Split(_options.NewLine, StringSplitOptions.RemoveEmptyEntries);
-            int i = _options.Header is AssertCsvHeader.Present ? index + 1 : index;
+            int diffIndex = _options.Header is AssertCsvHeader.Present ? rowNumber + 1 : rowNumber;
 
-            string row = rows.ElementAtOrDefault(i);
+            string row = rows.ElementAtOrDefault(diffIndex);
             if (row is null)
             {
                 return _originalCsv;
             }
 
-            string headerLine = string.Join(_options.Separator, HeaderNames);
-            return headerLine + _options.NewLine + row;
+            string headerLine = _options.Header is AssertCsvHeader.Present ? rows.ElementAtOrDefault(0) + _options.NewLine : "";
+            return headerLine + row;
         }
 
         /// <summary>
