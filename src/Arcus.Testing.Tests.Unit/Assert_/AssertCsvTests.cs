@@ -698,7 +698,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 
                 yield return TestCase(
                     expectedCsv: $"#;movie;genre;year;accepted{NewLine}1;blade runner;sf;1982;yes",
-                    actualCsv: $"#;movie;genre;year{NewLine}1;the thing;sf;1982",
+                    actualCsv: $"##;movie;genre;year{NewLine}1;the thing;sf;1982",
                     configureLoadExpectedOptions: null,
                     configureLoadActualOptions: null,
                     configureEqualOptions: options =>
@@ -706,7 +706,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                         options.IgnoreColumn("accepted");
                         options.IgnoreColumn(0);
                     },
-                    "different", "value", "\"blade runner\" while actual \"the thing\"");
+                    "different", "value", "\"blade runner\" while actual \"the thing\"", "#;movie;genre;year;accepted", "##;movie;genre;year");
             }
         }
 
