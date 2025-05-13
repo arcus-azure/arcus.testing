@@ -6,10 +6,11 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Moq;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Storage
 {
+    extern alias ArcusXunitV3;
+
     public class TemporaryMongoDbDocumentTests
     {
         private readonly ILogger _logger;
@@ -19,7 +20,7 @@ namespace Arcus.Testing.Tests.Unit.Storage
         /// </summary>
         public TemporaryMongoDbDocumentTests(ITestOutputHelper outputWriter)
         {
-            _logger = new XunitTestLogger(outputWriter);
+            _logger = new ArcusXunitV3::Arcus.Testing.XunitTestLogger(outputWriter);
         }
 
         [Theory]
@@ -49,14 +50,14 @@ namespace Arcus.Testing.Tests.Unit.Storage
         public async Task CreateTempMongoDbDocumentViaCollection_WithoutDocument_Fails()
         {
             await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryMongoDbDocument.InsertIfNotExistsAsync(collection: Mock.Of<IMongoCollection<SampleDoc>>() , document: null, _logger));
+                () => TemporaryMongoDbDocument.InsertIfNotExistsAsync(collection: Mock.Of<IMongoCollection<SampleDoc>>(), document: null, _logger));
         }
 
         [Fact]
         public async Task CreateTempMongoDbDocumentViaResourceId_WithoutDocument_Fails()
         {
             await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => TemporaryMongoDbDocument.InsertIfNotExistsAsync(ResourceIdentifier.Root, "<database-name>", "<collection-name>" , document: (SampleDoc) null, _logger));
+                () => TemporaryMongoDbDocument.InsertIfNotExistsAsync(ResourceIdentifier.Root, "<database-name>", "<collection-name>", document: (SampleDoc) null, _logger));
         }
 
         public class SampleDoc

@@ -7,22 +7,12 @@ using Bogus;
 using FsCheck;
 using FsCheck.Fluent;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 {
     public class DataFlowRunResultAsCsvTests
     {
-        private readonly ITestOutputHelper _outputWriter;
         private static readonly Faker Bogus = new();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataFlowRunResultAsCsvTests" /> class.
-        /// </summary>
-        public DataFlowRunResultAsCsvTests(ITestOutputHelper outputWriter)
-        {
-            _outputWriter = outputWriter;
-        }
 
         [Fact]
         public void GetDataAsCsv_WithData_SucceedsByParsing()

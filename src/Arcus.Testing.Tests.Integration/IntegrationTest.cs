@@ -1,6 +1,6 @@
 ﻿using Bogus;
 using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Arcus.Testing.Tests.Integration
 {
@@ -16,7 +16,8 @@ namespace Arcus.Testing.Tests.Integration
             Logger = new XunitTestLogger(outputWriter);
             Configuration = TestConfig.Create(options =>
             {
-                options.AddOptionalJsonFile("appsettings.default.json");
+                options.AddOptionalJsonFile("appsettings.default.json")
+                       .AddOptionalJsonFile("appsettings.local.json");
             });
         }
 

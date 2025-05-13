@@ -14,7 +14,6 @@ using Azure.ResourceManager.DataFactory.Models;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
@@ -167,7 +166,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             _connection = TemporaryManagedIdentityConnection.Create(_config, NullLogger.Instance);
 
@@ -219,7 +218,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// Called when an object is no longer needed. Called just before <see cref="M:System.IDisposable.Dispose" />
         /// if the class also implements that.
         /// </summary>
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(NullLogger.Instance);
 

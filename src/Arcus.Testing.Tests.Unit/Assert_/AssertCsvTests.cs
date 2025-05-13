@@ -6,7 +6,6 @@ using Arcus.Testing.Failure;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Bogus;
 using Xunit;
-using Xunit.Abstractions;
 using static System.DateTimeOffset;
 using static System.Environment;
 using static Arcus.Testing.Tests.Unit.Properties;

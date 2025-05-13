@@ -5,10 +5,11 @@ using Azure.ResourceManager.DataFactory;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
 {
+    extern alias ArcusXunitV3;
+
     public partial class TemporaryDataFlowDebugSessionTests
     {
         private readonly ILogger _logger;
@@ -19,7 +20,7 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
         /// </summary>
         public TemporaryDataFlowDebugSessionTests(ITestOutputHelper outputWriter)
         {
-            _logger = new XunitTestLogger(outputWriter);
+            _logger = new ArcusXunitV3::Arcus.Testing.XunitTestLogger(outputWriter);
         }
 
         [Fact]
