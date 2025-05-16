@@ -58,6 +58,31 @@
   background-color: var(--ifm-alert-background-color) !important;
 }
 
+.alert--praise {
+  --ifm-alert-background-color: rgba(114, 137, 218, 0.5);
+  --ifm-alert-background-color-highlight: rgba(84, 199, 236, 0.15);
+  --ifm-alert-foreground-color: rgb(66,69,73);
+  --ifm-alert-border-color: #5865F2;
+}
+
+html[data-theme='dark'] .alert--praise {
+  --ifm-alert-background-color: rgba(114, 137, 218, 0.5);
+  --ifm-alert-background-color-highlight: rgba(84, 199, 236, 0.15);
+  --ifm-alert-foreground-color: rgb(255,255,255);
+  --ifm-alert-border-color: #5865F2;
+}
+
+/* Use FontAwesome-style icon */
+.alert--praise::before {
+  font-family: "Font Awesome 5 Free"; /* Depends on your FontAwesome version */
+  font-weight: 900;
+  content: "\f559"; /* Unicode for FontAwesome icon (e.g., 'sticky-note') */
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  font-size: 1.2rem;
+}
+
 html[data-theme='dark'] .docusaurus-highlight-code-line {
   background-color: var(--ifm-color-gray-800);
 }
