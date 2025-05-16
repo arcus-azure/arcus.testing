@@ -1,6 +1,5 @@
 import React from 'react';
 import DefaultAdmonitionTypes from '@theme-original/Admonition/Types';
-import FontAwesomeIcon from '@fortawesome/react-fontawesome'
 
 function PraiseAdmonition(props) {
   props.title = props.title === "" ? "Praise" : props.title;
