@@ -25,7 +25,9 @@ The default `TestConfig` uses the `appsettings.json` as main file where the toke
 }
 ```
 
-> ⚠️ Make sure that you have such an `appsettings.json` file in your project and that this is copied to the test project's output. 
+:::warning
+Make sure that you have such an `appsettings.json` file in your project and that this is copied to the test project's output. 
+:::
 
 The default local alternative is called `appsettings.local.json` (for local integration/system testing) could include the endpoint to a locally run endpoint:
 ```json
@@ -73,7 +75,9 @@ var config = TestConfig.Create((options, IConfigurationBuilder builder) =>
 });
 ```
 
-> 💡 By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+:::tip
+By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+:::
 
 It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:
 
@@ -102,7 +106,9 @@ public class MyTestConfig : TestConfig
 }
 ```
 
-> 💡 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
+:::tip
+The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
+:::
 
 ## Polling
 Writing integration tests interacts by definition with external resources. These resources might not always be available at the time the test needs them. Because of this, polling until the target resource is available is a common practice. An example is polling for a health endpoint until the application response 'healthy'.
@@ -128,7 +134,9 @@ HttpResponseMessage response =
               .StartAsync();
 ```
 
-> 💡 The returned `Poll` model implements `GetAwaiter`, which means that the `StartAsync` is optional.
+:::tip
+The returned `Poll` model implements `GetAwaiter`, which means that the `StartAsync` is optional.
+:::
 
 ### Customization
 The `Poll` model can be customized with several options to override existing functionality or to manipulate the polling operations to your needs.
@@ -156,7 +164,9 @@ await Poll.Target(...)
           .StartAsync();
 ```
 
-> 💡 Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
+:::tip
+Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
+:::
 
 ## Resource directory
 The `ResourceDirectory` provides a solution to retrieving local files during the test run. It points by default to the root output directory where the test suite is running, and from there any sub-directory can be navigated to in a test-friendly manner. Each time a directory or a file does not exists, an IO exception will be thrown with a clear message on what is missing on disk.
