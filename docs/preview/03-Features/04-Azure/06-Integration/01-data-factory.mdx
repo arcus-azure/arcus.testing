@@ -56,16 +56,16 @@ await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
 });
 ```
 
-> #### 💡 Leveraging the `ActiveSessionId` option
-> The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
-> 
-> ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
->
-> 1. Run a **custom script** task before any of the test suites to start a debug session.
-> 2. Set a new **pipeline variable with the session ID** of the active debug session.
-> 3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
-> 4. Run a custom script after all the test suites to stop the debug session.
->    * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+:::info[Leveraging the `ActiveSessionId` option]
+The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
+
+⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
+1. Run a **custom script** task before any of the test suites to start a debug session.
+2. Set a new **pipeline variable with the session ID** of the active debug session.
+3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
+4. Run a custom script after all the test suites to stop the debug session.
+   * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+:::
 
 ### Full example
 The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.
