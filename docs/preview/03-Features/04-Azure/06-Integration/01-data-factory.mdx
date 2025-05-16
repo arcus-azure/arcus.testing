@@ -16,11 +16,13 @@ The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatic
 
 The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
 
-> 💡 Several testing framework provides the concept of 'singleton test fixtures':
-> * NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
-> * xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
-> * MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
-> * Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+:::tip
+Several testing framework provides the concept of 'singleton test fixtures':
+* NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
+* xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
+* MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
+* Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+:::
 
 ```csharp
 using Arcus.Testing;
@@ -192,13 +194,15 @@ CsvTable csv = result.GetDataAsCsv();
 JsonNode json = result.GetDataAsJson();
 ```
 
-> ⚠️ **IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
-> * For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
-> * For **JSON**:
->   * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
->   * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
->   * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
->   * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
+:::warning
+**IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
+* For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
+* For **JSON**:
+  * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
+  * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
+  * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
+  * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
+:::
 
 ### Customization
 The process of running a DataFlow can be manipulated with several options described here:

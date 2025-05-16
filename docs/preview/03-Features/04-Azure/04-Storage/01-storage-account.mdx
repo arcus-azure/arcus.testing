@@ -15,7 +15,9 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Storage.Blob
 ```
 
-> 🛡️ Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights if the test needs to create/update/delete containers.
+:::info
+Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights if the test needs to create/update/delete containers.
+:::
 
 ## Temporary Blob container
 The `TemporaryBlobContainer` provides a solution when the integration test requires a storage system (container) during the test run. An Azure Blob container is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -96,7 +98,9 @@ await using TemporaryBlobContainer container = ...
 container.OnTeardown.CleanMatchingBlobs(...);
 ```
 
-> 🎖️ The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UploadBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::info
+The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UploadBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 ## Temporary Blob file
 The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created (if new) or replaced (if existing) upon the setup of the test fixture and is deleted (if new) or reverted (if exsiting) again when the test fixture is disposed.
@@ -126,7 +130,9 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Storage.Table
 ```
 
-> 🛡️ Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)-rights if the test needs to create/update/delete tables.
+:::info
+Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)-rights if the test needs to create/update/delete tables.
+:::
 
 ## Temporary Table
 The `TemporaryTable` provides a solution when the integration test requires a storage system (table) during the test run. An Azure Table is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -230,10 +236,12 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Storage.File.Share
 ```
 
-> ⚠️ When using `TokenCredential` overloads (recommended: managed-identity), make sure to:
-> * 🛡️ enable [Identity-based access for file shares](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-identity-auth-domain-services-enable?tabs=azure-portal) to make sure that the file shares can be accessed via Entra ID.
->* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor)-rights if the test needs to create/update/delete share directories/files.
-> * 🛡️ include the [Share token intent](https://learn.microsoft.com/en-us/azure/storage/files/authorize-oauth-rest?tabs=portal#authorize-access-to-file-data-in-application-code), otherwise the file operations won't get authorized correctly.
+:::warning
+When using `TokenCredential` overloads (recommended: managed-identity), make sure to:
+* 🛡️ enable [Identity-based access for file shares](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-identity-auth-domain-services-enable?tabs=azure-portal) to make sure that the file shares can be accessed via Entra ID.
+* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor)-rights if the test needs to create/update/delete share directories/files.
+* 🛡️ include the [Share token intent](https://learn.microsoft.com/en-us/azure/storage/files/authorize-oauth-rest?tabs=portal#authorize-access-to-file-data-in-application-code), otherwise the file operations won't get authorized correctly.
+:::
 
 ## Temporary share directory
 The `TemporaryShareDirectory` provides a solution when the integration test requires a storage system (file share) during the test run. An Azure Share directory is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
