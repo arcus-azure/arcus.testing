@@ -2,9 +2,12 @@ import React from 'react';
 import DefaultAdmonitionTypes from '@theme-original/Admonition/Types';
 
 function PraiseAdmonition(props) {
+  props.title = props.title === "" ? "Praise" : props.title;
   return (
     <div class="theme-admonition alert alert--praise">
-      <h5>{props.title}</h5>
+      <div>
+        <span><i class="fa-solid fa-award"></i> {props.title}</span>
+      </div>
       <div>{props.children}</div>
     </div>
   );
