@@ -445,7 +445,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     <para>For string parameters, the value must be enclosed in single quotes (example: <c>"'myValue'"</c>).</para>
-        ///     <para>For boolean parameters, the value must be either <c>"true()"</c> or <c>"false()"</c>.</para
+        ///     <para>For boolean parameters, the value must be either <c>"true()"</c> or <c>"false()"</c>.</para>
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
