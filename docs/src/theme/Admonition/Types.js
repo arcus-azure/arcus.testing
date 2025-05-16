@@ -5,12 +5,8 @@ function PraiseAdmonition(props) {
   props.title = props.title === "" ? "Praise" : props.title;
   return (
     <div class="theme-admonition alert alert--praise">
-      <div>
-        <span>
-         {props.title}
-        </span>
-      </div>
-      <div>{props.children}</div>
+      <div><span>{props.title}</span></div>
+      <div><p>{props.children}</p></div>
     </div>
   );
 }
