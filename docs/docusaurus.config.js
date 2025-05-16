@@ -85,5 +85,6 @@ module.exports = {
   ],
   stylesheets: [
     'https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Inter:wght@400;500&display=swap',
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
   ],
 };
