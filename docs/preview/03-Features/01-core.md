@@ -106,7 +106,7 @@ public class MyTestConfig : TestConfig
 }
 ```
 
-:::tip
+:::note
 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
 :::
 
@@ -164,7 +164,7 @@ await Poll.Target(...)
           .StartAsync();
 ```
 
-:::tip
+:::note
 Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
 :::
 

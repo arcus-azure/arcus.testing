@@ -37,7 +37,9 @@ AssertXml.Equal(expected, actual);
 // </root>      </diff-root>
 ```
 
-💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::tip
+Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the XML comparison.
@@ -76,7 +78,7 @@ AssertXml.Equal(..., options =>
 ### Loading XML documents yourself
 The XML assertion equalization can be called directly with raw contents - internally it parses to a valid XML structure: `XmlDocument`. If you want to compare two XML nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
-💡 It provides you with more options to control how your file should be loaded.
+⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using System.Xml;
@@ -93,9 +95,9 @@ XmlDocument actual = AssertXml.Load(json, options => ...);
 AssertXml.Equal(expected, actual);
 ```
 
-> ❓ Why use the `AssertXml` to load something that is already available with `XmlDocument.LoadXml`?
-
+:::info[Why use the `AssertXml` to load something that is already available with `XmlDocument.LoadXml`?]
 The `AssertXml.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
+:::
 
 </TabItem>
 <TabItem value="json" label="JSON">
@@ -119,7 +121,9 @@ AssertJson.Equal(expected, actual);
 // }                {
 ```
 
-💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::tip
+Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the JSON comparison.
@@ -154,12 +158,14 @@ AssertJson.Equal(..., options =>
 });
 ```
 
-> 💡 `IgnoreNode` from a JSON path is currently unsupported by Arcus.Testing. As workaround you can use [Newtonsoft.Json](https://www.newtonsoft.com/json) library to parse the JSON string and remove the node before using the `AssertJson.Equal` method.
+:::warning
+`IgnoreNode` from a JSON path is currently unsupported by Arcus.Testing. As workaround you can use [Newtonsoft.Json](https://www.newtonsoft.com/json) library to parse the JSON string and remove the node before using the `AssertJson.Equal` method.
+:::
 
 ### Loading JSON nodes yourself
 The JSON assertion equalization can be called directly with raw contents - internally it parses to a valid JSON structure: `JsonNode`. If you want to compare two JSON nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
-💡 It provides you with more options to control how your file should be loaded.
+⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using System.Text.Json.Nodes;
@@ -176,9 +182,9 @@ JsonNode actual = AssertJson.Load(json, options => ...);
 AssertJson.Equal(expected, actual);
 ```
 
-> ❓ Why use the `AssertJson` to load something that is already available with `JsonNode.Parse`?
-
+:::info[Why use the `AssertJson` to load something that is already available with `JsonNode.Parse`?]
 The `AssertJson.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
+:::
 
 </TabItem>
 <TabItem value="csv" label="CSV">
@@ -205,7 +211,7 @@ AssertCsv.Equal(expected, actual);
 // printer;A double-sided printer;234,56
 ```
 
-💡 Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+⚡ Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the CSV comparison.
@@ -277,15 +283,16 @@ AssertCsv.Equal(..., options =>
 });
 ```
 
-> ⚠️ **️IMPORTANT:** beware of combining ordering options:
-> * If you want to ignore the order of columns, but do not use headers in your CSV contents (`options.Header = Missing`), the order cannot be determined. Make sure to include headers in your CSV contents, or do not use `Ignore` for columns.
-> * If you want to ignore the order of columns, but do not use headers or use duplicate headers, the comparison cannot determine whether all the cells are there. Make sure to include headers and use `IgnoreColumn` to remove any duplicates, or do not use `Ignore` for columns. 
-> * If you want to ignore a column via its index, but also want to ignore the order of columns, the comparison cannot determine the column index to ignore. Either remove all calls to `options.IgnoreColumn(0);` or set `options.ColumnOrder` to `AssertCsvOrder.Include;`.
+:::warning[**️IMPORTANT:** beware of combining ordering options:]
+* If you want to ignore the order of columns, but do not use headers in your CSV contents (`options.Header = Missing`), the order cannot be determined. Make sure to include headers in your CSV contents, or do not use `Ignore` for columns.
+* If you want to ignore the order of columns, but do not use headers or use duplicate headers, the comparison cannot determine whether all the cells are there. Make sure to include headers and use `IgnoreColumn` to remove any duplicates, or do not use `Ignore` for columns. 
+* If you want to ignore a column via its index, but also want to ignore the order of columns, the comparison cannot determine the column index to ignore. Either remove all calls to `options.IgnoreColumn(0);` or set `options.ColumnOrder` to `AssertCsvOrder.Include;`.
+:::
 
 ### Loading CSV tables yourself
 The CSV assertion equalization can be called directly with with raw contents - internally it parses the contents to a valid tabular structure: `CsvTable`. If it so happens that you want to compare two CSV tables each with different header, separators or other serialization settings, you can load the two tables separately and do the equalization on the loaded CSV tables.
 
-💡 It provides you with more options to control how your file should be loaded.
+⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using Arcus.Testing;
@@ -340,11 +347,11 @@ string actual = AssertXslt.TransformToCsv(xslt, input);
 // Use `AssertCsv.Equal` to do the equalization.
 ```
 
-💡 Both types of transformations can be adapted by passing any runtime XSLT arguments.
+⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
 
-> ❓ Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?
-
+:::info[Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?]
 The `AssertXslt.TransformXml/Json` are special variants on the existing transform functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
+:::
 
 ### Loading XSLT transformations yourself
 The asserted XSLT transformation is loading valid `XslCompiledTransform` instances from raw contents, but you can also call this asserted loading yourself before calling the asserted transformation.
@@ -363,6 +370,6 @@ XmlDocument xml = AssertXslt.TransformToXml(transformer, ...);
 JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 ```
 
-> ❓ Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?
-
+:::info[Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?]
 The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
+:::
