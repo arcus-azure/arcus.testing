@@ -78,7 +78,7 @@ AssertXml.Equal(..., options =>
 ### Loading XML documents yourself
 The XML assertion equalization can be called directly with raw contents - internally it parses to a valid XML structure: `XmlDocument`. If you want to compare two XML nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
-⚡ It provides you with more options to control how your file should be loaded.
+> ⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using System.Xml;
@@ -165,7 +165,7 @@ AssertJson.Equal(..., options =>
 ### Loading JSON nodes yourself
 The JSON assertion equalization can be called directly with raw contents - internally it parses to a valid JSON structure: `JsonNode`. If you want to compare two JSON nodes with different serialization settings, you can load the two nodes separately and do the equalization on the loaded nodes.
 
-⚡ It provides you with more options to control how your file should be loaded.
+> ⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using System.Text.Json.Nodes;
@@ -211,7 +211,7 @@ AssertCsv.Equal(expected, actual);
 // printer;A double-sided printer;234,56
 ```
 
-⚡ Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+> ⚡ Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the CSV comparison.
@@ -292,7 +292,7 @@ AssertCsv.Equal(..., options =>
 ### Loading CSV tables yourself
 The CSV assertion equalization can be called directly with with raw contents - internally it parses the contents to a valid tabular structure: `CsvTable`. If it so happens that you want to compare two CSV tables each with different header, separators or other serialization settings, you can load the two tables separately and do the equalization on the loaded CSV tables.
 
-⚡ It provides you with more options to control how your file should be loaded.
+> ⚡ It provides you with more options to control how your file should be loaded.
 
 ```csharp
 using Arcus.Testing;
@@ -314,7 +314,7 @@ AssertCsv.Equal(expected, actual);
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.
 
-🎖️ Since the XSLT transformation execution is now run as a test assertion, any failure during transformation or loading of the input/output/transformation will be reported to the tester in a humanly readable manner.
+> 🎖️ Since the XSLT transformation execution is now run as a test assertion, any failure during transformation or loading of the input/output/transformation will be reported to the tester in a humanly readable manner.
 
 ```csharp
 using Arcus.Testing;
@@ -347,7 +347,7 @@ string actual = AssertXslt.TransformToCsv(xslt, input);
 // Use `AssertCsv.Equal` to do the equalization.
 ```
 
-⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
+> ⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
 
 :::info[Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?]
 The `AssertXslt.TransformXml/Json` are special variants on the existing transform functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
