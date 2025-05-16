@@ -76,6 +76,10 @@ module.exports = {
           // Please change this to your repo.
           editUrl: 'https://github.com/arcus-azure/arcus.testing/edit/main/docs',
           includeCurrentVersion: process.env.CONTEXT !== 'production',
+          admonitions: {
+            keywords: ['praise'],
+            extendDefaults: true,
+          }
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -84,6 +88,6 @@ module.exports = {
     ],
   ],
   stylesheets: [
-    'https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Inter:wght@400;500&display=swap',
+    'https://fonts.googleapis.com/css2?family=Bitter:wght@700&family=Inter:wght@400;500&display=swap'
   ],
 };
