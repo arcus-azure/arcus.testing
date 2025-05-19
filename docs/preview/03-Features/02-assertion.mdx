@@ -354,11 +354,9 @@ string actual = AssertXslt.TransformToCsv(xslt, input);
 > ⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
 
 <details>
-
   <summary><strong>Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?</strong></summary>
 
-The `AssertXslt.TransformXml/Json` are special variants on the existing transform functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
-
+  The `AssertXslt.TransformXml/Json` are special variants on the existing transform functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
 </details>
 
 ### Loading XSLT transformations yourself
@@ -381,6 +379,5 @@ JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 <details>
   <summary><strong>Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?</strong></summary>
 
-The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
-
+  The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
 </details>
