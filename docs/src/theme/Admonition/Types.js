@@ -1,15 +1,6 @@
 import React from 'react';
 import DefaultAdmonitionTypes from '@theme-original/Admonition/Types';
-
-function PraiseAdmonition(props) {
-  props.title = props.title === "" ? "Praise" : props.title;
-  return (
-    <div class="theme-admonition alert alert--praise">
-      <div><span>{props.title}</span></div>
-      <div><p>{props.children}</p></div>
-    </div>
-  );
-}
+import PraiseAdmonition from './Type/praise';
 
 const AdmonitionTypes = {
   ...DefaultAdmonitionTypes,
