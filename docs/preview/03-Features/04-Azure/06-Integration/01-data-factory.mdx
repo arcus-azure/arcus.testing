@@ -57,7 +57,7 @@ await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
 ```
 
 <details>
-<summary>Leveraging the `ActiveSessionId` option</summary>
+  <summary><strong>Leveraging the `ActiveSessionId` option</strong></summary>
 The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
 
 ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
@@ -66,6 +66,7 @@ The `ActiveSessionId` is useful when developing locally when you do not want to 
 3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
 4. Run a custom script after all the test suites to stop the debug session.
    * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+
 </details>
 
 ### Full example
