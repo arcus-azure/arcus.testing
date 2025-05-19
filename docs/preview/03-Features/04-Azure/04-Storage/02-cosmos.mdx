@@ -51,6 +51,10 @@ await using TemporaryMongoDbCollection collection = ...
 await collection.UpsertDocumentAsync(new Shipment { BoatName = "The Alice"  });
 ```
 
+:::praise
+The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
 #### Customization
 The setup and teardown process of the temporary collection is configurable. **By default, it always removes any resources that it was responsible for creating.**
 
@@ -99,10 +103,6 @@ await using TemporaryMongoDbCollection collection = ...
 
 collection.OnTeardown.CleanAllDocuments();
 ```
-
-:::praise
-The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-:::
 
 ### Temporary MongoDb document
 The `TemporaryMongoDbDocument` provides a solution when the integration test requires a document during the test run. A MongoDb document is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -180,6 +180,10 @@ await using TemporaryNoSqlContainer container = ...
 await container.UpsertItemAsync(new Shipment { Id = "123", BoatName = "The Alice" });
 ```
 
+:::praise
+The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
 #### Customization
 The setup and teardown process of the temporary container is configurable. **By default, it always removes any resources that it was responsible for creating.**
 
@@ -224,10 +228,6 @@ await using TemporaryNoSqlContainer container = ...
 
 container.OnTeardown.CleanAllItems();
 ```
-
-:::praise
-The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-:::
 
 ### Temporary NoSql item
 The `TemporaryNoSqlItem` provides a solution when the integration test requires a item during the test run. A NoSql item is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.

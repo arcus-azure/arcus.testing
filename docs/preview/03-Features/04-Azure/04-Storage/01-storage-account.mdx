@@ -45,6 +45,10 @@ BlobClient client = await container.UpsertBlobFileAsync(
     "<blob-name>", BinaryData.FromString("<blob-content>"));
 ```
 
+:::praise
+The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UpsertBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
 ### Customization
 The setup and teardown process of the temporary container is configurable. **By default, it always removes/reverts any resources that it was responsible for creating/replacing.**
 
@@ -97,10 +101,6 @@ await using TemporaryBlobContainer container = ...
 
 container.OnTeardown.CleanMatchingBlobs(...);
 ```
-
-:::praise
-The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UpsertBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-:::
 
 ## Temporary Blob file
 The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created (if new) or replaced (if existing) upon the setup of the test fixture and is deleted (if new) or reverted (if existing) again when the test fixture is disposed.
@@ -160,6 +160,10 @@ ITableEntity myEntity = ...
 await table.UpsertEntityAsync(myEntity);
 ```
 
+:::praise
+The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
 ### Customization
 The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
 
@@ -205,10 +209,6 @@ await using TemporaryTable table = ...
 
 table.OnTeardown.CleanAllEntities();
 ```
-
-:::praise
-The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-:::
 
 ## Temporary Table entity
 The `TemporaryTableEntity` provides a solution when the integration test requires data (table) during the test run. An Azure Table entity is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -274,6 +274,10 @@ await using Stream fileContents = File.OpenRead(...);
 await directory.UpsertFileAsync(fileName, fileContents);
 ```
 
+:::praise
+The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
 ### Customization
 The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
 
@@ -322,10 +326,6 @@ await using TemporaryShareDirectory directory = ...
 
 directory.OnTeardown.CleanAllItems();
 ```
-
-:::praise
-The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-:::
 
 ## Temporary share file
 The `TemporaryShareFile` provides a solution when the integration test requires data (file share) during the test run. An Azure Share file item is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.

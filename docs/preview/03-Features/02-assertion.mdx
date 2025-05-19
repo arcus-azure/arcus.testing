@@ -211,7 +211,9 @@ AssertCsv.Equal(expected, actual);
 // printer;A double-sided printer;234,56
 ```
 
-> ⚡ Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::tip
+Currently, the input contents are trimmed in case the input is too big to be shown in a humanly readable manner to the test output. In case of large files, it might be best to log those files (or parts that interest you) separately before using this test assertion.
+:::
 
 ### Customization
 The test assertion also exposes several options to tweak the behavior of the CSV comparison.
@@ -314,7 +316,9 @@ AssertCsv.Equal(expected, actual);
 ## XSLT
 The library has an `AssertXslt` class that exposes useful test assertions when dealing with XSLT transformation. The most popular one is transforming XML contents to either XML or JSON.
 
-> 🎖️ Since the XSLT transformation execution is now run as a test assertion, any failure during transformation or loading of the input/output/transformation will be reported to the tester in a humanly readable manner.
+:::praise
+Since the XSLT transformation execution is now run as a test assertion, any failure during transformation or loading of the input/output/transformation will be reported to the tester in a humanly readable manner.
+:::
 
 ```csharp
 using Arcus.Testing;
@@ -349,9 +353,10 @@ string actual = AssertXslt.TransformToCsv(xslt, input);
 
 > ⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
 
-:::info[Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?]
+<details>
+<summary>Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?</summary>
 The `AssertXslt.TransformXml/Json` are special variants on the existing transform functionality in such a way that it provides more descriptive information on the input file that was trying to be parsed, plus by throwing an assertion message, it makes the test output more clear on what the problem was and where it happened. 
-:::
+</details>
 
 ### Loading XSLT transformations yourself
 The asserted XSLT transformation is loading valid `XslCompiledTransform` instances from raw contents, but you can also call this asserted loading yourself before calling the asserted transformation.
@@ -370,6 +375,7 @@ XmlDocument xml = AssertXslt.TransformToXml(transformer, ...);
 JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 ```
 
-:::info[Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?]
+<details>
+<summary>Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?</summary
 The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
-:::
+</details>
