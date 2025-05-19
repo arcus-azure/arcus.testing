@@ -376,6 +376,6 @@ JsonNode json = AssertXslt.TransformToJson(transformer, ...);
 ```
 
 <details>
-<summary>Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?</summary
+<summary>Why use the `AssertXslt.Load` to load something that is already available with `XslCompiledTransform.Load`?</summary>
 The `AssertXslt.Load` is a special variant on the existing load functionality in such a way that it provides more descriptive information on the input file that ws trying to be parsed, plus by throwing an assertion message, it mes the test output more clear on what the problem was and where it happened.
 </details>
