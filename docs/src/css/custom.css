@@ -59,17 +59,17 @@
 }
 
 .alert--praise {
-  --ifm-alert-background-color: #ffe0f0;
-  --ifm-alert-background-color-highlight: #ffcce5;
-  --ifm-alert-foreground-color: #c2185b;
-  --ifm-alert-border-color: #f06292;
+  --ifm-alert-background-color: #f3e8ff;
+  --ifm-alert-background-color-highlight: #e1d5fa;
+  --ifm-alert-foreground-color: #6a1b9a;
+  --ifm-alert-border-color: #ab47bc;
 }
 
 html[data-theme='dark'] .alert--praise {
-  --ifm-alert-background-color: #4a0033;
-  --ifm-alert-background-color-highlight: #880e4f;
-  --ifm-alert-foreground-color: #ff80ab;
-  --ifm-alert-border-color: #f48fb1;
+  --ifm-alert-background-color: #3d2353;
+  --ifm-alert-background-color-highlight: #512e75;
+  --ifm-alert-foreground-color: #e1bee7;
+  --ifm-alert-border-color: #ce93d8;
 }
 
 /* Use FontAwesome-style icon */
