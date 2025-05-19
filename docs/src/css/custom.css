@@ -72,17 +72,6 @@ html[data-theme='dark'] .alert--praise {
   --ifm-alert-border-color: #ce93d8;
 }
 
-/* Use FontAwesome-style icon */
-.alert--praise::before {
-  font-family: "Font Awesome 5 Free"; /* Depends on your FontAwesome version */
-  font-weight: 900;
-  content: "\f559"; /* Unicode for FontAwesome icon (e.g., 'sticky-note') */
-  position: absolute;
-  left: 1rem;
-  top: 1rem;
-  font-size: 1.2rem;
-}
-
 html[data-theme='dark'] .docusaurus-highlight-code-line {
   background-color: var(--ifm-color-gray-800);
 }

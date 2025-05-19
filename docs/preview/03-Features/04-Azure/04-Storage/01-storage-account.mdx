@@ -275,7 +275,7 @@ await directory.UpsertFileAsync(fileName, fileContents);
 ```
 
 :::praise
-The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UpsertFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 :::
 
 ### Customization
