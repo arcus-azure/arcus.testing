@@ -98,7 +98,7 @@ await using TemporaryBlobContainer container = ...
 container.OnTeardown.CleanMatchingBlobs(...);
 ```
 
-:::info
+:::praise
 The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UpsertBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 :::
 
@@ -206,7 +206,9 @@ await using TemporaryTable table = ...
 table.OnTeardown.CleanAllEntities();
 ```
 
-> 🎖️ The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::praise
+The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 ## Temporary Table entity
 The `TemporaryTableEntity` provides a solution when the integration test requires data (table) during the test run. An Azure Table entity is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -275,7 +277,9 @@ await directory.UpsertFileAsync(fileName, fileContents);
 ### Customization
 The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
 
-> ❔ Both files and subdirectories are meant by 'Azure Share items':
+:::note
+Both files and subdirectories are meant by 'Azure Share items':
+:::
 
 ```csharp
 using Arcus.Testing;
@@ -319,7 +323,9 @@ await using TemporaryShareDirectory directory = ...
 directory.OnTeardown.CleanAllItems();
 ```
 
-> 🎖️ The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::praise
+The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UploadFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 ## Temporary share file
 The `TemporaryShareFile` provides a solution when the integration test requires data (file share) during the test run. An Azure Share file item is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.

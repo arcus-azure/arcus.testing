@@ -100,7 +100,9 @@ await using TemporaryMongoDbCollection collection = ...
 collection.OnTeardown.CleanAllDocuments();
 ```
 
-> 🎖️ The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::praise
+The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 ### Temporary MongoDb document
 The `TemporaryMongoDbDocument` provides a solution when the integration test requires a document during the test run. A MongoDb document is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -223,7 +225,9 @@ await using TemporaryNoSqlContainer container = ...
 container.OnTeardown.CleanAllItems();
 ```
 
-> 🎖️ The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::praise
+The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 ### Temporary NoSql item
 The `TemporaryNoSqlItem` provides a solution when the integration test requires a item during the test run. A NoSql item is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.

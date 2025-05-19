@@ -196,11 +196,13 @@ byte[] img = sub.ReadFileBytesByPattern("*.png");
 //    Resource directory: /bin/net8.0/resources
 ```
 
-> 🚀 The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
-> ```csharp
-> ResourceDirectory sub = 
->     ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";
-> ``` 
+:::praise
+The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
+```csharp
+ResourceDirectory sub = 
+    ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";
+``` 
+:::
 
 ## Temporary environment variable
 The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is fairly common when testing locally and spinning up the application on your own system. It can also be used for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.
