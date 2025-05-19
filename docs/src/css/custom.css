@@ -58,6 +58,20 @@
   background-color: var(--ifm-alert-background-color) !important;
 }
 
+.alert--praise {
+  --ifm-alert-background-color: #f3e8ff;
+  --ifm-alert-background-color-highlight: #e1d5fa;
+  --ifm-alert-foreground-color: #6a1b9a;
+  --ifm-alert-border-color: #ab47bc;
+}
+
+html[data-theme='dark'] .alert--praise {
+  --ifm-alert-background-color: #3d2353;
+  --ifm-alert-background-color-highlight: #512e75;
+  --ifm-alert-foreground-color: #e1bee7;
+  --ifm-alert-border-color: #ce93d8;
+}
+
 html[data-theme='dark'] .docusaurus-highlight-code-line {
   background-color: var(--ifm-color-gray-800);
 }
