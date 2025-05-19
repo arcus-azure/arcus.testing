@@ -59,17 +59,17 @@
 }
 
 .alert--praise {
-  --ifm-alert-background-color: rgba(114, 137, 218, 0.5);
-  --ifm-alert-background-color-highlight: rgba(84, 199, 236, 0.15);
-  --ifm-alert-foreground-color: rgb(66,69,73);
-  --ifm-alert-border-color: #5865F2;
+  --ifm-alert-background-color: #ffe0f0;
+  --ifm-alert-background-color-highlight: #ffcce5;
+  --ifm-alert-foreground-color: #c2185b;
+  --ifm-alert-border-color: #f06292;
 }
 
 html[data-theme='dark'] .alert--praise {
-  --ifm-alert-background-color: rgba(114, 137, 218, 0.5);
-  --ifm-alert-background-color-highlight: rgba(84, 199, 236, 0.15);
-  --ifm-alert-foreground-color: rgb(255,255,255);
-  --ifm-alert-border-color: #5865F2;
+  --ifm-alert-background-color: #4a0033;
+  --ifm-alert-background-color-highlight: #880e4f;
+  --ifm-alert-foreground-color: #ff80ab;
+  --ifm-alert-border-color: #f48fb1;
 }
 
 /* Use FontAwesome-style icon */
