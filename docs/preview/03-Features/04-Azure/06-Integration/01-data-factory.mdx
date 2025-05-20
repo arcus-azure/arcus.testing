@@ -77,7 +77,6 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
     
      public class DataFactoryFixture : IAsyncLifetime
      {
-        // highlight-next-line
          public TemporaryDataFlowDebugSession Session { get; private set; }
     
          public async Task InitializeAsync()
@@ -116,7 +115,6 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
     [TestFixture]
     public class MyDataFactoryTests
     {
-        // highlight-next-line
         private TemporaryDataFlowDebugSession _session;
   
         [OneTimeSetUp]
@@ -144,7 +142,6 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
     [TestClass]
     public class MyDataFactoryTests
     {
-        // highlight-next-line
         private static TemporaryDataFlowDebugSession _session;
 
         [ClassInitialize]
