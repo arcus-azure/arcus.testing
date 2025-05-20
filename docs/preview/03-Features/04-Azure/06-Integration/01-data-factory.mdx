@@ -71,20 +71,24 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
 <Tabs>
   <TabItem value="xunit" label="xUnit" default>
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using Xunit;
     
      public class DataFactoryFixture : IAsyncLifetime
      {
+        // highlight-next-line
          public TemporaryDataFlowDebugSession Session { get; private set; }
     
          public async Task InitializeAsync()
          {
+            // highlight-next-line
              Session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
          }
     
          public async Task DisposeAsync()
          {
+             // highlight-next-line
              await Session.DisposeAsync();
          }
      }
@@ -105,23 +109,27 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
   </TabItem>
   <TabItem value="nunit" label="NUnit">
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using NUnit.Framework;
   
     [TestFixture]
     public class MyDataFactoryTests
     {
+        // highlight-next-line
         private TemporaryDataFlowDebugSession _session;
   
         [OneTimeSetUp]
         public async Task InitAsync()
         {
+            // highlight-next-line
             _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
         }
   
         [OneTimeTearDown]
         public async Task CleanupAsync()
         {
+            // highlight-next-line
             await _session.DisposeAsync();
         }
     }
@@ -129,23 +137,27 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
   </TabItem>
   <TabItem value="mstest" label="MSTest">
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
     [TestClass]
     public class MyDataFactoryTests
     {
+        // highlight-next-line
         private static TemporaryDataFlowDebugSession _session;
 
         [ClassInitialize]
         public static async Task InitializeAsync(TestContext context)
         {
+            // highlight-next-line
             _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
         }
 
         [ClassCleanup]
         public static async Task CleanupAsync()
         {
+            // highlight-next-line
             await _session.DisposeAsync();
         }
     } 
@@ -160,6 +172,7 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
 
     [<EntryPoint>]
     let main args = task {
+        // highlight-next-line
         use! session = TemporaryDataFlowDebugSession.StartDebugSessionAsync(...)
 
         let tests = TestList ([ myDataFactoryTests session ], Normal)
