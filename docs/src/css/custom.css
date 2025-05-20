@@ -46,7 +46,7 @@
   --ifm-toc-border-color: var(--ifm-color-primary);
   --ifm-global-spacing: 1.5rem;
 
-  --docusaurus-highlighted-code-line-bg: rgb(160, 168, 190);
+  --docusaurus-highlighted-code-line-bg: rgb(172, 180, 204);
 }
 
 .docusaurus-highlight-code-line {
@@ -61,7 +61,7 @@
 }
 
 [data-theme='dark'] {
-  --docusaurus-highlighted-code-line-bg: rgb(24, 24, 24);
+  --docusaurus-highlighted-code-line-bg: rgb(53, 53, 53);
 }
 
 html[data-theme='dark'] .docusaurus-highlight-code-line {
