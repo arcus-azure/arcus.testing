@@ -285,15 +285,15 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            if (dataFlowOptions.DataFlowParameters.Count > 0)
+            if (dataFlowOptions?.DataFlowParameters.Count > 0)
             {
                 properties.Transformations.Add(new DataFlowTransformation("AnArbitraryDerivedColumnName"));
             }
 
             IEnumerable<string> scriptLines = _dataType switch
             {
-                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions.DataFlowParameters),
-                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions.DataFlowParameters),
+                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions?.DataFlowParameters),
+                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions?.DataFlowParameters),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
