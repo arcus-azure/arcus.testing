@@ -112,7 +112,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 await temp.AddLinkedServiceAsync();
                 await temp.AddCsvSourceAsync(options, dfOptions);
                 await temp.AddCsvSinkAsync(options, dfOptions);
-                await temp.AddDataFlowAsync();
+                await temp.AddDataFlowAsync(dataFlowOptions: dfOptions);
             }
             catch
             {
@@ -260,7 +260,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
 
-        private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc)
+        private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
         {
             _logger.LogTrace("Adding DataFlow '{DataFlowName}' to Azure DataFactory '{DataFactoryName}'", Name, DataFactory.Name);
 
@@ -285,10 +285,15 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
+            if (dataFlowOptions?.DataFlowParameters.Count > 0)
+            {
+                properties.Transformations.Add(new DataFlowTransformation("AnArbitraryDerivedColumnName"));
+            }
+
             IEnumerable<string> scriptLines = _dataType switch
             {
-                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName),
-                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm),
+                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions?.DataFlowParameters),
+                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions?.DataFlowParameters),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -300,21 +305,68 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _dataFlow.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
         }
 
-        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName)
+        private static IEnumerable<string> DataFlowParametersScriptLines(IDictionary<string, string> dataFlowParameters)
         {
+            IEnumerable<string> parameters = Enumerable.Empty<string>();
+            if (dataFlowParameters?.Count > 0)
+            {
+                parameters = new[]
+                {
+                    "parameters{",
+                    string.Join(",\n", dataFlowParameters.Select(p => $"     {p.Key} as {p.Value}")),
+                    "}"
+                };
+            }
+
+            return parameters;
+        }
+
+        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
+        {
+            IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
+
+            return parameters.Concat(FormatDataFlowCsvScriptLines(sourceName, sinkName, dataFlowParameters));
+        }
+
+        private static string[] FormatDataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
+        {
+            if (dataFlowParameters?.Count > 0)
+            {
+                return new[]
+                {
+                    "source(allowSchemaDrift: true,",
+                    "       validateSchema: false,",
+                    $"      ignoreNoFilesFound: false) ~> {sourceName}",
+                    $"{sourceName} derive(",
+                    string.Join(',', dataFlowParameters.Select(p => $"          {p.Key} = ${p.Key}")),
+                    $"          ) ~> AnArbitraryDerivedColumnName",
+                    $"AnArbitraryDerivedColumnName sink(allowSchemaDrift: true,",
+                    "      validateSchema: false,",
+                    "      skipDuplicateMapInputs: true,",
+                    $"     skipDuplicateMapOutputs: true) ~> {sinkName}"
+                };
+            }
+
             return new[]
             {
                 "source(allowSchemaDrift: true,",
                 "     validateSchema: false,",
                 $"     ignoreNoFilesFound: false) ~> {sourceName}",
                 $"{sourceName} sink(allowSchemaDrift: true,",
-                "     validateSchema: false,",
-                "     skipDuplicateMapInputs: true,",
+                "      validateSchema: false,",
+                "      skipDuplicateMapInputs: true,",
                 $"     skipDuplicateMapOutputs: true) ~> {sinkName}"
             };
         }
 
-        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm)
+        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, IDictionary<string, string> dataFlowParameters)
+        {
+            IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
+
+            return parameters.Concat(DataFlowJsonScriptLines(sourceName, sinkName, docForm, dataFlowParameters?.Count > 0));
+        }
+
+        private static string[] DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, bool addDerivedColumWithDataFlowParams)
         {
             string documentForm = docForm switch
             {
@@ -329,7 +381,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 "     validateSchema: false,",
                 "     ignoreNoFilesFound: false,",
                 $"    documentForm: '{documentForm}') ~> {sourceName}",
-                $"{sourceName} sink(allowSchemaDrift: true,",
+                addDerivedColumWithDataFlowParams ? $"{sourceName} derive(NewColumn = iif($BoolDataFlowParam, $StringDataFlowParam, toString($IntDataFlowParam))) ~> ADerivedColumn" : "",
+                addDerivedColumWithDataFlowParams ? $"ADerivedColumn sink(allowSchemaDrift: true," : $"{sourceName} sink(allowSchemaDrift: true,",
                 "     validateSchema: false,",
                 "     skipDuplicateMapInputs: true,",
                 $"    skipDuplicateMapOutputs: true) ~> {sinkName}"
@@ -411,6 +464,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
     {
         public TempDataFlowSourceOptions Source { get; } = new();
         public TempDataFlowSinkOptions Sink { get; } = new();
+        /// <summary>
+        /// Gets the unique key and values of the parameters of the temporary Data Flow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> DataFlowParameters { get; } = new Dictionary<string, string>();
     }
 
     public class TempDataFlowSourceOptions

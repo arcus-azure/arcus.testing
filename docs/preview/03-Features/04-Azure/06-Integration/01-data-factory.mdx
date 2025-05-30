@@ -225,7 +225,10 @@ using Arcus.Testing;
 await session.RunDataFlowAsync(..., options =>
 {
     // Adds a parameter to the data flow upon starting.
-    options.AddDataFlowParameter("<name>", "<value>");
+    // Note: For string parameters, enclose your value with single quotes (example: "'myValue'").
+    //       For boolean parameters, values must be "true()" or "false()".
+    // See more: https://learn.microsoft.com/en-us/azure/data-factory/parameters-data-flow
+    options.AddDataFlowParameter("<name>", "'<value>'");
 
     // Adds a dataset parameter to the data flow upon starting.
     // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the DataFlow, not the actual DataSet name.
