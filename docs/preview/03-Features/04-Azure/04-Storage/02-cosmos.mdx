@@ -14,7 +14,9 @@ PM> Install-Package -Name Arcus.Testing.Storage.Cosmos
 <Tabs groupId="storage-types">
 <TabItem value="mongodb" label="MongoDb" default>
 
-> 🛡️ Make sure that the test client that interacts with the Cosmos storage has at least [`DocumentDB Account Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/databases#documentdb-account-contributor)-rights if the test needs to create/update/delete collections.
+:::info
+Make sure that the test client that interacts with the Cosmos storage has at least [`DocumentDB Account Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/databases#documentdb-account-contributor)-rights if the test needs to create/update/delete collections.
+:::
 
 ### Temporary MongoDb collection
 The `TemporaryMongoDbCollection` provides a solution when the integration tes requires a storage system (collection) during the test run. A MongoDb collection is created upon setup of the test fixture and is deleted again when the test fixture disposed.
@@ -48,6 +50,10 @@ await using TemporaryMongoDbCollection collection = ...
 
 await collection.UpsertDocumentAsync(new Shipment { BoatName = "The Alice"  });
 ```
+
+:::praise
+The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 #### Customization
 The setup and teardown process of the temporary collection is configurable. **By default, it always removes any resources that it was responsible for creating.**
@@ -98,8 +104,6 @@ await using TemporaryMongoDbCollection collection = ...
 collection.OnTeardown.CleanAllDocuments();
 ```
 
-> 🎖️ The `TemporaryMongoDbCollection` will always remove/revert any MongoDb documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
-
 ### Temporary MongoDb document
 The `TemporaryMongoDbDocument` provides a solution when the integration test requires a document during the test run. A MongoDb document is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
 
@@ -128,17 +132,19 @@ BsonValue documentId = document.Id;
 </TabItem>
 <TabItem value="nosql" label="NoSql">
 
-> 🛡️ Make sure that the test client that interacts with the Cosmos storage has at least [`Cosmos DB Built-in Data Contributor`](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/security/reference-data-plane-roles)-rights if the test needs to create/update/delete containers.
-> 
-> **This role is not a built-in Azure RBAC, but a role specific for NoSql**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
-> ```powershell
-> PS> az cosmosdb sql role assignment create `
->   --account-name "CosmosDBAccountName" `
->   --resource-group "ResourceGroupName" `
->   --role-definition-name "Cosmos DB Built-in Data Contributor" `
->   --scope "/" `
->   --principal-id "UserOrPrincipalObjectId"
-> ```
+:::info
+Make sure that the test client that interacts with the Cosmos storage has at least [`Cosmos DB Built-in Data Contributor`](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/security/reference-data-plane-roles)-rights if the test needs to create/update/delete containers.
+
+**This role is not a built-in Azure RBAC, but a role specific for NoSql**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
+```powershell
+PS> az cosmosdb sql role assignment create `
+  --account-name "CosmosDBAccountName" `
+  --resource-group "ResourceGroupName" `
+  --role-definition-name "Cosmos DB Built-in Data Contributor" `
+  --scope "/" `
+  --principal-id "UserOrPrincipalObjectId"
+```
+:::
 
 ### Temporary NoSql container
 The `TemporaryNoSqlContainer` provides a solution when the integration tes requires a storage system (container) during the test run. A NoSql container is created upon setup of the test fixture and is deleted again when the test fixture disposed.
@@ -173,6 +179,10 @@ await using TemporaryNoSqlContainer container = ...
 
 await container.UpsertItemAsync(new Shipment { Id = "123", BoatName = "The Alice" });
 ```
+
+:::praise
+The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
 
 #### Customization
 The setup and teardown process of the temporary container is configurable. **By default, it always removes any resources that it was responsible for creating.**
@@ -218,8 +228,6 @@ await using TemporaryNoSqlContainer container = ...
 
 container.OnTeardown.CleanAllItems();
 ```
-
-> 🎖️ The `TemporaryNoSqlContainer` will always remove/revert any NoSql items that were upserted via the temporary container itself with the `container.UpsertItemAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
 
 ### Temporary NoSql item
 The `TemporaryNoSqlItem` provides a solution when the integration test requires a item during the test run. A NoSql item is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.

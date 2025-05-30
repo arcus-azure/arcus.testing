@@ -16,11 +16,13 @@ The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatic
 
 The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
 
-> 💡 Several testing framework provides the concept of 'singleton test fixtures':
-> * NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
-> * xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
-> * MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
-> * Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+:::tip
+Several testing framework provides the concept of 'singleton test fixtures':
+* NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
+* xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
+* MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
+* Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+:::
 
 ```csharp
 using Arcus.Testing;
@@ -54,16 +56,18 @@ await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
 });
 ```
 
-> #### 💡 Leveraging the `ActiveSessionId` option
-> The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
-> 
-> ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
->
-> 1. Run a **custom script** task before any of the test suites to start a debug session.
-> 2. Set a new **pipeline variable with the session ID** of the active debug session.
-> 3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
-> 4. Run a custom script after all the test suites to stop the debug session.
->    * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+<details>
+  <summary><strong>Leveraging the `ActiveSessionId` option</strong></summary>
+
+  The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
+
+  ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
+  1. Run a **custom script** task before any of the test suites to start a debug session.
+  2. Set a new **pipeline variable with the session ID** of the active debug session.
+  3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
+  4. Run a custom script after all the test suites to stop the debug session.
+     * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+</details>
 
 ### Full example
 The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.
@@ -192,13 +196,15 @@ CsvTable csv = result.GetDataAsCsv();
 JsonNode json = result.GetDataAsJson();
 ```
 
-> ⚠️ **IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
-> * For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
-> * For **JSON**:
->   * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
->   * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
->   * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
->   * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
+:::warning
+**IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
+* For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
+* For **JSON**:
+  * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
+  * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
+  * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
+  * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
+:::
 
 ### Customization
 The process of running a DataFlow can be manipulated with several options described here:
@@ -225,7 +231,9 @@ await session.RunDataFlowAsync(..., options =>
 });
 ```
 
-> 🚩 When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
+:::tip
+When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
+:::
 
 ## Run a Data pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../../01-core.md) packages:

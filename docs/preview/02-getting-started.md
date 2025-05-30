@@ -19,8 +19,9 @@ Depending on the context of your project, you might use one or more libraries in
 The following guides will show you how to start with these categories in new or existing projects.
 
 ## Step-by-step guides
-> 🎉 All classes described here are available in the same namespace : `Arcus.Testing`, regardless which library you install.
-
+:::praise
+All classes described here are available in the same namespace : `Arcus.Testing`, regardless which library you install.
+:::
 
 <details>
   <summary><strong>Where do your integration tests get their values from?</strong></summary>
