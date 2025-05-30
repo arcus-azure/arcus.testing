@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -99,14 +100,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 dataFlow.SinkName,
                 options =>
                 {
-                    foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
-                    {
-                        options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
-                    }
-                    foreach (var sinkDataSetParameter in sinkDataSetParameterKeyValues)
-                    {
-                        options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
-                    }
+                    options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
+                    options.AddDataSetParameters(dataFlow.SinkName, sinkDataSetParameterKeyValues);
                 }
             );
 
@@ -154,14 +149,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             // Act
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
             {
-                foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
-                {
-                    options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
-                }
-                foreach (var param in dataFlowParametersWithValues)
-                {
-                    options.AddDataFlowParameter(param.Key, param.Value);
-                }
+                options.AddDataFlowParameters(dataFlowParametersWithValues);
+                options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
             });
 
             // Assert
@@ -220,6 +209,25 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         private static string RandomizeWith(string label)
         {
             return label + Guid.NewGuid().ToString()[..5];
+        }
+    }
+
+    internal static class RunDataFlowOptionsExtensions
+    {
+        public static void AddDataFlowParameters(this RunDataFlowOptions options, IDictionary<string, object> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                options.AddDataFlowParameter(parameter.Key, parameter.Value);
+            }
+        }
+
+        public static void AddDataSetParameters(this RunDataFlowOptions options, string sourceOrSinkName, IDictionary<string, string> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                options.AddDataSetParameter(sourceOrSinkName, parameter.Key, parameter.Value);
+            }
         }
     }
 
