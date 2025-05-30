@@ -18,7 +18,8 @@ This page describes functionality related to logging in tests.
     The following functionality is available when installing this package:
     
     ```powershell
-    PM> Install-Package -Name Arcus.Testing.Logging.Xunit
+    PM> Install-Package -Name Arcus.Testing.Logging.Xunit # for xUnit v2 tests
+    PM> Install-Package -Name Arcus.Testing.Logging.Xunit.v3 # for xUnit v3 tests
     ```
     
     **Example**
@@ -29,7 +30,7 @@ This page describes functionality related to logging in tests.
     // highlight-next-line
     using Arcus.Testing;
     using Microsoft.Extensions.Logging;
-    using Xunit.Abstractions;
+    using Xunit;
     
     public class TestClass
     {

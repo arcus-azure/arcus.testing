@@ -4,15 +4,17 @@ import TabItem from '@theme/TabItem';
 # Migrate your test suite from Testing Framework to Arcus.Testing v1
 This guide will walk you through the process of migrating your test suite from using the Testing Framework to `Arcus.Testing`.
 
-> ⚠️ **IMPORTANT** to note that the `Arcus.Testing` approach uses the files in the build output in any of its functionality (`TestConfig`, `ResourceDirectory`...). It uses this approach for more easily access to the actual files used (instead of hidden as an embedded resource). It is best to add your files needed in your test project either as links ([see how](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html)) or as actual files if only used for testing. **In both cases, they need to be copied to the output.**:
-> 
-> ```xml
-> <ItemGroup>
->   <None Update="resource.xml">
->     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
->   </None>
-> </ItemGroup>
-> ```
+:::warning
+**IMPORTANT** to note that the `Arcus.Testing` approach uses the files in the build output in any of its functionality (`TestConfig`, `ResourceDirectory`...). It uses this approach for more easily access to the actual files used (instead of hidden as an embedded resource). It is best to add your files needed in your test project either as links ([see how](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html)) or as actual files if only used for testing. **In both cases, they need to be copied to the output.**:
+
+```xml
+<ItemGroup>
+  <None Update="resource.xml">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+```
+:::
 
 ## Replace `Codit.Testing.OutputComparison/Xslt` with `Arcus.Testing.Assert`
 The `Codit.Testing.OutputComparison` library has some functionality to compare different kinds of file types. The new `Arcus.Testing.Assert` library handles these comparisons from now on.
@@ -22,9 +24,9 @@ Start by installing this library:
 PM > Install-Package -Name Arcus.Testing.Assert
 ```
 
-🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the supported assertions.
+> 🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the supported assertions.
 
-🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
+> 🔗 See the [code samples](https://github.com/arcus-azure/arcus.testing/tree/main/samples) for fully-implemented examples on before/after with the Testing Framework.
 
 <Tabs groupId="content-types">
 <TabItem value="xml" label="XML" default>
@@ -59,7 +61,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXml`.
+> 🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXml`.
 
 </TabItem>
 <TabItem value="json" label="JSON">
@@ -94,7 +96,7 @@ Any nodes that should be ignored can be configured by passing additional options
 + });
 ```
 
-🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertJson` and the available options.
+> 🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertJson` and the available options.
 
 </TabItem>
 <TabItem value="csv" label="CSV">
@@ -138,7 +140,7 @@ string actualCsv = ...;
 + });
 ```
 
-🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertCsv` and the available options.
+> 🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertCsv` and the available options.
 
 </TabItem>
 </Tabs>
@@ -146,7 +148,9 @@ string actualCsv = ...;
 ### XSLT
 Transforming XML-XML to XML-JSON now also happens in a test asserted manner. It does not use the file name anymore and a 'convention by configuration' file structure, but needs the actual contents. You can use the test-friendly `ResourceDirectory` in the `Arcus.Testing.Core` package to load the files.
 
-⚠️ **IMPORTANT** that you [add your XSLT files as links](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html) to the test project, that way any changes to the XSLT in the implementation project will be automatically copied to the XSLT transformation used in the tests. 
+:::warning
+**IMPORTANT** that you [add your XSLT files as links](https://jeremybytes.blogspot.com/2019/07/linking-files-in-visual-studio.html) to the test project, that way any changes to the XSLT in the implementation project will be automatically copied to the XSLT transformation used in the tests. 
+:::
 
 <Tabs groupId="content-types">
 <TabItem value="xml" label="XML to XML" default>
@@ -172,9 +176,10 @@ Here's how XML-XML now works:
 + // Use `AssertXml.Equal` to determine the difference next.
 ```
 
-> 💡You can use the test-friendly `AssertXml/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
-
-> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+:::tip
+* You can use the test-friendly `AssertXml/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML document. Upon failure, a load exception with a detailed description will be reported to the tester.
+* You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+:::
 
 </TabItem>
 <TabItem value="json" label="XML to JSON">
@@ -200,9 +205,10 @@ Here's how XML-JSON now works:
 + // Use `AssertJson.Equal` to determine the difference next.
 ```
 
-> 💡You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/JSON document. Upon failure, a load exception with a detailed description will be reported to the tester.
-
-> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+:::tip
+* You can use the test-friendly `AssertXml/Json/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/JSON document. Upon failure, a load exception with a detailed description will be reported to the tester.
+* You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+:::
 
 </TabItem>
 <TabItem value="csv" label="XML to CSV">
@@ -228,12 +234,12 @@ Here's how XML-CSV now works:
 + // Use `AssertCsv.Equal` to determine the difference next.
 ```
 
-> 💡You can use the test-friendly `AssertXml/Csv/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/CSV document. Upon failure, a load exception with a detailed description will be reported to the tester.
+:::tip
+* You can use the test-friendly `AssertXml/Csv/Xslt.Load` functionality to load raw contents to their respectful XSLT/XML/CSV document. Upon failure, a load exception with a detailed description will be reported to the tester.
+* You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
+:::
 
-> 💡 You can use the test-friendly [`ResourceDirectory`](../03-Features/01-core.md) functionality in the `Arcus.Testing.Core` package to load raw file contents. Upon failure, a not-found exception with a detailed description will be reported to the tester.
-
-
-🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXslt`.
+> 🔗 See the [feature documentation](../03-Features/02-assertion.mdx) for more info on the `AssertXslt`.
 
 </TabItem>
 </Tabs>
@@ -352,7 +358,7 @@ Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDe
 ### Run a Data pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../03-Features/01-core.md) packages.
 
-🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
+> 🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
 
 ## Replace storage account interactions
 
@@ -389,7 +395,7 @@ The testing framework separated storage operations, which are now collected in a
 + await client.GetBlobsAsync(BlobTraits.None, BlobStates.None, "<prefix>");
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+> 🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 ### Interact with Blob file
 The testing framework separated storage operations, which are now collected in a single `TemporaryBlobFile` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the file can be done with the Azure SDK.
@@ -412,7 +418,7 @@ The testing framework separated storage operations, which are now collected in a
 + BlobClient = file.Client;
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
+> 🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/01-storage-account.mdx) for more information on interacting with Blob storage.
 
 </TabItem>
 <TabItem value="table" label="Table storage">
@@ -497,4 +503,4 @@ The testing framework separated storage operations, which are now collected in a
 + await container.AddItemAsync(<model>);
 ```
 
-🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.
+> 🔗 See the [feature documentation](../03-Features/04-Azure/04-Storage/02-cosmos.mdx) for more information on interacting with Cosmos NoSql storage.

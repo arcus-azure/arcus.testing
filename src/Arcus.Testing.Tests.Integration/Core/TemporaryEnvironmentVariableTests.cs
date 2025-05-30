@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Core
 {
