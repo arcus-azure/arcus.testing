@@ -142,8 +142,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 tempDataFlowOptions: dataFlowOptions =>
                 {
                     dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
-                },
-                dataFlowParameters: dataFlowParametersWithTypes);
+                    foreach (var dataFlowParameter in dataFlowParametersWithTypes)
+                    {
+                        dataFlowOptions.DataFlowParameters.Add(dataFlowParameter.Key, dataFlowParameter.Value);
+                    }
+                });
 
             string expectedCsv = GenerateCsv();
             await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());

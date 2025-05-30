@@ -97,7 +97,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// <summary>
         /// Creates a DataFlow with a CSV source and sink on an Azure DataFactory resource.
         /// </summary>
-        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions, Action<TempDataFlowOptions> tempDataFlowOptions = null, Dictionary<string, string> dataFlowParameters = null)
+        public static async Task<TemporaryDataFactoryDataFlow> CreateWithCsvSinkSourceAsync(TestConfig config, ILogger logger, Action<AssertCsvOptions> configureOptions, Action<TempDataFlowOptions> tempDataFlowOptions = null)
         {
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
@@ -112,7 +112,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 await temp.AddLinkedServiceAsync();
                 await temp.AddCsvSourceAsync(options, dfOptions);
                 await temp.AddCsvSinkAsync(options, dfOptions);
-                await temp.AddDataFlowAsync(dataFlowParameters: dataFlowParameters);
+                await temp.AddDataFlowAsync(dataFlowOptions: dfOptions);
             }
             catch
             {
@@ -260,7 +260,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
 
-        private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, Dictionary<string, string> dataFlowParameters = null)
+        private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
         {
             _logger.LogTrace("Adding DataFlow '{DataFlowName}' to Azure DataFactory '{DataFactoryName}'", Name, DataFactory.Name);
 
@@ -285,15 +285,15 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
-            if (dataFlowParameters.Count > 0)
+            if (dataFlowOptions.DataFlowParameters.Count > 0)
             {
                 properties.Transformations.Add(new DataFlowTransformation("AnArbitraryDerivedColumnName"));
             }
 
             IEnumerable<string> scriptLines = _dataType switch
             {
-                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowParameters),
-                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowParameters),
+                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions.DataFlowParameters),
+                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions.DataFlowParameters),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -305,7 +305,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _dataFlow.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
         }
 
-        private static IEnumerable<string> DataFlowParametersScriptLines(Dictionary<string, string> dataFlowParameters)
+        private static IEnumerable<string> DataFlowParametersScriptLines(IDictionary<string, string> dataFlowParameters)
         {
             IEnumerable<string> parameters = Enumerable.Empty<string>();
             if (dataFlowParameters?.Count > 0)
@@ -321,14 +321,14 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return parameters;
         }
 
-        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName, Dictionary<string, string> dataFlowParameters)
+        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
         {
             IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
 
             return parameters.Concat(FormatDataFlowCsvScriptLines(sourceName, sinkName, dataFlowParameters));
         }
 
-        private static string[] FormatDataFlowCsvScriptLines(string sourceName, string sinkName, Dictionary<string, string> dataFlowParameters)
+        private static string[] FormatDataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
         {
             if (dataFlowParameters?.Count > 0)
             {
@@ -359,7 +359,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             };
         }
 
-        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, Dictionary<string, string> dataFlowParameters)
+        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, IDictionary<string, string> dataFlowParameters)
         {
             IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
 
@@ -464,6 +464,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
     {
         public TempDataFlowSourceOptions Source { get; } = new();
         public TempDataFlowSinkOptions Sink { get; } = new();
+        /// <summary>
+        /// Gets the unique key and values of the parameters of the temporary Data Flow in Azure DataFactory.
+        /// </summary>
+        public IDictionary<string, string> DataFlowParameters { get; } = new Dictionary<string, string>();
     }
 
     public class TempDataFlowSourceOptions
