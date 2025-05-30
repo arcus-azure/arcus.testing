@@ -172,17 +172,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 }
             });
 
-            // Create new CSV with just expected columns and values from dataflow params
-            var lineKeys = string.Join(';', dataFlowParametersWithTypes.Keys);
-            var lineValues = string.Join(';', dataFlowParametersWithValues.Values).Replace("\'", string.Empty).Replace("(", string.Empty).Replace(")", string.Empty);
-            var expectedString = $"{lineKeys}{Environment.NewLine}";
-            // Generate as many lines as we have in actualData
-            for (var i = 0; i < actualData.RowCount; i++)
-            {
-                expectedString += $"{lineValues}{Environment.NewLine}";
-            }
             // reload expected data with columns from dataflow params
-            expected = AssertCsv.Load(expectedString, ConfigureCsv);
+            expected = GenerateExpectedCsvTable(dataFlowParametersWithTypes, dataFlowParametersWithValues, actualData.RowCount);
 
             var headersFromDataFlowParams = actualData.HeaderNames.Where(h => !dataFlowParametersWithTypes.ContainsKey(h)).ToList();
 
@@ -193,6 +184,21 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                     options.IgnoreColumn(actualHeaderName);
                 }
             });
+        }
+
+        private static CsvTable GenerateExpectedCsvTable(Dictionary<string, string> keys, Dictionary<string, object> values, int expectedNumberOfLines)
+        {
+            // Create new CSV with just expected columns and values from dataflow params
+            var lineKeys = string.Join(';', keys.Keys);
+            var lineValues = string.Join(';', values.Values).Replace("\'", string.Empty).Replace("(", string.Empty).Replace(")", string.Empty);
+            var expectedString = $"{lineKeys}{Environment.NewLine}";
+            // Generate as many lines as we have in actualData
+            for (var i = 0; i < expectedNumberOfLines; i++)
+            {
+                expectedString += $"{lineValues}{Environment.NewLine}";
+            }
+            // reload expected data with columns from dataflow params
+            return AssertCsv.Load(expectedString, ConfigureCsv);
         }
 
         private static string GenerateCsv()
