@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Unit.Logging
 {
+    extern alias ArcusXunitV2;
+    extern alias ArcusXunitV3;
     public class XunitTestLoggerTests
     {
         private static readonly Faker Bogus = new();
@@ -16,7 +17,22 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var spyWriter = new SpyTestWriter();
-            var logger = new XunitTestLogger(spyWriter);
+            var logger = new ArcusXunitV2::Arcus.Testing.XunitTestLogger(spyWriter);
+            string message = Bogus.Lorem.Sentence();
+
+            // Act
+            logger.LogInformation(message);
+
+            // Assert
+            Assert.Contains(spyWriter.Messages, msg => msg.Contains(message));
+        }
+
+        [Fact]
+        public void XunitV3Log_WithMessage_Succeeds()
+        {
+            // Arrange
+            var spyWriter = new SpyTestWriter();
+            var logger = new ArcusXunitV3::Arcus.Testing.XunitTestLogger(spyWriter);
             string message = Bogus.Lorem.Sentence();
 
             // Act
@@ -31,7 +47,22 @@ namespace Arcus.Testing.Tests.Unit.Logging
         {
             // Arrange
             var spyWriter = new SpyTestWriter();
-            var logger = new XunitTestLogger<XunitTestLoggerTests>(spyWriter);
+            var logger = new ArcusXunitV2::Arcus.Testing.XunitTestLogger<XunitTestLoggerTests>(spyWriter);
+            string message = Bogus.Lorem.Sentence();
+
+            // Act
+            logger.LogInformation(message);
+
+            // Assert
+            Assert.Contains(spyWriter.Messages, msg => msg.Contains(message));
+        }
+
+        [Fact]
+        public void XunitV3TLog_WithMessage_Succeeds()
+        {
+            // Arrange
+            var spyWriter = new SpyTestWriter();
+            var logger = new ArcusXunitV3::Arcus.Testing.XunitTestLogger<XunitTestLoggerTests>(spyWriter);
             string message = Bogus.Lorem.Sentence();
 
             // Act
@@ -44,17 +75,25 @@ namespace Arcus.Testing.Tests.Unit.Logging
         [Fact]
         public void Create_WithoutWriter_Fails()
         {
-            Assert.ThrowsAny<ArgumentException>(() => new XunitTestLogger(testOutput: null));
+            Assert.ThrowsAny<ArgumentException>(() => new ArcusXunitV2::Arcus.Testing.XunitTestLogger(testOutput: null));
         }
 
-        private class SpyTestWriter : ITestOutputHelper
+        [Fact]
+        public void CreateV3_WithoutWriter_Fails()
         {
-            public List<string> Messages { get; } = new List<string>();
+            Assert.ThrowsAny<ArgumentException>(() => new ArcusXunitV3::Arcus.Testing.XunitTestLogger(outputWriter: null));
+        }
+
+        private class SpyTestWriter : Xunit.Abstractions.ITestOutputHelper, ITestOutputHelper
+        {
+            public List<string> Messages { get; } = new();
+            public void Write(string message) => Messages.Add(message);
+            public void Write(string format, params object[] args) => Write(string.Format(format, args));
+
             public void WriteLine(string message) => Messages.Add(message);
-            public void WriteLine(string format, params object[] args)
-            {
-                Messages.Add(string.Format(format, args));
-            }
+            public void WriteLine(string format, params object[] args) => WriteLine(string.Format(format, args));
+
+            public string Output => string.Join(Environment.NewLine, Messages);
         }
     }
 }

@@ -19,6 +19,15 @@ This means that the following types are not included anymore when you install v2
 This also means that the following packages will not be transiently available anymore:
 * **Serilog**
 
+### ⬆️ upgraded xUnit v3 support
+xUnit v3 is out for a while now, but migration in both extension open-source packages as well as test projects is a rather hard and tedious process. To smooth this transition, we followed the same packaging standard as xUnit and created a separate package, which means that we now have the following available:
+* 📦 **Arcus.Testing.Logging.Xunit** package: which is for xUnit v2 tests.
+* 📦 **Arcus.Testing.Logging.Xunit.v3** package: which is for xUnit v3 tests.
+
+By working with two different packages, the migration process is only a matter of changing logging package. The type names and namespaces are in both packages identical. Only the used xUnit transient dependency will be different.
+
+> 👀 **BUT** note that migrating to Arcus.Testing v2 does not mean that you are forced to migrate to xUnit v3 straightaway. We provide continued support for xUnit v2 as long as the package remains active. 
+
 ## 📦 Arcus.Testing.Storage.Blob
 ### `BlobNameFilter` ➡️ `Func<BlobItem, bool>`
 Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
