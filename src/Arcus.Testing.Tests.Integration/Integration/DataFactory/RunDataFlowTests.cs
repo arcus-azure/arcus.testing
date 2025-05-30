@@ -129,7 +129,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 { "BoolDataFlowParam", "boolean" },
                 { "IntDataFlowParam", "integer" }
             };
-            var dataFlowParametersWithValues = new Dictionary<string, dynamic>
+            var dataFlowParametersWithValues = new Dictionary<string, object>
             {
                 { "StringDataFlowParam", $"'{Bogus.Lorem.Word()}'" },
                 { "BoolDataFlowParam", $"{Bogus.Random.Bool().ToString().ToLowerInvariant()}()" },
