@@ -381,7 +381,6 @@ namespace Arcus.Testing
                 return;
             }
 
-            _logger.LogDebug("[Test:Setup] Adding Flowlets to DataFactory '{DataFactoryName}' debug session", dataFactory.Id.Name);
             foreach (var flowletName in options.FlowletNames)
             {
                 _logger.LogDebug("[Test:Setup] Add Flowlet '{FlowletName}' of DataFactory '{DataFactoryName}' to debug session", flowletName, dataFactory.Id.Name);
