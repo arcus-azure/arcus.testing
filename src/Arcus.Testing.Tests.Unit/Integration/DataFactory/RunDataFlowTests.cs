@@ -121,5 +121,16 @@ namespace Arcus.Testing.Tests.Unit.Integration.DataFactory
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => options.AddLinkedService(serviceName));
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void AddFlowlet_WithoutFlowletName_Fails(string flowletName)
+        {
+            // Arrange
+            var options = new RunDataFlowOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.AddFlowlet(flowletName));
+        }
     }
 }

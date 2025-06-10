@@ -14,7 +14,6 @@ using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
@@ -175,6 +174,34 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                     options.IgnoreColumn(actualHeaderName);
                 }
             });
+        }
+
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndFlowlet_SucceedsByGettingCsvFileOnSink()
+        {
+            // Arrange
+            var flowletName = RandomizeWith("flowlet");
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(
+                Configuration,
+                Logger,
+                ConfigureCsv,
+                tempDataFlowOptions: dataFlowOptions =>
+                {
+                    dataFlowOptions.FlowletNames.Add(flowletName);
+                });
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv);
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
+            {
+                options.AddFlowlet(flowletName);
+            });
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
         }
 
         private static CsvTable GenerateExpectedCsvTable(Dictionary<string, string> keys, Dictionary<string, object> values, int expectedNumberOfLines)
