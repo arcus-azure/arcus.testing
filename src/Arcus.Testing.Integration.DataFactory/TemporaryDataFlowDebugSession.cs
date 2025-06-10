@@ -385,7 +385,6 @@ namespace Arcus.Testing
             {
                 _logger.LogDebug("[Test:Setup] Add Flowlet '{FlowletName}' of DataFactory '{DataFactoryName}' to debug session", flowletName, dataFactory.Id.Name);
 
-                // get the flowlet
                 DataFactoryDataFlowResource flowlet = (await dataFactory.GetDataFactoryDataFlowAsync(flowletName)).Value;
 
                 var dataFactoryFlowletDebugInfo = new DataFactoryDataFlowDebugInfo(flowlet.Data.Properties)
