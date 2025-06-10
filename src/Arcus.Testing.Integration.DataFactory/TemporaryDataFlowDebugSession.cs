@@ -376,7 +376,10 @@ namespace Arcus.Testing
             DataFactoryResource dataFactory,
             RunDataFlowOptions options)
         {
-            if (options.FlowletNames.Count == 0)  return;
+            if (options.FlowletNames.Count == 0)
+            {
+                return;
+            }
 
             _logger.LogDebug("[Test:Setup] Adding Flowlets to DataFactory '{DataFactoryName}' debug session", dataFactory.Id.Name);
             foreach (var flowletName in options.FlowletNames)
