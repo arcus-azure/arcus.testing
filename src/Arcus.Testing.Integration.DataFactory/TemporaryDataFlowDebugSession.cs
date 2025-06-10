@@ -55,7 +55,7 @@ namespace Arcus.Testing
             {
                 if (value == Guid.Empty)
                 {
-                    throw new ArgumentException("Requires  non-empty GUID to represent the session ID of an active debug session", nameof(value));
+                    throw new ArgumentException("Requires non-empty GUID to represent the session ID of an active debug session", nameof(value));
                 }
 
                 _activeSessionId = value;
@@ -307,6 +307,7 @@ namespace Arcus.Testing
 
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
+            await AddDebugVariantsOfFlowletsAsync(debug, DataFactory, options);
 
             await DataFactory.AddDataFlowToDebugSessionAsync(debug);
         }
@@ -367,6 +368,29 @@ namespace Arcus.Testing
                     DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, sink.Dataset.ReferenceName);
                     await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName);
                 }
+            }
+        }
+
+        private async Task AddDebugVariantsOfFlowletsAsync(
+            DataFactoryDataFlowDebugPackageContent debug,
+            DataFactoryResource dataFactory,
+            RunDataFlowOptions options)
+        {
+            if (options.FlowletNames.Count == 0)  return;
+
+            _logger.LogDebug("[Test:Setup] Adding Flowlets to DataFactory '{DataFactoryName}' debug session", dataFactory.Id.Name);
+            foreach (var flowletName in options.FlowletNames)
+            {
+                _logger.LogDebug("[Test:Setup] Add Flowlet '{FlowletName}' of DataFactory '{DataFactoryName}' to debug session", flowletName, dataFactory.Id.Name);
+
+                // get the flowlet
+                DataFactoryDataFlowResource flowlet = (await dataFactory.GetDataFactoryDataFlowAsync(flowletName)).Value;
+
+                var dataFactoryFlowletDebugInfo = new DataFactoryDataFlowDebugInfo(flowlet.Data.Properties)
+                {
+                    Name = flowletName
+                };
+                debug.DataFlows.Add(dataFactoryFlowletDebugInfo);
             }
         }
 
@@ -439,6 +463,7 @@ namespace Arcus.Testing
         internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
         internal IDictionary<string, IDictionary<string, object>> DataSetParameters { get; } = new Dictionary<string, IDictionary<string, object>>();
+        internal Collection<string> FlowletNames { get; } = new();
 
         /// <summary>
         /// Adds a parameter to the DataFlow to run.
@@ -528,6 +553,21 @@ namespace Arcus.Testing
             }
 
             LinkedServiceNames.Add(serviceName);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a flowlet to the Azure DataFactory debug session.
+        /// </summary>
+        /// <remarks>
+        ///     This can be used to add flowlets that are needed when the DataFlow contains flowlets.
+        /// </remarks>
+        /// <param name="flowletName">The name of the linked service in Azure DataFactory.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="flowletName"/> is blank.</exception>
+        public RunDataFlowOptions AddFlowlet(string flowletName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(flowletName, nameof(flowletName));
+            FlowletNames.Add(flowletName);
             return this;
         }
     }

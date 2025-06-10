@@ -40,6 +40,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         private TemporaryBlobContainer _sourceContainer;
         private DataFactoryLinkedServiceResource _linkedService;
         private DataFactoryDatasetResource _sourceDataset, _sinkDataset;
+        private List<string> _flowletNames = new();
         private DataFactoryDataFlowResource _dataFlow;
 
         private TemporaryDataFactoryDataFlow(DataFlowDataType dataType, TestConfig config, ILogger logger)
@@ -112,6 +113,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 await temp.AddLinkedServiceAsync();
                 await temp.AddCsvSourceAsync(options, dfOptions);
                 await temp.AddCsvSinkAsync(options, dfOptions);
+                await temp.AddFlowletsAsync(dfOptions);
                 await temp.AddDataFlowAsync(dataFlowOptions: dfOptions);
             }
             catch
@@ -260,6 +262,46 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
         }
 
+        private async Task AddFlowletsAsync(TempDataFlowOptions dataFlowOptions)
+        {
+            if (dataFlowOptions?.FlowletNames.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var flowletName in dataFlowOptions?.FlowletNames)
+            {
+                _logger.LogTrace("Adding Flowlet '{FlowletName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", flowletName, Name, DataFactory.Name);
+                _flowletNames.Add(flowletName);
+
+                // get the flowlet
+                ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, flowletName);
+                var flowlet = _arm.GetDataFactoryDataFlowResource(flowletResourceId);
+
+                var properties = new DataFactoryFlowletProperties();
+                // Have to clear both lists to make sure we have an instance of the list
+                // ("sources": [], and "sinks": [], must be present in the typeProperties of the flowlet) 
+                properties.Sources.Clear();
+                properties.Sinks.Clear();
+
+                properties.Transformations.Add(new DataFlowTransformation("input1"));
+                properties.Transformations.Add(new DataFlowTransformation("output1"));
+
+                var lines = new List<string>
+                {
+                    "input(order: 0,",
+                    "     allowSchemaDrift: true) ~> input1",
+                    "input1 output() ~> output1"
+                };
+                foreach (var item in lines)
+                {
+                    properties.ScriptLines.Add(item);
+                }
+
+                await flowlet.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
+            }
+        }
+
         private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
         {
             _logger.LogTrace("Adding DataFlow '{DataFlowName}' to Azure DataFactory '{DataFactoryName}'", Name, DataFactory.Name);
@@ -285,6 +327,19 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }
             };
 
+            if (dataFlowOptions?.FlowletNames.Count > 0)
+            {
+                foreach (string flowletName in dataFlowOptions.FlowletNames)
+                {
+                    properties.Transformations.Add(
+                        new DataFlowTransformation(flowletName)
+                        {
+                            Flowlet = new DataFlowReference(DataFlowReferenceType.DataFlowReference, flowletName)
+                        }
+                    );
+                }
+            }
+
             if (dataFlowOptions?.DataFlowParameters.Count > 0)
             {
                 properties.Transformations.Add(new DataFlowTransformation("AnArbitraryDerivedColumnName"));
@@ -292,8 +347,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             IEnumerable<string> scriptLines = _dataType switch
             {
-                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions?.DataFlowParameters),
-                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions?.DataFlowParameters),
+                DataFlowDataType.Csv => DataFlowCsvScriptLines(SourceName, SinkName, dataFlowOptions?.FlowletNames, dataFlowOptions?.DataFlowParameters),
+                DataFlowDataType.Json => DataFlowJsonScriptLines(SourceName, SinkName, docForm, dataFlowOptions?.FlowletNames, dataFlowOptions?.DataFlowParameters),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -321,14 +376,14 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             return parameters;
         }
 
-        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
+        private static IEnumerable<string> DataFlowCsvScriptLines(string sourceName, string sinkName, IList<string> flowletNames, IDictionary<string, string> dataFlowParameters)
         {
             IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
 
-            return parameters.Concat(FormatDataFlowCsvScriptLines(sourceName, sinkName, dataFlowParameters));
+            return parameters.Concat(FormatDataFlowCsvScriptLines(sourceName, sinkName, flowletNames, dataFlowParameters));
         }
 
-        private static string[] FormatDataFlowCsvScriptLines(string sourceName, string sinkName, IDictionary<string, string> dataFlowParameters)
+        private static string[] FormatDataFlowCsvScriptLines(string sourceName, string sinkName, IList<string> flowletNames, IDictionary<string, string> dataFlowParameters)
         {
             if (dataFlowParameters?.Count > 0)
             {
@@ -347,6 +402,21 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 };
             }
 
+            if (flowletNames?.Count > 0)
+            {
+                return new[]
+                {
+                    "source(allowSchemaDrift: true,",
+                    "       validateSchema: false,",
+                    $"      ignoreNoFilesFound: false) ~> {sourceName}",
+                    $"{sourceName} compose(composition: '{flowletNames.First()}') ~> {flowletNames.First()}@(output1)",
+                    $"{flowletNames.First()}@output1 sink(allowSchemaDrift: true,",
+                    "     validateSchema: false,",
+                    "     skipDuplicateMapInputs: true,",
+                    $"    skipDuplicateMapOutputs: true) ~> {sinkName}"
+                };
+            }
+
             return new[]
             {
                 "source(allowSchemaDrift: true,",
@@ -359,14 +429,14 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             };
         }
 
-        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, IDictionary<string, string> dataFlowParameters)
+        private static IEnumerable<string> DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, IList<string> flowletNames, IDictionary<string, string> dataFlowParameters)
         {
             IEnumerable<string> parameters = DataFlowParametersScriptLines(dataFlowParameters);
 
-            return parameters.Concat(DataFlowJsonScriptLines(sourceName, sinkName, docForm, dataFlowParameters?.Count > 0));
+            return parameters.Concat(DataFlowJsonScriptLines(sourceName, sinkName, docForm, flowletNames, dataFlowParameters?.Count > 0));
         }
 
-        private static string[] DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, bool addDerivedColumWithDataFlowParams)
+        private static string[] DataFlowJsonScriptLines(string sourceName, string sinkName, JsonDocForm docForm, IList<string> flowletNames, bool addDerivedColumWithDataFlowParams)
         {
             string documentForm = docForm switch
             {
@@ -375,6 +445,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 _ => throw new ArgumentOutOfRangeException(nameof(docForm), docForm, null)
             };
 
+            if (flowletNames?.Count > 0)
+            {
+                return new[]
+                {
+                    "source(allowSchemaDrift: true,",
+                    "       validateSchema: false,",
+                    $"      ignoreNoFilesFound: false) ~> {sourceName}",
+                    $"{sourceName} compose(composition: '{flowletNames.First()}') ~> {flowletNames.First()}@(output1)",
+                    $"{flowletNames.First()}@output1 sink(allowSchemaDrift: true,",
+                    "     validateSchema: false,",
+                    "     skipDuplicateMapInputs: true,",
+                    $"    skipDuplicateMapOutputs: true) ~> {sinkName}"
+                };
+            }
             return new[]
             {
                 "source(allowSchemaDrift: true,",
@@ -449,6 +533,23 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 }));
             }
 
+            if (_flowletNames?.Count > 0)
+            {
+                disposables.Add(AsyncDisposable.Create(async () =>
+                {
+                    foreach (string flowletName in _flowletNames)
+                    {
+                        ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, flowletName);
+                        var flowlet = _arm.GetDataFactoryDataFlowResource(flowletResourceId);
+
+                        // We have to get the flowlet first to access flowlet.Data otherwise an exception is thrown
+                        var flowletGet = await flowlet.GetAsync();
+                        _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletGet.Value.Data.Name, DataFactory.Name);
+                        await flowlet.DeleteAsync(WaitUntil.Completed);
+                    }
+                }));
+            }
+
             if (_linkedService != null)
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
@@ -468,6 +569,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// Gets the unique key and values of the parameters of the temporary Data Flow in Azure DataFactory.
         /// </summary>
         public IDictionary<string, string> DataFlowParameters { get; } = new Dictionary<string, string>();
+        public List<string> FlowletNames { get; } = new();
     }
 
     public class TempDataFlowSourceOptions
