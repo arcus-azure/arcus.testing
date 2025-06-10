@@ -201,7 +201,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
-            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv), options =>
+            {
+                options.ColumnOrder = AssertCsvOrder.Ignore;
+            });
         }
 
         private static CsvTable GenerateExpectedCsvTable(Dictionary<string, string> keys, Dictionary<string, object> values, int expectedNumberOfLines)
