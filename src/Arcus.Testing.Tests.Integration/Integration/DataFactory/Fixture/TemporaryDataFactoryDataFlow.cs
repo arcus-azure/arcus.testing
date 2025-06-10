@@ -542,6 +542,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                         ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, flowletName);
                         var flowlet = _arm.GetDataFactoryDataFlowResource(flowletResourceId);
 
+                        // We have to get the flowlet first to access flowlet.Data otherwise an exception is thrown
                         var flowletGet = await flowlet.GetAsync();
                         _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletGet.Value.Data.Name, DataFactory.Name);
                         await flowlet.DeleteAsync(WaitUntil.Completed);
