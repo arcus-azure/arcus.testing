@@ -274,13 +274,11 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 _logger.LogTrace("Adding Flowlet '{FlowletName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", flowletName, Name, DataFactory.Name);
                 _flowletNames.Add(flowletName);
 
-                // get the flowlet
-                ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, flowletName);
-                var flowlet = _arm.GetDataFactoryDataFlowResource(flowletResourceId);
+                var flowlet = GetFlowlet(SubscriptionId, ResourceGroupName, DataFactory.Name, _arm, flowletName);
 
                 var properties = new DataFactoryFlowletProperties();
                 // Have to clear both lists to make sure we have an instance of the list
-                // ("sources": [], and "sinks": [], must be present in the typeProperties of the flowlet) 
+                // ("sources": [], and "sinks": [], must be present in the typeProperties of the flowlet)
                 properties.Sources.Clear();
                 properties.Sinks.Clear();
 
@@ -300,6 +298,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
                 await flowlet.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
             }
+        }
+
+        private static DataFactoryDataFlowResource GetFlowlet(string subscriptionId, string resourceGroupName, string dataFactoryName, ArmClient _arm, string flowletName)
+        {
+            ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, dataFactoryName, flowletName);
+            return _arm.GetDataFactoryDataFlowResource(flowletResourceId);
         }
 
         private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
@@ -539,12 +543,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 {
                     foreach (string flowletName in _flowletNames)
                     {
-                        ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, flowletName);
-                        var flowlet = _arm.GetDataFactoryDataFlowResource(flowletResourceId);
-
-                        // We have to get the flowlet first to access flowlet.Data otherwise an exception is thrown
-                        var flowletGet = await flowlet.GetAsync();
-                        _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletGet.Value.Data.Name, DataFactory.Name);
+                        var flowlet = GetFlowlet(SubscriptionId, ResourceGroupName, DataFactory.Name, _arm, flowletName);
+                        var flowletResource = await flowlet.GetAsync();
+                        _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletResource.Value.Data.Name, DataFactory.Name);
                         await flowlet.DeleteAsync(WaitUntil.Completed);
                     }
                 }));
