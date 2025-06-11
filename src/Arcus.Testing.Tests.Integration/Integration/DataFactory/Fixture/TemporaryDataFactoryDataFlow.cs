@@ -543,7 +543,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 {
                     foreach (string flowletName in _flowletNames)
                     {
-                        var flowlet = GetFlowlet(SubscriptionId, ResourceGroupName, DataFactory.Name, _arm, flowletName);
+                        DataFactoryDataFlowResource flowlet = GetFlowlet(SubscriptionId, ResourceGroupName, DataFactory.Name, _arm, flowletName);
                         var flowletResource = await flowlet.GetAsync();
                         _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletResource.Value.Data.Name, DataFactory.Name);
                         await flowlet.DeleteAsync(WaitUntil.Completed);
