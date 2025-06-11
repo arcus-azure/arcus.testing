@@ -300,12 +300,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             }
         }
 
-        private static DataFactoryDataFlowResource GetFlowlet(string subscriptionId, string resourceGroupName, string dataFactoryName, ArmClient arm, string flowletName)
-        {
-            ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, dataFactoryName, flowletName);
-            return arm.GetDataFactoryDataFlowResource(flowletResourceId);
-        }
-
         private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
         {
             _logger.LogTrace("Adding DataFlow '{DataFlowName}' to Azure DataFactory '{DataFactoryName}'", Name, DataFactory.Name);
@@ -559,6 +553,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     await _linkedService.DeleteAsync(WaitUntil.Completed);
                 }));
             }
+        }
+
+        private static DataFactoryDataFlowResource GetFlowlet(string subscriptionId, string resourceGroupName, string dataFactoryName, ArmClient arm, string flowletName)
+        {
+            ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, dataFactoryName, flowletName);
+            return arm.GetDataFactoryDataFlowResource(flowletResourceId);
         }
     }
 
