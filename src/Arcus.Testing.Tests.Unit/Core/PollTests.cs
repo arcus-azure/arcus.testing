@@ -56,9 +56,16 @@ namespace Arcus.Testing.Tests.Unit.Core
         public async Task PollFluentSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await Poll.Target(AlwaysSucceeds);
-            await Poll.Target(SometimesSucceeds).ReasonableTimeFrame();
             await Poll.Target<ArrayTypeMismatchException>(AlwaysSucceeds);
-            await Poll.Target<TestPollException>(SometimesSucceeds).ReasonableTimeFrame();
+
+            await ShouldContinueAsync(async failures => await Poll.Target(() => SometimesSucceeds(failures)).ReasonableTimeFrame());
+            await ShouldContinueAsync(async failures => await Poll.Target<TestPollException>(() => SometimesSucceeds(failures)).ReasonableTimeFrame());
+        }
+
+        private async Task ShouldContinueAsync(Func<Queue<bool>, Task> pollAsync)
+        {
+            var failures = new Queue<bool>([Bogus.Random.Bool(), Bogus.Random.Bool(), false]);
+            await pollAsync(failures);
         }
 
         [Fact]
