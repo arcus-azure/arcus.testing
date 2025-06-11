@@ -91,11 +91,11 @@ namespace Arcus.Testing.Tests.Unit.Core
         [Fact]
         public async Task Poll_WithDiffExceptionThanUnavailableTarget_FailsDirectlyWithDescription()
         {
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<InvalidOperationException>(AlwaysFailsAsync, ReasonableTimeFrame));
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, FileNotFoundException>(AlwaysFailsResultAsync, ReasonableTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<InvalidOperationException>(AlwaysFailsAsync, LowestTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, FileNotFoundException>(AlwaysFailsResultAsync, LowestTimeFrame));
 
-            await FailsByExceptionAsync(async () => await Poll.Target<AggregateException>(AlwaysFailsAsync).ReasonableTimeFrame());
-            await FailsByExceptionAsync(async () => await Poll.Target<object, ApplicationException>(AlwaysFailsResultAsync).ReasonableTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target<AggregateException>(AlwaysFailsAsync).LowestTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target<object, ApplicationException>(AlwaysFailsResultAsync).LowestTimeFrame());
         }
 
         [Fact]
@@ -133,7 +133,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             // Act / Assert
             await FailsByResultAsync(async () =>
                 await Poll.Target(AlwaysSucceedsResultAsync)
-                          .ReasonableTimeFrame()
+                          .Timeout(_100ms)
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
@@ -141,7 +141,7 @@ namespace Arcus.Testing.Tests.Unit.Core
 
             await FailsByResultAsync(async () =>
                 await Poll.Target<object, TestPollException>(AlwaysSucceedsResultAsync)
-                          .ReasonableTimeFrame()
+                          .Timeout(_100ms)
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
@@ -220,6 +220,12 @@ namespace Arcus.Testing.Tests.Unit.Core
         {
             options.Timeout = _5s;
             options.Interval = _100ms;
+        }
+
+        private void LowestTimeFrame(PollOptions options)
+        {
+            options.Timeout = _100ms;
+            options.Interval = TimeSpan.FromMilliseconds(10);
         }
 
         private static bool AlwaysTrue(object result) => true;
@@ -356,6 +362,13 @@ namespace Arcus.Testing.Tests.Unit.Core
             where TException : Exception
         {
             return poll.Every(TimeSpan.FromMilliseconds(100)).Timeout(TimeSpan.FromSeconds(5));
+        }
+
+        public static Poll<TResult, TException> LowestTimeFrame<TResult, TException>(
+            this Poll<TResult, TException> poll)
+            where TException : Exception
+        {
+            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromSeconds(100));
         }
     }
 
