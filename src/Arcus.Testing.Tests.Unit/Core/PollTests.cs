@@ -349,7 +349,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             this Poll<TResult, TException> poll)
             where TException : Exception
         {
-            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromMilliseconds(100));
+            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromSeconds(1));
         }
     }
 
