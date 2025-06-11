@@ -267,8 +267,8 @@ namespace Arcus.Testing.Tests.Unit.Core
 
         private async Task<object> SometimesSucceedsResultAsync(Queue<bool> failures)
         {
-            SometimesSucceeds(failures);
             await Task.Delay(TimeSpan.FromMilliseconds(100));
+            SometimesSucceeds(failures);
 
             return _expectedResult;
         }
