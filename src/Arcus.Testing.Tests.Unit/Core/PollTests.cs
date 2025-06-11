@@ -80,19 +80,19 @@ namespace Arcus.Testing.Tests.Unit.Core
         [Fact]
         public async Task PollDirectly_WithTargetRemainsUnavailableWithinTimeFrame_FailsWithDescription()
         {
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsAsync, ReasonableTimeFrame));
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsResultAsync, ReasonableTimeFrame));
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<TestPollException>(AlwaysFailsAsync, ReasonableTimeFrame));
-            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(AlwaysFailsResultAsync, ReasonableTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsAsync, LowestTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsResultAsync, LowestTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<TestPollException>(AlwaysFailsAsync, LowestTimeFrame));
+            await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(AlwaysFailsResultAsync, LowestTimeFrame));
         }
 
         [Fact]
         public async Task PollFluent_WithTargetRemainsUnavailableWithinTimeFrame_FailsWithDescription()
         {
-            await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsAsync).ReasonableTimeFrame());
-            await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsResultAsync).Until(AlwaysTrue).ReasonableTimeFrame());
-            await FailsByExceptionAsync(async () => await Poll.Target<TestPollException>(AlwaysFailsAsync).ReasonableTimeFrame());
-            await FailsByExceptionAsync(async () => await Poll.Target<object, TestPollException>(AlwaysFailsResultAsync).Until(AlwaysTrue).ReasonableTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsAsync).LowestTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsResultAsync).Until(AlwaysTrue).LowestTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target<TestPollException>(AlwaysFailsAsync).LowestTimeFrame());
+            await FailsByExceptionAsync(async () => await Poll.Target<object, TestPollException>(AlwaysFailsResultAsync).Until(AlwaysTrue).LowestTimeFrame());
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         [Fact]
         public async Task PollFailure_WithoutResult_ShouldFail()
         {
-            await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), ReasonableTimeFrame));
+            await Assert.ThrowsAsync<TimeoutException>(() => Poll.UntilAvailableAsync(async () => await AlwaysFailsAsync(), LowestTimeFrame));
         }
 
         [Fact]
@@ -200,7 +200,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             // Arrange
             var watch = Stopwatch.StartNew();
             var message = Bogus.Lorem.Sentence();
-            var timeout = TimeSpan.FromSeconds(3);
+            var timeout = TimeSpan.FromSeconds(1);
 
             // Act
             await Assert.ThrowsAsync<TimeoutException>(async () =>
@@ -219,7 +219,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             return options =>
             {
                 options.FailureMessage = message;
-                ReasonableTimeFrame(options);
+                LowestTimeFrame(options);
             };
         }
 
@@ -375,7 +375,7 @@ namespace Arcus.Testing.Tests.Unit.Core
             this Poll<TResult, TException> poll)
             where TException : Exception
         {
-            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromSeconds(100));
+            return poll.Every(TimeSpan.FromMilliseconds(10)).Timeout(TimeSpan.FromMilliseconds(100));
         }
     }
 
