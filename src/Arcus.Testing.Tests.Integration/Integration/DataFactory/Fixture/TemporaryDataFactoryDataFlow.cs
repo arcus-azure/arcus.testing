@@ -300,10 +300,10 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             }
         }
 
-        private static DataFactoryDataFlowResource GetFlowlet(string subscriptionId, string resourceGroupName, string dataFactoryName, ArmClient _arm, string flowletName)
+        private static DataFactoryDataFlowResource GetFlowlet(string subscriptionId, string resourceGroupName, string dataFactoryName, ArmClient arm, string flowletName)
         {
             ResourceIdentifier flowletResourceId = DataFactoryDataFlowResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, dataFactoryName, flowletName);
-            return _arm.GetDataFactoryDataFlowResource(flowletResourceId);
+            return arm.GetDataFactoryDataFlowResource(flowletResourceId);
         }
 
         private async Task AddDataFlowAsync(JsonDocForm docForm = JsonDocForm.SingleDoc, TempDataFlowOptions dataFlowOptions = null)
