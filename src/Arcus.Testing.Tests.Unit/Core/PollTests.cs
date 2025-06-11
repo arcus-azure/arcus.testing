@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -37,18 +38,18 @@ namespace Arcus.Testing.Tests.Unit.Core
         public async Task PollDirectResultAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await GetsResultAsync(() => Poll.UntilAvailableAsync(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(() => Poll.UntilAvailableAsync(SometimesSucceedsResultAsync, ReasonableTimeFrame));
+            await GetsResultAsync(failures => Poll.UntilAvailableAsync(() => SometimesSucceedsResultAsync(failures), ReasonableTimeFrame));
             await GetsResultAsync(() => Poll.UntilAvailableAsync<object, AggregateException>(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(SometimesSucceedsResultAsync, ReasonableTimeFrame));
+            await GetsResultAsync(failures => Poll.UntilAvailableAsync<object, TestPollException>(() => SometimesSucceedsResultAsync(failures), ReasonableTimeFrame));
         }
 
         [Fact]
         public async Task PollFluentResultAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResultAsync).ReasonableTimeFrame());
+            await GetsResultAsync(async failures => await Poll.Target(() => SometimesSucceedsResultAsync(failures)).ReasonableTimeFrame());
             await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResultAsync).ReasonableTimeFrame());
+            await GetsResultAsync(async failures => await Poll.Target<object, TestPollException>(() => SometimesSucceedsResultAsync(failures)).ReasonableTimeFrame());
         }
 
         [Fact]
@@ -64,9 +65,9 @@ namespace Arcus.Testing.Tests.Unit.Core
         public async Task PollDirectSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResult));
-            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResult).ReasonableTimeFrame());
+            await GetsResultAsync(async failures => await Poll.Target(() => SometimesSucceedsResult(failures)).ReasonableTimeFrame());
             await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResult));
-            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResult).ReasonableTimeFrame());
+            await GetsResultAsync(async failures => await Poll.Target<object, TestPollException>(() => SometimesSucceedsResult(failures)).ReasonableTimeFrame());
         }
 
         [Fact]
@@ -243,22 +244,40 @@ namespace Arcus.Testing.Tests.Unit.Core
                 throw new TestPollException("Sabotage polling!");
             }
         }
-        private static Task SometimesSucceedsAsync()
+
+        private static void SometimesSucceeds(Queue<bool> failures)
         {
-            SometimesSucceeds();
-            return Task.CompletedTask;
+            if (failures.Dequeue())
+            {
+                throw new TestPollException("Sabotage polling!");
+            }
         }
 
-        private object SometimesSucceedsResult()
+        private static async Task SometimesSucceedsAsync()
         {
             SometimesSucceeds();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+        }
+
+        private object SometimesSucceedsResult(Queue<bool> failures)
+        {
+            SometimesSucceeds(failures);
             return _expectedResult;
         }
 
-        private async Task<object> SometimesSucceedsResultAsync()
+        private async Task<object> SometimesSucceedsResultAsync(Queue<bool> failures)
         {
-            await SometimesSucceedsAsync();
+            SometimesSucceeds(failures);
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+
             return _expectedResult;
+        }
+
+        private async Task GetsResultAsync(Func<Queue<bool>, Task<object>> pollAsync)
+        {
+            var failures = new Queue<bool>([Bogus.Random.Bool(), Bogus.Random.Bool(), false]);
+            object actualResult = await pollAsync(failures);
+            Assert.Equal(_expectedResult, actualResult);
         }
 
         private async Task GetsResultAsync(Func<Task<object>> pollAsync)
