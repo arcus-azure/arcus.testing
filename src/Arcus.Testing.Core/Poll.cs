@@ -179,7 +179,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the default set of polling options.
         /// </summary>
-        internal static PollOptions Default { get; } = new();
+        internal static PollOptions Default => new();
 
         /// <summary>
         /// Gets or sets the interval between each poll operation.
