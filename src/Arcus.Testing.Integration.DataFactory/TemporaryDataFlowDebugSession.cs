@@ -31,11 +31,7 @@ namespace Arcus.Testing
             get => _timeToLiveInMinutes;
             set
             {
-                if (value < 1)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Time to live in minutes must be at least 1 minute");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
                 _timeToLiveInMinutes = value;
             }
         }
@@ -53,11 +49,7 @@ namespace Arcus.Testing
             get => _activeSessionId;
             set
             {
-                if (value == Guid.Empty)
-                {
-                    throw new ArgumentException("Requires non-empty GUID to represent the session ID of an active debug session", nameof(value));
-                }
-
+                ArgumentOutOfRangeException.ThrowIfEqual(value, Guid.Empty);
                 _activeSessionId = value;
             }
         }
@@ -270,15 +262,8 @@ namespace Arcus.Testing
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(dataFlowName))
-            {
-                throw new ArgumentException($"Name of the DataFlow in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(dataFlowName));
-            }
-
-            if (string.IsNullOrWhiteSpace(targetSinkName))
-            {
-                throw new ArgumentException($"Name of the target sink for the DataFlow '{dataFlowName}' in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(targetSinkName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
 
             var options = new RunDataFlowOptions();
             configureOptions?.Invoke(options);
@@ -477,11 +462,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
         public RunDataFlowOptions AddDataFlowParameter(string name, object value)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("DataFlow parameter name should not be blank", nameof(name));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
             ArgumentNullException.ThrowIfNull(value);
 
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
@@ -498,16 +479,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
         public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)
         {
-            if (string.IsNullOrWhiteSpace(sourceOrSinkName))
-            {
-                throw new ArgumentException("Source or Sink name should not be blank", nameof(sourceOrSinkName));
-            }
-
-            if (string.IsNullOrWhiteSpace(parameterName))
-            {
-                throw new ArgumentException("DataSet parameter name should not be blank", nameof(parameterName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceOrSinkName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameterName);
             ArgumentNullException.ThrowIfNull(parameterValue);
 
             if (!DataSetParameters.ContainsKey(sourceOrSinkName))
@@ -528,12 +501,7 @@ namespace Arcus.Testing
             get => _maxRows;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(
-                        nameof(value), value, "Requires a maximum row limit greater than zero for the preview response of the DataFlow run");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
                 _maxRows = value;
             }
         }
@@ -548,11 +516,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="serviceName"/> is blank.</exception>
         public RunDataFlowOptions AddLinkedService(string serviceName)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
-            {
-                throw new ArgumentException("Linked service name should not be blank", nameof(serviceName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
             LinkedServiceNames.Add(serviceName);
             return this;
         }
@@ -567,7 +531,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="flowletName"/> is blank.</exception>
         public RunDataFlowOptions AddFlowlet(string flowletName)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(flowletName, nameof(flowletName));
+            ArgumentException.ThrowIfNullOrWhiteSpace(flowletName);
             FlowletNames.Add(flowletName);
             return this;
         }
