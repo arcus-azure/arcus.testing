@@ -51,7 +51,7 @@ namespace Arcus.Testing
         /// Uploads a temporary blob to the Azure Blob container.
         /// </summary>
         /// <remarks>
-        ///     Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob storage.
+        ///     Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.
         /// </remarks>
         /// <param name="blobContainerUri">
         ///     A <see cref="BlobContainerClient.Uri" /> referencing the blob container that includes the name of the account and the name of the container.
@@ -71,7 +71,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Uploads a temporary blob to the Azure Blob container.
         /// </summary>
-        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob storage.</param>
+        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob Storage.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
@@ -85,10 +85,10 @@ namespace Arcus.Testing
         /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
         /// </summary>
         /// <remarks>
-        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob storage.</para>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
         ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
         /// </remarks>
-        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob storage.</param>
+        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob Storage.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
@@ -107,7 +107,7 @@ namespace Arcus.Testing
         /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
         /// </summary>
         /// <remarks>
-        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob storage.</para>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
         ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
         /// </remarks>
         /// <param name="blobContainerUri">

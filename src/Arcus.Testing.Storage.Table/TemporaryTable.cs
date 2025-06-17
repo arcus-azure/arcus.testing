@@ -256,7 +256,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTable"/> which creates a new Azure Table container if it doesn't exist yet.
         /// </summary>
-        /// <param name="serviceClient">The client to interact with the Azure Table storage resource as a whole.</param>
+        /// <param name="serviceClient">The client to interact with the Azure Table Storage resource as a whole.</param>
         /// <param name="tableName">The name of the Azure Table to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceClient"/> is <c>null</c>.</exception>
@@ -269,7 +269,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTable"/> which creates a new Azure Table container if it doesn't exist yet.
         /// </summary>
-        /// <param name="serviceClient">The client to interact with the Azure Table storage resource as a whole.</param>
+        /// <param name="serviceClient">The client to interact with the Azure Table Storage resource as a whole.</param>
         /// <param name="tableName">The name of the Azure Table to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
