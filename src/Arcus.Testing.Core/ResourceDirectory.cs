@@ -76,6 +76,7 @@ namespace Arcus.Testing
         /// <example>
         ///   <code>
         ///    string contents = resourceDirectory.ReadFileText("example.txt");
+        ///    string contents = resourceDirectory.ReadFileText("example?.txt");
         ///    string contents = resourceDirectory.ReadFileText("example.*");
         ///   </code>
         /// </example>
@@ -135,6 +136,7 @@ namespace Arcus.Testing
         /// <example>
         ///   <code>
         ///     byte[] contents = resourceDirectory.ReadFileBytes("example.txt");
+        ///     byte[] contents = resourceDirectory.ReadFileBytes("example?.txt");
         ///     byte[] contents = resourceDirectory.ReadFileBytes("example.*");
         ///   </code>
         /// </example>
