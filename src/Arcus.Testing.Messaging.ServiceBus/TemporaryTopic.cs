@@ -317,7 +317,7 @@ namespace Arcus.Testing
 
             if (shouldDeadLetter && shouldComplete)
             {
-                logger.LogWarning("[Test:Teardown] Service bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
+                logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
                 return MessageSettle.DeadLetter;
             }
 
@@ -401,19 +401,19 @@ namespace Arcus.Testing
         public string Name { get; }
 
         /// <summary>
-        /// Gets the fully-qualified name of the Azure Service bus namespace for which this test fixture managed a topic.
+        /// Gets the fully-qualified name of the Azure Service Bus namespace for which this test fixture managed a topic.
         /// </summary>
         public string FullyQualifiedNamespace { get; }
 
         /// <summary>
-        /// Gets the client to send messages to this Azure Service bus test-managed topic.
+        /// Gets the client to send messages to this Azure Service Bus test-managed topic.
         /// </summary>
         public ServiceBusSender Sender { get; }
 
         /// <summary>
-        /// creates a filter topic subscription client to search for messages on the Azure Service bus test-managed topic (a.k.a. 'spy test fixture').
+        /// creates a filter topic subscription client to search for messages on the Azure Service Bus test-managed topic (a.k.a. 'spy test fixture').
         /// </summary>
-        /// <param name="subscriptionName">The subscription specific to the test-managed Azure Service bus topic to create a filter for.</param>
+        /// <param name="subscriptionName">The subscription specific to the test-managed Azure Service Bus topic to create a filter for.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
         public ServiceBusMessageFilter MessagesOn(string subscriptionName) => new(Name, subscriptionName, _messagingClient);
 
@@ -467,7 +467,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
         /// <param name="topicName">The name of the Azure Service Bus topic that should be created.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic.</param>
@@ -487,7 +487,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
         /// <param name="topicName">The name of the Azure Service Bus topic that should be created.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic.</param>
@@ -557,12 +557,12 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });
@@ -632,12 +632,12 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });

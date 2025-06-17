@@ -323,7 +323,7 @@ namespace Arcus.Testing
 
             if (shouldDeadLetter && shouldComplete)
             {
-                logger.LogWarning("[Test:Teardown] Service bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
+                logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
                 return MessageSettle.DeadLetter;
             }
             if (shouldDeadLetter)
@@ -362,7 +362,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a temporary Azure Service bus queue that will be deleted when the instance is disposed.
+    /// Represents a temporary Azure Service Bus queue that will be deleted when the instance is disposed.
     /// </summary>
     public class TemporaryQueue : IAsyncDisposable
     {
@@ -400,12 +400,12 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the name of the Azure Service bus queue that is possibly created by the test fixture.
+        /// Gets the name of the Azure Service Bus queue that is possibly created by the test fixture.
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        /// Gets the fully-qualified name of the Azure Service bus namespace for which this test fixture managed a queue.
+        /// Gets the fully-qualified name of the Azure Service Bus namespace for which this test fixture managed a queue.
         /// </summary>
         public string FullyQualifiedNamespace { get; }
 
@@ -415,18 +415,18 @@ namespace Arcus.Testing
         public OnTeardownTemporaryQueueOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Gets the filter client to search for messages on the Azure Service bus test-managed queue (a.k.a. 'spy test fixture').
+        /// Gets the filter client to search for messages on the Azure Service Bus test-managed queue (a.k.a. 'spy test fixture').
         /// </summary>
         public ServiceBusMessageFilter Messages => new(Name, _messagingClient);
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
         /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
         /// </exception>
@@ -436,15 +436,15 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
         /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service bus queue should be created.
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
         /// </param>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
@@ -465,14 +465,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service bus resource where the topic should be created.</param>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
         /// </exception>
@@ -487,16 +487,16 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service bus resource where the topic should be created.</param>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service bus queue should be created.
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
@@ -531,7 +531,7 @@ namespace Arcus.Testing
 
             if (await adminClient.QueueExistsAsync(createOptions.Name))
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                logger.LogDebug("[Test:Setup] Use already existing Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: false, messagingClientCreatedByUs, options, logger);
 
                 await queue.CleanOnSetupAsync();
@@ -539,7 +539,7 @@ namespace Arcus.Testing
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Service bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                logger.LogDebug("[Test:Setup] Create new Azure Service Bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 await adminClient.CreateQueueAsync(createOptions);
 
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: true, messagingClientCreatedByUs, options, logger);
@@ -562,12 +562,12 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnSetup.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Setup] Complete Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });
@@ -587,7 +587,7 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", Name, FullyQualifiedNamespace);
+                        _logger.LogDebug("[Test:Teardown] Delete Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'", Name, FullyQualifiedNamespace);
                         await _adminClient.DeleteQueueAsync(Name);
                     }));
                 }
@@ -614,12 +614,12 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message, receiver, _logger);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
+                    _logger.LogDebug("[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });
