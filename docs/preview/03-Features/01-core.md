@@ -205,16 +205,16 @@ using Arcus.Testing;
 // Path: /bin/net8.0/
 ResourceDirectory root = ResourceDirectory.CurrentDirectory;
 
-string txt = root.ReadFileTextByName("file.txt");
-byte[] img = root.ReadFileBytesByName("file.png");
+string txt = root.ReadFileText("file.txt");
+byte[] img = root.ReadFileBytes("file.png");
 
 // Path: /bin/net8.0/resources
 ResourceDirectory sub = 
     root.WithSubDirectory("resources")
         .WithSubDirectory("component");
 
-string txt = sub.ReadFileTextByName("file.txt");
-byte[] img = sub.ReadFileBytesByPattern("*.png");
+string txt = sub.ReadFileText("file.txt");
+byte[] img = sub.ReadFileBytes("*.png");
 
 
 // FileNotFoundException: 
