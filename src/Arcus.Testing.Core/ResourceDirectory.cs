@@ -73,6 +73,39 @@ namespace Arcus.Testing
 
         /// <summary>
         /// Gets the file contents of a test resource file within the directory.
+        /// </summary>
+        /// <param name="fileName">The file name of the test resource.</param>
+        /// <returns>The raw contents of the test resource file.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
+        /// <exception cref="FileNotFoundException">
+        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
+        /// </exception>
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
+        public string ReadFileTextByName(string fileName)
+        {
+            return ReadFileText(fileName);
+        }
+
+        /// <summary>
+        /// Gets the file contents of a test resource file within the directory that matches the specified <paramref name="searchPattern"/>.
+        /// </summary>
+        /// <param name="searchPattern">
+        ///     The search string to match against the names of files in the directory.
+        ///     This parameter can contain a combination of valid literal path and wildcard (* and ?) characters, but it doesn't support regular expressions.
+        /// </param>
+        /// <returns>The raw contents of the test resource file.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="searchPattern"/> is blank.</exception>
+        /// <exception cref="FileNotFoundException">
+        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
+        /// </exception>
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
+        public string ReadFileTextByPattern(string searchPattern)
+        {
+            return ReadFileText(searchPattern);
+        }
+
+        /// <summary>
+        /// Gets the file contents of a test resource file within the directory.
         /// <example>
         ///   <code>
         ///    string contents = resourceDirectory.ReadFileText("example.txt");
@@ -105,11 +138,10 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
-        public string ReadFileTextByName(string fileName)
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
+        public byte[] ReadFileBytesByName(string fileName)
         {
-            FileInfo file = GetFileByPattern(fileName);
-            return File.ReadAllText(file.FullName);
+            return ReadFileBytes(fileName);
         }
 
         /// <summary>
@@ -124,11 +156,10 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
-        public string ReadFileTextByPattern(string searchPattern)
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
+        public byte[] ReadFileBytesByPattern(string searchPattern)
         {
-            FileInfo file = GetFileByPattern(searchPattern);
-            return File.ReadAllText(file.FullName);
+            return ReadFileBytes(searchPattern);
         }
 
         /// <summary>
@@ -153,41 +184,6 @@ namespace Arcus.Testing
         public byte[] ReadFileBytes(string fileNameOrSearchPattern)
         {
             FileInfo file = GetFileByPattern(fileNameOrSearchPattern);
-            return File.ReadAllBytes(file.FullName);
-        }
-
-        /// <summary>
-        /// Gets the file contents of a test resource file within the directory.
-        /// </summary>
-        /// <param name="fileName">The file name of the test resource.</param>
-        /// <returns>The raw contents of the test resource file.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
-        /// <exception cref="FileNotFoundException">
-        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
-        /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
-        public byte[] ReadFileBytesByName(string fileName)
-        {
-            FileInfo file = GetFileByPattern(fileName);
-            return File.ReadAllBytes(file.FullName);
-        }
-
-        /// <summary>
-        /// Gets the file contents of a test resource file within the directory that matches the specified <paramref name="searchPattern"/>.
-        /// </summary>
-        /// <param name="searchPattern">
-        ///     The search string to match against the names of files in the directory.
-        ///     This parameter can contain a combination of valid literal path and wildcard (* and ?) characters, but it doesn't support regular expressions.
-        /// </param>
-        /// <returns>The raw contents of the test resource file.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="searchPattern"/> is blank.</exception>
-        /// <exception cref="FileNotFoundException">
-        ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
-        /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
-        public byte[] ReadFileBytesByPattern(string searchPattern)
-        {
-            FileInfo file = GetFileByPattern(searchPattern);
             return File.ReadAllBytes(file.FullName);
         }
 
