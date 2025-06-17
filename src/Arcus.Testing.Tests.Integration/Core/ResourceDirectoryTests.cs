@@ -118,13 +118,27 @@ namespace Arcus.Testing.Tests.Integration.Core
         private static void AssertContainsFile(TemporaryFile expectedFile, ResourceDirectory directory)
         {
             Assert.Equal(expectedFile.Contents, directory.ReadFileBytes(Bogus.PickRandom(expectedFile.Name, expectedFile.Name[..^1] + "?")));
-            Assert.Equal(expectedFile.Text, directory.ReadFileText(Bogus.PickRandom(expectedFile.Name, expectedFile.Name[..5] + "*"))));
+            Assert.Equal(expectedFile.Text, directory.ReadFileText(Bogus.PickRandom(expectedFile.Name, expectedFile.Name[..5] + "*")));
+
+#pragma warning disable CS0618 // Type or member is obsolete: to be removed in v3.0
+            Assert.Equal(expectedFile.Contents, directory.ReadFileBytesByName(expectedFile.Name));
+            Assert.Equal(expectedFile.Contents, directory.ReadFileBytesByPattern(expectedFile.Name[..^1] + "?"));
+            Assert.Equal(expectedFile.Text, directory.ReadFileTextByName(expectedFile.Name));
+            Assert.Equal(expectedFile.Text, directory.ReadFileTextByPattern(expectedFile.Name[..5] + "*"));
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private static void AssertFileNotFound(string input, ResourceDirectory directory)
         {
             AssertFileNotFound(() => directory.ReadFileText(input), input);
             AssertFileNotFound(() => directory.ReadFileBytes(input), input);
+
+#pragma warning disable CS0618 // Type or member is obsolete: to be removed in v3.0
+            AssertFileNotFound(() => directory.ReadFileTextByName(input), input); AssertFileNotFound(() => directory.ReadFileText(input), input);
+            AssertFileNotFound(() => directory.ReadFileBytesByName(input), input); AssertFileNotFound(() => directory.ReadFileBytes(input), input);
+            AssertFileNotFound(() => directory.ReadFileTextByPattern(input), input);
+            AssertFileNotFound(() => directory.ReadFileBytesByPattern(input), input);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private static void AssertFileNotFound(Action dirAction, params string[] errorParts)
