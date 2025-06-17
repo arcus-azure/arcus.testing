@@ -134,8 +134,8 @@ namespace Arcus.Testing.Tests.Integration.Core
             AssertFileNotFound(() => directory.ReadFileBytes(input), input);
 
 #pragma warning disable CS0618 // Type or member is obsolete: to be removed in v3.0
-            AssertFileNotFound(() => directory.ReadFileTextByName(input), input); AssertFileNotFound(() => directory.ReadFileText(input), input);
-            AssertFileNotFound(() => directory.ReadFileBytesByName(input), input); AssertFileNotFound(() => directory.ReadFileBytes(input), input);
+            AssertFileNotFound(() => directory.ReadFileTextByName(input), input);
+            AssertFileNotFound(() => directory.ReadFileBytesByName(input), input);
             AssertFileNotFound(() => directory.ReadFileTextByPattern(input), input);
             AssertFileNotFound(() => directory.ReadFileBytesByPattern(input), input);
 #pragma warning restore CS0618 // Type or member is obsolete
