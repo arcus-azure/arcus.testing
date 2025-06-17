@@ -80,7 +80,9 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
         /// </exception>
+#pragma warning disable S1133 // Should wait until the next major version to remove obsolete code.
         [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
+#pragma warning restore S1133
         public string ReadFileTextByName(string fileName)
         {
             return ReadFileText(fileName);
@@ -98,7 +100,9 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
         /// </exception>
+#pragma warning disable S1133 // Should wait until the next major version to remove obsolete code.
         [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead")]
+#pragma warning restore S1133
         public string ReadFileTextByPattern(string searchPattern)
         {
             return ReadFileText(searchPattern);
@@ -138,7 +142,9 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
         /// </exception>
+#pragma warning disable S1133 // Should wait until the next major version to remove obsolete code.
         [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
+#pragma warning restore S1133
         public byte[] ReadFileBytesByName(string fileName)
         {
             return ReadFileBytes(fileName);
@@ -156,7 +162,9 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
         /// </exception>
+#pragma warning disable S1133 // Should wait until the next major version to remove obsolete code.
         [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead")]
+#pragma warning restore S1133
         public byte[] ReadFileBytesByPattern(string searchPattern)
         {
             return ReadFileBytes(searchPattern);
