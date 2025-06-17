@@ -199,13 +199,15 @@ Try to come up with a sweet spot that does not wait too long for the target reso
 ## Resource directory
 The `ResourceDirectory` provides a solution to retrieving local files during the test run. It points by default to the root output directory where the test suite is running, and from there any sub-directory can be navigated to in a test-friendly manner. Each time a directory or a file does not exists, an IO exception will be thrown with a clear message on what is missing on disk.
 
+> 🔗 More information on search patterns can be found on [Microsoft's documentation site](https://learn.microsoft.com/en-us/dotnet/api/system.io.directoryinfo.getfiles).
+
 ```csharp
 using Arcus.Testing;
 
 // Path: /bin/net8.0/
 ResourceDirectory root = ResourceDirectory.CurrentDirectory;
 
-string txt = root.ReadFileText("file.txt");
+string txt = root.ReadFileText("file?.txt");
 byte[] img = root.ReadFileBytes("file.png");
 
 // Path: /bin/net8.0/resources
