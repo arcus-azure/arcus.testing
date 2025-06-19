@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents a file that is temporary available on an Azure Storage file share directory.
+    /// Represents a file that is temporary available on an Azure Files share directory.
     /// </summary>
     public class TemporaryShareFile : IAsyncDisposable
     {
@@ -31,12 +31,12 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the client to interact with the temporary stored Azure Storage file share currently in storage.
+        /// Gets the client to interact with the temporary stored Azure Files share currently in storage.
         /// </summary>
         public ShareFileClient Client { get; }
 
         /// <summary>
-        /// Creates a new or replaces an existing file on an Azure Storage file share directory.
+        /// Creates a new or replaces an existing file on an Azure Files share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileContents"/>'s <see cref="Stream.Length"/> is accessible,
@@ -58,7 +58,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new or replaces an existing file on an Azure Storage file share directory.
+        /// Creates a new or replaces an existing file on an Azure Files share directory.
         /// </summary>
         /// <remarks>
         ///     Make sure that the <paramref name="fileStream"/>'s <see cref="Stream.Length"/> is accessible,
@@ -76,7 +76,7 @@ namespace Arcus.Testing
 
             if (await fileClient.ExistsAsync())
             {
-                logger.LogTrace("[Test:Setup] Replace already existing Azure File share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
+                logger.LogTrace("[Test:Setup] Replace already existing Azure Files share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
 
                 ShareFileDownloadInfo result = await fileClient.DownloadAsync();
                 await fileClient.CreateAsync(fileStream.Length);
@@ -87,24 +87,24 @@ namespace Arcus.Testing
 
             try
             {
-                logger.LogTrace("[Test:Setup] Upload Azure File share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
+                logger.LogTrace("[Test:Setup] Upload Azure Files share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
                 await fileClient.CreateAsync(fileStream.Length);
                 await fileClient.UploadAsync(fileStream);
             }
             catch (RequestFailedException exception) when (exception.ErrorCode == ShareErrorCode.ShareNotFound)
             {
                 throw new DriveNotFoundException(
-                    $"[Test:Setup] Cannot upload a new Azure File share file '{fileClient.Name}' at '{fileClient.AccountName}/{fileClient.Path}' " +
+                    $"[Test:Setup] Cannot upload a new Azure Files share file '{fileClient.Name}' at '{fileClient.AccountName}/{fileClient.Path}' " +
                     $"because the share '{fileClient.ShareName}' does not exists in account '{fileClient.AccountName}'; " +
-                    $"please make sure to use an existing Azure File share to create a temporary file test fixture",
+                    $"please make sure to use an existing Azure Files share to create a temporary file test fixture",
                     exception);
             }
             catch (RequestFailedException exception) when (exception.ErrorCode == ShareErrorCode.ParentNotFound)
             {
                 throw new DirectoryNotFoundException(
-                    $"[Test:Setup] Cannot upload a new Azure share file '{fileClient.Name}' at '{fileClient.AccountName}/{fileClient.Path}' " +
+                    $"[Test:Setup] Cannot upload a new Azure Files share file '{fileClient.Name}' at '{fileClient.AccountName}/{fileClient.Path}' " +
                     $"because the parent directory does not exists in account '{fileClient.AccountName}'; " +
-                    $"please make sure to use an existing Azure File share directory to create a temporary file test fixture",
+                    $"please make sure to use an existing Azure Files share directory to create a temporary file test fixture",
                     exception);
             }
 
@@ -123,7 +123,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Delete Azure File share file '{FileName}' in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
+                    _logger.LogTrace("[Test:Teardown] Delete Azure Files share file '{FileName}' in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
                     await Client.DeleteIfExistsAsync();
                 }));
             }
@@ -131,7 +131,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Replace Azure File share file '{FileName}' with original contents in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
+                    _logger.LogTrace("[Test:Teardown] Replace Azure Files share file '{FileName}' with original contents in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
                     await Client.CreateAsync(_original.length);
                     await Client.UploadAsync(_original.stream);
 

@@ -262,7 +262,7 @@ namespace Arcus.Testing
         public OnTeardownBlobContainerOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
@@ -274,7 +274,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
@@ -297,9 +297,9 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
-        /// <param name="containerClient">The client to interact with the Azure Blob storage container.</param>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
@@ -308,9 +308,9 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
-        /// <param name="containerClient">The client to interact with the Azure Blob storage container.</param>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
