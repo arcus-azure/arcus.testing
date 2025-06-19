@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Data.Tables;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -79,7 +74,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryTableEntity> CreateTempTableEntityAsync(TableClient client, TableEntity entity)
         {
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             return await TemporaryTableEntity.AddIfNotExistsAsync(client.AccountName, client.Name, entity, Logger);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         private async Task<TableStorageTestContext> GivenTableStorageAsync()

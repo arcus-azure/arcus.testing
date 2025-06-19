@@ -7,6 +7,8 @@ using MongoDB.Driver;
 using Moq;
 using Xunit;
 
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
+
 namespace Arcus.Testing.Tests.Unit.Storage
 {
     extern alias ArcusXunitV3;

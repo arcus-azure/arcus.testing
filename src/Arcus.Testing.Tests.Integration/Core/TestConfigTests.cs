@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Core.Fixture;
-using Bogus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json.Linq;
@@ -19,7 +18,6 @@ namespace Arcus.Testing.Tests.Integration.Core
         private const string DefaultAppSettingsName = "appsettings.json",
                              DefaultLocalAppSettingsName = "appsettings.local.json";
 
-        private static readonly Faker Bogus = new();
         private readonly DisposableCollection _disposables = new(NullLogger.Instance);
 
         public TestConfigTests(ITestOutputHelper outputWriter) : base(outputWriter)
