@@ -12,7 +12,7 @@ using Arcus.Testing.Failure;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents the available options when loading the data preview of a DataFactory DataFlow run to a JSON node with <see cref="DataFlowRunResult.GetDataAsJson()"/>.
+    /// Represents the available options when loading the data preview of an Azure Data Factory data flow run to a JSON node with <see cref="DataFlowRunResult.GetDataAsJson()"/>.
     /// </summary>
     public class DataPreviewJsonOptions
     {
@@ -80,8 +80,8 @@ namespace Arcus.Testing
             if (Data.ToMemory().IsEmpty)
             {
                 throw new JsonException(
-                    "[Test] Cannot load the content of the DataFactory preview expression as JSON as the run result data could not be parsed to JSON: the data is empty, " +
-                    "verify that the DataFactory test fixture returned the correct output preview expression");
+                    "[Test] Cannot load the content of the Azure Data Factory preview expression as JSON as the run result data could not be parsed to JSON: the data is empty, " +
+                    "verify that the Azure Data Factory test fixture returned the correct output preview expression");
             }
 
             var previewAsJson = Data.ToString();
@@ -96,7 +96,7 @@ namespace Arcus.Testing
             catch (JsonException exception)
             {
                 throw new JsonException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as JSON as the run result data could not be parsed to JSON: '{exception.Message}', for data: {previewAsJson}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as JSON as the run result data could not be parsed to JSON: '{exception.Message}', for data: {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures",
                     exception);
             }
@@ -109,7 +109,7 @@ namespace Arcus.Testing
                 || !header.ToString().StartsWith("output"))
             {
                 throw new JsonException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -126,7 +126,7 @@ namespace Arcus.Testing
             if (Regex.IsMatch(headersTxt, ",( )*,"))
             {
                 throw new JsonException(
-                    $"[Test] Cannot load the content of the DataFactory preview as the headers are not considered in a valid format: {headersTxt}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview as the headers are not considered in a valid format: {headersTxt}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
                 
@@ -229,7 +229,7 @@ namespace Arcus.Testing
             if (headers.Length != dataArray.Count)
             {
                 throw new JsonException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the header count does not match the data count: {dataArray}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the header count does not match the data count: {dataArray}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -257,7 +257,7 @@ namespace Arcus.Testing
                     
                     default:
                         throw new JsonException(
-                            $"[Test] Cannot load the content of the DataFactory preview expression as the header and data is not representing the same types: {dataArray}, " +
+                            $"[Test] Cannot load the content of the Azure Data Factory preview expression as the header and data is not representing the same types: {dataArray}, " +
                             $"consider parsing the raw run data yourself as this parsing only supports limited structures");
                 }
             }
@@ -292,7 +292,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Represents the available types the DataFactory data preview can handle.
+        /// Represents the available types the Azure Data Factory data preview can handle.
         /// </summary>
         private enum PreviewDataType { DirectValue, Array, Object }
 
@@ -362,8 +362,8 @@ namespace Arcus.Testing
             if (Data.ToMemory().IsEmpty)
             {
                 throw new CsvException(
-                    "[Test] Cannot load the content of the DataFactory preview expression as CSV as the run result data could not be parsed to JSON: the data is empty, " +
-                    "verify that the DataFactory test fixture returned the correct output preview expression");
+                    "[Test] Cannot load the content of the Azure Data Factory preview expression as CSV as the run result data could not be parsed to JSON: the data is empty, " +
+                    "verify that the Azure Data Factory test fixture returned the correct output preview expression");
             }
 
             var previewCsvAsJson = Data.ToString();
@@ -378,7 +378,7 @@ namespace Arcus.Testing
             catch (JsonException exception)
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as CSV as the run result data could not be parsed to JSON: '{exception.Message}' for data: {previewCsvAsJson}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as CSV as the run result data could not be parsed to JSON: '{exception.Message}' for data: {previewCsvAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures",
                     exception);
             }
@@ -390,7 +390,7 @@ namespace Arcus.Testing
             if (json is not JsonObject)
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the content is loaded as 'null': {previewAsJson}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the content is loaded as 'null': {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -398,7 +398,7 @@ namespace Arcus.Testing
             if (string.IsNullOrWhiteSpace(outputJson))
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the output is not available in the 'output' node: {previewAsJson}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the output is not available in the 'output' node: {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -406,7 +406,7 @@ namespace Arcus.Testing
             if (outputNode is not JsonObject outputObj)
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the 'output' node value is not considered valid JSON: {previewAsJson}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the 'output' node value is not considered valid JSON: {previewAsJson}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -420,7 +420,7 @@ namespace Arcus.Testing
                 || !headersValue.ToString().StartsWith("output"))
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -428,7 +428,7 @@ namespace Arcus.Testing
             if (string.IsNullOrWhiteSpace(headersTxt))
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -503,7 +503,7 @@ namespace Arcus.Testing
             if (dataNode is not JsonArray dataArr)
             {
                 throw new CsvException(
-                    $"[Test] Cannot load the content of the DataFactory preview expression as CSV as the rows are not available in the 'output.data' node: {outputObj}, " +
+                    $"[Test] Cannot load the content of the Azure Data Factory preview expression as CSV as the rows are not available in the 'output.data' node: {outputObj}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
@@ -511,7 +511,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Represents a specific DataFactory-version implementation of the <see cref="CsvTable"/>.
+        /// Represents a specific Azure Data Factory-version implementation of the <see cref="CsvTable"/>.
         /// </summary>
         private sealed class DataFlowPreviewCsvTable : CsvTable
         {
