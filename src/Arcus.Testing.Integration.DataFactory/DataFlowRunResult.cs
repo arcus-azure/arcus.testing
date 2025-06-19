@@ -43,13 +43,11 @@ namespace Arcus.Testing
         /// </summary>
         public DataFlowRunResult(string status, BinaryData data)
         {
-            if (string.IsNullOrWhiteSpace(status))
-            {
-                throw new ArgumentException("Status should not be blank", nameof(status));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(status);
+            ArgumentNullException.ThrowIfNull(data);
 
             Status = status;
-            Data = data ?? throw new ArgumentNullException(nameof(data));
+            Data = data;
         }
 
         /// <summary>
