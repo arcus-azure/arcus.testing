@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# Service bus
+# Service Bus
 The `Arcus.Testing.Messaging.ServiceBus` package provides test fixtures related to Azure Service Bus. By using the common testing practice 'clean environment', it provides a temporary Topic (subscription) and queue.
 
 ## Installation
@@ -101,7 +101,7 @@ await TemporaryTopic.CreateIfNotExistsAsync(..., options =>
 ```
 
 ### Peek for messages
-The `TemporaryTopic` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a topic, or as a test assertion to verify Service bus-related implementations.
+The `TemporaryTopic` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a topic, or as a test assertion to verify Service Bus-related implementations.
 
 ```csharp
 using Arcus.Testing;
@@ -123,6 +123,35 @@ IEnumerable<ServiceBusReceivedMessage> messages =
 
              // Start peeking for messages.
              .ToListAsync();
+```
+
+### Temporary topic subscription
+The `TemporaryTopicSubscription` provides a solution when the integration test requires an Azure Service Bus topic subscription during the test run. A subscription is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ✨ Only when the test fixture was responsible for creating the topic subscription, will the subscription be deleted upon the fixture's disposal. This follows the 'clean environment' testing principle that describes that after the test run, the same state should be achieved as before the test run.
+
+```csharp
+using Arcus.Testing;
+
+await using var sub = await TemporaryTopicSubscription.CreateIfNotExistsAsync(
+    "<fully-qualified-namespace>", "<topic-name>", "<subscription-name>", logger);
+```
+
+> ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
+
+Adding rules to the subscription can also be done via the test fixture. It always makes sure that any added rules are deleted again afterwards.
+
+:::warning[no default rule]
+The `$Default` rule name is not supported to be added as a temporary subscription rule name. Please use custom rule names.
+:::
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryTopicSubscription sub = ...
+
+RuleFilter filter = new SqlRuleFilter("1=1");
+await sub.AddRuleIfNotExistsAsync("<rule-name>", filter);
 ```
 
 </TabItem>
@@ -206,7 +235,7 @@ await TemporaryQueue.CreateIfNotExistsAsync(..., options =>
 ```
 
 ### Peek for messages
-The `TemporaryQueue` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a queue, or as a test assertion to verify Service bus-related implementations.
+The `TemporaryQueue` is equipped with a message filtering system that allows testers to search for messages during the lifetime of the test fixture. This can be useful to verify the current state of a queue, or as a test assertion to verify Service Bus-related implementations.
 
 ```csharp
 using Arcus.Testing;
