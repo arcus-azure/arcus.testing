@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
-using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
 using Azure.Identity;
-using Azure.ResourceManager.DataFactory.Models;
-using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager;
+using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager.DataFactory.Models;
 using Bogus;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Xunit.Abstractions;
-using System.Linq;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
@@ -99,20 +98,128 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
                 dataFlow.SinkName,
                 options =>
                 {
-                    foreach (var sourceDataSetParameter in sourceDataSetParameterKeyValues)
-                    {
-                        options.AddDataSetParameter(dataFlow.SourceName, sourceDataSetParameter.Key, sourceDataSetParameter.Value);
-                    }
-                    foreach (var sinkDataSetParameter in sinkDataSetParameterKeyValues)
-                    {
-                        options.AddDataSetParameter(dataFlow.SinkName, sinkDataSetParameter.Key, sinkDataSetParameter.Value);
-                    }
+                    options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
+                    options.AddDataSetParameters(dataFlow.SinkName, sinkDataSetParameterKeyValues);
                 }
             );
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
             AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv));
+        }
+
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndDataSetParameterAndDataFlowParameters_SucceedsByGettingCsvFileOnSink()
+        {
+            // Arrange
+            IDictionary<string, string> sourceDataSetParameterKeyValues = new Dictionary<string, string>
+            {
+                { RandomizeWith("sourceDataSetParameterKey"), RandomizeWith("A/Path/To/SourceDataSetParameterValue") }
+            };
+            var dataFlowParametersWithTypes = new Dictionary<string, string>()
+            {
+                { "StringDataFlowParam", "string" },
+                { "BoolDataFlowParam", "boolean" },
+                { "IntDataFlowParam", "integer" }
+            };
+            var dataFlowParametersWithValues = new Dictionary<string, object>
+            {
+                { "StringDataFlowParam", $"'{Bogus.Lorem.Word()}'" },
+                { "BoolDataFlowParam", $"{Bogus.Random.Bool().ToString().ToLowerInvariant()}()" },
+                { "IntDataFlowParam", Bogus.Random.Int(0, int.MaxValue) }
+            };
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(
+                Configuration,
+                Logger,
+                ConfigureCsv,
+                tempDataFlowOptions: dataFlowOptions =>
+                {
+                    dataFlowOptions.Source.AddFolderPathParameters(sourceDataSetParameterKeyValues);
+                    foreach (var dataFlowParameter in dataFlowParametersWithTypes)
+                    {
+                        dataFlowOptions.DataFlowParameters.Add(dataFlowParameter.Key, dataFlowParameter.Value);
+                    }
+                });
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
+            {
+                options.AddDataFlowParameters(dataFlowParametersWithValues);
+                options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
+            });
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            var actualData = result.GetDataAsCsv(ConfigureCsv);
+            AssertCsv.Equal(expected, actualData, options =>
+            {
+                foreach (var dataFlowParam in dataFlowParametersWithTypes)
+                {
+                    options.IgnoreColumn(dataFlowParam.Key);
+                }
+            });
+
+            // reload expected data with columns from dataflow params
+            expected = GenerateExpectedCsvTable(dataFlowParametersWithTypes, dataFlowParametersWithValues, actualData.RowCount);
+
+            var headersFromDataFlowParams = actualData.HeaderNames.Where(h => !dataFlowParametersWithTypes.ContainsKey(h)).ToList();
+
+            AssertCsv.Equal(expected, actualData, options =>
+            {
+                foreach (var actualHeaderName in headersFromDataFlowParams)
+                {
+                    options.IgnoreColumn(actualHeaderName);
+                }
+            });
+        }
+
+        [Fact]
+        public async Task RunDataFlow_WithCsvFileOnSourceAndFlowlet_SucceedsByGettingCsvFileOnSink()
+        {
+            // Arrange
+            var flowletName = RandomizeWith("flowlet");
+            await using var dataFlow = await TemporaryDataFactoryDataFlow.CreateWithCsvSinkSourceAsync(
+                Configuration,
+                Logger,
+                ConfigureCsv,
+                tempDataFlowOptions: dataFlowOptions =>
+                {
+                    dataFlowOptions.FlowletNames.Add(flowletName);
+                });
+
+            string expectedCsv = GenerateCsv();
+            await dataFlow.UploadToSourceAsync(expectedCsv);
+
+            // Act
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
+            {
+                options.AddFlowlet(flowletName);
+            });
+
+            // Assert
+            CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
+            AssertCsv.Equal(expected, result.GetDataAsCsv(ConfigureCsv), options =>
+            {
+                options.ColumnOrder = AssertCsvOrder.Ignore;
+            });
+        }
+
+        private static CsvTable GenerateExpectedCsvTable(Dictionary<string, string> keys, Dictionary<string, object> values, int expectedNumberOfLines)
+        {
+            // Create new CSV with just expected columns and values from dataflow params
+            var lineKeys = string.Join(';', keys.Keys);
+            var lineValues = string.Join(';', values.Values).Replace("\'", string.Empty).Replace("(", string.Empty).Replace(")", string.Empty);
+            var expectedString = $"{lineKeys}{Environment.NewLine}";
+            // Generate as many lines as we have in actualData
+            for (var i = 0; i < expectedNumberOfLines; i++)
+            {
+                expectedString += $"{lineValues}{Environment.NewLine}";
+            }
+            // reload expected data with columns from dataflow params
+            return AssertCsv.Load(expectedString, ConfigureCsv);
         }
 
         private static string GenerateCsv()
@@ -127,9 +234,29 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             options.Separator = ';';
             options.NewLine = Environment.NewLine;
         }
+
         private static string RandomizeWith(string label)
         {
             return label + Guid.NewGuid().ToString()[..5];
+        }
+    }
+
+    internal static class RunDataFlowOptionsExtensions
+    {
+        public static void AddDataFlowParameters(this RunDataFlowOptions options, IDictionary<string, object> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                options.AddDataFlowParameter(parameter.Key, parameter.Value);
+            }
+        }
+
+        public static void AddDataSetParameters(this RunDataFlowOptions options, string sourceOrSinkName, IDictionary<string, string> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                options.AddDataSetParameter(sourceOrSinkName, parameter.Key, parameter.Value);
+            }
         }
     }
 
@@ -168,9 +295,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
-            _connection = TemporaryManagedIdentityConnection.Create(_config.GetServicePrincipal());
+            _connection = TemporaryManagedIdentityConnection.Create(_config, NullLogger.Instance);
 
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
@@ -220,7 +347,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// Called when an object is no longer needed. Called just before <see cref="M:System.IDisposable.Dispose" />
         /// if the class also implements that.
         /// </summary>
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(NullLogger.Instance);
 

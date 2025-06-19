@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -14,8 +14,6 @@ using Azure.ResourceManager.CosmosDB.Models;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static Arcus.Testing.NoSqlExtraction;
 
 namespace Arcus.Testing
@@ -28,12 +26,12 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryNoSqlContainer"/> is deleted.
     /// </summary>
-    internal enum OnTeardownNoSqlContainer { CleanIfCreated = 0, CleanAll, CleanIfMatched }
+    internal enum OnTeardownNoSqlContainer { CleanIfUpserted = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
     /// Represents a generic dictionary-like type which defines an arbitrary set of properties on a NoSql item as key-value pairs.
     /// </summary>
-    public class NoSqlItem : JObject
+    public class NoSqlItem
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="NoSqlItem" /> class.
@@ -41,13 +39,13 @@ namespace Arcus.Testing
         internal NoSqlItem(
             string id,
             PartitionKey partitionKey,
-            JObject properties)
-            : base(properties)
+            JsonObject properties)
         {
             ArgumentNullException.ThrowIfNull(id);
 
             Id = id;
             PartitionKey = partitionKey;
+            Content = properties;
         }
 
         /// <summary>
@@ -59,6 +57,11 @@ namespace Arcus.Testing
         /// Gets the key to group items together in partitions.
         /// </summary>
         public PartitionKey PartitionKey { get; }
+
+        /// <summary>
+        /// Gets the complete custom user-defined content of the stored NoSql item.
+        /// </summary>
+        public JsonNode Content { get; }
     }
 
     /// <summary>
@@ -66,7 +69,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupNoSqlContainerOptions
     {
-        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = new();
+        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture creation.
@@ -152,7 +155,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Determine if any of the user configured filters matches with the current NoSql item.
         /// </summary>
-        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JsonObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
             return _filters.Exists(filter => filter(client, item));
@@ -164,7 +167,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownNoSqlContainerOptions
     {
-        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = new();
+        private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture deletion.
@@ -173,11 +176,21 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSql items upon disposal
-        /// if the item was inserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
+        /// if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
         /// </summary>
+        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedItems) + " instead that provides exactly the same on-teardown functionality")]
         public OnTeardownNoSqlContainerOptions CleanCreatedItems()
         {
-            Items = OnTeardownNoSqlContainer.CleanIfCreated;
+            return CleanUpsertedItems();
+        }
+
+        /// <summary>
+        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete or revert the NoSql items upon disposal
+        /// if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}"/>).
+        /// </summary>
+        public OnTeardownNoSqlContainerOptions CleanUpsertedItems()
+        {
+            Items = OnTeardownNoSqlContainer.CleanIfUpserted;
             return this;
         }
 
@@ -196,7 +209,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
-        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All items created by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
@@ -223,7 +236,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
-        ///     All items created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All items upserted by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
@@ -253,7 +266,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Determine if any of the user configured filters matches with the current NoSql item.
         /// </summary>
-        internal bool IsMatched(string itemId, PartitionKey partitionKey, JObject itemStream, CosmosClient client)
+        internal bool IsMatched(string itemId, PartitionKey partitionKey, JsonObject itemStream, CosmosClient client)
         {
             var item = new NoSqlItem(itemId, partitionKey, itemStream);
             return _filters.Exists(filter => filter(client, item));
@@ -275,7 +288,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryNoSqlContainer"/>.
         /// </summary>
-        public OnTeardownNoSqlContainerOptions OnTeardown { get; } = new OnTeardownNoSqlContainerOptions().CleanCreatedItems();
+        public OnTeardownNoSqlContainerOptions OnTeardown { get; } = new OnTeardownNoSqlContainerOptions().CleanUpsertedItems();
     }
 
     /// <summary>
@@ -286,7 +299,7 @@ namespace Arcus.Testing
         private readonly CosmosDBSqlContainerResource _container;
         private readonly CosmosClient _resourceClient;
         private readonly bool _createdByUs;
-        private readonly Collection<IAsyncDisposable> _items = new();
+        private readonly Collection<IAsyncDisposable> _items = [];
         private readonly TemporaryNoSqlContainerOptions _options;
         private readonly ILogger _logger;
 
@@ -593,10 +606,25 @@ namespace Arcus.Testing
         /// <typeparam name="T">The custom NoSql model.</typeparam>
         /// <param name="item">The item to create in the NoSql container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality")]
         public async Task AddItemAsync<T>(T item)
         {
+            await UpsertItemAsync(item);
+        }
+
+        /// <summary>
+        /// Adds a new or replaces an existing NoSql item in the Azure NoSql container (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryNoSqlContainer"/> is disposed.
+        /// </remarks>
+        /// <param name="item">The item to create in the NoSql container.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
+        public async Task UpsertItemAsync<TItem>(TItem item)
+        {
             ArgumentNullException.ThrowIfNull(item);
-            _items.Add(await TemporaryNoSqlItem.InsertIfNotExistsAsync(Client, item, _logger));
+            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(Client, item, _logger));
         }
 
         /// <summary>
@@ -628,7 +656,7 @@ namespace Arcus.Testing
 
         private async Task CleanContainerOnTeardownAsync(DisposableCollection disposables)
         {
-            if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfCreated)
+            if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfUpserted)
             {
                 return;
             }
@@ -678,12 +706,12 @@ namespace Arcus.Testing
             }
         }
 
-        private async Task ForEachItemAsync(Func<string, PartitionKey, JObject, Task> deleteItemAsync)
+        private async Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
             await ForEachItemAsync(Client, deleteItemAsync);
         }
 
-        private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JObject, Task> deleteItemAsync)
+        private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
             ContainerResponse resp = await container.ReadContainerAsync();
             ContainerProperties properties = resp.Resource;
@@ -697,18 +725,16 @@ namespace Arcus.Testing
                     continue;
                 }
 
-                using var content = new StreamReader(message.Content);
-                using var reader = new JsonTextReader(content);
+                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions);
 
-                JToken json = await JToken.ReadFromAsync(reader);
-                if (json is not JObject root
-                    || !root.TryGetValue("Documents", out JToken docs)
-                    || docs is not JArray docsArr)
+                if (json is not JsonObject root
+                    || !root.TryGetPropertyValue("Documents", out JsonNode docs)
+                    || docs is not JsonArray docsArr)
                 {
                     continue;
                 }
 
-                foreach (JObject doc in docsArr.Where(d => d is JObject).Cast<JObject>().ToArray())
+                foreach (JsonObject doc in docsArr.OfType<JsonObject>().ToArray())
                 {
                     string id = ExtractIdFromItem(doc);
                     if (string.IsNullOrWhiteSpace(id))

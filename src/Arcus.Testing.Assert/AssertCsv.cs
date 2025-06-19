@@ -61,12 +61,9 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="headerName"/> is blank.</exception>
         public AssertCsvOptions IgnoreColumn(string headerName)
         {
-            if (string.IsNullOrWhiteSpace(headerName))
-            {
-                throw new ArgumentException($"Requires a non-blank '{nameof(headerName)}' when adding an ignored column of a CSV table", nameof(headerName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(headerName);
             _ignoredColumns.Add(headerName);
+
             return this;
         }
 
@@ -76,12 +73,9 @@ namespace Arcus.Testing
         /// <param name="index">The zero-based index of the column that should be ignored.</param>
         public AssertCsvOptions IgnoreColumn(int index)
         {
-            if (index < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index), $"Requires a positive '{nameof(index)}' value when adding an ignored column of a CSV table");
-            }
-
+            ArgumentOutOfRangeException.ThrowIfLessThan(index, 0);
             _ignoredColumnIndexes.Add(index);
+
             return this;
         }
 
@@ -94,6 +88,12 @@ namespace Arcus.Testing
         /// Gets the indexes of the columns that should be ignored when comparing CSV tables.
         /// </summary>
         internal IReadOnlyCollection<int> IgnoredColumnIndexes => _ignoredColumnIndexes;
+
+        /// <summary>
+        /// Determines whether a given <paramref name="headerName"/> at <paramref name="columnIndex"/>
+        /// is allowed to be included in the CSV.
+        /// </summary>
+        internal bool IsColumnIncluded(string headerName, int columnIndex) => !IgnoredColumns.Contains(headerName) && !IgnoredColumnIndexes.Contains(columnIndex);
 
         /// <summary>
         /// Gets or sets the separator character to be used when determining CSV columns in the loaded table, default: ; (semicolon).
@@ -122,11 +122,7 @@ namespace Arcus.Testing
             get => _newRow;
             set
             {
-                if (string.IsNullOrEmpty(value))
-                {
-                    throw new ArgumentException("Requires a non-empty CSV new row character to load the CSV table", nameof(value));
-                }
-
+                ArgumentException.ThrowIfNullOrEmpty(value);
                 _newRow = value;
             }
         }
@@ -192,7 +188,11 @@ namespace Arcus.Testing
         public CultureInfo CultureInfo
         {
             get => _cultureInfo;
-            set => _cultureInfo = value ?? throw new ArgumentNullException(nameof(value));
+            set
+            {
+                ArgumentNullException.ThrowIfNull(value);
+                _cultureInfo = value;
+            }
         }
 
         /// <summary>
@@ -204,11 +204,7 @@ namespace Arcus.Testing
             get => _maxInputCharacters;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), value, "Maximum input characters cannot be lower than zero");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
                 _maxInputCharacters = value;
             }
         }
@@ -222,6 +218,37 @@ namespace Arcus.Testing
         /// Gets or sets the format in which the different input documents will be shown in the failure report (default: <see cref="ReportFormat.Vertical"/>).
         /// </summary>
         public ReportFormat ReportFormat { get; set; } = ReportFormat.Vertical;
+
+        /// <summary>
+        /// Gets the <c>string</c> representation of the current options during <see cref="AssertCsv.Load(string,Action{AssertCsvOptions})"/>.
+        /// </summary>
+        internal string ToStringForLoad()
+        {
+            string optionsDescription =
+                $"Options: {Environment.NewLine}" +
+                $"\t- separator: {Separator}{Environment.NewLine}" +
+                $"\t- escape: {Escape}{Environment.NewLine}" +
+                $"\t- quote: {Quote}{Environment.NewLine}" +
+                $"\t- ignored column names [{string.Join(", ", IgnoredColumns)}]{Environment.NewLine}" +
+                $"\t- ignored column indexes [{string.Join(", ", IgnoredColumnIndexes)}]";
+
+            return optionsDescription;
+        }
+
+        /// <summary>
+        /// Gets the <c>string</c> representation of the current options during <see cref="AssertCsv.Equal(CsvTable,CsvTable,Action{AssertCsvOptions})"/>.
+        /// </summary>
+        internal string ToStringForEqual()
+        {
+            string optionsDescription =
+                $"Options: {Environment.NewLine}" +
+                $"\t- ignored columns: [{string.Join(", ", IgnoredColumns)}]{Environment.NewLine}" +
+                $"\t- ignored column indexes: [{string.Join(", ", IgnoredColumnIndexes)}]{Environment.NewLine}" +
+                $"\t- column order: {ColumnOrder}{Environment.NewLine}" +
+                $"\t- row order: {RowOrder}";
+
+            return optionsDescription;
+        }
     }
 
     /// <summary>
@@ -242,16 +269,6 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv)
         {
-            if (string.IsNullOrWhiteSpace(expectedCsv))
-            {
-                throw new ArgumentException("Cannot compare CSV contents when the expected CSV is blank", nameof(expectedCsv));
-            }
-
-            if (string.IsNullOrWhiteSpace(actualCsv))
-            {
-                throw new ArgumentException("Cannot compare CSV contents when the actual CSV is blank", nameof(actualCsv));
-            }
-
             Equal(expectedCsv, actualCsv, configureOptions: null);
         }
 
@@ -267,15 +284,8 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(string expectedCsv, string actualCsv, Action<AssertCsvOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(expectedCsv))
-            {
-                throw new ArgumentException("Cannot compare CSV contents when the expected CSV is blank", nameof(expectedCsv));
-            }
-
-            if (string.IsNullOrWhiteSpace(actualCsv))
-            {
-                throw new ArgumentException("Cannot compare CSV contents when the actual CSV is blank", nameof(actualCsv));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(expectedCsv);
+            ArgumentException.ThrowIfNullOrWhiteSpace(actualCsv);
 
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
@@ -283,7 +293,7 @@ namespace Arcus.Testing
             var expected = CsvTable.Load(expectedCsv, options);
             var actual = CsvTable.Load(actualCsv, options);
 
-            Equal(expected, actual, configureOptions);
+            Equal(expected, actual, options);
         }
 
         /// <summary>
@@ -297,9 +307,7 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(CsvTable expected, CsvTable actual)
         {
-            Equal(expected ?? throw new ArgumentNullException(nameof(expected)),
-                  actual ?? throw new ArgumentNullException(nameof(actual)),
-                  configureOptions: null);
+            Equal(expected, actual, configureOptions: null);
         }
 
         /// <summary>
@@ -314,25 +322,24 @@ namespace Arcus.Testing
         /// </exception>
         public static void Equal(CsvTable expected, CsvTable actual, Action<AssertCsvOptions> configureOptions)
         {
+            ArgumentNullException.ThrowIfNull(expected);
+            ArgumentNullException.ThrowIfNull(actual);
+
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
-            CsvDifference diff = FindFirstDifference(
-                expected ?? throw new ArgumentNullException(nameof(expected)),
-                actual ?? throw new ArgumentNullException(nameof(actual)),
-                options);
+            Equal(expected.ApplyOptions(options), actual.ApplyOptions(options), options);
+        }
 
+        private static void Equal(CsvTable expected, CsvTable actual, AssertCsvOptions options)
+        {
+            CsvDifference diff = FindFirstDifference(expected, actual, options);
             if (diff != null)
             {
                 string expectedCsv = diff.ExpectedDiff != null && options.ReportScope is ReportScope.Limited ? diff.ExpectedDiff : expected.ToString();
                 string actualCsv = diff.ActualDiff != null && options.ReportScope is ReportScope.Limited ? diff.ActualDiff : actual.ToString();
 
-                string optionsDescription =
-                    $"Options: {Environment.NewLine}" +
-                    $"\t- ignored columns: [{string.Join($"{options.Separator} ", options.IgnoredColumns)}]{Environment.NewLine}" +
-                    $"\t- ignored column indexes: [{string.Join($"{options.Separator} ", options.IgnoredColumnIndexes)}]{Environment.NewLine}" +
-                    $"\t- column order: {options.ColumnOrder}{Environment.NewLine}" +
-                    $"\t- row order: {options.RowOrder}";
+                string optionsDescription = options.ToStringForEqual();
 
                 throw new EqualAssertionException(
                     ReportBuilder.ForMethod(EqualMethodName, "expected and actual CSV contents do not match")
@@ -358,7 +365,7 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV table.</exception>
         public static CsvTable Load(string csv)
         {
-            return Load(csv ?? throw new ArgumentNullException(nameof(csv)), configureOptions: null);
+            return Load(csv, configureOptions: null);
         }
 
         /// <summary>
@@ -371,10 +378,12 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the <paramref name="csv"/> could not be successfully loaded into a structured CSV table.</exception>
         public static CsvTable Load(string csv, Action<AssertCsvOptions> configureOptions)
         {
+            ArgumentNullException.ThrowIfNull(csv);
+
             var options = new AssertCsvOptions();
             configureOptions?.Invoke(options);
 
-            return CsvTable.Load(csv ?? throw new ArgumentNullException(nameof(csv)), options);
+            return CsvTable.Load(csv, options);
         }
 
         private static CsvDifference FindFirstDifference(CsvTable expected, CsvTable actual, AssertCsvOptions options)
@@ -510,11 +519,6 @@ namespace Arcus.Testing
                     CsvCell expectedCell = expectedCells.ElementAt(col),
                             actualCell = actualCells.ElementAt(col);
 
-                    if (options.IgnoredColumnIndexes.Contains(col) || options.IgnoredColumns.Contains(expectedCell.HeaderName))
-                    {
-                        continue;
-                    }
-
                     if (!expectedCell.Equals(actualCell))
                     {
                         return shouldIgnoreOrder
@@ -631,36 +635,36 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
         protected CsvTable(string[] headerNames, CsvRow[] rows, string originalCsv, AssertCsvOptions options)
         {
-            _originalCsv = originalCsv ?? throw new ArgumentNullException(nameof(originalCsv));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(originalCsv);
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(headerNames);
+            ArgumentNullException.ThrowIfNull(rows);
 
-            HeaderNames = headerNames ?? throw new ArgumentNullException(nameof(headerNames));
-            Rows = rows ?? throw new ArgumentNullException(nameof(rows));
-            RowCount = rows.Length;
-            ColumnCount = headerNames.Length;
+            _originalCsv = originalCsv;
+            _options = options;
 
             if (Array.Exists(headerNames, h => h is null))
             {
-                throw new CsvException(
-                    "Cannot parse the incoming header names as one or more header names is 'null'");
+                throw new CsvException("Cannot parse the incoming header names as one or more header names is 'null'");
             }
 
-            if (Rows.Any(r => r is null))
+            if (rows.Any(r => r is null))
             {
-                throw new CsvException(
-                    "Cannot parse the incoming rows as one or more rows is 'null'");
+                throw new CsvException("Cannot parse the incoming rows as one or more rows is 'null'");
             }
 
-            if (Rows.Any(r => r.Cells.Count != headerNames.Length))
+            if (rows.Any(r => r.Cells.Count != headerNames.Length))
             {
-                throw new CsvException(
-                    $"Cannot parse the incoming header names and rows to a valid CSV table as not all rows matches the header count of {headerNames.Length}");
+                throw new CsvException($"Cannot parse the incoming header names and rows to a valid CSV table as not all rows matches the header count of {headerNames.Length}");
             }
+
+            HeaderNames = headerNames;
+            Rows = rows;
+            RowCount = rows.Length;
+            ColumnCount = headerNames.Length;
         }
 
         internal AssertCsvHeader Header => _options.Header;
-
-        internal string HeaderNamesTxt => string.Join(_options.Separator, HeaderNames);
 
         /// <summary>
         /// Gets the names of the headers of the first row in the table.
@@ -693,55 +697,16 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the raw <paramref name="csv"/> contents does not represent a valid CSV structure.</exception>
         internal static CsvTable Load(string csv, AssertCsvOptions options)
         {
-            if (string.IsNullOrWhiteSpace(csv))
-            {
-                throw new ArgumentException("Cannot load CSV contents when the CSV is blank", nameof(csv));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(csv);
             ArgumentNullException.ThrowIfNull(options);
 
-            string[][] rawLines = SplitCsv(csv, options);
-            EnsureAllRowsSameLength(csv, rawLines, options);
+            string[][] allLines = SplitCsv(csv, options);
+            (string[] headerNames, string[][] rowLines) = SubtractHeaderNames(allLines, options);
 
-            string[] headerNames;
-            if (options.Header is AssertCsvHeader.Present)
-            {
-                headerNames = rawLines[0];
-                rawLines = rawLines.Skip(1).ToArray();
-            }
-            else
-            {
-                headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
-            }
+            CsvRow[] allRows = ParseCsvRows(rowLines, headerNames, options);
+            (string[] includedHeaderNames, CsvRow[] includedRows) = FilterIncludedColumns(headerNames, allRows, options);
 
-            CsvRow[] rows = ParseCsvRows(rawLines, headerNames, options);
-            return new CsvTable(headerNames, rows, csv, options);
-        }
-
-        
-        /// <summary>
-        /// Parse the incoming <paramref name="rowLines"/> into <see cref="CsvRow"/>s.
-        /// </summary>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="rowLines"/> or the <paramref name="headerNames"/> is <c>null</c></exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
-        protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
-        {
-            ArgumentNullException.ThrowIfNull(rowLines);
-            ArgumentNullException.ThrowIfNull(headerNames);
-            options ??= new AssertCsvOptions();
-
-            CsvRow[] rows = rowLines.Select((rawRow, rowNumber) =>
-            {
-                CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
-                {
-                    string headerName = headerNames[columnNumber];
-                    return new CsvCell(headerName, columnNumber, rowNumber, cellValue, options);
-                }).ToArray();
-
-                return new CsvRow(cells, rowNumber, options);
-            }).ToArray();
-            
-            return rows;
+            return new CsvTable(includedHeaderNames, includedRows.ToArray(), csv, options);
         }
 
         private static string[][] SplitCsv(string csv, AssertCsvOptions options)
@@ -786,9 +751,56 @@ namespace Arcus.Testing
                 yield return builder.ToString();
             }
 
-            return csv.Split(options.NewLine, StringSplitOptions.RemoveEmptyEntries)
-                      .Select(row => SplitCsvRow(row).ToArray())
-                      .ToArray();
+            var rawLines =
+                csv.Split(options.NewLine, StringSplitOptions.RemoveEmptyEntries)
+                   .Select(row => SplitCsvRow(row).ToArray())
+                   .ToArray();
+
+            EnsureAllRowsSameLength(csv, rawLines, options);
+            return rawLines;
+        }
+
+        private static (string[] headerNames, string[][] rowLines) SubtractHeaderNames(string[][] rawLines, AssertCsvOptions options)
+        {
+            string[] headerNames;
+            string[][] rowLines = rawLines;
+
+            if (options.Header is AssertCsvHeader.Present)
+            {
+                headerNames = rawLines[0];
+                rowLines = rawLines.Skip(1).ToArray();
+            }
+            else
+            {
+                headerNames = Enumerable.Range(0, rawLines[0].Length).Select(i => $"Col #{i}").ToArray();
+            }
+
+            return (headerNames, rowLines);
+        }
+
+        /// <summary>
+        /// Parse the incoming <paramref name="rowLines"/> into <see cref="CsvRow"/>s.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="rowLines"/> or the <paramref name="headerNames"/> is <c>null</c></exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
+        protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(rowLines);
+            ArgumentNullException.ThrowIfNull(headerNames);
+            options ??= new AssertCsvOptions();
+
+            CsvRow[] rows = rowLines.Select((rawRow, rowNumber) =>
+            {
+                CsvCell[] cells = rawRow.Select((cellValue, columnNumber) =>
+                {
+                    string headerName = headerNames[columnNumber];
+                    return new CsvCell(headerName, columnNumber, rowNumber, cellValue, options);
+                }).ToArray();
+
+                return new CsvRow(cells, rowNumber, options);
+            }).ToArray();
+
+            return rows;
         }
 
         private static void EnsureAllRowsSameLength(string csv, string[][] rawRows, AssertCsvOptions options)
@@ -804,11 +816,7 @@ namespace Arcus.Testing
                                       .Select(row => $"\t - {row.Count()} row(s) with {row.Key} columns")
                                       .Aggregate((x, y) => x + Environment.NewLine + y);
 
-                string optionsDescription =
-                    $"Options: {Environment.NewLine}" +
-                    $"\t- separator: {options.Separator}{Environment.NewLine}" +
-                    $"\t- escape: {options.Escape}{Environment.NewLine}" +
-                    $"\t- quote: {options.Quote}";
+                string optionsDescription = options.ToStringForLoad();
 
                 throw new CsvException(
                     ReportBuilder.ForMethod(LoadMethodName, "cannot correctly load the CSV contents as not all rows in the CSV table has the same amount of columns")
@@ -821,24 +829,48 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the original CSV row at a given <paramref name="index"/>,
+        /// Applies the additional user options provided via the <see cref="AssertCsv.Equal(CsvTable,CsvTable,Action{AssertCsvOptions})"/> to the current loaded CSV.
+        /// </summary>
+        internal CsvTable ApplyOptions(AssertCsvOptions optionsViaEqual)
+        {
+            (string[] includedHeaderNames, CsvRow[] includedRows) = FilterIncludedColumns(HeaderNames, Rows, optionsViaEqual);
+            return new CsvTable(includedHeaderNames, includedRows, _originalCsv, _options);
+        }
+
+        private static (string[] includedHeaderNames, CsvRow[] includedRows) FilterIncludedColumns(
+            IReadOnlyCollection<string> headerNames,
+            IReadOnlyCollection<CsvRow> allRows,
+            AssertCsvOptions options)
+        {
+            var includedHeaderNames = headerNames.Where(options.IsColumnIncluded).ToArray();
+            var includedRows = allRows.Select(row =>
+            {
+                return row.WithCells(row.Cells.Where(c => includedHeaderNames.Contains(c.HeaderName)));
+
+            }).ToArray();
+
+            return (includedHeaderNames, includedRows);
+        }
+
+        /// <summary>
+        /// Gets the original CSV row at a given <paramref name="rowNumber"/>,
         /// or the entire table when no such row could be found.
         /// </summary>
         /// <remarks>
         ///     Safely implemented to fallback on the original CSV when the row cannot be found.
         /// </remarks>
-        internal string GetOriginalRowAtOrAll(int index)
+        internal string GetOriginalRowAtOrAll(int rowNumber)
         {
             string[] rows = _originalCsv.Split(_options.NewLine, StringSplitOptions.RemoveEmptyEntries);
-            int i = _options.Header is AssertCsvHeader.Present ? index + 1 : index;
+            int diffIndex = _options.Header is AssertCsvHeader.Present ? rowNumber + 1 : rowNumber;
 
-            string row = rows.ElementAtOrDefault(i);
+            string row = rows.ElementAtOrDefault(diffIndex);
             if (row is null)
             {
                 return _originalCsv;
             }
 
-            string headerLine = string.Join(_options.Separator, HeaderNames);
+            string headerLine = _options.Header is AssertCsvHeader.Present ? rows.ElementAtOrDefault(0) : "";
             return headerLine + _options.NewLine + row;
         }
 
@@ -862,11 +894,14 @@ namespace Arcus.Testing
         /// <summary>
         /// Initializes a new instance of the <see cref="CsvRow" /> class.
         /// </summary>
-        internal CsvRow(CsvCell[] cells, int rowNumber, AssertCsvOptions options)
+        internal CsvRow(IReadOnlyCollection<CsvCell> cells, int rowNumber, AssertCsvOptions options)
         {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(cells);
+            ArgumentNullException.ThrowIfNull(options);
 
-            Cells = cells ?? throw new ArgumentNullException(nameof(cells));
+            _options = options;
+
+            Cells = cells;
             RowNumber = rowNumber;
         }
 
@@ -881,11 +916,17 @@ namespace Arcus.Testing
         public int RowNumber { get; }
 
         /// <summary>
+        /// Creates a new <see cref="CsvRow"/> with a new set of CSV <paramref name="cells"/>.
+        /// </summary>
+        internal CsvRow WithCells(IEnumerable<CsvCell> cells) => new(cells.ToArray(), RowNumber, _options);
+
+        /// <summary>
         /// Order the cells of each row in the passed <paramref name="rows"/>, a.k.a. horizontal ordering.
         /// </summary>
         internal static CsvRow[] WithOrderedCells(IReadOnlyCollection<CsvRow> rows)
         {
             ArgumentNullException.ThrowIfNull(rows);
+
             return rows.Select(row =>
             {
                 row.Cells = row.Cells.OrderBy(c => c.HeaderName, StringComparer.InvariantCulture).ToArray();
@@ -903,9 +944,7 @@ namespace Arcus.Testing
 
             return rows.OrderBy(r =>
             {
-                string[] line = r.Cells.Where(c => !options.IgnoredColumns.Contains(c.HeaderName) && !options.IgnoredColumnIndexes.Contains(c.ColumnNumber))
-                                       .Select(c => c.Value)
-                                       .ToArray();
+                string[] line = r.Cells.Select(c => c.Value).ToArray();
                 return string.Join(options.Separator, line);
             }).ToArray();
         }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
@@ -25,6 +24,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         private readonly ServiceBusClient _messagingClient;
         private readonly Collection<string> _topicNames = new(), _queueNames = new();
         private readonly Collection<(string topicName, string subscriptionName)> _subscriptionNames = new();
+        private readonly Collection<(string topicName, string subscriptionName, string ruleName)> _ruleNames = new();
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
@@ -46,10 +46,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public static ServiceBusTestContext Given(TestConfig config, ILogger logger)
         {
-            ServicePrincipal servicePrincipal = config.GetServicePrincipal();
             ServiceBusNamespace serviceBus = config.GetServiceBus();
 
-            var connection = TemporaryManagedIdentityConnection.Create(servicePrincipal);
+            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
             var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
@@ -78,7 +77,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             string queueName = $"queue-{Guid.NewGuid()}";
             _queueNames.Add(queueName);
-            
+
             return queueName;
         }
 
@@ -121,6 +120,28 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             return subscriptionName;
         }
 
+        public async Task<string> WhenTopicSubscriptionRuleAvailableAsync(string topicName, string subscriptionName)
+        {
+            string ruleName = WhenTopicSubscriptionRuleNameUnavailable(topicName, subscriptionName);
+            _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", ruleName, subscriptionName, topicName);
+
+            await _adminClient.CreateRuleAsync(topicName, subscriptionName, new CreateRuleOptions
+            {
+                Name = ruleName,
+                Filter = new TrueRuleFilter()
+            });
+
+            return ruleName;
+        }
+
+        private string WhenTopicSubscriptionRuleNameUnavailable(string topicName, string subscriptionName)
+        {
+            string ruleName = $"rule-{Guid.NewGuid()}";
+            _ruleNames.Add((topicName, subscriptionName, ruleName));
+            
+            return ruleName;
+        }
+
         /// <summary>
         /// Provides an Azure Service bus topic subscription that is unavailable remotely.
         /// </summary>
@@ -159,6 +180,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription '{SubscriptionName}' in topic '{TopicName}'", subscriptionName, topicName);
             await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
+        }
+
+        public async Task WhenTopicSubscriptionRuleDeletedAsync(string topicName, string subscriptionName, string ruleName)
+        {
+            _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", ruleName, subscriptionName, topicName);
+            await _adminClient.DeleteRuleAsync(topicName, subscriptionName, ruleName);
         }
 
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
@@ -233,6 +260,16 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
         }
 
+        public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
+        {
+            Assert.True(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service Bus topic subscription '{subscriptionName}' should have a rule '{ruleName}', but it hasn't");
+        }
+
+        public async Task ShouldNotHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
+        {
+            Assert.False(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service Bus topic subscription '{subscriptionName}' should not have a rule '{ruleName}', but it has");
+        }
+
         /// <summary>
         /// Verifies that the message is left alone on the Azure Service bus entity.
         /// </summary>
@@ -276,7 +313,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             await ShouldCompletedMessageAsync(entityName, subscriptionName: null, message);
         }
-        
+
         /// <summary>
         /// Verifies that the message is completed on the Azure Service bus entity.
         /// </summary>
@@ -314,6 +351,15 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
                 {
                     _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus queue '{QueueName}'", queueName);
                     await _adminClient.DeleteQueueAsync(queueName);
+                }
+            })));
+
+            disposables.AddRange(_ruleNames.Select(item => AsyncDisposable.Create(async () =>
+            {
+                if (await _adminClient.RuleExistsAsync(item.topicName, item.subscriptionName, item.ruleName))
+                {
+                    _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", item.ruleName, item.subscriptionName, item.topicName);
+                    await _adminClient.DeleteRuleAsync(item.topicName, item.subscriptionName, item.ruleName);
                 }
             })));
 

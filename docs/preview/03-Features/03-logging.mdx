@@ -18,7 +18,8 @@ This page describes functionality related to logging in tests.
     The following functionality is available when installing this package:
     
     ```powershell
-    PM> Install-Package -Name Arcus.Testing.Logging.Xunit
+    PM> Install-Package -Name Arcus.Testing.Logging.Xunit # for xUnit v2 tests
+    PM> Install-Package -Name Arcus.Testing.Logging.Xunit.v3 # for xUnit v3 tests
     ```
     
     **Example**
@@ -26,9 +27,10 @@ This page describes functionality related to logging in tests.
     Log messages written to the `ILogger` instance will be written to the xUnit test output.
     
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using Microsoft.Extensions.Logging;
-    using Xunit.Abstractions;
+    using Xunit;
     
     public class TestClass
     {
@@ -36,13 +38,29 @@ This page describes functionality related to logging in tests.
     
         public TestClass(ITestOutputHelper outputWriter)
         {
+            // highlight-next-line
             _testLogger = new XunitTestLogger(outputWriter);
         }
     }
     ```
 
-    In the same fashion there is a:
-    * [`AddXunitTestLogging`] extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) setup.
+    In the same fashion there is an extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/) setup:
+
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using Microsoft.Extensions.Logging;
+
+    ILoggerFactory factory = LoggerFactory.Create(logging =>
+    {
+        logging.SetMinimumLevel(LogLevel.Warning)
+               .AddFilter("Example.DefaultService", LogLevel.Trace)
+               .AddFile("logs/test-{0:yyyy}-{0:MM}-{0:dd}.log")
+               // highlight-next-line
+               .AddXunitTestLogging(outputWriter);
+    });
+    ILogger logger = factory.CreateLogger<TestClass>();
+    ```
   </TabItem>
   <TabItem value="nunit" label="NUnit">
     The `Arcus.Testing.Logging.NUnit` library provides a `NUnitTestLogger` type that's an implementation of the abstracted Microsoft [`ILogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging)
@@ -61,6 +79,7 @@ This page describes functionality related to logging in tests.
     Log messages written to the `ILogger` instance will be written to the `TestContext.Out/Error` in the NUnit test output.
     
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using Microsoft.Extensions.Logging;
     using NUnit.Framework;
@@ -71,13 +90,29 @@ This page describes functionality related to logging in tests.
     
         public TestClass()
         {
+            // highlight-next-line
             _testLogger = new NUnitTestLogger(TestContext.Out, TestContext.Error);
         }
     }
     ```
 
-    In the same fashion there is a:
-    * [`AddNUnitTestLogging`] extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) setup.
+    In the same fashion there is an extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/) setup:
+
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using Microsoft.Extensions.Logging;
+
+    ILoggerFactory factory = LoggerFactory.Create(logging =>
+    {
+        logging.SetMinimumLevel(LogLevel.Warning)
+               .AddFilter("Example.DefaultService", LogLevel.Trace)
+               .AddFile("logs/test-{0:yyyy}-{0:MM}-{0:dd}.log")
+               // highlight-next-line
+               .AddNUnitTestLogging(TestContext.Out, TestContext.Error);
+    });
+    ILogger logger = factory.CreateLogger<TestClass>();
+    ```
   </TabItem>
   <TabItem value="mstest" label="MSTest">
     The `Arcus.Testing.Logging.MSTest` library provides a `MSTestLogger` type that's an implementation of the abstracted Microsoft [`ILogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging)
@@ -96,19 +131,36 @@ This page describes functionality related to logging in tests.
     Log messages written to the `ILogger` instance will be written to the `TestContext` in the MSTest test output.
     
     ```csharp
+    // highlight-next-line
     using Arcus.Testing;
     using Microsoft.Extensions.Logging;
     using NUnit.Framework;
     
     public class TestClass
     {
+        // highlight-next-line
         private ILogger TestLogger => new MSTestLogger(TestContext);
         public TestContext TestContext { get; set; }
     }
     ```
     
-    In the same fashion there is a:
-    * [`AddMSTestLogging`] extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/?view=aspnetcore-3.1) setup.
+    In the same fashion there is an extension to add a `ILoggerProvider` to a [Microsoft Logging](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/logging/) setup:
+
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using Microsoft.Extensions.Logging;
+
+    ILoggerFactory factory = LoggerFactory.Create(logging =>
+    {
+        logging.SetMinimumLevel(LogLevel.Warning)
+               .AddFilter("Example.DefaultService", LogLevel.Trace)
+               .AddFile("logs/test-{0:yyyy}-{0:MM}-{0:dd}.log")
+               // highlight-next-line
+               .AddMSTestLogging(TestContext);
+    });
+    ILogger logger = factory.CreateLogger<TestClass>();
+    ```
   </TabItem>
   <TabItem value="tunit" label="TUnit">
     The `Arcus.Testing.Logging.TUnit` library provides a `TUnitTestLogger` type that's an implementation of the abstracted Microsoft [`ILogger`](https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging) inside the [TUnit](https://tunit.dev/) test framework.

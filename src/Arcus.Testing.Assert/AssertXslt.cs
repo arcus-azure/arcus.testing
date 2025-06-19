@@ -29,10 +29,7 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> or output could not be successfully loaded into a structured XML document.</exception>
         public static string TransformToXml(string xsltTransformer, string inputXml)
         {
-            return TransformToXml(
-                xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)), 
-                inputXml ?? throw new ArgumentNullException(nameof(inputXml)), 
-                arguments: null);
+            return TransformToXml(xsltTransformer, inputXml, arguments: null);
         }
 
         /// <summary>
@@ -49,6 +46,9 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the <paramref name="inputXml"/> or output could not be successfully loaded into a structured XML document.</exception>
         public static string TransformToXml(string xsltTransformer, string inputXml, XsltArgumentList arguments)
         {
+            ArgumentNullException.ThrowIfNull(xsltTransformer);
+            ArgumentNullException.ThrowIfNull(inputXml);
+
             XslCompiledTransform transformer = Load(xsltTransformer);
             XmlNode input = AssertXml.Load(inputXml);
 
@@ -67,10 +67,7 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
         public static XmlDocument TransformToXml(XslCompiledTransform transformer, XmlNode input)
         {
-            return TransformToXml(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)), 
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments: null);
+            return TransformToXml(transformer, input, arguments: null);
         }
 
         /// <summary>
@@ -85,15 +82,8 @@ namespace Arcus.Testing
         /// <exception cref="XmlException">Thrown when the output could not be successfully loaded into a structured XML document.</exception>
         public static XmlDocument TransformToXml(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
-            if (transformer is null)
-            {
-                throw new ArgumentNullException(nameof(transformer));
-            }
-
-            if (input is null)
-            {
-                throw new ArgumentNullException(nameof(input));
-            }
+            ArgumentNullException.ThrowIfNull(transformer);
+            ArgumentNullException.ThrowIfNull(input);
 
             try
             {
@@ -123,10 +113,7 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static string TransformToJson(string xsltTransformer, string inputXml)
         {
-            return TransformToJson(
-                xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)),
-                inputXml ?? throw new ArgumentNullException(nameof(inputXml)),
-                arguments: null);
+            return TransformToJson(xsltTransformer, inputXml, arguments: null);
         }
 
         /// <summary>
@@ -144,8 +131,8 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static string TransformToJson(string xsltTransformer, string inputXml, XsltArgumentList arguments)
         {
-            XslCompiledTransform transformer = Load(xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)));
-            XmlNode input = AssertXml.Load(inputXml ?? throw new ArgumentNullException(nameof(inputXml)));
+            XslCompiledTransform transformer = Load(xsltTransformer);
+            XmlNode input = AssertXml.Load(inputXml);
 
             JsonNode token = TransformToJson(transformer, input, arguments);
             return token.ToString();
@@ -162,10 +149,7 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static JsonNode TransformToJson(XslCompiledTransform transformer, XmlNode input)
         {
-            return TransformToJson(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)),
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments: null);
+            return TransformToJson(transformer, input, arguments: null);
         }
 
         /// <summary>
@@ -180,15 +164,8 @@ namespace Arcus.Testing
         /// <exception cref="JsonException">Thrown when the output could not be successfully loaded into a structured JSON document.</exception>
         public static JsonNode TransformToJson(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
-            if (input is null)
-            {
-                throw new ArgumentNullException(nameof(input));
-            }
-
-            if (transformer is null)
-            {
-                throw new ArgumentNullException(nameof(transformer));
-            }
+            ArgumentNullException.ThrowIfNull(input);
+            ArgumentNullException.ThrowIfNull(transformer);
 
             try
             {
@@ -204,7 +181,7 @@ namespace Arcus.Testing
             }
         }
 
-                /// <summary>
+        /// <summary>
         /// Transforms the <paramref name="inputXml"/> with the given <paramref name="xsltTransformer"/> to a CSV output.
         /// </summary>
         /// <param name="xsltTransformer">The XSLT stylesheet that describes the transformation of the <paramref name="inputXml"/> XML contents.</param>
@@ -215,10 +192,7 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
         public static string TransformToCsv(string xsltTransformer, string inputXml)
         {
-            return TransformToCsv(
-                xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)),
-                inputXml ?? throw new ArgumentNullException(nameof(inputXml)),
-                arguments: null);
+            return TransformToCsv(xsltTransformer, inputXml, arguments: null);
         }
 
         /// <summary>
@@ -233,8 +207,8 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
         public static string TransformToCsv(string xsltTransformer, string inputXml, XsltArgumentList arguments)
         {
-            XslCompiledTransform transformer = Load(xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)));
-            XmlNode input = AssertXml.Load(inputXml ?? throw new ArgumentNullException(nameof(inputXml)));
+            XslCompiledTransform transformer = Load(xsltTransformer);
+            XmlNode input = AssertXml.Load(inputXml);
 
             CsvTable csvTable = TransformToCsv(transformer, input, arguments);
             return csvTable.ToString();
@@ -251,10 +225,7 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
         public static CsvTable TransformToCsv(XslCompiledTransform transformer, XmlNode input)
         {
-            return TransformToCsv(
-                transformer ?? throw new ArgumentNullException(nameof(transformer)),
-                input ?? throw new ArgumentNullException(nameof(input)),
-                arguments: null);
+            return TransformToCsv(transformer, input, arguments: null);
         }
 
         /// <summary>
@@ -269,15 +240,8 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
         public static CsvTable TransformToCsv(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
-            if (input is null)
-            {
-                throw new ArgumentNullException(nameof(input));
-            }
-
-            if (transformer is null)
-            {
-                throw new ArgumentNullException(nameof(transformer));
-            }
+            ArgumentNullException.ThrowIfNull(input);
+            ArgumentNullException.ThrowIfNull(transformer);
 
             try
             {
@@ -309,11 +273,13 @@ namespace Arcus.Testing
         /// <exception cref="XsltException">Thrown when the <paramref name="xsltTransformer"/> could not be successfully loaded into structured XSLT instance.</exception>
         public static XslCompiledTransform Load(string xsltTransformer)
         {
+            ArgumentNullException.ThrowIfNull(xsltTransformer);
+
             try
             {
                 var transformer = new XslCompiledTransform(enableDebug: true);
 
-                using var txtReader = new StringReader(xsltTransformer ?? throw new ArgumentNullException(nameof(xsltTransformer)));
+                using var txtReader = new StringReader(xsltTransformer);
                 using var xmlReader = XmlReader.Create(txtReader);
                 transformer.Load(xmlReader);
 

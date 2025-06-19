@@ -20,7 +20,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryMongoDbCollection"/> is deleted.
     /// </summary>
-    internal enum OnTeardownMongoDbCollection { CleanIfCreated = 0, CleanAll, CleanIfMatched }
+    internal enum OnTeardownMongoDbCollection { CleanIfUpserted = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
     /// Represents the available options when creating a <see cref="TemporaryMongoDbCollection"/>.
@@ -116,11 +116,21 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete the MongoDb documents upon disposal
-        /// if the document was inserted by the test fixture (using <see cref="TemporaryMongoDbCollection.AddDocumentAsync{TDocument}"/>).
+        /// if the document was inserted by the test fixture (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality")]
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
         {
-            Documents = OnTeardownMongoDbCollection.CleanIfCreated;
+            return CleanUpsertedDocuments();
+        }
+
+        /// <summary>
+        /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete or revert the MongoDb documents upon disposal
+        /// if the document was upserted by the test fixture (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
+        /// </summary>
+        public OnTeardownMongoDbCollectionOptions CleanUpsertedDocuments()
+        {
+            Documents = OnTeardownMongoDbCollection.CleanIfUpserted;
             return this;
         }
 
@@ -138,7 +148,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
@@ -155,7 +165,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
@@ -189,7 +199,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryMongoDbCollection"/>.
         /// </summary>
-        public OnTeardownMongoDbCollectionOptions OnTeardown { get; } = new OnTeardownMongoDbCollectionOptions().CleanCreatedDocuments();
+        public OnTeardownMongoDbCollectionOptions OnTeardown { get; } = new OnTeardownMongoDbCollectionOptions().CleanUpsertedDocuments();
     }
 
     /// <summary>
@@ -200,7 +210,7 @@ namespace Arcus.Testing
         private readonly bool _createdByUs;
         private readonly IMongoDatabase _database;
         private readonly TemporaryMongoDbCollectionOptions _options;
-        private readonly Collection<IAsyncDisposable> _documents = new();
+        private readonly Collection<IAsyncDisposable> _documents = [];
         private readonly ILogger _logger;
 
         private TemporaryMongoDbCollection(
@@ -391,12 +401,28 @@ namespace Arcus.Testing
         /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
         /// <param name="document">The document to upload to the MongoDb collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
         public async Task AddDocumentAsync<TDocument>(TDocument document)
+        {
+            await UpsertDocumentAsync(document);
+        }
+
+        /// <summary>
+        /// Adds a new or replaces an existing document in the Azure MongoDb collection (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryMongoDbCollection"/> is disposed.
+        /// </remarks>
+        /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
+        /// <param name="document">The document to upload to the MongoDb collection.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
+        public async Task UpsertDocumentAsync<TDocument>(TDocument document)
         {
             ArgumentNullException.ThrowIfNull(document);
 
             IMongoCollection<TDocument> collection = GetCollectionClient<TDocument>();
-            _documents.Add(await TemporaryMongoDbDocument.InsertIfNotExistsAsync(collection, document, _logger));
+            _documents.Add(await TemporaryMongoDbDocument.UpsertDocumentAsync(collection, document, _logger));
         }
 
         /// <summary>
@@ -429,7 +455,7 @@ namespace Arcus.Testing
 
         private async Task CleanCollectionOnTeardownAsync()
         {
-            if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfCreated)
+            if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfUpserted)
             {
                 return;
             }

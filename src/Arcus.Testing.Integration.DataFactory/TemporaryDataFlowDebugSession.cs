@@ -31,11 +31,7 @@ namespace Arcus.Testing
             get => _timeToLiveInMinutes;
             set
             {
-                if (value < 1)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Time to live in minutes must be at least 1 minute");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
                 _timeToLiveInMinutes = value;
             }
         }
@@ -53,11 +49,7 @@ namespace Arcus.Testing
             get => _activeSessionId;
             set
             {
-                if (value == Guid.Empty)
-                {
-                    throw new ArgumentException("Requires  non-empty GUID to represent the session ID of an active debug session", nameof(value));
-                }
-
+                ArgumentOutOfRangeException.ThrowIfEqual(value, Guid.Empty);
                 _activeSessionId = value;
             }
         }
@@ -270,15 +262,8 @@ namespace Arcus.Testing
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(dataFlowName))
-            {
-                throw new ArgumentException($"Name of the DataFlow in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(dataFlowName));
-            }
-
-            if (string.IsNullOrWhiteSpace(targetSinkName))
-            {
-                throw new ArgumentException($"Name of the target sink for the DataFlow '{dataFlowName}' in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(targetSinkName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
 
             var options = new RunDataFlowOptions();
             configureOptions?.Invoke(options);
@@ -307,6 +292,7 @@ namespace Arcus.Testing
 
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
+            await AddDebugVariantsOfFlowletsAsync(debug, DataFactory, options);
 
             await DataFactory.AddDataFlowToDebugSessionAsync(debug);
         }
@@ -367,6 +353,30 @@ namespace Arcus.Testing
                     DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, sink.Dataset.ReferenceName);
                     await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName);
                 }
+            }
+        }
+
+        private async Task AddDebugVariantsOfFlowletsAsync(
+            DataFactoryDataFlowDebugPackageContent debug,
+            DataFactoryResource dataFactory,
+            RunDataFlowOptions options)
+        {
+            if (options.FlowletNames.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var flowletName in options.FlowletNames)
+            {
+                _logger.LogDebug("[Test:Setup] Add Flowlet '{FlowletName}' of DataFactory '{DataFactoryName}' to debug session", flowletName, dataFactory.Id.Name);
+
+                DataFactoryDataFlowResource flowlet = (await dataFactory.GetDataFactoryDataFlowAsync(flowletName)).Value;
+
+                var dataFactoryFlowletDebugInfo = new DataFactoryDataFlowDebugInfo(flowlet.Data.Properties)
+                {
+                    Name = flowletName
+                };
+                debug.DataFlows.Add(dataFactoryFlowletDebugInfo);
             }
         }
 
@@ -439,19 +449,20 @@ namespace Arcus.Testing
         internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
         internal IDictionary<string, IDictionary<string, object>> DataSetParameters { get; } = new Dictionary<string, IDictionary<string, object>>();
+        internal Collection<string> FlowletNames { get; } = new();
 
         /// <summary>
         /// Adds a parameter to the DataFlow to run.
         /// </summary>
+        /// <remarks>
+        ///     <para>For string parameters, the value must be enclosed in single quotes (example: <c>"'myValue'"</c>).</para>
+        ///     <para>For boolean parameters, the value must be either <c>"true()"</c> or <c>"false()"</c>.</para>
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
         public RunDataFlowOptions AddDataFlowParameter(string name, object value)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("DataFlow parameter name should not be blank", nameof(name));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
             ArgumentNullException.ThrowIfNull(value);
 
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
@@ -468,16 +479,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
         public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)
         {
-            if (string.IsNullOrWhiteSpace(sourceOrSinkName))
-            {
-                throw new ArgumentException("Source or Sink name should not be blank", nameof(sourceOrSinkName));
-            }
-
-            if (string.IsNullOrWhiteSpace(parameterName))
-            {
-                throw new ArgumentException("DataSet parameter name should not be blank", nameof(parameterName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceOrSinkName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameterName);
             ArgumentNullException.ThrowIfNull(parameterValue);
 
             if (!DataSetParameters.ContainsKey(sourceOrSinkName))
@@ -498,12 +501,7 @@ namespace Arcus.Testing
             get => _maxRows;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(
-                        nameof(value), value, "Requires a maximum row limit greater than zero for the preview response of the DataFlow run");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
                 _maxRows = value;
             }
         }
@@ -518,12 +516,23 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="serviceName"/> is blank.</exception>
         public RunDataFlowOptions AddLinkedService(string serviceName)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
-            {
-                throw new ArgumentException("Linked service name should not be blank", nameof(serviceName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
             LinkedServiceNames.Add(serviceName);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a flowlet to the Azure DataFactory debug session.
+        /// </summary>
+        /// <remarks>
+        ///     This can be used to add flowlets that are needed when the DataFlow contains flowlets.
+        /// </remarks>
+        /// <param name="flowletName">The name of the linked service in Azure DataFactory.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="flowletName"/> is blank.</exception>
+        public RunDataFlowOptions AddFlowlet(string flowletName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(flowletName);
+            FlowletNames.Add(flowletName);
             return this;
         }
     }

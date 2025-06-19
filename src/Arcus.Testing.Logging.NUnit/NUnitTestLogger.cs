@@ -18,11 +18,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut)
         {
-            if (testContextOut is null)
-            {
-                throw new ArgumentNullException(nameof(testContextOut));
-            }
-
+            ArgumentNullException.ThrowIfNull(testContextOut);
             _testContextOut = testContextOut;
         }
 
@@ -34,15 +30,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> or the <paramref name="testContextError"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError)
         {
-            if (testContextOut is null)
-            {
-                throw new ArgumentNullException(nameof(testContextOut));
-            }
-
-            if (testContextError is null)
-            {
-                throw new ArgumentNullException(nameof(testContextError));
-            }
+            ArgumentNullException.ThrowIfNull(testContextOut);
+            ArgumentNullException.ThrowIfNull(testContextError);
 
             _testContextOut = testContextOut;
             _testContextError = testContextError;
@@ -112,7 +101,7 @@ namespace Arcus.Testing
     /// <summary>
     /// <see cref="ILogger"/> representation of a NUnit logger.
     /// </summary>
-    /// <typeparam name="TCategoryName">The type who's name is used for the logger category name.</typeparam>
+    /// <typeparam name="TCategoryName">The type whose name is used for the logger category name.</typeparam>
     public class NUnitTestLogger<TCategoryName> : NUnitTestLogger, ILogger<TCategoryName>
     {
         /// <summary>

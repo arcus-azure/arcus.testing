@@ -44,6 +44,8 @@ namespace Arcus.Testing.Tests.Core.Assert_.Fixture
             HeaderNames = headerNames;
             ColumnCount = options.ColumnCount;
             RowCount = options.RowCount;
+
+            IgnoredIndex = Bogus.PickRandom(Enumerable.Range(0, ColumnCount).ToArray());
         }
 
         /// <summary>
@@ -79,7 +81,7 @@ namespace Arcus.Testing.Tests.Core.Assert_.Fixture
         /// <summary>
         /// Gets the index of a column that should be ignored during the assertion.
         /// </summary>
-        public int IgnoredIndex => Bogus.PickRandom(Enumerable.Range(0, ColumnCount).ToArray());
+        public int IgnoredIndex { get; }
 
         /// <summary>
         /// Generate a new <see cref="TestCsv"/> model.
@@ -115,12 +117,14 @@ namespace Arcus.Testing.Tests.Core.Assert_.Fixture
         /// <summary>
         /// Adds a new random column to the CSV table.
         /// </summary>
-        public void AddColumn(string headerName = null)
+        public string AddColumn(string headerName = null)
         {
             string columnName = headerName ?? CreateColumnName();
             List<string> newColumn = GenerateColumn(RowCount).Prepend(columnName).ToList();
             _columns.Insert(Bogus.Random.Int(0, _columns.Count - 1), newColumn);
             ColumnCount++;
+
+            return columnName;
         }
 
         private static string CreateColumnName()

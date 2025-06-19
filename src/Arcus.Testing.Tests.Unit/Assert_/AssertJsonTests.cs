@@ -7,7 +7,6 @@ using FsCheck;
 using FsCheck.Fluent;
 using Newtonsoft.Json.Linq;
 using Xunit;
-using Xunit.Abstractions;
 using Xunit.Sdk;
 using static System.Environment;
 using static Arcus.Testing.Tests.Unit.Properties;
@@ -316,8 +315,8 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string fileNamePrefix = "json.ignored.order.objects.in.array.sample";
-            string actual = _resourceDir.ReadFileTextByName(fileNamePrefix + ".actual.json");
-            string expected = _resourceDir.ReadFileTextByName(fileNamePrefix + ".expected.json");
+            string actual = _resourceDir.ReadFileText(fileNamePrefix + ".actual.json");
+            string expected = _resourceDir.ReadFileText(fileNamePrefix + ".expected.json");
 
             // Act / Assert
             EqualJson(expected, actual);

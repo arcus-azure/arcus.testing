@@ -25,7 +25,9 @@ The default `TestConfig` uses the `appsettings.json` as main file where the toke
 }
 ```
 
-> ⚠️ Make sure that you have such an `appsettings.json` file in your project and that this is copied to the test project's output. 
+:::warning
+Make sure that you have such an `appsettings.json` file in your project and that this is copied to the test project's output. 
+:::
 
 The default local alternative is called `appsettings.local.json` (for local integration/system testing) could include the endpoint to a locally run endpoint:
 ```json
@@ -73,7 +75,9 @@ var config = TestConfig.Create((options, IConfigurationBuilder builder) =>
 });
 ```
 
-> 💡 By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+:::tip
+By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+:::
 
 It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:
 
@@ -102,7 +106,9 @@ public class MyTestConfig : TestConfig
 }
 ```
 
-> 💡 The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
+:::note
+The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
+:::
 
 ## Polling
 Writing integration tests interacts by definition with external resources. These resources might not always be available at the time the test needs them. Because of this, polling until the target resource is available is a common practice. An example is polling for a health endpoint until the application response 'healthy'.
@@ -118,48 +124,82 @@ using Arcus.Testing;
 // When no exception is specified, all are considered failures.
 string txt = 
     await Poll.UntilAvailableAsync<FileNotFoundException>(
-        () => File.ReadAllTextAsync("..."));
+        () => File.ReadAllTextAsync(...));
 
 // Poll until HTTP status code is `200 OK`:
 // When no 'until' filters are specified, all results are considered valid. 
 HttpResponseMessage response = 
-    await Poll.Target(() => HttpClient.GetAsync("..."))
+    await Poll.Target(() => HttpClient.GetAsync(..))
               .Until(resp => resp.StatusCode == HttpStatusCode.OK)
               .StartAsync();
 ```
 
-> 💡 The returned `Poll` model implements `GetAwaiter`, which means that the `StartAsync` is optional.
+:::tip
+The returned `Poll` model implements `GetAwaiter`, which means that the `StartAsync` is optional.
+:::
 
 ### Customization
 The `Poll` model can be customized with several options to override existing functionality or to manipulate the polling operations to your needs.
 
 ```csharp
-// Set options directly.
+// Set options directly with the `Poll.UntilAvailableAsync` overloads.
 await Poll.UntilAvailableAsync(..., options =>
 {
     // Sets the interval between each poll operation (default: 1 second).
+    // Same as doing `Poll.Every(...)`
     options.Interval = TimeSpan.FromMilliseconds(500);
 
     // Sets the time frame in which the polling operation has to succeed (default: 30 seconds).
+    // Same as doing `Poll.Timeout(...)`
     options.Timeout = TimeSpan.FromSeconds(5);
 
     // Sets the message that describes the failure of the polling operation.
+    // Same as doing `Poll.FailWith(...)`
     options.FailureMessage = "my polling operation description that gives the test failure more context";
+
+    // Add one or more additional exception filters to specify for which exact exception the polling operation should run.
+    // Same as doing 'Poll.When(ex => ...)`
+    options.AddExceptionFilter((RequestFailedException ex) => ex.Status == 429);
+    options.AddExceptionFilter((MongoCommandException ex) => ex.Message.Contains("high rate"));
 });
 
-// Set options fluently.
-await Poll.Target(...)
-          .Until(...)
-          .Every(TimeSpan.FromMilliseconds(500))
-          .Timeout(TimeSpan.FromSeconds(5))
-          .FailWith("my polling operation description that gives the test failure more context")
-          .StartAsync();
+// Set options fluently by building `Poll.Target(...)` constructs.
+MyResult endResult =
+    await Poll.Target<MyResult, MyException>(() => // Get `MyResult` from somewhere...)
+          
+              // Add one or more additional exception filters to specify for which exact exception the polling operation should run.
+              // Same as doing `options.AddExceptionFilter(...)`
+              .When((MyException exception) => ...)  
+              .When((MyException exception) => ...)
+              
+              // Add one or more additional result filters to specify for what end-result state the polling operation should wait.
+              .Until((MyResult result) => ...)
+              .Until((MyResult result) => ...)
+              
+              // Sets the interval between each poll operation (default: 1 second).
+              // Same as doing `options.Interval = ...`
+              .Every(TimeSpan.FromMilliseconds(500))
+              
+              // Sets the time frame in which the polling operation has to succeed (default: 30 seconds).
+              // Same as doing `options.Timeout = ...`
+              .Timeout(TimeSpan.FromSeconds(5))
+              
+              // Sets the message that describes the failure of the polling operation.
+              // Same as doing `options.FailureMessage = ...`
+              .FailWith("my polling operation description that gives the test failure more context")
+    
+              // Start the polling operation.
+              .StartAsync();
 ```
 
-> 💡 Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
+:::note
+Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
+:::
 
 ## Resource directory
 The `ResourceDirectory` provides a solution to retrieving local files during the test run. It points by default to the root output directory where the test suite is running, and from there any sub-directory can be navigated to in a test-friendly manner. Each time a directory or a file does not exists, an IO exception will be thrown with a clear message on what is missing on disk.
+
+> 🔗 More information on search patterns can be found on [Microsoft's documentation site](https://learn.microsoft.com/en-us/dotnet/api/system.io.directoryinfo.getfiles).
 
 ```csharp
 using Arcus.Testing;
@@ -167,16 +207,16 @@ using Arcus.Testing;
 // Path: /bin/net8.0/
 ResourceDirectory root = ResourceDirectory.CurrentDirectory;
 
-string txt = root.ReadFileTextByName("file.txt");
-byte[] img = root.ReadFileBytesByName("file.png");
+string txt = root.ReadFileText("file?.txt");
+byte[] img = root.ReadFileBytes("file.png");
 
 // Path: /bin/net8.0/resources
 ResourceDirectory sub = 
     root.WithSubDirectory("resources")
         .WithSubDirectory("component");
 
-string txt = sub.ReadFileTextByName("file.txt");
-byte[] img = sub.ReadFileBytesByPattern("*.png");
+string txt = sub.ReadFileText("file.txt");
+byte[] img = sub.ReadFileBytes("*.png");
 
 
 // FileNotFoundException: 
@@ -186,11 +226,13 @@ byte[] img = sub.ReadFileBytesByPattern("*.png");
 //    Resource directory: /bin/net8.0/resources
 ```
 
-> 🚀 The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
-> ```csharp
-> ResourceDirectory sub = 
->     ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";
-> ``` 
+:::praise
+The `ResourceDirectory` overrides the `/` operator, which points to the `.WithSubDirectory(...)` call, which means you can create complex paths with ease:
+```csharp
+ResourceDirectory sub = 
+    ResourceDirectory.CurrentDirectory / "resources" / "components" / "module";
+``` 
+:::
 
 ## Temporary environment variable
 The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is fairly common when testing locally and spinning up the application on your own system. It can also be used for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.

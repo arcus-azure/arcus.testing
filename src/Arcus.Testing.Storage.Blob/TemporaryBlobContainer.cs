@@ -18,7 +18,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryBlobContainer"/> is cleaned.
     /// </summary>
-    internal enum OnTeardownBlobs { CleanIfCreated = 0, CleanAll = 1, CleanIfMatched = 2 }
+    internal enum OnTeardownBlobs { CleanIfUpserted = 0, CleanAll = 1, CleanIfMatched = 2 }
 
     /// <summary>
     /// Represents the available options when the <see cref="TemporaryBlobContainer"/> is deleted.
@@ -50,7 +50,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete the Azure Blobs upon the test fixture creation that matched the configured <paramref name="filters"/>.
         /// </summary>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <param name="filters">The filters to match the blobs in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>>
         public OnSetupBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
@@ -106,7 +106,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the configurable option on what to do with unlinked Azure Blobs in the Azure Blob container upon the disposal of the test fixture.
         /// </summary>
-        internal OnTeardownBlobs Blobs { get; private set; } = OnTeardownBlobs.CleanIfCreated;
+        internal OnTeardownBlobs Blobs { get; private set; } = OnTeardownBlobs.CleanIfUpserted;
 
         /// <summary>
         /// Gets the configurable option on what to do with the Azure Blob container upon the disposal of the test fixture.
@@ -115,11 +115,21 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was uploaded by the test fixture (using <see cref="TemporaryBlobContainer.UploadBlobAsync(string, BinaryData)"/>).
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
         /// </summary>
+        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality")]
         public OnTeardownBlobContainerOptions CleanCreatedBlobs()
         {
-            Blobs = OnTeardownBlobs.CleanIfCreated;
+            return CleanUpsertedBlobs();
+        }
+
+        /// <summary>
+        /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
+        /// </summary>
+        public OnTeardownBlobContainerOptions CleanUpsertedBlobs()
+        {
+            Blobs = OnTeardownBlobs.CleanIfUpserted;
             return this;
         }
 
@@ -140,7 +150,7 @@ namespace Arcus.Testing
         ///     All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <param name="filters">The filters to match the blob's names in the Azure Blob container.</param>
+        /// <param name="filters">The filters to match the blobs in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when any of the <paramref name="filters"/> is <c>null</c>.</exception>
         public OnTeardownBlobContainerOptions CleanMatchingBlobs(params Func<BlobItem, bool>[] filters)
@@ -207,7 +217,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobContainer"/>.
         /// </summary>
-        public OnTeardownBlobContainerOptions OnTeardown { get; } = new OnTeardownBlobContainerOptions().CleanCreatedBlobs().DeleteCreatedContainer();
+        public OnTeardownBlobContainerOptions OnTeardown { get; } = new OnTeardownBlobContainerOptions().CleanUpsertedBlobs().DeleteCreatedContainer();
     }
 
     /// <summary>
@@ -252,7 +262,7 @@ namespace Arcus.Testing
         public OnTeardownBlobContainerOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
@@ -264,7 +274,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
@@ -287,9 +297,9 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
-        /// <param name="containerClient">The client to interact with the Azure Blob storage container.</param>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
         public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
@@ -298,9 +308,9 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob storage container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
-        /// <param name="containerClient">The client to interact with the Azure Blob storage container.</param>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
@@ -345,13 +355,30 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality")]
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
+        {
+            return await UpsertBlobFileAsync(blobName, blobContent);
+        }
+
+        /// <summary>
+        /// Uploads a new or replaces an existing blob in the Azure Blob container (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any blob files upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryBlobContainer"/> is disposed.
+        /// </remarks>
+        /// <param name="blobName">The name of the blob to upload.</param>
+        /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        public async Task<BlobClient> UpsertBlobFileAsync(string blobName, BinaryData blobContent)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
-            _blobs.Add(await TemporaryBlobFile.UploadIfNotExistsAsync(blobClient, blobContent, _logger));
+            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger));
 
             return blobClient;
         }
@@ -403,7 +430,7 @@ namespace Arcus.Testing
 
         private static async Task CleanBlobContainerUponDeletionAsync(BlobContainerClient containerClient, TemporaryBlobContainerOptions options, ILogger logger)
         {
-            if (options.OnTeardown.Blobs is OnTeardownBlobs.CleanIfCreated)
+            if (options.OnTeardown.Blobs is OnTeardownBlobs.CleanIfUpserted)
             {
                 return;
             }
