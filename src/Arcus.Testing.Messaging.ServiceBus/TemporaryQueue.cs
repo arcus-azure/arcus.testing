@@ -318,22 +318,23 @@ namespace Arcus.Testing
 
         internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver, ILogger logger)
         {
-            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
             bool shouldComplete = _shouldCompleteMessages.Any(func => func(message));
+            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
 
-            if (shouldDeadLetter && shouldComplete)
+            if (shouldComplete && shouldDeadLetter)
             {
                 logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in queue '{Namespace}/{QueueName}'", message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
-                return MessageSettle.DeadLetter;
-            }
-            if (shouldDeadLetter)
-            {
                 return MessageSettle.DeadLetter;
             }
 
             if (shouldComplete)
             {
                 return MessageSettle.Complete;
+            }
+
+            if (shouldDeadLetter)
+            {
+                return MessageSettle.DeadLetter;
             }
 
             if (Messages is OnTeardownQueue.CompleteMessages)
