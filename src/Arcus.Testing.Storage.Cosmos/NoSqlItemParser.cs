@@ -6,12 +6,12 @@ using Microsoft.Azure.Cosmos;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents how NoSql-items are parsed.
+    /// Represents how Azure Cosmos DB for NoSQL-items are parsed.
     /// </summary>
     internal static class NoSqlItemParser
     {
         /// <summary>
-        /// Parse a raw <paramref name="json"/> NoSql item to a typed <typeparamref name="TItem"/>.
+        /// Parse a raw <paramref name="json"/> NoSQL item to a typed <typeparamref name="TItem"/>.
         /// </summary>
         internal static TItem Parse<TItem>(CosmosClient client, NoSqlItem json, TestPhase phase)
         {
@@ -25,7 +25,7 @@ namespace Arcus.Testing
             if (client.ClientOptions.Serializer is null)
             {
                 throw new InvalidOperationException(
-                    $"{prefix} Cannot match the NoSql item because the Cosmos client used has no JSON item serializer configured");
+                    $"{prefix} Cannot match the Azure Cosmos DB for NoSQL item because the Azure Cosmos DB client used has no JSON item serializer configured");
             }
 
             using var body = new MemoryStream(Encoding.UTF8.GetBytes(json.Content.ToString()));
@@ -34,7 +34,7 @@ namespace Arcus.Testing
             if (item is null)
             {
                 throw new InvalidOperationException(
-                    $"{prefix} Cannot match the NoSql item because the configured JSON item serializer returned 'null' when deserializing '{typeof(TItem).Name}'");
+                    $"{prefix} Cannot match the Azure Cosmos DB for NoSQL item because the configured JSON item serializer returned 'null' when deserializing '{typeof(TItem).Name}'");
             }
 
             return item;

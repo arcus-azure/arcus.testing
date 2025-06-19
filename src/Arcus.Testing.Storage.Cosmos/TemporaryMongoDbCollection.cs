@@ -28,19 +28,19 @@ namespace Arcus.Testing
     public class OnSetupMongoDbCollectionOptions
     {
         /// <summary>
-        /// Gets the configurable setup option on what to do with existing MongoDb documents in the Azure MongoDb collection upon the test fixture creation.
+        /// Gets the configurable setup option on what to do with existing MongoDB documents in the Azure Cosmos DB for MongoDB collection upon the test fixture creation.
         /// </summary>
         internal OnSetupMongoDbCollection Documents { get; private set; }
 
         /// <summary>
-        /// Gets the filter expression that determines if MongoDb documents should be cleaned
+        /// Gets the filter expression that determines if MongoDB documents should be cleaned
         /// when the <see cref="Documents"/> is configured as <see cref="OnSetupMongoDbCollection.CleanIfMatched"/>.
         /// </summary>
         internal FilterDefinition<BsonDocument> IsMatched { get; private set; } = Builders<BsonDocument>.Filter.Where(_ => false);
 
         /// <summary>
-        /// (default) Configures the <see cref="TemporaryMongoDbCollection"/> to leave all MongoDb documents untouched
-        /// that already existed upon the test fixture creation, when there was already an Azure MongoDb collection available.
+        /// (default) Configures the <see cref="TemporaryMongoDbCollection"/> to leave all MongoDB documents untouched
+        /// that already existed upon the test fixture creation, when there was already an Azure Cosmos DB for MongoDB collection available.
         /// </summary>
         public OnSetupMongoDbCollectionOptions LeaveAllDocuments()
         {
@@ -49,7 +49,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the already existing MongoDb documents upon the test fixture creation.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the already existing MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon the test fixture creation.
         /// </summary>
         public OnSetupMongoDbCollectionOptions CleanAllDocuments()
         {
@@ -58,14 +59,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents
-        /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will aggregate together in an OR expression.
         /// </remarks>
-        /// <typeparam name="T">The type of the documents in the MongoDb collection.</typeparam>
-        /// <param name="filter">The filter expression to match documents that should be removed.</param>
+        /// <typeparam name="T">The type of the documents in the Azure Cosmos DB for MongoDB collection.</typeparam>
+        /// <param name="filter">The filter expression to match MongoDB documents that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filter"/> is <c>null</c>.</exception>
         public OnSetupMongoDbCollectionOptions CleanMatchingDocuments<T>(Expression<Func<T, bool>> filter)
         {
@@ -74,14 +75,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents
-        /// upon the test fixture creation that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon the test fixture creation that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will aggregate together in an OR expression.
         /// </remarks>
         /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
-        /// <param name="filter">The filter expression to match documents that should be removed.</param>
+        /// <param name="filter">The filter expression to match MongoDB documents that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filter"/> is <c>null</c>.</exception>
         public OnSetupMongoDbCollectionOptions CleanMatchingDocuments<TDocument>(FilterDefinition<TDocument> filter)
         {
@@ -104,19 +105,20 @@ namespace Arcus.Testing
     public class OnTeardownMongoDbCollectionOptions
     {
         /// <summary>
-        /// Gets the configurable setup option on what to do with existing MongoDb documents in the Azure MongoDb collection upon the test fixture deletion.
+        /// Gets the configurable setup option on what to do with existing MongoDB documents in the Azure Cosmos DB for MongoDB collection upon the test fixture deletion.
         /// </summary>
         internal OnTeardownMongoDbCollection Documents { get; private set; }
 
         /// <summary>
-        /// Gets the filter expression that determines if MongoDb documents should be cleaned
+        /// Gets the filter expression that determines if MongoDB documents should be cleaned
         /// when the <see cref="Documents"/> is configured as <see cref="OnTeardownMongoDbCollection.CleanIfMatched"/>.
         /// </summary>
         internal FilterDefinition<BsonDocument> IsMatched { get; private set; } = Builders<BsonDocument>.Filter.Where(_ => false);
 
         /// <summary>
-        /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete the MongoDb documents upon disposal
-        /// if the document was inserted by the test fixture (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
+        /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete the MongoBb documents
+        /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was inserted by the test fixture
+        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
         [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality")]
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
@@ -125,8 +127,9 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete or revert the MongoDb documents upon disposal
-        /// if the document was upserted by the test fixture (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
+        /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete or revert the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was upserted by the test fixture
+        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanUpsertedDocuments()
         {
@@ -135,7 +138,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the MongoDb documents upon disposal - even if the test fixture didn't insert them.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete all the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon disposal - even if the test fixture didn't insert them.
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanAllDocuments()
         {
@@ -144,15 +148,16 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents upon disposal that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon disposal that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
+        ///     The matching of documents only happens on MongoDB documents that were created outside the scope of the test fixture.
         ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
-        /// <param name="filter">The filter expression to match documents that should be removed.</param>
+        /// <typeparam name="TDocument">The type of the documents in the MongoDB collection.</typeparam>
+        /// <param name="filter">The filter expression to match MongoDB documents that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filter"/> is <c>null</c>.</exception>
         public OnTeardownMongoDbCollectionOptions CleanMatchingDocuments<TDocument>(Expression<Func<TDocument, bool>> filter)
         {
@@ -161,15 +166,16 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDb documents upon disposal that matched the configured <paramref name="filter"/>.
+        /// Configures the <see cref="TemporaryMongoDbCollection"/> to delete the MongoDB documents
+        /// in an Azure Cosmos DB for MongoDB collection upon disposal that matched the configured <paramref name="filter"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of documents only happens on MongoDb documents that were created outside the scope of the test fixture.
+        ///     The matching of documents only happens on MongoDB documents that were created outside the scope of the test fixture.
         ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <typeparam name="TDocument">The type of the documents in the MongoDb collection.</typeparam>
-        /// <param name="filter">The filter expression to match documents that should be removed.</param>
+        /// <typeparam name="TDocument">The type of the documents in the MongoDB collection.</typeparam>
+        /// <param name="filter">The filter expression to match MongoDB documents that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filter"/> is <c>null</c>.</exception>
         public OnTeardownMongoDbCollectionOptions CleanMatchingDocuments<TDocument>(FilterDefinition<TDocument> filter)
         {
@@ -203,7 +209,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a temporary Azure Cosmos MongoDb collection that will be deleted after the instance is disposed.
+    /// Represents a temporary Azure Cosmos DB for MongoDB collection that will be deleted after the instance is disposed.
     /// </summary>
     public class TemporaryMongoDbCollection : IAsyncDisposable
     {
@@ -233,7 +239,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the unique name of the MongoDb collection, currently available on Azure Cosmos.
+        /// Gets the unique name of the MongoDB collection, currently available on Azure Cosmos DB.
         /// </summary>
         public string Name { get; }
 
@@ -243,10 +249,10 @@ namespace Arcus.Testing
         public OnTeardownMongoDbCollectionOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbResourceId">
-        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID pointing towards the Azure Cosmos DB account.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -255,9 +261,9 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="databaseName">The name of the MongoDb database in which the collection should be created.</param>
-        /// <param name="collectionName">The unique name of the MongoDb collection.</param>
-        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>
+        /// <param name="databaseName">The name of the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
         public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
@@ -270,10 +276,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbResourceId">
-        ///   <para>The resource ID pointing towards the Azure Cosmos account.</para>
+        ///   <para>The resource ID pointing towards the Azure Cosmos DB account.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -282,9 +288,9 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="databaseName">The name of the MongoDb database in which the collection should be created.</param>
-        /// <param name="collectionName">The unique name of the MongoDb collection.</param>
-        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>
+        /// <param name="databaseName">The name of the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
@@ -307,11 +313,11 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
         /// </summary>
-        /// <param name="database">The client to the MongoDb database in which the collection should be created.</param>
-        /// <param name="collectionName">The unique name of the MongoDb collection.</param>
-        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>
+        /// <param name="database">The client to the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
         public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(IMongoDatabase database, string collectionName, ILogger logger)
@@ -320,11 +326,11 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos MongoDb collection if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
         /// </summary>
-        /// <param name="database">The client to the MongoDb database in which the collection should be created.</param>
-        /// <param name="collectionName">The unique name of the MongoDb collection.</param>
-        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb collection.</param>
+        /// <param name="database">The client to the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
@@ -348,13 +354,13 @@ namespace Arcus.Testing
             using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions);
             if (await collectionNames.AnyAsync())
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
+                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos DB for MongoDB '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
 
                 await CleanCollectionOnSetupAsync(database, collectionName, options, logger);
                 return new TemporaryMongoDbCollection(createdByUs: false, collectionName, database, logger, options);
             }
 
-            logger.LogDebug("[Test:Setup] Create new Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
+            logger.LogDebug("[Test:Setup] Create new Azure Cosmos DB MongoDB '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
             await database.CreateCollectionAsync(collectionName);
 
             return new TemporaryMongoDbCollection(createdByUs: true, collectionName, database, logger, options);
@@ -371,13 +377,13 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
-                logger.LogDebug("[Test:Setup] Clean all documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogDebug("[Test:Setup] Clean all documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
-                logger.LogDebug("[Test:Setup] Clean all matching documents in Azure Cosmos MongoDb collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogDebug("[Test:Setup] Clean all matching documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
         }
@@ -392,14 +398,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Inserts a temporary <paramref name="document"/> to the MongoDb collection.
+        /// Inserts a temporary <paramref name="document"/> to the Azure Cosmos DB for MongoDB collection.
         /// </summary>
         /// <remarks>
-        ///     All documents inserted via the temporary collection will always be removed when the collection disposes,
+        ///     All MongoDB documents inserted via the temporary collection will always be removed when the collection disposes,
         ///     regardless of what teardown options were configured on the collection.
         /// </remarks>
-        /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
-        /// <param name="document">The document to upload to the MongoDb collection.</param>
+        /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
+        /// <param name="document">The document to upload to the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
         public async Task AddDocumentAsync<TDocument>(TDocument document)
@@ -408,14 +414,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds a new or replaces an existing document in the Azure MongoDb collection (a.k.a. UPSERT).
+        /// Adds a new or replaces an existing document in the Azure Cosmos DB for MongoDB collection (a.k.a. UPSERT).
         /// </summary>
         /// <remarks>
         ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
         ///     when the <see cref="TemporaryMongoDbCollection"/> is disposed.
         /// </remarks>
-        /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
-        /// <param name="document">The document to upload to the MongoDb collection.</param>
+        /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
+        /// <param name="document">The document to upload to the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
         public async Task UpsertDocumentAsync<TDocument>(TDocument document)
         {
@@ -438,7 +444,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos MongoDb '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
+                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos DB for MongoDB '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
                     await _database.DropCollectionAsync(Name);
                 }));
             }
@@ -464,13 +470,13 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
-                _logger.LogDebug("[Test:Teardown] Clean all documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogDebug("[Test:Teardown] Clean all documents in Azure Cosmos DB for MongoDB '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
-                _logger.LogDebug("[Test:Teardown] Clean all matching documents in Azure Cosmos MongoDb '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogDebug("[Test:Teardown] Clean all matching documents in Azure Cosmos DB for MongoDB '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
         }

@@ -29,7 +29,7 @@ namespace Arcus.Testing
     internal enum OnTeardownNoSqlContainer { CleanIfUpserted = 0, CleanAll, CleanIfMatched }
 
     /// <summary>
-    /// Represents a generic dictionary-like type which defines an arbitrary set of properties on a NoSql item as key-value pairs.
+    /// Represents a generic dictionary-like type which defines an arbitrary set of properties on an Azure Cosmos DB for NoSQL item as key-value pairs.
     /// </summary>
     public class NoSqlItem
     {
@@ -59,7 +59,7 @@ namespace Arcus.Testing
         public PartitionKey PartitionKey { get; }
 
         /// <summary>
-        /// Gets the complete custom user-defined content of the stored NoSql item.
+        /// Gets the complete custom user-defined content of the stored NoSQL item.
         /// </summary>
         public JsonNode Content { get; }
     }
@@ -72,13 +72,13 @@ namespace Arcus.Testing
         private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = [];
 
         /// <summary>
-        /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture creation.
+        /// Gets the configurable setup option on what to do with existing NoSQL items in the Azure NoSql container upon the test fixture creation.
         /// </summary>
         internal OnSetupNoSqlContainer Items { get; private set; }
 
         /// <summary>
-        /// (default) Configures the <see cref="TemporaryNoSqlContainer"/> to leave all NoSql items untouched
-        /// that already existed upon the test fixture creation, when there was already an Azure NoSql container available.
+        /// (default) Configures the <see cref="TemporaryNoSqlContainer"/> to leave all NoSQL items untouched
+        /// that already existed upon the test fixture creation, when there was already an Azure Cosmos DB for NoSQL container available.
         /// </summary>
         public OnSetupNoSqlContainerOptions LeaveAllItems()
         {
@@ -87,7 +87,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the already existing NoSql items upon the test fixture creation.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the already existing NoSQL items
+        /// in an Azure Cosmos DB for NoSql container upon the test fixture creation.
         /// </summary>
         public OnSetupNoSqlContainerOptions CleanAllItems()
         {
@@ -96,13 +97,13 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
-        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSQL items
+        /// in an Azure Cosmos DB for NoSql container upon the test fixture creation that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will be aggregated together in an OR expression.
         /// </remarks>
-        /// <param name="filters">The filters to match NoSql items that should be removed.</param>
+        /// <param name="filters">The filters to match NoSQL items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
         public OnSetupNoSqlContainerOptions CleanMatchingItems(params Func<NoSqlItem, bool>[] filters)
@@ -121,14 +122,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
-        /// upon the test fixture creation that match any of the configured <paramref name="filters"/>.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSQL items
+        /// in an Azure Cosmos DB for NoSql container upon the test fixture creation that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
         ///     Multiple calls will be aggregated together in an OR expression.
         /// </remarks>
-        /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
-        /// <param name="filters">The filters to match NoSql items that should be removed.</param>
+        /// <typeparam name="TItem">The custom type of the NoSQL item.</typeparam>
+        /// <param name="filters">The filters to match NoSQL items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when one or more <paramref name="filters"/> is <c>null</c>.</exception>
         public OnSetupNoSqlContainerOptions CleanMatchingItems<TItem>(params Func<TItem, bool>[] filters)
@@ -170,13 +171,13 @@ namespace Arcus.Testing
         private readonly List<Func<CosmosClient, NoSqlItem, bool>> _filters = [];
 
         /// <summary>
-        /// Gets the configurable setup option on what to do with existing NoSql items in the Azure NoSql container upon the test fixture deletion.
+        /// Gets the configurable setup option on what to do with existing NoSQL items in the Azure NoSql container upon the test fixture deletion.
         /// </summary>
         internal OnTeardownNoSqlContainer Items { get; private set; }
 
         /// <summary>
-        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSql items upon disposal
-        /// if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
+        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSQL items
+        /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
         /// </summary>
         [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedItems) + " instead that provides exactly the same on-teardown functionality")]
         public OnTeardownNoSqlContainerOptions CleanCreatedItems()
@@ -185,8 +186,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete or revert the NoSql items upon disposal
-        /// if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}"/>).
+        /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete or revert the NoSQL items
+        /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}"/>).
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanUpsertedItems()
         {
@@ -195,7 +196,8 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the NoSql items upon disposal - even if the test fixture didn't add them.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete all the NoSQL items
+        /// in an Azure Cosmos DB for NoSQL container upon disposal - even if the test fixture didn't add them.
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanAllItems()
         {
@@ -204,15 +206,15 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
-        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSQL items
+        /// in an Azure Cosmos DB for NoSQL container upon disposal that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     The matching of items only happens on NoSQL items that were created outside the scope of the test fixture.
         ///     All items created by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
+        /// <param name="filters">The filters  to match NoSQL items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
         public OnTeardownNoSqlContainerOptions CleanMatchingItems(params Func<NoSqlItem, bool>[] filters)
@@ -231,16 +233,16 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSql items
-        /// upon disposal that match any of the configured <paramref name="filters"/>.
+        /// Configures the <see cref="TemporaryNoSqlContainer"/> to delete the NoSQL items
+        /// in an Azure Cosmos DB for NoSQL container upon disposal that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of items only happens on NoSql items that were created outside the scope of the test fixture.
+        ///     The matching of items only happens on NoSQL items that were created outside the scope of the test fixture.
         ///     All items upserted by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         /// </remarks>
-        /// <typeparam name="TItem">The custom type of the NoSql item.</typeparam>
-        /// <param name="filters">The filters  to match NoSql items that should be removed.</param>
+        /// <typeparam name="TItem">The custom type of the NoSQL item.</typeparam>
+        /// <param name="filters">The filters  to match NoSQL items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="filters"/> contains <c>null</c>.</exception>
         public OnTeardownNoSqlContainerOptions CleanMatchingItems<TItem>(params Func<TItem, bool>[] filters)
@@ -292,7 +294,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a temporary Azure Cosmos NoSql container that will be deleted after the instance is disposed.
+    /// Represents a temporary Azure Cosmos DB for NoSQL container that will be deleted after the instance is disposed.
     /// </summary>
     public class TemporaryNoSqlContainer : IAsyncDisposable
     {
@@ -326,12 +328,12 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the unique name of the NoSql container, currently available on Azure Cosmos.
+        /// Gets the unique name of the NoSQL container, currently available on Azure Cosmos DB.
         /// </summary>
         public string Name => Client.Id;
 
         /// <summary>
-        /// Gets the client to interact with the NoSql container.
+        /// Gets the client to interact with the Azure Cosmos DB for NoSQL container.
         /// </summary>
         public Container Client { get; }
 
@@ -341,10 +343,10 @@ namespace Arcus.Testing
         public OnTeardownNoSqlContainerOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB NoSQL container if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbAccountResourceId">
-        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -353,10 +355,10 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
-        /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
-        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
-        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbAccountResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
@@ -378,10 +380,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSql container if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbAccountResourceId">
-        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -390,10 +392,10 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
-        /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
-        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
-        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbAccountResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
@@ -418,10 +420,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSQL container if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbAccountResourceId">
-        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -430,11 +432,11 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos resource.</param>
-        /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
-        /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
+        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos DB resource.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
         /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
-        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="cosmosDbAccountResourceId"/> or the <paramref name="credential"/> is <c>null</c>.
         /// </exception>
@@ -460,10 +462,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos NoSql container if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSQL container if it doesn't exist yet.
         /// </summary>
         /// <param name="cosmosDbAccountResourceId">
-        ///   <para>The resource ID of the Azure Cosmos resource where the temporary NoSql container should be created.</para>
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
         ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -472,11 +474,11 @@ namespace Arcus.Testing
         ///     </code>
         ///   </example>
         /// </param>
-        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos resource.</param>
-        /// <param name="databaseName">The name of the existing NoSql database in the Azure Cosmos resource.</param>
-        /// <param name="containerName">The name of the NoSql container to be created within the Azure Cosmos resource.</param>
-        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
-        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSql container.</param>
+        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos DB resource.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture.</param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="cosmosDbAccountResourceId"/> or the <paramref name="credential"/> is <c>null</c>.
@@ -511,7 +513,7 @@ namespace Arcus.Testing
 
             if (await database.GetCosmosDBSqlContainers().ExistsAsync(containerName))
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", containerName, databaseName);
+                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos DB for NoSQL '{ContainerName}' container in database '{DatabaseName}'", containerName, databaseName);
                 await CleanContainerOnSetupAsync(containerClient, options, logger);
 
                 CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName);
@@ -519,7 +521,7 @@ namespace Arcus.Testing
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", containerName, databaseName);
+                logger.LogDebug("[Test:Setup] Create new Azure Cosmos DB for NoSQL '{ContainerName}' container in database '{DatabaseName}'", containerName, databaseName);
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
                 CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
@@ -569,13 +571,13 @@ namespace Arcus.Testing
             {
                 await ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
-                    logger.LogDebug("[Test:Setup] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
+                    logger.LogDebug("[Test:Setup] Delete NoSQL item '{ItemId}' {PartitionKey} in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", id, partitionKey, container.Database.Id, container.Id);
                     using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
 
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
                         throw new RequestFailedException(
-                            $"[Test:Setup] Failed to delete Azure Cosmos NoSql item '{id}' {partitionKey} in container '{container.Database.Id}/{container.Id}' " +
+                            $"[Test:Setup] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}' " +
                             $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                     }
                 });
@@ -586,13 +588,13 @@ namespace Arcus.Testing
                 {
                     if (options.OnSetup.IsMatched(id, key, doc, container.Database.Client))
                     {
-                        logger.LogDebug("[Test:Setup] Delete matched Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in container '{DatabaseName}/{ContainerName}'", id, key, container.Database.Id, container.Id);
+                        logger.LogDebug("[Test:Setup] Delete matched NoSQL item '{ItemId}' {PartitionKey} in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", id, key, container.Database.Id, container.Id);
                         using ResponseMessage response = await container.DeleteItemStreamAsync(id, key);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException(
-                                $"[Test:Setup] Failed to delete matched Azure Cosmos NoSql item '{id}' {key} in container '{container.Database.Id}/{container.Id}' " +
+                                $"[Test:Setup] Failed to delete matched NoSQL item '{id}' {key} in Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}' " +
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }
@@ -603,8 +605,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Adds a temporary NoSql item to the current container instance.
         /// </summary>
-        /// <typeparam name="T">The custom NoSql model.</typeparam>
-        /// <param name="item">The item to create in the NoSql container.</param>
+        /// <typeparam name="T">The custom NoSQL model.</typeparam>
+        /// <param name="item">The item to create in the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality")]
         public async Task AddItemAsync<T>(T item)
@@ -613,13 +615,13 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds a new or replaces an existing NoSql item in the Azure NoSql container (a.k.a. UPSERT).
+        /// Adds a new or replaces an existing NoSQL item in the Azure Cosmos DB for NoSQL container (a.k.a. UPSERT).
         /// </summary>
         /// <remarks>
         ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
         ///     when the <see cref="TemporaryNoSqlContainer"/> is disposed.
         /// </remarks>
-        /// <param name="item">The item to create in the NoSql container.</param>
+        /// <param name="item">The item to create in the Azure Cosmos DB for NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
         public async Task UpsertItemAsync<TItem>(TItem item)
         {
@@ -640,7 +642,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
+                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos DB for NoSQL '{ContainerName}' container in database '{DatabaseName}'", _container.Id.Name, _container.Id.Parent?.Name);
                     await _container.DeleteAsync(WaitUntil.Completed);
                 }));
             }
@@ -667,13 +669,13 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
+                        _logger.LogDebug("[Test:Teardown] Delete NoSQL item '{ItemId}' {PartitionKey} in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                         using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException(
-                                $"[Test:Teardown] Failed to delete Azure Cosmos NoSql item '{id}' {key} in container '{Client.Database.Id}/{Client.Id}' " +
+                                $"[Test:Teardown] Failed to delete NoSQL item '{id}' {key} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }));
@@ -689,13 +691,13 @@ namespace Arcus.Testing
                     {
                         if (_options.OnTeardown.IsMatched(id, key, doc, Client.Database.Client))
                         {
-                            _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos NoSql item '{ItemId}' {PartitionKey} in NoSql container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
+                            _logger.LogDebug("[Test:Teardown] Delete NoSQL item '{ItemId}' {PartitionKey} in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", id, key, Client.Database.Id, Client.Id);
                             using ResponseMessage response = await Client.DeleteItemStreamAsync(id, key);
 
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
                                 throw new RequestFailedException(
-                                    $"[Test:Teardown] Failed to delete matched Azure Cosmos NoSql item '{id}' {key} in container '{Client.Database.Id}/{Client.Id}' " +
+                                    $"[Test:Teardown] Failed to delete matched NoSQL item '{id}' {key} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
                                     $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                             }
                         }
