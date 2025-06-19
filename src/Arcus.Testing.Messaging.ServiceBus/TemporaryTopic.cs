@@ -317,7 +317,7 @@ namespace Arcus.Testing
 
             if (shouldDeadLetter && shouldComplete)
             {
-                logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
+                logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'", message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
                 return MessageSettle.DeadLetter;
             }
 
