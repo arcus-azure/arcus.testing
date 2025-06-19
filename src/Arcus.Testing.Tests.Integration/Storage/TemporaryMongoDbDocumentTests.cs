@@ -6,7 +6,6 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -68,12 +67,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc)
             where TDoc : class
         {
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             return await TemporaryMongoDbDocument.InsertIfNotExistsAsync(
                 MongoDb.AccountResourceId,
                 MongoDb.DatabaseName,
                 collectionName,
                 doc,
                 Logger);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         public class Product
@@ -164,6 +165,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WhenTempDocumentCreatedAsync("<collection-name>", new DocWithoutId()));
         }
 
+#pragma warning disable S2094 // S2094: Types should not be empty - this is a test class to verify that the temporary document creation fails when no ID is present
         public class DocWithoutId { }
+#pragma warning restore S2094
     }
 }

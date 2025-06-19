@@ -4,7 +4,6 @@ using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
 using Azure.Messaging.ServiceBus;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Messaging
 {
@@ -80,8 +79,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldDeadLetteredMessageAsync(queueName, messageDeadLetterBefore);
             await serviceBus.ShouldCompletedMessageAsync(queueName, messageCompleteBefore);
 
-            Assert.True(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageDeadLetterBefore.MessageId).AnyAsync(), $"temp queue should have found dead-lettered message '{messageDeadLetterBefore.MessageId}'");
-            Assert.False(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageCompleteBefore.MessageId).AnyAsync(), $"temp queue should not have found completed message '{messageCompleteBefore.MessageId}'");
+            Assert.True(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageDeadLetterBefore.MessageId).AnyAsync(TestContext.Current.CancellationToken), $"temp queue should have found dead-lettered message '{messageDeadLetterBefore.MessageId}'");
+            Assert.False(await temp.Messages.FromDeadLetter().Where(msg => msg.MessageId == messageCompleteBefore.MessageId).AnyAsync(TestContext.Current.CancellationToken), $"temp queue should not have found completed message '{messageCompleteBefore.MessageId}'");
 
             ServiceBusMessage messageAfter = await serviceBus.WhenMessageSentAsync(queueName);
 
