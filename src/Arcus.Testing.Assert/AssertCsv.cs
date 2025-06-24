@@ -46,8 +46,8 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertCsvOptions
     {
-        private readonly Collection<string> _ignoredColumns = new();
-        private readonly Collection<int> _ignoredColumnIndexes = new();
+        private readonly Collection<string> _ignoredColumns = [];
+        private readonly Collection<int> _ignoredColumnIndexes = [];
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
         private string _newRow = Environment.NewLine;
         private AssertCsvHeader _header = AssertCsvHeader.Present;

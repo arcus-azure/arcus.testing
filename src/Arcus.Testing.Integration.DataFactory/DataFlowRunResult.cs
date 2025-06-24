@@ -317,7 +317,7 @@ namespace Arcus.Testing
 
             public static PreviewHeader CreateAsValue(string headerName)
             {
-                return new PreviewHeader(DirectValueTrail.Replace(headerName, ""), PreviewDataType.DirectValue, Array.Empty<PreviewHeader>());
+                return new PreviewHeader(DirectValueTrail.Replace(headerName, ""), PreviewDataType.DirectValue, []);
             }
 
             public static PreviewHeader CreateAsArray(string headerName, PreviewHeader[] parsed)
@@ -494,7 +494,7 @@ namespace Arcus.Testing
                               .ToArray();
             }
 
-            return new[] { dataArr.Select(n => AsCsvCell(n.ToString())).ToArray() };
+            return [dataArr.Select(n => AsCsvCell(n.ToString())).ToArray()];
         }
 
         private static JsonArray ParseDataAsArray(JsonObject outputObj)

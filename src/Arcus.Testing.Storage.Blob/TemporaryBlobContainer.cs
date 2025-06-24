@@ -30,7 +30,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupBlobContainerOptions
     {
-        private readonly List<Func<BlobItem, bool>> _filters = new();
+        private readonly List<Func<BlobItem, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable setup option on what to do with existing Azure Blobs in the Azure Blob container upon the test fixture creation.
@@ -101,7 +101,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownBlobContainerOptions
     {
-        private readonly List<Func<BlobItem, bool>> _filters = new();
+        private readonly List<Func<BlobItem, bool>> _filters = [];
 
         /// <summary>
         /// Gets the configurable option on what to do with unlinked Azure Blobs in the Azure Blob container upon the disposal of the test fixture.
@@ -225,7 +225,7 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryBlobContainer : IAsyncDisposable
     {
-        private readonly Collection<TemporaryBlobFile> _blobs = new();
+        private readonly Collection<TemporaryBlobFile> _blobs = [];
         private readonly bool _createdByUs;
         private readonly TemporaryBlobContainerOptions _options;
         private readonly ILogger _logger;

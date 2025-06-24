@@ -19,8 +19,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupTemporaryTopicOptions
     {
-        private readonly Collection<Action<CreateTopicOptions>> _configuredOptions = new();
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = new(), _shouldDeadLetterMessages = new();
+        private readonly Collection<Action<CreateTopicOptions>> _configuredOptions = [];
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = [], _shouldDeadLetterMessages = [];
 
         internal OnSetupMessagesTopic Messages { get; private set; }
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
@@ -178,7 +178,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryTopicOptions
     {
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = new(), _shouldDeadLetterMessages = new();
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = [], _shouldDeadLetterMessages = [];
 
         private OnTeardownMessagesTopic Messages { get; set; }
         private TimeSpan MaxWaitTime { get; set; } = TimeSpan.FromSeconds(5);
@@ -363,7 +363,7 @@ namespace Arcus.Testing
     {
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
-        private readonly Collection<TemporaryTopicSubscription> _subscriptions = new();
+        private readonly Collection<TemporaryTopicSubscription> _subscriptions = [];
 
         private readonly bool _topicCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryTopicOptions _options;
