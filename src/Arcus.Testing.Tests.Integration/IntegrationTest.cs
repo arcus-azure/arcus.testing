@@ -1,7 +1,6 @@
-﻿using Arcus.Testing.Tests.Integration.Configuration;
-using Bogus;
+﻿using Bogus;
 using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Arcus.Testing.Tests.Integration
 {
@@ -15,18 +14,17 @@ namespace Arcus.Testing.Tests.Integration
         protected IntegrationTest(ITestOutputHelper outputWriter)
         {
             Logger = new XunitTestLogger(outputWriter);
-            Configuration = TestConfig.Create();
+            Configuration = TestConfig.Create(options =>
+            {
+                options.AddOptionalJsonFile("appsettings.default.json")
+                       .AddOptionalJsonFile("appsettings.local.json");
+            });
         }
 
         /// <summary>
         /// Gets the current configuration loaded for this integration test suite.
         /// </summary>
         protected TestConfig Configuration { get; }
-
-        /// <summary>
-        /// Gets the service principal that has access to the interacted with test resources currently being tested.
-        /// </summary>
-        protected ServicePrincipal ServicePrincipal => Configuration.GetServicePrincipal();
 
         /// <summary>
         /// Gets the logger to write diagnostic messages during the integration test execution.

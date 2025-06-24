@@ -1,0 +1,272 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Data Factory
+The `Arcus.Testing.Integration.DataFactory` package provides test fixtures related to [Azure Data Factory](https://learn.microsoft.com/en-us/azure/data-factory/introduction). By using the common test practice 'clean environment', it provides things like an automatic temporary data flow debug session to help with testing data flow pipelines.
+
+## Installation
+The following functionality is available when installing this package:
+
+```powershell
+PM> Install-Package -Name Arcus.Testing.Integration.DataFactory
+```
+
+## Temporary DataFlow debug session
+The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatically tracking the process of an Azure Data Factory data flow under test. More information on data flow debugging can be found on [Mapping data flow Debug Mode](https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-debug-mode?tabs=data-factory).
+
+The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
+
+:::tip
+Several testing framework provides the concept of 'singleton test fixtures':
+* NUnit uses [`[OneTimeSetUp/TearDown]`](https://docs.nunit.org/articles/nunit/writing-tests/attributes/onetimesetup.html) attributes.
+* xUnit uses injectable [Collection fixtures](https://xunit.net/docs/shared-context).
+* MSTest uses [`[Assembly/ClassInitializer]`](https://learn.microsoft.com/en-us/visualstudio/test/using-microsoft-visualstudio-testtools-unittesting-members-in-unit-tests?view=vs-2022#attributes-used-to-provide-initialization-and-cleanups) attributes.
+* Expecto [uses higher-order functions](https://www.codit.eu/blog/writing-flexible-integration-tests-with-f-expecto/) for both tests and fixtures.
+:::
+
+```csharp
+using Arcus.Testing;
+
+ResourceIdentifier dataFactoryResourceId =
+    DataFactoryResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<factory-name>");
+
+await using var session = 
+  await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactoryResourceId, logger);
+```
+
+> ⚡ Uses by default the `DefaultAzureCredential` but other types of authentication mechanism are supported with overloads that take in the `DataFactoryResource` directly:
+> ```csharp
+>  var credential = new DefaultAzureCredential();
+>  var arm = new ArmClient(credential);
+>  DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+> ```
+
+### Customization
+The setup of the `TemporaryDataFlowDebugSession` test fixture can be customized with the following options: 
+
+```csharp
+await TemporaryDataFlowDebugSession.StartDebugSessionAsync(..., options =>
+{
+    // The time to live setting of the cluster in the debug session in minutes (default: 90 minutes).
+    options.TimeToLiveInMinutes = 60;
+
+    // The session ID of an already active debug session.
+    // Default: empty, meaning: a new debug session will be started. This also happens when no matching session is found.
+    options.ActiveSessionId = new Guid("3B0E4AF5-AA5C-4BB3-9CDB-06442EE2F2E3");
+});
+```
+
+<details>
+  <summary><strong>Leveraging the `ActiveSessionId` option</strong></summary>
+
+  The `ActiveSessionId` is useful when developing locally when you do not want to start/stop the debug session on every run. But this also means that in case an active session is found, it will not be teardown when the test fixture disposes. This follows the 'clean environment' principle that test fixtures should only be responsible for the things they set up.
+
+  ⚡ Because of this functionality, you can even use the same debug session across different test suites/projects. These things need to happen to set this up:
+  1. Run a **custom script** task before any of the test suites to start a debug session.
+  2. Set a new **pipeline variable with the session ID** of the active debug session.
+  3. Get the pipeline variable in your tests suites to assign it to the `ActiveSessionId` option.
+  4. Run a custom script after all the test suites to stop the debug session.
+     * ⚠️ **_Make sure that this always runs, even if the tests fail._**
+</details>
+
+### Full example
+The following snippet provides a full examples of how the `TemporaryDataFlowDebugSession` test fixture can be used as a singleton test fixture across tests.
+
+<Tabs>
+  <TabItem value="xunit" label="xUnit" default>
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using Xunit;
+    
+     public class DataFactoryFixture : IAsyncLifetime
+     {
+         public TemporaryDataFlowDebugSession Session { get; private set; }
+    
+         public async Task InitializeAsync()
+         {
+            // highlight-next-line
+             Session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+         }
+    
+         public async Task DisposeAsync()
+         {
+             // highlight-next-line
+             await Session.DisposeAsync();
+         }
+     }
+    
+     [CollectionDefinition("DataFactory")]
+     public class DataFactoryFixtureCollection : ICollectionFixture<DataFactoryFixture>
+     {
+     }
+    
+    [Collection("DataFactory")]
+    public class MyDataFactoryTests
+    {
+        public MyDataFactoryTests(DataFactoryFixture fixture)
+        {
+        }
+    }
+    ```
+  </TabItem>
+  <TabItem value="nunit" label="NUnit">
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using NUnit.Framework;
+  
+    [TestFixture]
+    public class MyDataFactoryTests
+    {
+        private TemporaryDataFlowDebugSession _session;
+  
+        [OneTimeSetUp]
+        public async Task InitAsync()
+        {
+            // highlight-next-line
+            _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+        }
+  
+        [OneTimeTearDown]
+        public async Task CleanupAsync()
+        {
+            // highlight-next-line
+            await _session.DisposeAsync();
+        }
+    }
+    ```
+  </TabItem>
+  <TabItem value="mstest" label="MSTest">
+    ```csharp
+    // highlight-next-line
+    using Arcus.Testing;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    [TestClass]
+    public class MyDataFactoryTests
+    {
+        private static TemporaryDataFlowDebugSession _session;
+
+        [ClassInitialize]
+        public static async Task InitializeAsync(TestContext context)
+        {
+            // highlight-next-line
+            _session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(...);
+        }
+
+        [ClassCleanup]
+        public static async Task CleanupAsync()
+        {
+            // highlight-next-line
+            await _session.DisposeAsync();
+        }
+    } 
+    ```
+  </TabItem>
+  <TabItem value="expecto" label="Expecto">
+    ```fsharp
+    open Arcus.Testing
+    open Expecto
+
+    let myDataFactoryTests session = testList "datafactory tests" []
+
+    [<EntryPoint>]
+    let main args = task {
+        // highlight-next-line
+        use! session = TemporaryDataFlowDebugSession.StartDebugSessionAsync(...)
+
+        let tests = TestList ([ myDataFactoryTests session ], Normal)
+        return runTestsWithCLIArgs [] args tests } |> Async.AwaitTask |> Async.RunSynchronously
+    ```
+  </TabItem>
+</Tabs>
+
+## Run data flow within Debug Session
+To run a specific data flow separately within an Azure Data Factory resource, the manual process would be to start the debug session yourself, start the flow and wait for the result in the preview window.
+
+The `TemporaryDataFlowDebugSession` provides an automated approach on activating and reusing debug sessions across tests. Running data flows on this automated debug session requires you to provide the name of the data flow and the target sink where the result of the data flow will be sent to.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryDataFlowDebugSession session = ...
+
+DataFlowRunResult result = 
+    await session.RunDataFlowAsync("<dataflow-name>", "<target-sink-name>");
+
+// The run status of data preview, statistics or expression preview.
+string status = result.Status;
+
+// The result raw run data of data preview, statistics or expression preview.
+BinaryData data = result.Data;
+
+// Parse the data as a specific format (CSV or JSON).
+CsvTable csv = result.GetDataAsCsv();
+JsonNode json = result.GetDataAsJson();
+```
+
+:::warning
+**IMPORTANT** to note on the `GetDataAs...()` calls is that the Azure Data Factory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
+* For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
+* For **JSON**:
+  * Based on the `SingleDocument` or `ArrayOfDocuments`, Azure Data Factory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
+  * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
+  * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
+  * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
+:::
+
+### Customization
+The process of running a data flow can be manipulated with several options described here:
+
+```csharp
+using Arcus.Testing;
+
+await session.RunDataFlowAsync(..., options =>
+{
+    // Adds a parameter to the data flow upon starting.
+    // Note: For string parameters, enclose your value with single quotes (example: "'myValue'").
+    //       For boolean parameters, values must be "true()" or "false()".
+    // See more: https://learn.microsoft.com/en-us/azure/data-factory/parameters-data-flow
+    options.AddDataFlowParameter("<name>", "'<value>'");
+
+    // Adds a dataset parameter to the data flow upon starting.
+    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the data flow, not the actual DataSet name.
+    // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
+    options.AddDataSetParameter("<source-or-sink-name>", "<parameter-name>", "<parameter-value>");
+
+    // Add additional linked services to the debug session.
+    // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.
+    options.AddLinkedService("datafactory_sales_keyvaultLS");
+
+    // The maximum amount of rows to include in the preview response (default: 100 rows).
+    options.MaxRows = 100;
+});
+```
+
+:::tip
+When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
+:::
+
+## Run a Data pipeline
+Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../../01-core.md) packages:
+
+```csharp
+using Arcus.Testing;
+using Azure.ResourceManager.DataFactory;
+using Azure.ResourceManager.DataFactory.Models;
+
+DataFactoryResource resource = ...
+
+DataFactoryPipelineResource pipeline = 
+    await resource.GetDataFactoryPipelineAsync(pipelineName);
+
+PipelineCreateRunResult run = await pipeline.CreateRunAsync();
+
+DataFactoryPipelineRunInfo finalStatus =
+    await Poll.Target(async () => await resource.GetPipelineRunAsync(run.RunId.ToString()))
+              .Until(current => current.Status == "Succeeded")
+              .Every(TimeSpan.FromSeconds(5))
+              .Timeout(TimeSpan.FromMinutes(1))
+              .FailWith("DataFactory pipeline did not succeeded within the expected time frame");
+```

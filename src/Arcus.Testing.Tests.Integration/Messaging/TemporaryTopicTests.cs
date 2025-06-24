@@ -4,7 +4,6 @@ using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
 using Azure.Messaging.ServiceBus;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Messaging
 {
@@ -52,7 +51,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
-            await temp.Sender.SendMessageAsync(messageAfter);
+            await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
 
             await temp.DisposeAsync();
             await serviceBus.ShouldHaveTopicAsync(topicName);
@@ -149,7 +148,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
-            await temp.Sender.SendMessageAsync(messageAfter);
+            await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
 
             await temp.DisposeAsync();
             await serviceBus.ShouldDeadLetteredMessageAsync(topicName, subscriptionName, messageBefore);
@@ -183,7 +182,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore1);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
-            await temp.Sender.SendMessageAsync(messageAfter);
+            await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
 
             await temp.DisposeAsync();
             await serviceBus.ShouldCompletedMessageAsync(topicName, subscriptionName, messageBefore1);

@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Fixture;
 using Azure;
 using Azure.Identity;
@@ -63,7 +62,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static NoSqlTestContext Given(TestConfig config, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(config.GetServicePrincipal());
+            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             CosmosDbConfig noSql = config.GetNoSql();
 
             var client = new CosmosClient(noSql.AccountEndpoint.ToString(), new DefaultAzureCredential());

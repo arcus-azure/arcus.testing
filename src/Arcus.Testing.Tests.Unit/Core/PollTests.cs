@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Bogus;
-using Bogus.Extensions;
 using Polly.Timeout;
 using Xunit;
 
@@ -17,51 +17,78 @@ namespace Arcus.Testing.Tests.Unit.Core
         private static readonly Faker Bogus = new();
 
         [Fact]
-        public async Task PollAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        public async Task PollDirectAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await Poll.UntilAvailableAsync(AlwaysSucceedsAsync);
             await Poll.UntilAvailableAsync(SometimesSucceedsAsync, ReasonableTimeFrame);
             await Poll.UntilAvailableAsync<InvalidOperationException>(AlwaysSucceedsAsync);
             await Poll.UntilAvailableAsync<TestPollException>(SometimesSucceedsAsync, ReasonableTimeFrame);
+        }
 
+        [Fact]
+        public async Task PollFluentAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        {
             await Poll.Target(AlwaysSucceedsAsync);
             await Poll.Target(SometimesSucceedsAsync).ReasonableTimeFrame();
             await Poll.Target<ArrayTypeMismatchException>(AlwaysSucceedsAsync);
             await Poll.Target<TestPollException>(SometimesSucceedsAsync).ReasonableTimeFrame();
-
-            await GetsResultAsync(() => Poll.UntilAvailableAsync(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(() => Poll.UntilAvailableAsync(SometimesSucceedsResultAsync, ReasonableTimeFrame));
-            await GetsResultAsync(() => Poll.UntilAvailableAsync<object, AggregateException>(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(SometimesSucceedsResultAsync, ReasonableTimeFrame));
-
-            await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResultAsync).ReasonableTimeFrame());
-            await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResultAsync));
-            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResultAsync).ReasonableTimeFrame());
         }
 
         [Fact]
-        public async Task PollSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        public async Task PollDirectResultAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        {
+            await GetsResultAsync(() => Poll.UntilAvailableAsync(AlwaysSucceedsResultAsync));
+            await GetsResultAsync(failures => Poll.UntilAvailableAsync(() => SometimesSucceedsResultAsync(failures), ReasonableTimeFrame));
+            await GetsResultAsync(() => Poll.UntilAvailableAsync<object, AggregateException>(AlwaysSucceedsResultAsync));
+            await GetsResultAsync(failures => Poll.UntilAvailableAsync<object, TestPollException>(() => SometimesSucceedsResultAsync(failures), ReasonableTimeFrame));
+        }
+
+        [Fact]
+        public async Task PollFluentResultAsync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        {
+            await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResultAsync));
+            await GetsResultAsync(async failures => await Poll.Target(() => SometimesSucceedsResultAsync(failures)).ReasonableTimeFrame());
+            await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResultAsync));
+            await GetsResultAsync(async failures => await Poll.Target<object, TestPollException>(() => SometimesSucceedsResultAsync(failures)).ReasonableTimeFrame());
+        }
+
+        [Fact]
+        public async Task PollFluentSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
         {
             await Poll.Target(AlwaysSucceeds);
-            await Poll.Target(SometimesSucceeds).ReasonableTimeFrame();
             await Poll.Target<ArrayTypeMismatchException>(AlwaysSucceeds);
-            await Poll.Target<TestPollException>(SometimesSucceeds).ReasonableTimeFrame();
 
-            await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResult));
-            await GetsResultAsync(async () => await Poll.Target(SometimesSucceedsResult).ReasonableTimeFrame());
-            await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResult));
-            await GetsResultAsync(async () => await Poll.Target<object, TestPollException>(SometimesSucceedsResult).ReasonableTimeFrame());
+            await ShouldContinueAsync(async failures => await Poll.Target(() => SometimesSucceeds(failures)).ReasonableTimeFrame());
+            await ShouldContinueAsync(async failures => await Poll.Target<TestPollException>(() => SometimesSucceeds(failures)).ReasonableTimeFrame());
+        }
+
+        private async Task ShouldContinueAsync(Func<Queue<bool>, Task> pollAsync)
+        {
+            var failures = new Queue<bool>([Bogus.Random.Bool(), Bogus.Random.Bool(), false]);
+            await pollAsync(failures);
         }
 
         [Fact]
-        public async Task Poll_WithTargetRemainsUnavailableWithinTimeFrame_FailsWithDescription()
+        public async Task PollDirectSync_WithTargetAvailableWithinTimeFrame_SucceedsByContinuing()
+        {
+            await GetsResultAsync(async () => await Poll.Target(AlwaysSucceedsResult));
+            await GetsResultAsync(async failures => await Poll.Target(() => SometimesSucceedsResult(failures)).ReasonableTimeFrame());
+            await GetsResultAsync(async () => await Poll.Target<object, DllNotFoundException>(AlwaysSucceedsResult));
+            await GetsResultAsync(async failures => await Poll.Target<object, TestPollException>(() => SometimesSucceedsResult(failures)).ReasonableTimeFrame());
+        }
+
+        [Fact]
+        public async Task PollDirectly_WithTargetRemainsUnavailableWithinTimeFrame_FailsWithDescription()
         {
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsAsync, LowestTimeFrame));
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsResultAsync, LowestTimeFrame));
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<TestPollException>(AlwaysFailsAsync, LowestTimeFrame));
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, TestPollException>(AlwaysFailsResultAsync, LowestTimeFrame));
+        }
 
+        [Fact]
+        public async Task PollFluent_WithTargetRemainsUnavailableWithinTimeFrame_FailsWithDescription()
+        {
             await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsAsync).LowestTimeFrame());
             await FailsByExceptionAsync(async () => await Poll.Target(AlwaysFailsResultAsync).Until(AlwaysTrue).LowestTimeFrame());
             await FailsByExceptionAsync(async () => await Poll.Target<TestPollException>(AlwaysFailsAsync).LowestTimeFrame());
@@ -113,15 +140,15 @@ namespace Arcus.Testing.Tests.Unit.Core
             // Act / Assert
             await FailsByResultAsync(async () =>
                 await Poll.Target(AlwaysSucceedsResultAsync)
-                          .LowestTimeFrame()
+                          .Timeout(_100ms)
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
                           .FailWith(expected), errorParts: expected);
-            
-            await FailsByResultAsync(async () => 
+
+            await FailsByResultAsync(async () =>
                 await Poll.Target<object, TestPollException>(AlwaysSucceedsResultAsync)
-                          .LowestTimeFrame()
+                          .Timeout(_100ms)
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
@@ -138,6 +165,53 @@ namespace Arcus.Testing.Tests.Unit.Core
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync(AlwaysFailsResultAsync, WithMessage(expected)), expected);
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<InvalidOperationException>(AlwaysFailsAsync, WithMessage(expected)), expected);
             await FailsByExceptionAsync(() => Poll.UntilAvailableAsync<object, AggregateException>(AlwaysFailsResultAsync, WithMessage(expected)), expected);
+        }
+
+        [Fact]
+        public async Task Poll_WithNotMatchedExceptionFilter_DoesNotRunPolling()
+        {
+            // Arrange
+            var watch = Stopwatch.StartNew();
+            var timeout = TimeSpan.FromSeconds(3);
+
+            // Act
+            await Assert.ThrowsAsync<TimeoutException>(async () =>
+                await Poll.Target<AggregateException>(Task () => throw new AggregateException())
+                          .When(_ => false)
+                          .Timeout(timeout));
+
+            await Assert.ThrowsAsync<TimeoutException>(async () =>
+                await Poll.UntilAvailableAsync<InvalidOperationException>(
+                    Task () => throw new InvalidOperationException(),
+                    options =>
+                    {
+                        options.Timeout = timeout;
+                        options.AddExceptionFilter((InvalidOperationException _) => false);
+                    }));
+
+            // Assert
+            watch.Stop();
+            Assert.True(timeout > watch.Elapsed, $"elapsed: {watch.Elapsed}");
+        }
+
+        [Fact]
+        public async Task Poll_WithMatchedExceptionFilter_DoesRunPolling()
+        {
+            // Arrange
+            var watch = Stopwatch.StartNew();
+            var message = Bogus.Lorem.Sentence();
+            var timeout = TimeSpan.FromSeconds(1);
+
+            // Act
+            await Assert.ThrowsAsync<TimeoutException>(async () =>
+                await Poll.Target<int, InvalidOperationException>(Task<int> () => throw new InvalidOperationException(message))
+                          .Timeout(timeout)
+                          .When(ex => ex.Message == message)
+                          .When(_ => false));
+
+            // Assert
+            watch.Stop();
+            Assert.True(timeout <= watch.Elapsed, $"elapsed: {watch.Elapsed}");
         }
 
         private Action<PollOptions> WithMessage(string message)
@@ -177,22 +251,40 @@ namespace Arcus.Testing.Tests.Unit.Core
                 throw new TestPollException("Sabotage polling!");
             }
         }
-        private static Task SometimesSucceedsAsync()
+
+        private static void SometimesSucceeds(Queue<bool> failures)
         {
-            SometimesSucceeds();
-            return Task.CompletedTask;
+            if (failures.Dequeue())
+            {
+                throw new TestPollException("Sabotage polling!");
+            }
         }
 
-        private object SometimesSucceedsResult()
+        private static async Task SometimesSucceedsAsync()
         {
             SometimesSucceeds();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+        }
+
+        private object SometimesSucceedsResult(Queue<bool> failures)
+        {
+            SometimesSucceeds(failures);
             return _expectedResult;
         }
 
-        private async Task<object> SometimesSucceedsResultAsync()
+        private async Task<object> SometimesSucceedsResultAsync(Queue<bool> failures)
         {
-            await SometimesSucceedsAsync();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            SometimesSucceeds(failures);
+
             return _expectedResult;
+        }
+
+        private async Task GetsResultAsync(Func<Queue<bool>, Task<object>> pollAsync)
+        {
+            var failures = new Queue<bool>([Bogus.Random.Bool(), Bogus.Random.Bool(), false]);
+            object actualResult = await pollAsync(failures);
+            Assert.Equal(_expectedResult, actualResult);
         }
 
         private async Task GetsResultAsync(Func<Task<object>> pollAsync)

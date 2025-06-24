@@ -5,7 +5,7 @@
     <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides capabilities during testing of Azure Table storage interactions</Description>
+    <Description>Provides capabilities during testing of Azure Table Storage interactions</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
@@ -28,8 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="[1.13.1,2.0.0)" />
-    <PackageReference Include="Azure.Data.Tables" Version="[12.9.1,13.0.0)" />
+    <PackageReference Include="Azure.Identity" Version="[1.*,2.0.0)" />
+    <PackageReference Include="Azure.Data.Tables" Version="[12.*,13.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -5,6 +5,8 @@ using Azure.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
+
 namespace Arcus.Testing.Tests.Unit.Storage
 {
     public class TemporaryTableEntityTests

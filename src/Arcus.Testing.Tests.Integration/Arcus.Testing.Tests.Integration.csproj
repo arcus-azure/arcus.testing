@@ -2,19 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bogus" Version="35.6.2" />
-    <PackageReference Include="coverlet.collector" Version="6.0.4">
+    <PackageReference Include="Bogus" Version="35.*" />
+    <PackageReference Include="coverlet.collector" Version="6.*">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit.v3" Version="2.*" Aliases="XunitV3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -22,15 +26,20 @@
     <ProjectReference Include="..\Arcus.Testing.Core\Arcus.Testing.Core.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Integration.DataFactory\Arcus.Testing.Integration.DataFactory.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Logging.Xunit\Arcus.Testing.Logging.Xunit.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Logging.Xunit.v3\Arcus.Testing.Logging.Xunit.v3.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.EventHubs\Arcus.Testing.Messaging.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Messaging.ServiceBus\Arcus.Testing.Messaging.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Blob\Arcus.Testing.Storage.Blob.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Cosmos\Arcus.Testing.Storage.Cosmos.csproj" />
+    <ProjectReference Include="..\Arcus.Testing.Storage.File.Share\Arcus.Testing.Storage.File.Share.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Storage.Table\Arcus.Testing.Storage.Table.csproj" />
     <ProjectReference Include="..\Arcus.Testing.Tests.Core\Arcus.Testing.Tests.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="appsettings.default.json" Condition="'$(Configuration)' == 'Debug'">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="appsettings.local.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

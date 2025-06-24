@@ -20,6 +20,7 @@ resources:
 
 variables:
   - group: 'GitHub Configuration'
+  - group: 'NuGet'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
@@ -107,7 +108,12 @@ stages:
                 None.
                 ### Removal
                 None.
-          - template: nuget/publish-official-package.yml@templates
+          - task: DotNetCoreCLI@2
+            displayName: 'Push to NuGet.org'
+            inputs:
+              command: 'custom'
+              custom: 'nuget'
+              arguments: 'push src/**/*.nupkg --source $(NuGet.SourceUrl) --api-key $(NuGet.ApiKey)'
           - template: templates/trigger-bump-docs-version.yml
             parameters:
               gitHubToken: $(GITHUB_TOKEN)

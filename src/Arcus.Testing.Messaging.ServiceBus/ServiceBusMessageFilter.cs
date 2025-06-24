@@ -10,7 +10,7 @@ using Azure.Messaging.ServiceBus;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents a configurable filter instance that selects a subset of <see cref="ServiceBusReceivedMessage"/>s on an Azure Service bus queue or topic subscription
+    /// Represents a configurable filter instance that selects a subset of <see cref="ServiceBusReceivedMessage"/>s on an Azure Service Bus queue or topic subscription
     /// (a.k.a. 'spy test fixture').
     /// </summary>
     public class ServiceBusMessageFilter

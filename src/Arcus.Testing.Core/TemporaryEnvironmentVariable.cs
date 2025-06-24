@@ -54,11 +54,7 @@ namespace Arcus.Testing
             bool isSecret,
             ILogger logger)
         {
-            if (string.IsNullOrWhiteSpace(variableName))
-            {
-                throw new ArgumentException("Environment variable name cannot be blank", nameof(variableValue));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(variableName);
             logger ??= NullLogger.Instance;
 
             string currentValue = Environment.GetEnvironmentVariable(variableName);

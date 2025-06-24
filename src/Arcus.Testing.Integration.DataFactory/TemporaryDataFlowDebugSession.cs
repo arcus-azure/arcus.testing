@@ -31,17 +31,13 @@ namespace Arcus.Testing
             get => _timeToLiveInMinutes;
             set
             {
-                if (value < 1)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Time to live in minutes must be at least 1 minute");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
                 _timeToLiveInMinutes = value;
             }
         }
 
         /// <summary>
-        /// Gets or sets the optional session ID of an 'active' debug session in the Data Factory resource.
+        /// Gets or sets the optional session ID of an 'active' debug session in the Azure Data Factory resource.
         /// </summary>
         /// <remarks>
         ///     This is useful when developing locally when you do not want to start/stop the debug session on every run.
@@ -53,11 +49,7 @@ namespace Arcus.Testing
             get => _activeSessionId;
             set
             {
-                if (value == Guid.Empty)
-                {
-                    throw new ArgumentException("Requires  non-empty GUID to represent the session ID of an active debug session", nameof(value));
-                }
-
+                ArgumentOutOfRangeException.ThrowIfEqual(value, Guid.Empty);
                 _activeSessionId = value;
             }
         }
@@ -83,7 +75,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the DataFactory resource where the active DataFlow debug session is started.
+        /// Gets the Azure Data Factory resource where the active data flow debug session is started.
         /// </summary>
         private DataFactoryResource DataFactory { get; }
 
@@ -93,14 +85,14 @@ namespace Arcus.Testing
         public Guid SessionId { get; }
 
         /// <summary>
-        /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="dataFactoryResourceId"/>.
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="dataFactoryResourceId"/>.
         /// </summary>
         /// <remarks>
         ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
         ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger)"/> overload to provide a custom authentication mechanism.
         /// </remarks>
         /// <param name="dataFactoryResourceId">
-        ///   <para>The resource ID to the DataFactory instance where to start the active DataFlow debug session.</para>
+        ///   <para>The resource ID to the Azure Data Factory instance where to start the active data flow debug session.</para>
         ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -111,21 +103,21 @@ namespace Arcus.Testing
         /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(ResourceIdentifier dataFactoryResourceId, ILogger logger)
         {
             return await StartDebugSessionAsync(dataFactoryResourceId, logger, configureOptions: null);
         }
 
         /// <summary>
-        /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="dataFactoryResourceId"/>.
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="dataFactoryResourceId"/>.
         /// </summary>
         /// <remarks>
         ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
         ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,Action{TemporaryDataFlowDebugSessionOptions})"/> overload to provide a custom authentication mechanism.
         /// </remarks>
         /// <param name="dataFactoryResourceId">
-        ///   <para>The resource ID to the DataFactory instance where to start the active DataFlow debug session.</para>
+        ///   <para>The resource ID to the Azure Data Factory instance where to start the active data flow debug session.</para>
         ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -136,7 +128,7 @@ namespace Arcus.Testing
         /// </param>        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
             ResourceIdentifier dataFactoryResourceId,
             ILogger logger,
@@ -151,10 +143,10 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="resource"/>.
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="resource"/>.
         /// </summary>
         /// <param name="resource">
-        ///   <para>The resource to start the active DataFlow debug session for.</para>
+        ///   <para>The resource to start the active data flow debug session for.</para>
         ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
         ///   <example>
         ///     <code>
@@ -166,17 +158,17 @@ namespace Arcus.Testing
         /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(DataFactoryResource resource, ILogger logger)
         {
             return await StartDebugSessionAsync(resource, logger, configureOptions: null);
         }
 
         /// <summary>
-        /// Starts a new active DataFactory DataFlow debug session for the given <paramref name="resource"/>.
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="resource"/>.
         /// </summary>
         /// <param name="resource">
-        ///   <para>The resource to start the active DataFlow debug session for.</para>
+        ///   <para>The resource to start the active data flow debug session for.</para>
         ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
         ///   <example>
         ///     <code>
@@ -189,7 +181,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the starting of the DataFlow debug session did not result in a session ID.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
             DataFactoryResource resource,
             ILogger logger,
@@ -204,19 +196,19 @@ namespace Arcus.Testing
             DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId);
             if (activeSession is not null)
             {
-                logger.LogDebug("[Test:Setup] Re-using Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
-                return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
+                logger.LogDebug("[Test:Setup] Re-using Azure Data Factory '{Name}' data flow debug session '{SessionId}'", resource.Id.Name, activeSession.SessionId);
+                return new TemporaryDataFlowDebugSession(startedByUs: false, activeSession.SessionId ?? throw new InvalidOperationException($"Re-using Azure Data Factory '{resource.Id.Name}' DataFlow debug session did not result in a session ID"), resource, logger);
             }
 
-            logger.LogTrace("[Test:Setup] Starting Azure DataFactory '{Name}' DataFlow debug session... (might take up to 3 min to start up)", resource.Id.Name);
+            logger.LogTrace("[Test:Setup] Starting Azure Data Factory '{Name}' data flow debug session... (might take up to 3 min to start up)", resource.Id.Name);
             ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result =
                 await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent
                 {
                     TimeToLiveInMinutes = options.TimeToLiveInMinutes
                 });
 
-            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting DataFactory '{resource.Id.Name}' DataFlow debug session did not result in a session ID");
-            logger.LogDebug("[Test:Setup] Started Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", resource.Id.Name, sessionId);
+            Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"Starting Data Factory '{resource.Id.Name}' data flow debug session did not result in a session ID");
+            logger.LogDebug("[Test:Setup] Started Azure Data Factory '{Name}' data flow debug session '{SessionId}'", resource.Id.Name, sessionId);
 
             return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
         }
@@ -240,14 +232,14 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Starts a given DataFlow within the debug session,
+        /// Starts a given data flow within the debug session,
         /// which should give a result in the <paramref name="targetSinkName"/>.
         /// </summary>
-        /// <param name="dataFlowName">The name of the DataFlow to start.</param>
+        /// <param name="dataFlowName">The name of the data flow to start.</param>
         /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
-        /// <returns>The final result of the DataFlow run.</returns>
+        /// <returns>The final result of the data flow run.</returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the DataFlow execution did not result in a successful status.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
         public async Task<DataFlowRunResult> RunDataFlowAsync(string dataFlowName, string targetSinkName)
         {
@@ -255,30 +247,23 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Starts a given DataFlow within the debug session,
+        /// Starts a given data flow within the debug session,
         /// which should give a result in the <paramref name="targetSinkName"/>.
         /// </summary>
-        /// <param name="dataFlowName">The name of the DataFlow to start.</param>
+        /// <param name="dataFlowName">The name of the data flow to start.</param>
         /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
-        /// <param name="configureOptions">The function to configure the options of the DataFlow run.</param>
-        /// <returns>The final result of the DataFlow run.</returns>
+        /// <param name="configureOptions">The function to configure the options of the data flow run.</param>
+        /// <returns>The final result of the data flow run.</returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the DataFlow execution did not result in a successful status.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
         public async Task<DataFlowRunResult> RunDataFlowAsync(
             string dataFlowName,
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(dataFlowName))
-            {
-                throw new ArgumentException($"Name of the DataFlow in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(dataFlowName));
-            }
-
-            if (string.IsNullOrWhiteSpace(targetSinkName))
-            {
-                throw new ArgumentException($"Name of the target sink for the DataFlow '{dataFlowName}' in DataFactory '{DataFactory.Id.Name}' should not be blank", nameof(targetSinkName));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
 
             var options = new RunDataFlowOptions();
             configureOptions?.Invoke(options);
@@ -290,7 +275,7 @@ namespace Arcus.Testing
 
         private async Task StartDataFlowAsync(string dataFlowName, RunDataFlowOptions options)
         {
-            _logger.LogTrace("[Test:Setup] Adding DataFlow '{DataFlowName}' of DataFactory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
+            _logger.LogTrace("[Test:Setup] Adding data flow '{DataFlowName}' of Azure Data Factory '{DataFactoryName}' to debug session", dataFlowName, DataFactory.Id.Name);
             DataFactoryDataFlowResource dataFlow = await DataFactory.GetDataFactoryDataFlowAsync(dataFlowName);
 
             var debug = new DataFactoryDataFlowDebugPackageContent
@@ -307,6 +292,7 @@ namespace Arcus.Testing
 
             await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow);
             await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow);
+            await AddDebugVariantsOfFlowletsAsync(debug, DataFactory, options);
 
             await DataFactory.AddDataFlowToDebugSessionAsync(debug);
         }
@@ -317,7 +303,7 @@ namespace Arcus.Testing
 
             foreach (KeyValuePair<string, BinaryData> parameter in options.DataFlowParameters)
             {
-                _logger.LogDebug("[Test:Setup] Add DataFlow parameter '{Name}' to debug session", parameter.Key);
+                _logger.LogDebug("[Test:Setup] Add data flow parameter '{Name}' to debug session", parameter.Key);
                 settings.Parameters[parameter.Key] = parameter.Value;
             }
 
@@ -325,7 +311,7 @@ namespace Arcus.Testing
             {
                 foreach (KeyValuePair<string, object> parameter in datasetParameter.Value)
                 {
-                    _logger.LogDebug("[Test:Setup] Add DataSet parameter '{ParameterName}' for DataSet '{DataSetName}' to debug session", parameter.Key, datasetParameter.Key);
+                    _logger.LogDebug("[Test:Setup] Add dataset parameter '{ParameterName}' for dataset '{DataSetName}' to debug session", parameter.Key, datasetParameter.Key);
                 }
             }
 
@@ -370,9 +356,33 @@ namespace Arcus.Testing
             }
         }
 
+        private async Task AddDebugVariantsOfFlowletsAsync(
+            DataFactoryDataFlowDebugPackageContent debug,
+            DataFactoryResource dataFactory,
+            RunDataFlowOptions options)
+        {
+            if (options.FlowletNames.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var flowletName in options.FlowletNames)
+            {
+                _logger.LogDebug("[Test:Setup] Add flowlet '{FlowletName}' of Azure Data Factory '{DataFactoryName}' to debug session", flowletName, dataFactory.Id.Name);
+
+                DataFactoryDataFlowResource flowlet = (await dataFactory.GetDataFactoryDataFlowAsync(flowletName)).Value;
+
+                var dataFactoryFlowletDebugInfo = new DataFactoryDataFlowDebugInfo(flowlet.Data.Properties)
+                {
+                    Name = flowletName
+                };
+                debug.DataFlows.Add(dataFactoryFlowletDebugInfo);
+            }
+        }
+
         private async Task<DataFactoryDatasetResource> AddDataSetAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string datasetName)
         {
-            _logger.LogDebug("[Test:Setup] Add DataSet '{DataSetName}' of DataFactory '{DataFactoryName}' to debug session", datasetName, dataFactory.Id.Name);
+            _logger.LogDebug("[Test:Setup] Add dataset '{DataSetName}' of Azure Data Factory '{DataFactoryName}' to debug session", datasetName, dataFactory.Id.Name);
 
             DataFactoryDatasetResource dataset = await dataFactory.GetDataFactoryDatasetAsync(datasetName);
             debug.Datasets.Add(new DataFactoryDatasetDebugInfo(dataset.Data.Properties) { Name = dataset.Data.Name });
@@ -382,7 +392,7 @@ namespace Arcus.Testing
 
         private async Task AddLinkedServiceAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string serviceName)
         {
-            _logger.LogDebug("[Test:Setup] Add LinkedService '{ServiceName}' of DataFactory '{DatFactoryName}' to debug session", serviceName, dataFactory.Id.Name);
+            _logger.LogDebug("[Test:Setup] Add linked service '{ServiceName}' of Azure Data Factory '{DatFactoryName}' to debug session", serviceName, dataFactory.Id.Name);
 
             DataFactoryLinkedServiceResource linkedService = await dataFactory.GetDataFactoryLinkedServiceAsync(serviceName);
             debug.LinkedServices.Add(new DataFactoryLinkedServiceDebugInfo(linkedService.Data.Properties) { Name = linkedService.Data.Name });
@@ -390,7 +400,7 @@ namespace Arcus.Testing
 
         private async Task<DataFlowRunResult> GetDataFlowResultAsync(string dataFlowName, string targetSinkName, RunDataFlowOptions options)
         {
-            _logger.LogInformation("[Test] Run DataFlow '{DataFlowName}' until result is available on sink '{SinkName}'", dataFlowName, targetSinkName);
+            _logger.LogInformation("[Test] Run data flow '{DataFlowName}' until result is available on sink '{SinkName}'", dataFlowName, targetSinkName);
 
             ArmOperation<DataFactoryDataFlowDebugCommandResult> result =
                 await DataFactory.ExecuteDataFlowDebugSessionCommandAsync(WaitUntil.Completed, new DataFlowDebugCommandContent
@@ -406,8 +416,8 @@ namespace Arcus.Testing
             if (result.Value.Status != "Succeeded")
             {
                 throw new InvalidOperationException(
-                    $"[Test] Executing DataFlow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in DataFactory '{DataFactory.Id.Name}' " +
-                    $"did not result in a successful status: '{result.Value.Status}', please check whether the DataFlow is correctly set up and can be run within a debug session");
+                    $"[Test] Executing data flow '{dataFlowName}' and waiting for a result in sink '{targetSinkName}' in Azure Data Factory '{DataFactory.Id.Name}' " +
+                    $"did not result in a successful status: '{result.Value.Status}', please check whether the data flow is correctly set up and can be run within a debug session");
             }
 
             return new DataFlowRunResult(result.Value.Status, BinaryData.FromString(result.Value.Data));
@@ -421,7 +431,7 @@ namespace Arcus.Testing
         {
             if (_startedByUs)
             {
-                _logger.LogDebug("[Test:Teardown] Stop Azure DataFactory '{Name}' DataFlow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
+                _logger.LogDebug("[Test:Teardown] Stop Azure Data Factory '{Name}' data flow debug session '{SessionId}'", DataFactory.Id.Name, SessionId);
                 await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = SessionId });
             }
 
@@ -439,19 +449,20 @@ namespace Arcus.Testing
         internal Collection<string> LinkedServiceNames { get; } = new();
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
         internal IDictionary<string, IDictionary<string, object>> DataSetParameters { get; } = new Dictionary<string, IDictionary<string, object>>();
+        internal Collection<string> FlowletNames { get; } = new();
 
         /// <summary>
-        /// Adds a parameter to the DataFlow to run.
+        /// Adds a parameter to the data flow to run.
         /// </summary>
+        /// <remarks>
+        ///     <para>For string parameters, the value must be enclosed in single quotes (example: <c>"'myValue'"</c>).</para>
+        ///     <para>For boolean parameters, the value must be either <c>"true()"</c> or <c>"false()"</c>.</para>
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="name"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="value"/> is null.</exception>
         public RunDataFlowOptions AddDataFlowParameter(string name, object value)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("DataFlow parameter name should not be blank", nameof(name));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
             ArgumentNullException.ThrowIfNull(value);
 
             DataFlowParameters[name] = BinaryData.FromObjectAsJson(value);
@@ -459,25 +470,17 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Adds a parameter to a DataSet that is part of the targeted DataFlow.
+        /// Adds a parameter to a dataset that is part of the targeted data flow.
         /// </summary>
         /// <remarks>
-        ///     The <paramref name="sourceOrSinkName"/> should be the "Output stream name" of the source or sink dataset in the DataFlow, not than the actual DataSet name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings" />.
+        ///     The <paramref name="sourceOrSinkName"/> should be the "Output stream name" of the source or sink dataset in the data flow, not than the actual dataset name, see <a href="https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings" />.
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="sourceOrSinkName"/> or the <paramref name="parameterName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="parameterValue"/> is null.</exception>
         public RunDataFlowOptions AddDataSetParameter(string sourceOrSinkName, string parameterName, object parameterValue)
         {
-            if (string.IsNullOrWhiteSpace(sourceOrSinkName))
-            {
-                throw new ArgumentException("Source or Sink name should not be blank", nameof(sourceOrSinkName));
-            }
-
-            if (string.IsNullOrWhiteSpace(parameterName))
-            {
-                throw new ArgumentException("DataSet parameter name should not be blank", nameof(parameterName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(sourceOrSinkName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(parameterName);
             ArgumentNullException.ThrowIfNull(parameterValue);
 
             if (!DataSetParameters.ContainsKey(sourceOrSinkName))
@@ -490,7 +493,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the limit of rows for the preview response of the DataFlow run (default: 100 rows).
+        /// Gets or sets the limit of rows for the preview response of the data flow run (default: 100 rows).
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
         public int MaxRows
@@ -498,32 +501,38 @@ namespace Arcus.Testing
             get => _maxRows;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentOutOfRangeException(
-                        nameof(value), value, "Requires a maximum row limit greater than zero for the preview response of the DataFlow run");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
                 _maxRows = value;
             }
         }
 
         /// <summary>
-        /// Adds an additional linked service to the Azure DataFactory debug session.
+        /// Adds an additional linked service to the Azure Data Factory debug session.
         /// </summary>
         /// <remarks>
         ///     This can be used to add, for example, Azure Key vault linked services that are needed when datasets require a vault for their authentication.
         /// </remarks>
-        /// <param name="serviceName">The name of the linked service in Azure DataFactory.</param>
+        /// <param name="serviceName">The name of the linked service in Azure Data Factory.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="serviceName"/> is blank.</exception>
         public RunDataFlowOptions AddLinkedService(string serviceName)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
-            {
-                throw new ArgumentException("Linked service name should not be blank", nameof(serviceName));
-            }
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(serviceName);
             LinkedServiceNames.Add(serviceName);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a flowlet to the Azure Data Factory debug session.
+        /// </summary>
+        /// <remarks>
+        ///     This can be used to add flowlets that are needed when the data flow contains flowlets.
+        /// </remarks>
+        /// <param name="flowletName">The name of the linked service in Azure Data Factory.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="flowletName"/> is blank.</exception>
+        public RunDataFlowOptions AddFlowlet(string flowletName)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(flowletName);
+            FlowletNames.Add(flowletName);
             return this;
         }
     }
