@@ -1,0 +1,348 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Storage account
+
+<Tabs groupId="storage-systems">
+<TabItem value="blob" label="Blob storage" default>
+
+The `Arcus.Testing.Storage.Blob` package provides test fixtures related to Azure Blob Storage. By using the common testing practice 'clean environment', it provides a temporary Blob container and Blob file.
+
+## Installation
+The following functionality is available when installing this package:
+
+```powershell
+PM> Install-Package -Name Arcus.Testing.Storage.Blob
+```
+
+:::info
+Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights if the test needs to create/update/delete containers.
+:::
+
+## Temporary Blob container
+The `TemporaryBlobContainer` provides a solution when the integration test requires a storage system (container) during the test run. An Azure Blob container is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ Whether or not the test fixture should use an existing container is configurable.
+
+```csharp
+using Arcus.Testing;
+
+await using var container = await TemporaryBlobContainer.CreateIfNotExistsAsync(
+    "<account-name", "<container-name>", logger);
+
+// Interact with the container during the lifetime of the fixture.
+BlobContainerClient client = container.Client;
+```
+
+Uploading blobs to the container can also be done via the test fixture. It always make sure that any uploaded blobs will be removed afterwards. If the blob file already exists, it replaces the contents and reverts this replacement when the container test fixture disposes. (a.k.a. UPSERT).
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryBlobContainer container = ...
+
+BlobClient client = await container.UpsertBlobFileAsync(
+    "<blob-name>", BinaryData.FromString("<blob-content>"));
+```
+
+:::praise
+The `TemporaryBlobContainer` will always remove any Azure Blobs that were uploaded on the temporary container itself with the `container.UpsertBlobAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
+### Customization
+The setup and teardown process of the temporary container is configurable. **By default, it always removes/reverts any resources that it was responsible for creating/replacing.**
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Leaves all Azure Blob files untouched that already existed,
+    // upon the test fixture creation, when there was already an Azure Blob container available.
+    options.OnSetup.LeaveAllBlobs();
+
+    // Delete all Azure Blob files upon the test fixture creation, 
+    // when there was already an Azure Blob container available.
+    options.OnSetup.CleanAllBlobs();
+
+    // Delete Azure Blob files that matches any of the configured filters, 
+    // upon the test fixture creation, when there was already an Azure Blob container available.
+    options.OnSetup.CleanMatchingBlobs((BlobItem blob) => blob.Name.StartsWith("test-"));
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default for cleaning blob files)
+    // Delete/revert Azure Blob files upon the test fixture disposal that were upserted by the fixture.
+    options.OnTeardown.CleanUpsertedBlobs();
+
+    // Delete all Azure Blob files upon the test fixture disposal, 
+    // even if the test fixture didn't uploaded them.
+    options.OnTeardown.CleanAllBlobs();
+
+    // Delete additional Azure Blob files that matches any of the configured filters, 
+    // upon the test fixture disposal.
+    // ⚠️ Blob files upserted by the test fixture itself will always be deleted/reverted.
+    options.OnTeardown.CleanMatchingBlobs((BlobItem blob) => blob.Name.StartsWith("test-"));
+
+    // (Default for deleting container)
+    // Delete Azure Blob container if the test fixture created the container.
+    options.OnTeardown.DeleteCreatedContainer();S
+
+    // Delete Azure Blob container regardless if the test fixture created the container or not.
+    options.OnTeardown.DeleteExistingContainer();
+});
+
+// `OnTeardown` is also still available after the temporary container is created:
+await using TemporaryBlobContainer container = ...
+
+container.OnTeardown.CleanMatchingBlobs(...);
+```
+
+## Temporary Blob file
+The `TemporaryBlobFile` provides a solution when the integration test requires data (blob) during the test run. An Azure Blob file is created (if new) or replaced (if existing) upon the setup of the test fixture and is deleted (if new) or reverted (if existing) again when the test fixture is disposed.
+
+```csharp
+using Arcus.Testing;
+
+await using var file = await TemporaryBlobFile.UpsertFileAsync(
+    blobContainerUri: new Uri("<blob-container-uri">),
+    blobName: "<blob-name>",
+    blobContent: BinaryData.FromString("<blob-content">),
+    logger: logger);
+
+// Interact with the blob during the lifetime of the fixture.
+BlobClient client = file.Client;
+```
+
+</TabItem>
+<TabItem value="table" label="Table storage">
+
+The `Arcus.Testing.Storage.Table` package provides test fixtures related to Azure Table Storage. By using the common testing practice 'clean environment', it provides a temporary Table and Table entity.
+
+## Installation
+The following functionality is available when installing this package:
+
+```powershell
+PM> Install-Package -Name Arcus.Testing.Storage.Table
+```
+
+:::info
+Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)-rights if the test needs to create/update/delete tables.
+:::
+
+## Temporary Table
+The `TemporaryTable` provides a solution when the integration test requires a storage system (table) during the test run. An Azure Table is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+```csharp
+using Arcus.Testing;
+
+await using var table = await TemporaryTable.CreateIfNotExistsAsync(
+    "<account-name", "<table-name>", logger);
+
+// Interact with the table during the lifetime of the fixture.
+TableClient client = table.Client;
+```
+
+> 🎖️ Overloads are available to fully control the authentication mechanism to Azure Table Storage. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
+
+Upserting entities to the table can also be done via the test fixture. It always make sure that any added entities will be removed/reverted afterwards upon disposal.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryTable table = ...
+
+ITableEntity myEntity = ...
+await table.UpsertEntityAsync(myEntity);
+```
+
+:::praise
+The `TemporaryTable` will always remove/revert any Azure Table entities that were upserted on the temporary table itself with the `table.UpsertEntityAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
+### Customization
+The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryTable.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Leaves all Azure Table entities untouched that already existed,
+    // upon the test fixture creation, when there was already an Azure Table available.
+    options.OnSetup.LeaveAllEntities();
+
+    // Delete all Azure Table entities upon the test fixture creation, 
+    // when there was already an Azure Table available.
+    options.OnSetup.CleanAllEntities();
+
+    // Delete Azure Table entities that matches any of the configured filters, 
+    // upon the test fixture creation, when there was already an Azure Table available.
+    options.OnSetup.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default for cleaning entities)
+    // Delete/Revert Azure Table entities upon the test fixture disposal that were upserted by the fixture.
+    options.OnTeardown.CleanUpsertedEntities();
+
+    // Delete all Azure Table entities upon the test fixture disposal, 
+    // even if the test fixture didn't added them.
+    options.OnTeardown.CleanAllEntities();
+
+    // Delete additional Azure Table entities that matches any of the configured filters, 
+    // upon the test fixture disposal.
+    // ⚠️ Entities upserted by the test fixture itself always be deleted/reverted, even if the entities do not match one of the filters.
+    options.OnTeardown.CleanMatchingEntities((TableEntity entity) => entity["Test"] = "Value");
+});
+
+// `OnTeardown` is also still available after the temporary table is created:
+await using TemporaryTable table = ...
+
+table.OnTeardown.CleanAllEntities();
+```
+
+## Temporary Table entity
+The `TemporaryTableEntity` provides a solution when the integration test requires data (table) during the test run. An Azure Table entity is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ When the entity already existed (already an entity with a same configured entity row and partition key), then the test fixture will revert to the original content of the entity upon the test fixture disposal.
+
+```csharp
+using Arcus.Testing;
+
+ITableEntity entity = ...
+
+await using var entity = await TemporaryTableEntity.UpsertEntityAsync(
+    "<account-name>", "<table-name>", entity, logger);
+```
+
+> 🎖️ Overloads are available to fully control the authentication mechanism to Azure Table Storage. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
+
+</TabItem>
+<TabItem value="file-share" label="File share storage">
+
+The `Arcus.Testing.Storage.File.Share` package provides test fixtures related to Azure Files share storage. By using the common testing practice 'clean environment', it provides a temporary Share directory and Share file.
+
+## Installation
+The following functionality is available when installing this package:
+
+```powershell
+PM> Install-Package -Name Arcus.Testing.Storage.File.Share
+```
+
+:::warning
+When using `TokenCredential` overloads (recommended: managed-identity), make sure to:
+* 🛡️ enable [Identity-based access for file shares](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-identity-auth-domain-services-enable?tabs=azure-portal) to make sure that the file shares can be accessed via Entra ID.
+* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor)-rights if the test needs to create/update/delete share directories/files.
+* 🛡️ include the [Share token intent](https://learn.microsoft.com/en-us/azure/storage/files/authorize-oauth-rest?tabs=portal#authorize-access-to-file-data-in-application-code), otherwise the file operations won't get authorized correctly.
+:::
+
+## Temporary share directory
+The `TemporaryShareDirectory` provides a solution when the integration test requires a storage system (file share) during the test run. An Azure Share directory is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+```csharp
+using Arcus.Testing;
+using Azure.Storage.Files.Shares;
+
+var shareClient = new ShareClient(...);
+
+await using var directory = await TemporaryShareDirectory.CreateIfNotExistsAsync(
+    shareClient, "<directory-name", logger);
+
+// Interact with the directory during the lifetime of the fixture.
+ShareDirectoryClient client = directory.Client;
+```
+
+Upserting files to the directory can also be done via the test fixture. It always make sure that any uploaded files will be deleted (if the file was new) or reverted (if the file already existed) afterwards upon disposal.
+
+```csharp
+using Arcus.Testing;
+
+await using TemporaryShareDirectory directory = ...
+
+string fileName = "TestFile";
+await using Stream fileContents = File.OpenRead(...);
+
+await directory.UpsertFileAsync(fileName, fileContents);
+```
+
+:::praise
+The `TemporaryShareDirectory` will always remove any Azure Share files that were added on the temporary directory  itself with the `directory.UpsertFileAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+:::
+
+### Customization
+The setup and teardown process of the temporary table is configurable. **By default, it always removes any resources that it was responsible for creating.**
+
+:::note
+Both files and subdirectories are meant by 'Azure Share items':
+:::
+
+```csharp
+using Arcus.Testing;
+
+await TemporaryShareDirectory.CreateIfNotExistsAsync(..., options =>
+{
+    // Options related to when the test fixture is set up.
+    // ---------------------------------------------------
+
+    // (Default) Leaves all Azure Share items untouched that already existed,
+    // upon the test fixture creation, when there was already an Azure Share available.
+    options.OnSetup.LeaveAllItems();
+
+    // Delete all Azure Share items upon the test fixture creation, 
+    // when there was already an Azure Share available.
+    options.OnSetup.CleanAllItems();
+
+    // Delete Azure Share items that matches any of the configured filters, 
+    // upon the test fixture creation, when there was already an Azure Share available.
+    options.OnSetup.CleanMatchingItems((ShareFileItem item) => item.Name == "TestFile");
+
+    // Options related to when the test fixture is teared down.
+    // --------------------------------------------------------
+
+    // (Default) Delete/Revert Azure Share items upon the test fixture disposal that were upserted by the fixture.
+    options.OnTeardown.CleanUpsertedItems();
+
+    // Delete all Azure Share items upon the test fixture disposal, 
+    // even if the test fixture didn't added them.
+    options.OnTeardown.CleanAllItems();
+
+    // Delete additional Azure Share items that matches any of the configured filters, 
+    // upon the test fixture disposal.
+    // ⚠️ Items upserted by the test fixture itself will always be deleted/reverted.
+    options.OnTeardown.CleanMatchingItems((ShareFileItem item) => item.Name == "TestFile");
+});
+
+// `OnTeardown` is also still available after the temporary directory is created:
+await using TemporaryShareDirectory directory = ...
+
+directory.OnTeardown.CleanAllItems();
+```
+
+## Temporary share file
+The `TemporaryShareFile` provides a solution when the integration test requires data (file share) during the test run. An Azure Share file item is added upon the setup of the test fixture and is deleted again when the test fixture is disposed.
+
+> ⚡ When the file already existed (already a file with a same file name), then the test fixture will revert to the original content of the file upon the test fixture disposal.
+
+```csharp
+using Arcus.Testing;
+
+ShareDirectoryClient client = ...
+
+string fileName = "TestFile";
+await using Stream fileContents = File.OpenRead(...);
+
+await using var file = await TemporaryShareFile.UpsertFileAsync(
+    client, fileName, fileContents, logger);
+```
+
+</TabItem>
+</Tabs>
