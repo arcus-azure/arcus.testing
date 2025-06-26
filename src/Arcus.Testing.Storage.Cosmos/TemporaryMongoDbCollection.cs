@@ -155,7 +155,7 @@ namespace Arcus.Testing
         ///   <para>Multiple calls will aggregate together in an OR expression.</para>
         ///   <para>
         ///     The matching of documents only happens on MongoDB documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match of the filters.
+        ///     All documents upserted by the test fixture will be deleted or reverted upon disposal, even if the documents do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         ///   </para>
         /// </remarks>
@@ -176,7 +176,7 @@ namespace Arcus.Testing
         ///   <para>Multiple calls will aggregate together in an OR expression.</para>
         ///   <para>
         ///     The matching of documents only happens on MongoDB documents that were created outside the scope of the test fixture.
-        ///     All documents created by the test fixture will be deleted or reverted upon disposal, even if the documents do not match of the filters.
+        ///     All documents upserted by the test fixture will be deleted or reverted upon disposal, even if the documents do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
         ///   </para>
         /// </remarks>
