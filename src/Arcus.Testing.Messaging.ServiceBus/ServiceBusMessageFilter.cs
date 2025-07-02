@@ -17,7 +17,7 @@ namespace Arcus.Testing
     {
         private readonly string _entityName, _subscriptionName;
         private readonly ServiceBusClient _client;
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _predicates = new();
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _predicates = [];
 
         private bool _fromDeadLetter;
         private int _maxMessages = 100;

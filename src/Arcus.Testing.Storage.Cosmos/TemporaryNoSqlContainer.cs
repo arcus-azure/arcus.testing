@@ -210,9 +210,12 @@ namespace Arcus.Testing
         /// in an Azure Cosmos DB for NoSQL container upon disposal that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
+        ///   <para>Multiple calls will be aggregated together in an OR expression.</para>
+        ///   <para>
         ///     The matching of items only happens on NoSQL items that were created outside the scope of the test fixture.
-        ///     All items created by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
+        ///     All items upserted by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        ///   </para>
         /// </remarks>
         /// <param name="filters">The filters  to match NoSQL items that should be removed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
@@ -237,9 +240,12 @@ namespace Arcus.Testing
         /// in an Azure Cosmos DB for NoSQL container upon disposal that match any of the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
+        ///   <para>Multiple calls will be aggregated together in an OR expression.</para>
+        ///   <para>
         ///     The matching of items only happens on NoSQL items that were created outside the scope of the test fixture.
         ///     All items upserted by the test fixture will be deleted or reverted upon disposal, even if the items do not match one of the filters.
         ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        ///   </para>
         /// </remarks>
         /// <typeparam name="TItem">The custom type of the NoSQL item.</typeparam>
         /// <param name="filters">The filters  to match NoSQL items that should be removed.</param>

@@ -29,7 +29,7 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertJsonOptions
     {
-        private readonly Collection<string> _ignoredNodeNames = new();
+        private readonly Collection<string> _ignoredNodeNames = [];
         private AssertJsonOrder _order = AssertJsonOrder.Ignore;
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 

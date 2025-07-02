@@ -30,7 +30,7 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertXmlOptions
     {
-        private readonly Collection<string> _ignoredNodeNames = new();
+        private readonly Collection<string> _ignoredNodeNames = [];
         private AssertXmlOrder _order = AssertXmlOrder.Ignore;
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 
@@ -410,7 +410,7 @@ namespace Arcus.Testing
                     ?.OfType<XmlAttribute>()
                     .Where(a => a.NamespaceURI != namespaceDefinition
                                 && !options.IgnoredNodeNames.Contains(a.LocalName))
-                    .ToArray() ?? Array.Empty<XmlAttribute>();
+                    .ToArray() ?? [];
         }
 
         /// <summary>

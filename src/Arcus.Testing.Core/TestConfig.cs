@@ -11,7 +11,7 @@ namespace Arcus.Testing
     /// </summary>
     public class TestConfigOptions
     {
-        private readonly Collection<string> _localAppSettingsNames = new() { "appsettings.local.json" };
+        private readonly Collection<string> _localAppSettingsNames = ["appsettings.local.json"];
 
         /// <summary>
         /// Override the default 'appsettings.json' JSON path where the test configuration values are retrieved from.

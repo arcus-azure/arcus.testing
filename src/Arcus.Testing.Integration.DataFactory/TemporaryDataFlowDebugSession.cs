@@ -446,10 +446,10 @@ namespace Arcus.Testing
     {
         private int _maxRows = 100;
 
-        internal Collection<string> LinkedServiceNames { get; } = new();
+        internal Collection<string> LinkedServiceNames { get; } = [];
         internal IDictionary<string, BinaryData> DataFlowParameters { get; } = new Dictionary<string, BinaryData>();
         internal IDictionary<string, IDictionary<string, object>> DataSetParameters { get; } = new Dictionary<string, IDictionary<string, object>>();
-        internal Collection<string> FlowletNames { get; } = new();
+        internal Collection<string> FlowletNames { get; } = [];
 
         /// <summary>
         /// Adds a parameter to the data flow to run.

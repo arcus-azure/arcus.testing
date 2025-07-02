@@ -14,7 +14,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupTemporaryTopicSubscriptionOptions
     {
-        private readonly Collection<Action<CreateSubscriptionOptions>> _configureSubscriptionOptions = new();
+        private readonly Collection<Action<CreateSubscriptionOptions>> _configureSubscriptionOptions = [];
 
         /// <summary>
         /// Configures the <see cref="Azure.Messaging.ServiceBus.Administration.CreateSubscriptionOptions"/> used when the test fixture creates the topic subscription.
@@ -62,7 +62,7 @@ namespace Arcus.Testing
     public class TemporaryTopicSubscription : IAsyncDisposable
     {
         private readonly ServiceBusAdministrationClient _client;
-        private readonly Collection<CreateRuleOptions> _rules = new();
+        private readonly Collection<CreateRuleOptions> _rules = [];
 
         private readonly CreateSubscriptionOptions _options;
         private readonly bool _createdByUs;

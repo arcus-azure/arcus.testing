@@ -21,8 +21,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupTemporaryQueueOptions
     {
-        private readonly Collection<Action<CreateQueueOptions>> _configuredOptions = new();
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = new(), _shouldCompleteMessages = new();
+        private readonly Collection<Action<CreateQueueOptions>> _configuredOptions = [];
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = [], _shouldCompleteMessages = [];
 
         internal OnSetupQueue Messages { get; private set; }
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
@@ -183,7 +183,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryQueueOptions
     {
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = new(), _shouldCompleteMessages = new();
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = [], _shouldCompleteMessages = [];
 
         private OnTeardownQueue Messages { get; set; }
 
