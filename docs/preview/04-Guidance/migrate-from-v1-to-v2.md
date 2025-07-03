@@ -89,7 +89,7 @@ TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
 ```
 
 ### `NoSqlItemFilter` ➡️ `Func<NoSqlItem, bool>`
-Previous versions had a dedicated type called `NoSqlItemFilter` to filter out certain Azure Cosmos NoSql items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
+Previous versions had a dedicated type called `NoSqlItemFilter` to filter out certain Azure Cosmos DB for NoSQL items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
 
 ```diff
 TemporaryNoSqlContainer.CreateIfNoExistsAsync(..., options =>

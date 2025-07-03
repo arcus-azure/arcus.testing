@@ -11,7 +11,7 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Integration.DataFactory
 ```
 
-## Temporary DataFlow debug session
+## Temporary data flow debug session
 The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatically tracking the process of an Azure Data Factory data flow under test. More information on data flow debugging can be found on [Mapping data flow Debug Mode](https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-debug-mode?tabs=data-factory).
 
 The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
@@ -231,12 +231,12 @@ await session.RunDataFlowAsync(..., options =>
     options.AddDataFlowParameter("<name>", "'<value>'");
 
     // Adds a dataset parameter to the data flow upon starting.
-    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the data flow, not the actual DataSet name.
+    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the data flow, not the actual dataset name.
     // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
     options.AddDataSetParameter("<source-or-sink-name>", "<parameter-name>", "<parameter-value>");
 
     // Add additional linked services to the debug session.
-    // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.
+    // 💡 This can be useful to add, for example, an additional Key Vault linked services for certain authentication types of datasets.
     options.AddLinkedService("datafactory_sales_keyvaultLS");
 
     // The maximum amount of rows to include in the preview response (default: 100 rows).
@@ -248,7 +248,7 @@ await session.RunDataFlowAsync(..., options =>
 When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
 :::
 
-## Run a Data pipeline
+## Run an Azure Data Factory pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../../01-core.md) packages:
 
 ```csharp
@@ -268,5 +268,5 @@ DataFactoryPipelineRunInfo finalStatus =
               .Until(current => current.Status == "Succeeded")
               .Every(TimeSpan.FromSeconds(5))
               .Timeout(TimeSpan.FromMinutes(1))
-              .FailWith("DataFactory pipeline did not succeeded within the expected time frame");
+              .FailWith("Azure Data Factory pipeline did not succeeded within the expected time frame");
 ```
