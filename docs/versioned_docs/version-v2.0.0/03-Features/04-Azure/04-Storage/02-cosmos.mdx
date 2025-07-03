@@ -91,7 +91,7 @@ await TemporaryMongoDbCollection.CreateIfNotExistsAsync(..., options =>
 
     // Delete all MongoDB documents that matches any of the configured filters,
     // upon the test fixture disposal, even if the test fixture didn't upserted them.
-    // ⚠️ MongoDb documents upserted by the test fixture will be deleted/reverted, even if the documents don't match the configured filters.
+    // ⚠️ MongoDB documents upserted by the test fixture will be deleted/reverted, even if the documents don't match the configured filters.
     options.OnTeardown.CleanMatchingDocuments(
       Builders<Shipment>.Filter.Eq(s => s.BoatName, "The Alice"));
 

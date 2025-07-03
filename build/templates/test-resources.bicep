@@ -1,32 +1,32 @@
 // Define the location for the deployment of the components.
 param location string
 
-// Define the name of the DataFactory resource that will be created.
+// Define the name of the Azure Data Factory resource that will be created.
 param dataFactoryName string
 
 // Define the name of the storage account that will be created.
 param storageAccountName string
 
-// Define the name of the CosmosDb MongoDb database account that will be created.
-param cosmosDb_mongoDb_name string
+// Define the name of the Cosmos DB for MongoDB database account that will be created.
+param cosmosDbMongoDbName string
 
-// Define the name of the CosmosDb MongoDb database that will be created.
-param cosmosDb_mongoDb_databaseName string
+// Define the name of the Cosmos DB for MongoDB database that will be created.
+param cosmosDbMongoDbDatabaseName string
 
-// Define the name of the CosmosDb NoSql database account that will be created.
-param cosmosDb_noSql_name string
+// Define the name of the Cosmos DB for NoSQL database account that will be created.
+param cosmosDbNoSqlName string
 
-// Define the name of the CosmosDb NoSql database that will be created.
-param cosmosDb_noSql_databaseName string
+// Define the name of the Cosmos DB for NoSQL database that will be created.
+param cosmosDbNoSqlDatabaseName string
 
-// Define the name of the Service bus namespace resource that will be created.
+// Define the name of the Service Bus namespace resource that will be created.
 param serviceBusNamespaceName string
 
-// Define the name of the key vault where the necessary secrets will be stored to access the deployed test resources.
+// Define the name of the Key Vault where the necessary secrets will be stored to access the deployed test resources.
 param keyVaultName string
 
-// Define the Service Principal ID that needs access full access to the deployed resource group.
-param servicePrincipal_objectId string
+// Define the service principal ID that needs access full access to the deployed resource group.
+param servicePrincipalObjectId string
 
 module factory 'br/public:avm/res/data-factory/factory:0.4.0' = {
   name: 'dataFactoryDeployment'
@@ -51,11 +51,11 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
     }
     roleAssignments: [
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'Storage Blob Data Contributor'
       }
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'Storage Table Data Contributor'
       }
     ]
@@ -65,7 +65,7 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
 module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.6.0' = {
   name: 'cosmosMongoDbDeployment'
   params: {
-    name: cosmosDb_mongoDb_name
+    name: cosmosDbMongoDbName
     location: location
     enableFreeTier: true
     capabilitiesToAdd: [
@@ -74,12 +74,12 @@ module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.6.0' =
     ]
     mongodbDatabases: [
       {
-        name: cosmosDb_mongoDb_databaseName
+        name: cosmosDbMongoDbDatabaseName
       }
     ]
     roleAssignments: [
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'DocumentDB Account Contributor'
       }
     ]
@@ -90,7 +90,7 @@ module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.6.0' =
 module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
   name: 'cosmosNoSqlDeployment'
   params: {
-    name: cosmosDb_noSql_name
+    name: cosmosDbNoSqlName
     location: location
     disableLocalAuth: false
     capabilitiesToAdd: [
@@ -98,17 +98,17 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
     ]
     sqlDatabases: [
       {
-        name: cosmosDb_noSql_databaseName
+        name: cosmosDbNoSqlDatabaseName
       }
     ]
     roleAssignments: [
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'DocumentDB Account Contributor'
       }
     ]
     sqlRoleAssignmentsPrincipalIds: [
-      servicePrincipal_objectId
+      servicePrincipalObjectId
     ]
     sqlRoleDefinitions: [
       {
@@ -141,7 +141,7 @@ module serviceBusNamespace 'br/public:avm/res/service-bus/namespace:0.10.1' = {
     zoneRedundant: false
     roleAssignments: [
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'Azure Service Bus Data Owner'
       }
     ]
@@ -155,7 +155,7 @@ module vault 'br/public:avm/res/key-vault/vault:0.6.1' = {
     location: location
     roleAssignments: [
       {
-        principalId: servicePrincipal_objectId
+        principalId: servicePrincipalObjectId
         roleDefinitionIdOrName: 'Key Vault Secrets officer'
       }
     ]
