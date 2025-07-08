@@ -138,7 +138,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             string ruleName = $"rule-{Guid.NewGuid()}";
             _ruleNames.Add((topicName, subscriptionName, ruleName));
-            
+
             return ruleName;
         }
 

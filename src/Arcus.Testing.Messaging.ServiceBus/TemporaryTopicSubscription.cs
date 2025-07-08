@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -203,7 +203,7 @@ namespace Arcus.Testing
 
             var options = new TemporaryTopicSubscriptionOptions();
             configureOptions?.Invoke(options);
-            
+
             CreateSubscriptionOptions createOptions = options.OnSetup.CreateSubscriptionOptions(topicName, subscriptionName);
 
             NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync();
@@ -282,7 +282,7 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () => 
+                    disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () =>
                     {
                         if (await _client.RuleExistsAsync(TopicName, Name, r.Name))
                         {
