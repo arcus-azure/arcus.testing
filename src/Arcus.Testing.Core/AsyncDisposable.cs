@@ -8,9 +8,9 @@ namespace Arcus.Testing
     /// </summary>
     public class AsyncDisposable : IAsyncDisposable
     {
-        private readonly Func<ValueTask> _disposeAsync;
+        private readonly Func<Task> _disposeAsync;
 
-        private AsyncDisposable(Func<ValueTask> disposeAsync)
+        private AsyncDisposable(Func<Task> disposeAsync)
         {
             ArgumentNullException.ThrowIfNull(disposeAsync);
             _disposeAsync = disposeAsync;
@@ -51,7 +51,7 @@ namespace Arcus.Testing
         public static AsyncDisposable Create(Func<Task> disposeAsync)
         {
             ArgumentNullException.ThrowIfNull(disposeAsync);
-            return new AsyncDisposable(async () => await disposeAsync());
+            return new AsyncDisposable(disposeAsync);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await _disposeAsync();
+            await _disposeAsync().ConfigureAwait(false);
             GC.SuppressFinalize(this);
         }
     }
