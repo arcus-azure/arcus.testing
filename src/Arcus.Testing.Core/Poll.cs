@@ -15,7 +15,7 @@ namespace Arcus.Testing
     public class Poll<TException> : Poll<int, TException> where TException : Exception
     {
         internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options)
-            : base(async () => { await getTargetWithoutResultAsync(); return 0; }, options)
+            : base(async () => { await getTargetWithoutResultAsync().ConfigureAwait(false); return 0; }, options)
         {
             ArgumentNullException.ThrowIfNull(getTargetWithoutResultAsync);
         }
@@ -153,7 +153,8 @@ namespace Arcus.Testing
             PolicyResult<TResult> target =
                 await Policy.TimeoutAsync(_options.Timeout)
                             .WrapAsync(retryPolicy)
-                            .ExecuteAndCaptureAsync(_getTargetWithResultAsync);
+                            .ExecuteAndCaptureAsync(_getTargetWithResultAsync)
+                            .ConfigureAwait(false);
 
             if (target.Outcome is OutcomeType.Failure)
             {
