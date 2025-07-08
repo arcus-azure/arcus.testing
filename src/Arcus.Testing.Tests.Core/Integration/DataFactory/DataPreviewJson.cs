@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Bogus;
 using Xunit;
 
@@ -57,7 +57,7 @@ namespace Arcus.Testing.Tests.Core.Integration.DataFactory
             });
 
             return Assert.IsType<JsonArray>(JsonSerializer.SerializeToNode(values));
-        } 
+        }
 
         /// <summary>
         /// Generates a run result of a DataFlow that represents a JSON array.
