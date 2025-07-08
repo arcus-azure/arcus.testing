@@ -144,7 +144,7 @@ namespace Arcus.Testing
                     ? _client.CreateReceiver(_entityName, options)
                     : _client.CreateReceiver(_entityName, _subscriptionName, options);
 
-            IReadOnlyList<ServiceBusReceivedMessage> messages = 
+            IReadOnlyList<ServiceBusReceivedMessage> messages =
                 await receiver.PeekMessagesAsync(_maxMessages, cancellationToken: cancellationToken);
 
             return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();

@@ -27,7 +27,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         /// <returns></returns>
         public static TestJson Generate()
         {
-            string json = 
+            string json =
                 Bogus.Random.Bool()
                     ? GenerateJsonObject()
                     : GenerateJsonArray();
@@ -202,7 +202,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
             if (node is JsonObject obj)
             {
-                IDictionary<string, JsonNode> items = 
+                IDictionary<string, JsonNode> items =
                     Bogus.Random.Shuffle(obj)
                          .ToDictionary(p => p.Key, p => Shuffle(p.Value));
 

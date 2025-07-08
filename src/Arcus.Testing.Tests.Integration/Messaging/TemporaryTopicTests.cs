@@ -23,7 +23,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await using var serviceBus = GivenServiceBus();
 
             string topicName = serviceBus.WhenTopicUnavailable();
-            
+
             // Act
             TemporaryTopic temp = await CreateTempTopicAsync(topicName);
 
@@ -220,7 +220,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
                         options.OnSetup.CreateTopicWith(topic => topic.Name = topicName);
                         configureOptions(options);
                     });
-            
+
             Assert.Equal(topicName, temp.Name);
             Assert.Equal(fullyQualifiedNamespace, temp.FullyQualifiedNamespace);
 

@@ -77,7 +77,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.DeadLetterMessages;
-            
+
             return this;
         }
 
@@ -128,7 +128,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.CompleteMessages;
-            
+
             return this;
         }
 
@@ -290,7 +290,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownQueue.CompleteMessages;
-            
+
             return this;
         }
 
@@ -390,9 +390,9 @@ namespace Arcus.Testing
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _messagingClientCreatedByUs = messagingClientCreatedByUs;
-            
+
             _queueCreatedByUs = queueCreatedByUs;
-            
+
             _options = options ?? new TemporaryQueueOptions();
             _logger = logger ?? NullLogger.Instance;
 
@@ -461,7 +461,7 @@ namespace Arcus.Testing
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
-            
+
             return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
         }
 

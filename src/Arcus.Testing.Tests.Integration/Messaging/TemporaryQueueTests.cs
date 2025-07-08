@@ -174,7 +174,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
         {
             string fullyQualifiedNamespace = Configuration.GetServiceBus().HostName;
 
-            var temp = 
+            var temp =
                 configureOptions is null
                     ? await TemporaryQueue.CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, Logger)
                     : await TemporaryQueue.CreateIfNotExistsAsync(fullyQualifiedNamespace, Bogus.Random.Guid().ToString(), Logger, configureOptions:

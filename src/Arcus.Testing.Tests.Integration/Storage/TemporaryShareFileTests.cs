@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Azure.Storage.Files.Shares;
 using Xunit;
-using Xunit.Abstractions;
 using DirClient = Azure.Storage.Files.Shares.ShareDirectoryClient;
 using FileClient = Azure.Storage.Files.Shares.ShareFileClient;
 
