@@ -37,7 +37,7 @@ namespace Arcus.Testing.Tests.Unit.Messaging.ServiceBus
             var messagingClient = new Mock<ServiceBusClient>();
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryQueue.CreateIfNotExistsAsync(adminClient: null, messagingClient.Object, "<queue-name>", NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryQueue.CreateIfNotExistsAsync(adminClient: null, messagingClient.Object, "<queue-name>", NullLogger.Instance, configureOptions: _ => { }));
-            
+
             var adminClient = new Mock<ServiceBusAdministrationClient>();
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryQueue.CreateIfNotExistsAsync(adminClient.Object, messagingClient: null, "<queue-name>", NullLogger.Instance));
             await Assert.ThrowsAnyAsync<ArgumentException>(() => TemporaryQueue.CreateIfNotExistsAsync(adminClient.Object, messagingClient: null, "<queue-name>", NullLogger.Instance, configureOptions: _ => { }));

@@ -75,7 +75,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.DeadLetterMessages;
-            
+
             return this;
         }
 
@@ -96,7 +96,7 @@ namespace Arcus.Testing
             return this;
         }
 
-         /// <summary>
+        /// <summary>
         /// Configures the <see cref="TemporaryTopic"/> to complete any pre-existing messages on all available topic subscriptions
         /// upon the creation of the test fixture.
         /// </summary>
@@ -120,10 +120,10 @@ namespace Arcus.Testing
         public OnSetupTemporaryTopicOptions CompleteMessages(TimeSpan maxWaitTime)
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(maxWaitTime, TimeSpan.Zero);
-            
+
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupMessagesTopic.CompleteMessages;
-            
+
             return this;
         }
 
@@ -284,7 +284,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownMessagesTopic.CompleteMessages;
-            
+
             return this;
         }
 
@@ -386,7 +386,7 @@ namespace Arcus.Testing
             _messagingClientCreatedByUs = messagingClientCreatedByUs;
 
             _topicCreatedByUs = topicCreatedByUs;
-            
+
             _options = options ?? new TemporaryTopicOptions();
             _logger = logger;
 
