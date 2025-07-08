@@ -13,7 +13,6 @@ tab_width = 4
 
 # New line preferences
 end_of_line = crlf
-charset = utf-8
 insert_final_newline = false
 
 #### .NET Code Actions ####
