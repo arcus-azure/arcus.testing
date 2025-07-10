@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -37,11 +38,11 @@ namespace Arcus.Testing
             string message = formatter(state, exception);
 
             var builder = new StringBuilder();
-            builder.Append($"{DateTimeOffset.UtcNow:s} {logLevel} > {message}");
+            builder.Append(CultureInfo.InvariantCulture, $"{DateTimeOffset.UtcNow:s} {logLevel} > {message}");
 
             if (exception is not null)
             {
-                builder.Append($": {exception}");
+                builder.Append(CultureInfo.InvariantCulture, $": {exception}");
             }
 
             _outputWriter.WriteLine(builder.ToString());

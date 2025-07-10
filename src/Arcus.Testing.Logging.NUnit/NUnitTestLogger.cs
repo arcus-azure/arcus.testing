@@ -91,7 +91,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
-        /// <returns>An <see cref="T:System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
+        /// <returns>An <see cref="IDisposable" /> that ends the logical operation scope on dispose.</returns>
         public IDisposable BeginScope<TState>(TState state)
         {
             return null;

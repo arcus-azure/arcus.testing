@@ -27,14 +27,9 @@ namespace Microsoft.Extensions.Logging
         }
 
         [ProviderAlias("MSTest")]
-        private sealed class MSTestLoggerProvider : ILoggerProvider
+        private sealed class MSTestLoggerProvider(TestContext context) : ILoggerProvider
         {
-            private readonly ILogger _logger;
-
-            public MSTestLoggerProvider(TestContext context)
-            {
-                _logger = new MSTestLogger(context);
-            }
+            private readonly ILogger _logger = new MSTestLogger(context);
 
             public ILogger CreateLogger(string categoryName)
             {

@@ -47,18 +47,11 @@ namespace Microsoft.Extensions.Logging
         }
 
         [ProviderAlias("NUnit")]
-        private sealed class NUnitLoggerProvider : ILoggerProvider
+        private sealed class NUnitLoggerProvider(NUnitTestLogger logger) : ILoggerProvider
         {
-            private readonly NUnitTestLogger _logger;
-
-            public NUnitLoggerProvider(NUnitTestLogger logger)
-            {
-                _logger = logger;
-            }
-
             public ILogger CreateLogger(string categoryName)
             {
-                return _logger;
+                return logger;
             }
 
             public void Dispose()
