@@ -529,7 +529,7 @@ namespace Arcus.Testing
             /// <summary>
             /// Loads the raw <paramref name="headerNames"/> and <paramref name="rows"/> to a validly parsed <see cref="CsvTable"/>.
             /// </summary>
-            internal static CsvTable Load(
+            internal static DataFlowPreviewCsvTable Load(
                 IEnumerable<string> headerNames,
                 IEnumerable<IEnumerable<string>> rows,
                 AssertCsvOptions options)
