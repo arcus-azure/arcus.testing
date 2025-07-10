@@ -117,7 +117,9 @@ namespace Arcus.Testing
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
         /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
         /// </summary>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality")]
+#pragma warning restore S1133
         public OnTeardownBlobContainerOptions CleanCreatedBlobs()
         {
             return CleanUpsertedBlobs();
@@ -336,13 +338,13 @@ namespace Arcus.Testing
             bool createdByUs = false;
             if (!await containerClient.ExistsAsync())
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
+                logger.LogSetupCreateNewContainer(containerClient.Name, containerClient.AccountName);
                 await containerClient.CreateIfNotExistsAsync();
                 createdByUs = true;
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Blob container '{ContainerName}' in account '{AccountName}'", containerClient.Name, containerClient.AccountName);
+                logger.LogSetupUseExistingContainer(containerClient.Name, containerClient.AccountName);
             }
 
             return createdByUs;
@@ -355,7 +357,9 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality")]
+#pragma warning restore S1133
         public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
             return await UpsertBlobFileAsync(blobName, blobContent);
@@ -401,7 +405,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Blob container '{ContainerName}' from account '{AccountName}'", Client.Name, Client.AccountName);
+                    _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
                     await Client.DeleteIfExistsAsync();
                 }));
             }
@@ -422,7 +426,7 @@ namespace Arcus.Testing
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
-                    logger.LogDebug("[Test:Setup] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
+                    logger.LogSetupDeleteFile(blob.Name, containerClient.AccountName, containerClient.Name);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
@@ -441,10 +445,35 @@ namespace Arcus.Testing
             {
                 if (options.OnTeardown.IsMatched(blob))
                 {
-                    logger.LogDebug("[Test:Teardown] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", blob.Name, containerClient.AccountName, containerClient.Name);
+                    logger.LogTeardownDeleteFile(blob.Name, containerClient.AccountName, containerClient.Name);
                     await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
                 }
             }
         }
+    }
+
+    internal static partial class TempBlobContainerILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Blob container '{ContainerName}' in account '{AccountName}'")]
+        internal static partial void LogSetupCreateNewContainer(this ILogger logger, string containerName, string accountName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Blob container '{ContainerName}' in account '{AccountName}'")]
+        internal static partial void LogSetupUseExistingContainer(this ILogger logger, string containerName, string accountName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'")]
+        internal static partial void LogSetupDeleteFile(this ILogger logger, string blobName, string accountName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Blob container '{ContainerName}' from account '{AccountName}'")]
+        internal static partial void LogTeardownDeleteContainer(this ILogger logger, string containerName, string accountName);
     }
 }

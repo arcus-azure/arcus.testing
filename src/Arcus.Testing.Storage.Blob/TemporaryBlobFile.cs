@@ -62,7 +62,9 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
+#pragma warning restore S1133
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
             return await UpsertFileAsync(blobContainerUri, blobName, blobContent, logger);
@@ -75,7 +77,9 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
+#pragma warning restore S1133
         public static async Task<TemporaryBlobFile> UploadIfNotExistsAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
         {
             return await UpsertFileAsync(blobClient, blobContent, logger);
@@ -139,13 +143,13 @@ namespace Arcus.Testing
             {
                 BlobDownloadResult originalContent = await client.DownloadContentAsync();
 
-                logger.LogDebug("[Test:Setup] Replace already existing Azure Blob file '{BlobName}' in container '{AccountName}/{ContainerName}'", client.Name, client.AccountName, client.BlobContainerName);
+                logger.LogSetupReplaceFile(client.Name, client.AccountName, client.BlobContainerName);
                 await client.UploadAsync(newContent, overwrite: true);
 
                 return (createdByUs: false, originalContent.Content);
             }
 
-            logger.LogDebug("[Test:Setup] Upload Azure Blob file '{BlobName}' to container '{AccountName}/{ContainerName}'", client.Name, client.AccountName, client.BlobContainerName);
+            logger.LogSetupUploadNewFile(client.Name, client.AccountName, client.BlobContainerName);
             await client.UploadAsync(newContent);
 
             return (createdByUs: true, originalData: null);
@@ -159,16 +163,41 @@ namespace Arcus.Testing
         {
             if (_createdByUs)
             {
-                _logger.LogDebug("[Test:Teardown] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'", Client.Name, Client.AccountName, Client.BlobContainerName);
+                _logger.LogTeardownDeleteFile(Client.Name, Client.AccountName, Client.BlobContainerName);
                 await Client.DeleteIfExistsAsync();
             }
             else if (_originalData != null)
             {
-                _logger.LogDebug("[Test:Teardown] Revert replaced Azure Blob file '{BlobName}' to original content in container '{AccountName}/{ContainerName}'", Client.Name, Client.AccountName, Client.BlobContainerName);
+                _logger.LogTeardownRevertFile(Client.Name, Client.AccountName, Client.BlobContainerName);
                 await Client.UploadAsync(_originalData, overwrite: true);
             }
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempBlobFileILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Upload Azure Blob file '{BlobName}' to container '{AccountName}/{ContainerName}'")]
+        internal static partial void LogSetupUploadNewFile(this ILogger logger, string blobName, string accountName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Replace already existing Azure Blob file '{BlobName}' in container '{AccountName}/{ContainerName}'")]
+        internal static partial void LogSetupReplaceFile(this ILogger logger, string blobName, string accountName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Blob file '{BlobName}' from container '{AccountName}/{ContainerName}'")]
+        internal static partial void LogTeardownDeleteFile(this ILogger logger, string blobName, string accountName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert replaced Azure Blob file '{BlobName}' to original content in container '{AccountName}/{ContainerName}'")]
+        internal static partial void LogTeardownRevertFile(this ILogger logger, string blobName, string accountName, string containerName);
     }
 }
