@@ -106,7 +106,7 @@ namespace Arcus.Testing
         {
             if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
                 || headersNode is not JsonValue header
-                || !header.ToString().StartsWith("output"))
+                || !header.ToString().StartsWith("output", StringComparison.InvariantCulture))
             {
                 throw new JsonException(
                     $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
@@ -417,7 +417,7 @@ namespace Arcus.Testing
         {
             if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
                 || headersNode is not JsonValue headersValue
-                || !headersValue.ToString().StartsWith("output"))
+                || !headersValue.ToString().StartsWith("output", StringComparison.InvariantCulture))
             {
                 throw new CsvException(
                     $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
