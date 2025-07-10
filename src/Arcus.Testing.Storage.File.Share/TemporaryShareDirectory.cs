@@ -188,9 +188,9 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="shareClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="directoryName"/> is blank.</exception>
-        public static async Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareClient shareClient, string directoryName, ILogger logger)
+        public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareClient shareClient, string directoryName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(shareClient, directoryName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(shareClient, directoryName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -202,7 +202,7 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="shareClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="directoryName"/> is blank.</exception>
-        public static async Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
+        public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
             ShareClient shareClient,
             string directoryName,
             ILogger logger,
@@ -212,7 +212,7 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(directoryName);
 
             ShareDirectoryClient dirClient = shareClient.GetDirectoryClient(directoryName);
-            return await CreateIfNotExistsAsync(dirClient, logger, configureOptions);
+            return CreateIfNotExistsAsync(dirClient, logger, configureOptions);
         }
 
         /// <summary>
@@ -221,9 +221,9 @@ namespace Arcus.Testing
         /// <param name="directoryClient">The client to interact with the directory share in the Azure Files share resource.</param>
         /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareDirectoryClient directoryClient, ILogger logger)
+        public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareDirectoryClient directoryClient, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(directoryClient, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(directoryClient, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace Arcus.Testing
 
             if (await directoryClient.ExistsAsync())
             {
-                logger.LogTrace("[Test:Setup] Use already existing Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'", directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
+                logger.LogSetupUseExistingDirectory(directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
                 await CleanDirectoryOnSetupAsync(directoryClient, options, logger);
 
                 return new TemporaryShareDirectory(directoryClient, createdByUs: false, options, logger);
@@ -254,7 +254,7 @@ namespace Arcus.Testing
 
             try
             {
-                logger.LogTrace("[Test:Setup] Create new Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'", directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
+                logger.LogSetupCreateNewDirectory(directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
                 await directoryClient.CreateAsync();
             }
             catch (RequestFailedException exception) when (exception.ErrorCode == ShareErrorCode.ShareNotFound)
@@ -316,7 +316,7 @@ namespace Arcus.Testing
 
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Delete Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'", Client.Name, Client.AccountName, Client.Path);
+                    _logger.LogTeardownDeleteDirectory(Client.Name, Client.AccountName, Client.Path);
                     await Client.DeleteAsync();
                 }));
             }
@@ -368,7 +368,7 @@ namespace Arcus.Testing
                         {
                             await DeleteAllDirectoryContentsAsync(sub, state, logger);
 
-                            logger.LogTrace("[Test:{State}] Delete Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'", state, sub.Name, sub.AccountName, sub.Path);
+                            LogDeleteDirectory(logger, state, sub.Name, sub.AccountName, sub.Path);
                             await sub.DeleteIfExistsAsync();
                         }
                         else
@@ -380,16 +380,74 @@ namespace Arcus.Testing
                     {
                         ShareFileClient file = current.GetFileClient(item.Name);
 
-                        logger.LogTrace("[Test:{State}] Delete Azure Files share item '{FileName}' at '{AccountName}/{FilePath}'", state, file.Name, file.AccountName, file.Path);
+                        LogDeleteFile(logger, state, file.Name, file.AccountName, file.Path);
                         await file.DeleteIfExistsAsync();
                     }
                 }
             }));
         }
 
+        private static void LogDeleteDirectory(ILogger logger, TestFixture state, string directoryName, string accountName, string directoryPath)
+        {
+            switch (state)
+            {
+                case TestFixture.Setup:
+                    logger.LogSetupDeleteDirectory(directoryName, accountName, directoryPath);
+                    break;
+
+                case TestFixture.Teardown:
+                    logger.LogTeardownDeleteDirectory(directoryName, accountName, directoryPath);
+                    break;
+            }
+        }
+
+        private static void LogDeleteFile(ILogger logger, TestFixture state, string fileName, string accountName, string filePath)
+        {
+            switch (state)
+            {
+                case TestFixture.Setup:
+                    logger.LogSetupDeleteFile(fileName, accountName, filePath);
+                    break;
+
+                case TestFixture.Teardown:
+                    logger.LogTeardownDeleteFile(fileName, accountName, filePath);
+                    break;
+            }
+        }
+
         private static async Task DeleteAllDirectoryContentsAsync(ShareDirectoryClient current, TestFixture state, ILogger logger)
         {
             await DeleteDirectoryContentsAsync(current, shouldDeleteItem: _ => true, state, logger);
         }
+    }
+
+    internal static partial class TempShareDirectoryILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'")]
+        internal static partial void LogSetupCreateNewDirectory(this ILogger logger, string directoryName, string accountName, string directoryPath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'")]
+        internal static partial void LogSetupUseExistingDirectory(this ILogger logger, string directoryName, string accountName, string directoryPath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Delete Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'")]
+        internal static partial void LogSetupDeleteDirectory(this ILogger logger, string directoryName, string accountName, string directoryPath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Delete Azure Files share item '{FileName}' at '{AccountName}/{FilePath}'")]
+        internal static partial void LogSetupDeleteFile(this ILogger logger, string fileName, string accountName, string filePath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Files share directory '{DirectoryName}' at '{AccountName}/{DirectoryPath}'")]
+        internal static partial void LogTeardownDeleteDirectory(this ILogger logger, string directoryName, string accountName, string directoryPath);
     }
 }

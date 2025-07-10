@@ -48,13 +48,13 @@ namespace Arcus.Testing
         /// <param name="logger">The instance to log diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> or the <paramref name="fileContents"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
-        public static async Task<TemporaryShareFile> UpsertFileAsync(ShareDirectoryClient directoryClient, string fileName, Stream fileContents, ILogger logger)
+        public static Task<TemporaryShareFile> UpsertFileAsync(ShareDirectoryClient directoryClient, string fileName, Stream fileContents, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(directoryClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
             ShareFileClient fileClient = directoryClient.GetFileClient(fileName);
-            return await UpsertFileAsync(fileClient, fileContents, logger);
+            return UpsertFileAsync(fileClient, fileContents, logger);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace Arcus.Testing
 
             if (await fileClient.ExistsAsync())
             {
-                logger.LogTrace("[Test:Setup] Replace already existing Azure Files share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
+                logger.LogSetupReplaceExistingFile(fileClient.Name, fileClient.AccountName, fileClient.Path);
 
                 ShareFileDownloadInfo result = await fileClient.DownloadAsync();
                 await fileClient.CreateAsync(fileStream.Length);
@@ -87,7 +87,8 @@ namespace Arcus.Testing
 
             try
             {
-                logger.LogTrace("[Test:Setup] Upload Azure Files share file '{FileName}' in directory '{AccountName}/{FilePath}'", fileClient.Name, fileClient.AccountName, fileClient.Path);
+                logger.LogSetupUploadNewFile(fileClient.Name, fileClient.AccountName, fileClient.Path);
+
                 await fileClient.CreateAsync(fileStream.Length);
                 await fileClient.UploadAsync(fileStream);
             }
@@ -123,7 +124,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Delete Azure Files share file '{FileName}' in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
+                    _logger.LogTeardownDeleteFile(Client.Name, Client.AccountName, Client.Path);
                     await Client.DeleteIfExistsAsync();
                 }));
             }
@@ -131,7 +132,8 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTrace("[Test:Teardown] Replace Azure Files share file '{FileName}' with original contents in directory '{AccountName}/{DirectoryName}'", Client.Name, Client.AccountName, Client.Path);
+                    _logger.LogTeardownRevertFile(Client.Name, Client.AccountName, Client.Path);
+
                     await Client.CreateAsync(_original.length);
                     await Client.UploadAsync(_original.stream);
 
@@ -141,5 +143,30 @@ namespace Arcus.Testing
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempShareFileILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Upload new Azure Files share file '{FileName}' at '{AccountName}/{FilePath}'")]
+        internal static partial void LogSetupUploadNewFile(this ILogger logger, string fileName, string accountName, string filePath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Replace already existing Azure Files share file '{FileName}' at '{AccountName}/{FilePath}'")]
+        internal static partial void LogSetupReplaceExistingFile(this ILogger logger, string fileName, string accountName, string filePath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Files share file '{FileName}' at '{AccountName}/{FilePath}'")]
+        internal static partial void LogTeardownDeleteFile(this ILogger logger, string fileName, string accountName, string filePath);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Replace Azure Files share file '{FileName}' with original contents at '{AccountName}/{FilePath}'")]
+        internal static partial void LogTeardownRevertFile(this ILogger logger, string fileName, string accountName, string filePath);
     }
 }
