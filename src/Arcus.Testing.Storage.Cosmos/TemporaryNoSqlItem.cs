@@ -63,7 +63,9 @@ namespace Arcus.Testing
         /// <param name="item">The item to temporary create in the NoSQL container.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be deleted in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " instead which provides the exact same functionality")]
+#pragma warning restore S1133
         public static async Task<TemporaryNoSqlItem> InsertIfNotExistsAsync<TItem>(Container container, TItem item, ILogger logger)
         {
             return await UpsertItemAsync(container, item, logger);
@@ -83,31 +85,33 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(container);
             logger ??= NullLogger.Instance;
+            Type itemType = typeof(TItem);
 
             JsonNode json = JsonSerializer.SerializeToNode(item, SerializeToNodeOptions);
-            string itemId = ExtractIdFromItem(json, typeof(TItem));
+            string itemId = ExtractIdFromItem(json, itemType);
 
             ContainerResponse resp = await container.ReadContainerAsync();
             PartitionKey partitionKey = ExtractPartitionKeyFromItem(json, resp.Resource);
 
             try
             {
-                return await ReplaceExistingItemAsync(container, itemId, partitionKey, item, logger);
+                return await ReplaceExistingItemAsync(container, itemType, itemId, partitionKey, item, logger);
             }
             catch (CosmosException exception) when (exception.StatusCode is HttpStatusCode.NotFound)
             {
-                return await InsertNewItemAsync(container, itemId, partitionKey, item, logger);
+                return await InsertNewItemAsync(container, itemType, itemId, partitionKey, item, logger);
             }
         }
 
         private static async Task<TemporaryNoSqlItem> ReplaceExistingItemAsync<TItem>(
             Container container,
+            Type itemType,
             string itemId,
             PartitionKey partitionKey,
             TItem item,
             ILogger logger)
         {
-            logger.LogTrace("[Test:Setup] Try replacing NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB For NoSQL container '{DatabaseName}/{ContainerName}'...", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
+            logger.LogBeforeSetupReplaceItem(itemType.Name, itemId, container.Database.Id, container.Id);
             ItemResponse<TItem> response = await container.ReadItemAsync<TItem>(itemId, partitionKey);
 
             CosmosSerializer serializer = container.Database.Client.ClientOptions.Serializer;
@@ -120,7 +124,7 @@ namespace Arcus.Testing
             TItem original = response.Resource;
             var originalItemStream = serializer.ToStream(original);
 
-            logger.LogDebug("[Test:Setup] Replace NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
+            logger.LogSetupReplaceItem(itemType.Name, itemId, container.Database.Id, container.Id);
             await container.ReplaceItemAsync(item, itemId, partitionKey);
 
             return new TemporaryNoSqlItem(container, itemId, partitionKey, typeof(TItem), createdByUs: false, originalItemStream, logger);
@@ -128,21 +132,22 @@ namespace Arcus.Testing
 
         private static async Task<TemporaryNoSqlItem> InsertNewItemAsync<TItem>(
             Container container,
+            Type itemType,
             string itemId,
             PartitionKey partitionKey,
             TItem item,
             ILogger logger)
         {
-            logger.LogDebug("[Test:Setup] Insert new NoSQL '{ItemType}' item '{ItemId}' to Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", typeof(TItem).Name, itemId, container.Database.Id, container.Id);
+            logger.LogSetupInsertNewItem(itemType.Name, itemId, container.Database.Id, container.Id);
             ItemResponse<TItem> response = await container.CreateItemAsync(item);
 
             if (response.StatusCode != HttpStatusCode.Created)
             {
                 throw new RequestFailedException(
-                    (int) response.StatusCode, $"[Test:Setup] Unable to insert a new NoSQL '{typeof(TItem).Name}' item into the Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}': {response.StatusCode} - " + response.Diagnostics);
+                    (int) response.StatusCode, $"[Test:Setup] Unable to insert a new NoSQL '{itemType.Name}' item into the Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}': {response.StatusCode} - " + response.Diagnostics);
             }
 
-            return new TemporaryNoSqlItem(container, itemId, partitionKey, typeof(TItem), createdByUs: true, originalItemStream: null, logger);
+            return new TemporaryNoSqlItem(container, itemId, partitionKey, itemType, createdByUs: true, originalItemStream: null, logger);
         }
 
         /// <summary>
@@ -157,7 +162,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
+                    _logger.LogTeardownDeleteItem(_itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.DeleteItemStreamAsync(Id, PartitionKey);
 
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
@@ -172,7 +177,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Revert replaced NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'", _itemType.Name, Id, _container.Database.Id, _container.Id);
+                    _logger.LogTeardownRevertItem(_itemType.Name, Id, _container.Database.Id, _container.Id);
                     using ResponseMessage response = await _container.ReplaceItemStreamAsync(_originalItemStream, Id, PartitionKey);
 
                     if (!response.IsSuccessStatusCode)
@@ -190,5 +195,35 @@ namespace Arcus.Testing
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempNoSqlItemILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Insert new NoSQL '{ItemType}' item '{ItemId}' to Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'")]
+        internal static partial void LogSetupInsertNewItem(this ILogger logger, string itemType, string itemId, string databaseName, string containerName);
+
+        [LoggerMessage(
+            Level = LogLevel.Trace,
+            Message = "[Test:Setup] Try replacing NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB For NoSQL container '{DatabaseName}/{ContainerName}'...")]
+        internal static partial void LogBeforeSetupReplaceItem(this ILogger logger, string itemTYpe, string itemId, string databaseName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Replace NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'")]
+        internal static partial void LogSetupReplaceItem(this ILogger logger, string itemType, string itemId, string databaseName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'")]
+        internal static partial void LogTeardownDeleteItem(this ILogger logger, string itemType, string itemId, string databaseName, string containerName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert replaced NoSQL '{ItemType}' item '{ItemId}' in Azure Cosmos DB for NoSQL container '{DatabaseName}/{ContainerName}'")]
+        internal static partial void LogTeardownRevertItem(this ILogger logger, string itemType, string itemId, string databaseName, string containerName);
     }
 }

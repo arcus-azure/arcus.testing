@@ -120,7 +120,9 @@ namespace Arcus.Testing
         /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was inserted by the test fixture
         /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality")]
+#pragma warning restore S1133
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
         {
             return CleanUpsertedDocuments();
@@ -217,7 +219,9 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a temporary Azure Cosmos DB for MongoDB collection that will be deleted after the instance is disposed.
     /// </summary>
+#pragma warning disable CA1711 // Type ends with '...Collection' because it represents a 'MongoDB collection' in Azure Cosmos DB, not because it is a .NET type.
     public class TemporaryMongoDbCollection : IAsyncDisposable
+#pragma warning restore CA1711
     {
         private readonly bool _createdByUs;
         private readonly IMongoDatabase _database;
@@ -360,13 +364,13 @@ namespace Arcus.Testing
             using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions);
             if (await collectionNames.AnyAsync())
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Cosmos DB for MongoDB '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
+                logger.LogSetupUseExistingCollection(collectionName, database.DatabaseNamespace.DatabaseName);
 
                 await CleanCollectionOnSetupAsync(database, collectionName, options, logger);
                 return new TemporaryMongoDbCollection(createdByUs: false, collectionName, database, logger, options);
             }
 
-            logger.LogDebug("[Test:Setup] Create new Azure Cosmos DB MongoDB '{CollectionName}' collection in database '{DatabaseName}'", collectionName, database.DatabaseNamespace.DatabaseName);
+            logger.LogSetupCreateNewCollection(collectionName, database.DatabaseNamespace.DatabaseName);
             await database.CreateCollectionAsync(collectionName);
 
             return new TemporaryMongoDbCollection(createdByUs: true, collectionName, database, logger, options);
@@ -383,13 +387,13 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
-                logger.LogDebug("[Test:Setup] Clean all documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogSetupCleanAllDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
-                logger.LogDebug("[Test:Setup] Clean all matching documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'", database.DatabaseNamespace.DatabaseName, collectionName);
+                logger.LogSetupCleanAllMatchingDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
                 await collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
         }
@@ -413,7 +417,9 @@ namespace Arcus.Testing
         /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
         /// <param name="document">The document to upload to the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
+#pragma warning restore S1133
         public async Task AddDocumentAsync<TDocument>(TDocument document)
         {
             await UpsertDocumentAsync(document);
@@ -450,7 +456,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos DB for MongoDB '{CollectionName}' collection in database '{DatabaseName}'", Name, _database.DatabaseNamespace.DatabaseName);
+                    _logger.LogTeardownDeleteCollection(Name, _database.DatabaseNamespace.DatabaseName);
                     await _database.DropCollectionAsync(Name);
                 }));
             }
@@ -476,15 +482,55 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
-                _logger.LogDebug("[Test:Teardown] Clean all documents in Azure Cosmos DB for MongoDB '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogTeardownCleanAllDocuments(_database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
-                _logger.LogDebug("[Test:Teardown] Clean all matching documents in Azure Cosmos DB for MongoDB '{DatabaseName}/{CollectionName}' collection", _database.DatabaseNamespace.DatabaseName, Name);
+                _logger.LogTeardownCleanAllMatchingDocuments(_database.DatabaseNamespace.DatabaseName, Name);
                 await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
         }
+    }
+
+    internal static partial class TempMongoDbCollectionILoggerExtensions
+    {
+        internal const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Cosmos DB MongoDB collection '{CollectionName}' in database '{DatabaseName}'")]
+        internal static partial void LogSetupCreateNewCollection(this ILogger logger, string collectionName, string databaseName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Cosmos DB for MongoDB collection '{CollectionName}' in database '{DatabaseName}'")]
+        internal static partial void LogSetupUseExistingCollection(this ILogger logger, string collectionName, string databaseName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Clean all documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogSetupCleanAllDocuments(this ILogger logger, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Clean all matching documents in Azure Cosmos DB MongoDB collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogSetupCleanAllMatchingDocuments(this ILogger logger, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Clean all documents in Azure Cosmos DB for MongoDB collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogTeardownCleanAllDocuments(this ILogger logger, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Clean all matching documents in Azure Cosmos DB for MongoDB collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogTeardownCleanAllMatchingDocuments(this ILogger logger, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Cosmos DB for MongoDB collection '{CollectionName}' in database '{DatabaseName}'")]
+        internal static partial void LogTeardownDeleteCollection(this ILogger logger, string collectionName, string databaseName);
     }
 }

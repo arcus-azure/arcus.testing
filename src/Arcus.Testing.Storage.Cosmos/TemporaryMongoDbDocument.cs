@@ -69,7 +69,9 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
+#pragma warning restore S1133
         public static async Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -88,7 +90,9 @@ namespace Arcus.Testing
         /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
+#pragma warning restore S1133
         public static async Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
         {
             return await UpsertDocumentAsync(collection, document, logger);
@@ -152,11 +156,12 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(collection);
             ArgumentNullException.ThrowIfNull(document);
             logger ??= NullLogger.Instance;
+            Type documentType = typeof(TDocument);
 
             IMongoCollection<BsonDocument> collectionBson =
                 collection.Database.GetCollection<BsonDocument>(collection.CollectionNamespace.CollectionName);
 
-            BsonMemberMap idMemberMap = DetermineIdMemberMap(collection);
+            BsonMemberMap idMemberMap = DetermineIdMemberMap(collection, documentType);
             var bson = document.ToBsonDocument();
             BsonValue id = DetermineId(collection, bson, idMemberMap);
 
@@ -164,38 +169,40 @@ namespace Arcus.Testing
             using IAsyncCursor<BsonDocument> existingDocs = await collectionBson.FindAsync(findOneDocument);
 
             List<BsonDocument> matchingDocs = await existingDocs.ToListAsync();
+
             if (matchingDocs.Count > 1)
             {
                 throw new InvalidOperationException(
                     $"[Test:Setup] Cannot temporary insert a document in the Azure Cosmos DB for MongoDB collection '{collection.CollectionNamespace.FullName}' " +
-                    $"as the passed filter expression for document type '{typeof(TDocument).Name}' matches more than a single document, " +
+                    $"as the passed filter expression for document type '{documentType.Name}' matches more than a single document, " +
                     $"please stricken the filter expression so that it only matches a single document, if you want to temporary replace the document");
             }
 
+            object documentId = BsonTypeMapper.MapToDotNetValue(id);
             if (matchingDocs.Count is 0)
             {
-                logger.LogDebug("[Test:Setup] Insert new Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'", typeof(TDocument).Name, BsonTypeMapper.MapToDotNetValue(id), collection.Database.DatabaseNamespace.DatabaseName, collection.CollectionNamespace.FullName);
+                logger.LogSetupInsertNewDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collection.CollectionNamespace.CollectionName);
 
                 await collectionBson.InsertOneAsync(bson);
-                return new TemporaryMongoDbDocument(id, typeof(TDocument), findOneDocument, originalDoc: null, collectionBson, logger);
+                return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc: null, collectionBson, logger);
             }
 
-            logger.LogDebug("[Test:Setup] Replace Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'", typeof(TDocument).Name, BsonTypeMapper.MapToDotNetValue(id), collection.Database.DatabaseNamespace.DatabaseName, collection.CollectionNamespace.FullName);
+            logger.LogSetupReplaceDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collection.CollectionNamespace.CollectionName);
 
             BsonDocument originalDoc = matchingDocs.Single();
             await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson);
 
-            return new TemporaryMongoDbDocument(id, typeof(TDocument), findOneDocument, originalDoc, collectionBson, logger);
+            return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, collectionBson, logger);
         }
 
-        private static BsonMemberMap DetermineIdMemberMap<TDocument>(IMongoCollection<TDocument> collection)
+        private static BsonMemberMap DetermineIdMemberMap<TDocument>(IMongoCollection<TDocument> collection, Type documentType)
         {
-            BsonClassMap classMap = BsonClassMap.LookupClassMap(typeof(TDocument));
+            BsonClassMap classMap = BsonClassMap.LookupClassMap(documentType);
             if (classMap.IdMemberMap is null)
             {
                 throw new InvalidOperationException(
                     $"[Test:Setup] Cannot temporary insert a document in the Azure Cosmos DB for MongoDB collection '{collection.CollectionNamespace.FullName}' " +
-                    $"as the passed document type '{typeof(TDocument).Name}' has no member map defined for the '_id' property, " +
+                    $"as the passed document type '{documentType.Name}' has no member map defined for the '_id' property, " +
                     $"please see the MongoDb documentation for more information on this required property: https://www.mongodb.com/docs/drivers/csharp/current/fundamentals/crud/write-operations/insert/#the-_id-field");
             }
 
@@ -231,7 +238,7 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Delete Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'", _documentType.Name, id, _collection.Database.DatabaseNamespace.DatabaseName, _collection.CollectionNamespace.FullName);
+                    _logger.LogTeardownDeleteDocument(_documentType.Name, id, _collection.Database.DatabaseNamespace.DatabaseName, _collection.CollectionNamespace.CollectionName);
                     await _collection.DeleteOneAsync(_filter);
                 }));
             }
@@ -239,12 +246,37 @@ namespace Arcus.Testing
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogDebug("[Test:Teardown] Revert replaced Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'", _documentType.Name, id, _collection.Database.DatabaseNamespace.DatabaseName, _collection.CollectionNamespace.FullName);
+                    _logger.LogTeardownRevertDocument(_documentType.Name, id, _collection.Database.DatabaseNamespace.DatabaseName, _collection.CollectionNamespace.CollectionName);
                     await _collection.ReplaceOneAsync(_filter, _originalDoc);
                 }));
             }
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempMongoDbDocumentILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Insert new Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogSetupInsertNewDocument(this ILogger logger, string documentType, object documentId, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Replace Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogSetupReplaceDocument(this ILogger logger, string documentType, object documentId, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogTeardownDeleteDocument(this ILogger logger, string documentType, object documentId, string databaseName, string collectionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert replaced Azure Cosmos DB for MongoDB '{DocumentType}' document '{DocumentId}' in collection '{DatabaseName}/{CollectionName}'")]
+        internal static partial void LogTeardownRevertDocument(this ILogger logger, string documentType, object documentId, string databaseName, string collectionName);
     }
 }
