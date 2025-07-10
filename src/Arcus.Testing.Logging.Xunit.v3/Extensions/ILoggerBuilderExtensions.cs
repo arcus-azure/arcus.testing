@@ -26,14 +26,9 @@ namespace Microsoft.Extensions.Logging
         }
 
         [ProviderAlias("Xunit")]
-        private sealed class XunitLoggerProvider : ILoggerProvider
+        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider
         {
-            private readonly ILogger _logger;
-
-            internal XunitLoggerProvider(ITestOutputHelper outputWriter)
-            {
-                _logger = new XunitTestLogger(outputWriter);
-            }
+            private readonly ILogger _logger = new XunitTestLogger(outputWriter);
 
             /// <summary>
             /// Creates a new <see cref="ILogger" /> instance.
