@@ -52,7 +52,7 @@ namespace Arcus.Testing
             XslCompiledTransform transformer = Load(xsltTransformer);
             XmlNode input = AssertXml.Load(inputXml);
 
-            XmlNode resultDoc = TransformToXml(transformer, input, arguments);
+            XmlDocument resultDoc = TransformToXml(transformer, input, arguments);
             return resultDoc.OuterXml;
         }
 
