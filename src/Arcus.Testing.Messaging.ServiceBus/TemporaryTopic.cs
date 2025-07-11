@@ -317,7 +317,7 @@ namespace Arcus.Testing
 
             if (shouldDeadLetter && shouldComplete)
             {
-                logger.LogWarning("[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'", message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
+                logger.LogTeardownAmbiguousMessageSettleOnTopic(message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
                 return MessageSettle.DeadLetter;
             }
 
@@ -428,9 +428,9 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="topicName"/> is blank.
         /// </exception>
-        public static async Task<TemporaryTopic> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, ILogger logger)
+        public static Task<TemporaryTopic> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -447,7 +447,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="topicName"/> is blank.
         /// </exception>
-        public static async Task<TemporaryTopic> CreateIfNotExistsAsync(
+        public static Task<TemporaryTopic> CreateIfNotExistsAsync(
             string fullyQualifiedNamespace,
             string topicName,
             ILogger logger,
@@ -459,7 +459,7 @@ namespace Arcus.Testing
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
 
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName, logger, configureOptions);
         }
 
         /// <summary>
@@ -473,13 +473,13 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> is blank.</exception>
-        public static async Task<TemporaryTopic> CreateIfNotExistsAsync(
+        public static Task<TemporaryTopic> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string topicName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, topicName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, topicName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -496,14 +496,14 @@ namespace Arcus.Testing
         /// </param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> is blank.</exception>
-        public static async Task<TemporaryTopic> CreateIfNotExistsAsync(
+        public static Task<TemporaryTopic> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string topicName,
             ILogger logger,
             Action<TemporaryTopicOptions> configureOptions)
         {
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, topicName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, topicName, logger, configureOptions);
         }
 
         private static async Task<TemporaryTopic> CreateIfNotExistsAsync(
@@ -524,24 +524,23 @@ namespace Arcus.Testing
 
             CreateTopicOptions createOptions = options.OnSetup.CreateTopicOptions(topicName);
 
+            bool topicCreatedByUs = false;
             if (await adminClient.TopicExistsAsync(createOptions.Name))
             {
-                logger.LogTrace("[Test:Setup] Use already existing Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name, topicCreatedByUs: false, options, logger);
-
-                await topic.CleanOnSetupAsync();
-                return topic;
+                logger.LogSetupUseExistingTopic(createOptions.Name, messagingClient.FullyQualifiedNamespace);
             }
             else
             {
-                logger.LogTrace("[Test:Setup] Create new Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                logger.LogSetupCreateNewTopic(createOptions.Name, messagingClient.FullyQualifiedNamespace);
+
                 await adminClient.CreateTopicAsync(createOptions);
-
-                var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name, topicCreatedByUs: true, options, logger);
-                await topic.CleanOnSetupAsync();
-
-                return topic;
+                topicCreatedByUs = true;
             }
+
+            var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name, topicCreatedByUs, options, logger);
+
+            await topic.CleanOnSetupAsync();
+            return topic;
         }
 
         private async Task CleanOnSetupAsync()
@@ -557,12 +556,12 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogSetupDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogSetupCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });
@@ -573,9 +572,9 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="subscriptionName">The name of the subscription within the topic.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        public async Task AddSubscriptionAsync(string subscriptionName)
+        public Task AddSubscriptionAsync(string subscriptionName)
         {
-            await AddSubscriptionAsync(subscriptionName, configureOptions: null);
+            return AddSubscriptionAsync(subscriptionName, configureOptions: null);
         }
 
         /// <summary>
@@ -605,7 +604,7 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTrace("[Test:Teardown] Delete Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'", Name, FullyQualifiedNamespace);
+                        _logger.LogTeardownDeleteTopic(Name, FullyQualifiedNamespace);
                         await _adminClient.DeleteTopicAsync(Name);
                     }));
                 }
@@ -632,12 +631,12 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogTeardownDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.DeadLetterMessageAsync(message);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    _logger.LogTeardownCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message);
                 }
             });
@@ -666,5 +665,50 @@ namespace Arcus.Testing
                 await operation(receiver, message);
             }
         }
+    }
+
+    internal static partial class TempTopicILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupCreateNewTopic(this ILogger logger, string topicName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupUseExistingTopic(this ILogger logger, string topicName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
+            Message = "[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'")]
+        internal static partial void LogTeardownAmbiguousMessageSettleOnTopic(this ILogger logger, string messageId, string @namespace, string topicName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownDeleteTopic(this ILogger logger, string topicName, string @namespace);
     }
 }
