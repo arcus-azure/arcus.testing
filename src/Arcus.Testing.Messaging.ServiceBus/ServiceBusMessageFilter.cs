@@ -84,9 +84,9 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
-        public async Task<bool> AnyAsync()
+        public Task<bool> AnyAsync()
         {
-            return await AnyAsync(CancellationToken.None);
+            return AnyAsync(CancellationToken.None);
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Arcus.Testing
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
             List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken);
-            return messages.Any();
+            return messages.Count > 0;
         }
 
         /// <summary>
@@ -118,9 +118,9 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
-        public async Task<List<ServiceBusReceivedMessage>> ToListAsync()
+        public Task<List<ServiceBusReceivedMessage>> ToListAsync()
         {
-            return await ToListAsync(CancellationToken.None);
+            return ToListAsync(CancellationToken.None);
         }
 
         /// <summary>

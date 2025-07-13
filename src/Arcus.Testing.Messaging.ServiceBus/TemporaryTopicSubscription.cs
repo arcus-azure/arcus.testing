@@ -53,7 +53,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the options related to setting up the <see cref="TemporaryTopicSubscription"/>.
         /// </summary>
-        public OnSetupTemporaryTopicSubscriptionOptions OnSetup { get; } = new OnSetupTemporaryTopicSubscriptionOptions();
+        public OnSetupTemporaryTopicSubscriptionOptions OnSetup { get; } = new();
     }
 
     /// <summary>
@@ -64,7 +64,6 @@ namespace Arcus.Testing
         private readonly ServiceBusAdministrationClient _client;
         private readonly Collection<CreateRuleOptions> _rules = [];
 
-        private readonly CreateSubscriptionOptions _options;
         private readonly bool _createdByUs;
         private readonly ILogger _logger;
 
@@ -80,12 +79,11 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(serviceBusNamespace);
 
             _client = client;
-            _options = options;
             _createdByUs = createdByUs;
             _logger = logger;
 
-            Name = _options.SubscriptionName;
-            TopicName = _options.TopicName;
+            Name = options.SubscriptionName;
+            TopicName = options.TopicName;
             FullyQualifiedNamespace = serviceBusNamespace;
         }
 
@@ -117,9 +115,9 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
         /// </exception>
-        public static async Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, string subscriptionName, ILogger logger)
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, string subscriptionName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -138,7 +136,7 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
         /// </exception>
-        public static async Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
             string fullyQualifiedNamespace,
             string topicName,
             string subscriptionName,
@@ -148,7 +146,7 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
 
             var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
-            return await CreateIfNotExistsAsync(client, topicName, subscriptionName, logger, configureOptions);
+            return CreateIfNotExistsAsync(client, topicName, subscriptionName, logger, configureOptions);
         }
 
         /// <summary>
@@ -164,13 +162,13 @@ namespace Arcus.Testing
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/>
         ///     in the given namespace where the given <paramref name="adminClient"/> points to.
         /// </exception>
-        public static async Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             string topicName,
             string subscriptionName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(adminClient, topicName, subscriptionName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(adminClient, topicName, subscriptionName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -219,11 +217,11 @@ namespace Arcus.Testing
 
             if (await adminClient.SubscriptionExistsAsync(createOptions.TopicName, createOptions.SubscriptionName))
             {
-                logger.LogTrace("[Test:Setup] Use already existing Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'", createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
+                logger.LogSetupUseExistingSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
                 return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: false, logger);
             }
 
-            logger.LogTrace("[Test:Setup] Create new Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'", createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
+            logger.LogSetupCreateNewSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
             await adminClient.CreateSubscriptionAsync(createOptions);
 
             return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: true, logger);
@@ -249,11 +247,11 @@ namespace Arcus.Testing
 
             if (await _client.RuleExistsAsync(TopicName, Name, ruleName))
             {
-                _logger.LogDebug("[Test] Skip creation of Azure Service Bus topic subscription rule '{RuleName}' in '{Namespace}/{TopicName}/{SubscriptionName}' as it already exists", ruleName, FullyQualifiedNamespace, TopicName, Name);
+                _logger.LogSkipCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
             }
             else
             {
-                _logger.LogDebug("[Test] Create new Azure Service Bus topic subscription rule '{RuleName}' in '{Namespace}/{TopicName}/{SubscriptionName}'", ruleName, FullyQualifiedNamespace, TopicName, Name);
+                _logger.LogCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
 
                 var options = new CreateRuleOptions(ruleName, ruleFilter);
                 await _client.CreateRuleAsync(TopicName, Name, options);
@@ -270,14 +268,14 @@ namespace Arcus.Testing
         {
             await using var disposables = new DisposableCollection(_logger);
 
-            if (await _client.SubscriptionExistsAsync(_options.TopicName, _options.SubscriptionName))
+            if (await _client.SubscriptionExistsAsync(TopicName, Name))
             {
                 if (_createdByUs)
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'", _options.SubscriptionName, FullyQualifiedNamespace, _options.TopicName);
-                        await _client.DeleteSubscriptionAsync(_options.TopicName, _options.SubscriptionName);
+                        _logger.LogTeardownDeleteSubscription(Name, FullyQualifiedNamespace, TopicName);
+                        await _client.DeleteSubscriptionAsync(TopicName, Name);
                     }));
                 }
                 else
@@ -286,7 +284,7 @@ namespace Arcus.Testing
                     {
                         if (await _client.RuleExistsAsync(TopicName, Name, r.Name))
                         {
-                            _logger.LogDebug("[Test:Teardown] Delete Azure Service Bus topic subscription rule '{RuleName}' in {Namespace}/{TopicName}/{SubscriptionName}", r.Name, FullyQualifiedNamespace, _options.TopicName, _options.SubscriptionName);
+                            _logger.LogTeardownDeleteSubscriptionRule(r.Name, FullyQualifiedNamespace, TopicName, Name);
                             await _client.DeleteRuleAsync(TopicName, Name, r.Name);
                         }
                     })));
@@ -295,5 +293,40 @@ namespace Arcus.Testing
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempTopicSubscriptionILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'")]
+        internal static partial void LogSetupCreateNewSubscription(this ILogger logger, string subscriptionName, string @namespace, string topicName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'")]
+        internal static partial void LogSetupUseExistingSubscription(this ILogger logger, string subscriptionName, string @namespace, string topicName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test] Create new Azure Service Bus topic subscription rule '{RuleName}' in '{Namespace}/{TopicName}/{SubscriptionName}'")]
+        internal static partial void LogCreateSubscriptionRule(this ILogger logger, string ruleName, string @namespace, string topicName, string subscriptionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test] Skip creation of Azure Service Bus topic subscription rule '{RuleName}' in '{Namespace}/{TopicName}/{SubscriptionName}' as it already exists")]
+        internal static partial void LogSkipCreateSubscriptionRule(this ILogger logger, string ruleName, string @namespace, string topicName, string subscriptionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Service Bus topic subscription rule '{RuleName}' in {Namespace}/{TopicName}/{SubscriptionName}")]
+        internal static partial void LogTeardownDeleteSubscriptionRule(this ILogger logger, string ruleName, string @namespace, string topicName, string subscriptionName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Service Bus topic subscription '{SubscriptionName}' in {Namespace}/{TopicName}")]
+        internal static partial void LogTeardownDeleteSubscription(this ILogger logger, string subscriptionName, string @namespace, string topicName);
     }
 }
