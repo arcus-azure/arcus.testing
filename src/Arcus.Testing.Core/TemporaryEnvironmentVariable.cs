@@ -75,19 +75,19 @@ namespace Arcus.Testing
             switch (currentValue, isSecret)
             {
                 case (null, false):
-                    logger.LogDebug("[Test:Setup] Set new environment variable '{Name}' with '{Value}'", variableName, variableValue);
+                    logger.LogSetupNewVariable(variableName, variableValue);
                     break;
 
                 case (null, true):
-                    logger.LogDebug("[Test:Setup] Set new secret environment variable '{Name}'", variableName);
+                    logger.LogSetupNewSecretVariable(variableName);
                     break;
 
                 case (_, false):
-                    logger.LogDebug("[Test:Setup] Override environment variable '{Name}' from '{CurrentValue}' to '{NewValue}'", variableName, currentValue, variableValue);
+                    logger.LogSetupOverrideVariable(variableName, currentValue, variableValue);
                     break;
 
                 case (_, true):
-                    logger.LogDebug("[Test:Setup] Override secret environment variable '{Name}' to new value", variableName);
+                    logger.LogSetupOverrideSecretVariable(variableName);
                     break;
             }
         }
@@ -100,23 +100,68 @@ namespace Arcus.Testing
             switch (_originalValue, _isSecret)
             {
                 case (null, false):
-                    _logger.LogDebug("[Test:Teardown] Remove environment variable '{Name}' with '{Value}'", _variableName, _currentValue);
+                    _logger.LogTeardownRemoveVariable(_variableName, _currentValue);
                     break;
 
                 case (null, true):
-                    _logger.LogDebug("[Test:Teardown] Remove secret environment variable '{Name}'", _variableName);
+                    _logger.LogTeardownRemoveSecretVariable(_variableName);
                     break;
 
                 case (_, false):
-                    _logger.LogDebug("[Test:Teardown] Revert environment variable '{Name}' from '{CurrentValue}' back to '{OriginalValue}'", _variableName, _currentValue, _originalValue);
+                    _logger.LogTeardownRevertVariable(_variableName, _currentValue, _originalValue);
                     break;
 
                 case (_, true):
-                    _logger.LogDebug("[Test:Teardown] Revert secret environment variable '{Name}' back to original value", _variableName);
+                    _logger.LogTeardownRevertSecretVariable(_variableName);
                     break;
             }
 
             Environment.SetEnvironmentVariable(_variableName, _originalValue);
         }
+    }
+
+    internal static partial class TempEnvILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Set new environment variable '{Name}' with '{Value}'")]
+        internal static partial void LogSetupNewVariable(this ILogger logger, string name, string value);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Set new secret environment variable '{Name}'")]
+        internal static partial void LogSetupNewSecretVariable(this ILogger logger, string name);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Override environment variable '{Name}' from '{CurrentValue}' to '{NewValue}'")]
+        internal static partial void LogSetupOverrideVariable(this ILogger logger, string name, string currentValue, string newValue);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Override secret environment variable '{Name}' to new value")]
+        internal static partial void LogSetupOverrideSecretVariable(this ILogger logger, string name);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Remove environment variable '{Name}' with '{Value}'")]
+        internal static partial void LogTeardownRemoveVariable(this ILogger logger, string name, string value);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Remove secret environment variable '{Name}'")]
+        internal static partial void LogTeardownRemoveSecretVariable(this ILogger logger, string name);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert environment variable '{Name}' from '{CurrentValue}' back to '{OriginalValue}'")]
+        internal static partial void LogTeardownRevertVariable(this ILogger logger, string name, string currentValue, string originalValue);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert secret environment variable '{Name}' back to original value")]
+        internal static partial void LogTeardownRevertSecretVariable(this ILogger logger, string name);
     }
 }
