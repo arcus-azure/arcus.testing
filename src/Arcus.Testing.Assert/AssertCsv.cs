@@ -539,7 +539,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the single found difference between two JSON contents.
     /// </summary>
-    internal class CsvDifference
+    internal sealed class CsvDifference
     {
         private readonly CsvDifferenceKind _kind;
         private readonly string _expected, _actual, _column;
@@ -560,7 +560,7 @@ namespace Arcus.Testing
         }
 
         internal CsvDifference(CsvDifferenceKind kind, int expected, int actual)
-            : this(kind, expected.ToString(), actual.ToString(), rowNumber: 0)
+            : this(kind, expected.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), rowNumber: 0)
         {
         }
 
@@ -783,7 +783,9 @@ namespace Arcus.Testing
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="rowLines"/> or the <paramref name="headerNames"/> is <c>null</c></exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
+#pragma warning disable S2368 // The two-dimensional array is the simplest way to represent a matrix.
         protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
+#pragma warning restore S2368
         {
             ArgumentNullException.ThrowIfNull(rowLines);
             ArgumentNullException.ThrowIfNull(headerNames);

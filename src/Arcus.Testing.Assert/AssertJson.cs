@@ -438,7 +438,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the single found difference between two JSON contents.
     /// </summary>
-    internal class JsonDifference
+    internal sealed class JsonDifference
     {
         private readonly JsonDifferenceKind _kind;
         private readonly string _path;
