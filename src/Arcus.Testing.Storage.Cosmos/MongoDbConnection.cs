@@ -26,7 +26,7 @@ namespace Arcus.Testing
             AccessToken accessToken = await RequestAccessTokenAsync(logger);
             string responseBody = await RequestConnectionStringsAsync(cosmosDbResourceId, databaseName, collectionName, accessToken, logger);
 
-            string connectionString = ParseConnectionString(responseBody, logger);
+            string connectionString = ParseConnectionString(responseBody);
             return new MongoClient(connectionString);
         }
 
@@ -35,8 +35,8 @@ namespace Arcus.Testing
             const string scope = "https://management.azure.com/.default";
             var tokenProvider = new DefaultAzureCredential();
 
-            logger.LogTrace("[Test:Setup] Request access token for Azure Cosmos DB for MongoDB resource at scope '{Url}'", scope);
-            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: new[] { scope }));
+            logger.LogRequestAccessToken(scope);
+            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: [scope]));
         }
 
         private static async Task<string> RequestConnectionStringsAsync(
@@ -47,7 +47,7 @@ namespace Arcus.Testing
             ILogger logger)
         {
             var listConnectionStringUrl = $"https://management.azure.com/{cosmosDbResourceId}/listConnectionStrings?api-version=2021-04-15";
-            logger.LogTrace("[Test:Setup] Request access for Azure Cosmos DB for MongoDB resource at '{Url}'", listConnectionStringUrl);
+            logger.LogRequestConnectionString(listConnectionStringUrl);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
@@ -66,7 +66,7 @@ namespace Arcus.Testing
             return responseBody;
         }
 
-        private static string ParseConnectionString(string responseBody, ILogger logger)
+        private static string ParseConnectionString(string responseBody)
         {
             try
             {
@@ -85,12 +85,27 @@ namespace Arcus.Testing
             }
             catch (JsonException exception)
             {
-                logger.LogError(exception, "[Test:Setup] Failed to parse the response for Azure Cosmos DB for MongoDB access due to a deserialization failure: {Message}", exception.Message);
-                throw;
+                throw new JsonException(
+                    $"[Test:Setup] Failed to parse the response for Azure Cosmos DB for MongoDB access due to a deserialization failure: {responseBody}", exception);
             }
 
             throw new JsonException(
                 $"[Test:Setup] Failed to parse the response for Azure Cosmos DB for MongoDB access as there does not exists any access information in the response: {responseBody}");
         }
+    }
+
+    internal static partial class MongoDbConnectionILoggerExtensions
+    {
+        private const LogLevel Level = LogLevel.Trace;
+
+        [LoggerMessage(
+            Level = Level,
+            Message = "[Test:Setup] Request access token for Azure Cosmos DB for MongoDB resource at scope '{Url}'")]
+        internal static partial void LogRequestAccessToken(this ILogger logger, string url);
+
+        [LoggerMessage(
+            Level = Level,
+            Message = "[Test:Setup] Request connection string for Azure Cosmos DB for MongoDB resource at '{Url}'")]
+        internal static partial void LogRequestConnectionString(this ILogger logger, string url);
     }
 }
