@@ -194,7 +194,7 @@ namespace Arcus.Testing
     internal static partial class DisposableILoggerExtensions
     {
         [LoggerMessage(
-            Level = LogLevel.Error, 
+            Level = LogLevel.Error,
             Message = "[Test:Teardown] Test fixture failed to be tear down: '{Message}', retrying in {RetryInterval:g}...")]
         internal static partial void LogTearDownError(this ILogger logger, Exception exception, string message, TimeSpan retryInterval);
     }
