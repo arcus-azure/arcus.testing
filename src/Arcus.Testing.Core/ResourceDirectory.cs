@@ -238,7 +238,7 @@ namespace Arcus.Testing
                 return false;
             }
 
-            return Path.FullName.Equals(other.Path.FullName, StringComparison.InvariantCultureIgnoreCase);
+            return Path.FullName.Equals(other.Path.FullName, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
@@ -50,7 +51,7 @@ namespace Arcus.Testing
     /// <para>Represents a collection of <see cref="IAsyncDisposable"/> which are handled as a single disposable.</para>
     /// <para>See also: <a href="https://testing.arcus-azure.net/features/core"/></para>
     /// </summary>
-    public sealed class DisposableCollection : IAsyncDisposable
+    public sealed class DisposableCollection : IAsyncDisposable, IReadOnlyCollection<IAsyncDisposable>
     {
         private readonly Collection<IAsyncDisposable> _disposables = [];
         private readonly ILogger _logger;
@@ -68,6 +69,12 @@ namespace Arcus.Testing
         /// Gets the available options to manipulate the dispose behavior of the collection.
         /// </summary>
         public DisposeOptions Options { get; } = new();
+
+        /// <summary>
+        /// Gets the number of disposable elements in the collection.
+        /// </summary>
+        /// <returns>The number of disposable elements in the collection.</returns>
+        public int Count => _disposables.Count;
 
         /// <summary>
         /// Adds a <paramref name="disposable"/> to this collection which will get disposed when this collection gets disposed.
@@ -122,6 +129,24 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
+        public IEnumerator<IAsyncDisposable> GetEnumerator()
+        {
+            return _disposables.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>An <see cref="IEnumerator" /> object that can be used to iterate through the collection.</returns>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
         /// </summary>
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
@@ -130,7 +155,7 @@ namespace Arcus.Testing
             AsyncRetryPolicy policy =
                 Policy.Handle<Exception>(ex =>
                       {
-                          _logger.LogError(ex, "[Test:Teardown] Test fixture failed to be tear down: '{Message}', retrying in {RetryInterval:g}...", ex.Message, Options.RetryInterval);
+                          _logger.LogTearDownError(ex, ex.Message, Options.RetryInterval);
                           return true;
                       })
                       .WaitAndRetryAsync(Options.RetryCount, _ => Options.RetryInterval);
@@ -140,8 +165,11 @@ namespace Arcus.Testing
             {
                 try
                 {
-                    await policy.ExecuteAsync(
-                        async () => await fixture.DisposeAsync());
+                    await policy.ExecuteAsync(async () =>
+                    {
+                        await fixture.DisposeAsync().ConfigureAwait(false);
+
+                    }).ConfigureAwait(false);
                 }
                 catch (Exception exception)
                 {
@@ -161,5 +189,13 @@ namespace Arcus.Testing
                     exceptions);
             }
         }
+    }
+
+    internal static partial class DisposableILoggerExtensions
+    {
+        [LoggerMessage(
+            Level = LogLevel.Error, 
+            Message = "[Test:Teardown] Test fixture failed to be tear down: '{Message}', retrying in {RetryInterval:g}...")]
+        internal static partial void LogTearDownError(this ILogger logger, Exception exception, string message, TimeSpan retryInterval);
     }
 }
