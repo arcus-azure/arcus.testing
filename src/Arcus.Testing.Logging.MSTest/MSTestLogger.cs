@@ -29,7 +29,7 @@ namespace Arcus.Testing
         /// <param name="eventId">Id of the event.</param>
         /// <param name="state">The entry to be written. Can be also an object.</param>
         /// <param name="exception">The exception related to this entry.</param>
-        /// <param name="formatter">Function to create a <see cref="T:System.String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
+        /// <param name="formatter">Function to create a <see cref="String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
         /// <typeparam name="TState">The type of the object to be written.</typeparam>
         public void Log<TState>(
             LogLevel logLevel,
@@ -64,7 +64,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
-        /// <returns>An <see cref="T:System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
+        /// <returns>An <see cref="IDisposable" /> that ends the logical operation scope on dispose.</returns>
         public IDisposable BeginScope<TState>(TState state)
         {
             return null;
