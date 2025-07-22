@@ -265,10 +265,7 @@ namespace Arcus.Testing
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
-            if (_isDisposed)
-            {
-                throw new ObjectDisposedException(nameof(TemporaryDataFlowDebugSession), "[Test:Teardown] cannot run data flow in a disposed Azure Data Factory debug session");
-            }
+            ObjectDisposedException.ThrowIf(_isDisposed, typeof(TemporaryDataFlowDebugSession));
 
             ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
             ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
