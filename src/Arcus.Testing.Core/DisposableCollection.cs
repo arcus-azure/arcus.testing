@@ -192,8 +192,6 @@ namespace Arcus.Testing
                 return;
             }
 
-            IsDisposed = true;
-
             AsyncRetryPolicy policy =
                 Policy.Handle<Exception>(ex =>
                       {
@@ -230,6 +228,8 @@ namespace Arcus.Testing
                     "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information",
                     exceptions);
             }
+
+            IsDisposed = true;
         }
     }
 
