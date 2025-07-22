@@ -15,6 +15,8 @@ namespace Arcus.Testing
     public class TemporaryShareFile : IAsyncDisposable
     {
         private readonly (Stream stream, long length) _original;
+        private readonly ShareFileClient _client;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryShareFile(
@@ -26,14 +28,23 @@ namespace Arcus.Testing
 
             _original = original;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
-            Client = client;
+            _client = client;
         }
 
         /// <summary>
         /// Gets the client to interact with the temporary stored Azure Files share currently in storage.
         /// </summary>
-        public ShareFileClient Client { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public ShareFileClient Client
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _client;
+            }
+        }
 
         /// <summary>
         /// Creates a new or replaces an existing file on an Azure Files share directory.
@@ -74,13 +85,13 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(fileStream);
             logger ??= NullLogger.Instance;
 
-            if (await fileClient.ExistsAsync())
+            if (await fileClient.ExistsAsync().ConfigureAwait(false))
             {
                 logger.LogSetupReplaceExistingFile(fileClient.Name, fileClient.AccountName, fileClient.Path);
 
-                ShareFileDownloadInfo result = await fileClient.DownloadAsync();
-                await fileClient.CreateAsync(fileStream.Length);
-                await fileClient.UploadAsync(fileStream);
+                ShareFileDownloadInfo result = await fileClient.DownloadAsync().ConfigureAwait(false);
+                await fileClient.CreateAsync(fileStream.Length).ConfigureAwait(false);
+                await fileClient.UploadAsync(fileStream).ConfigureAwait(false);
 
                 return new TemporaryShareFile(fileClient, (result.Content, result.ContentLength), logger);
             }
@@ -89,8 +100,8 @@ namespace Arcus.Testing
             {
                 logger.LogSetupUploadNewFile(fileClient.Name, fileClient.AccountName, fileClient.Path);
 
-                await fileClient.CreateAsync(fileStream.Length);
-                await fileClient.UploadAsync(fileStream);
+                await fileClient.CreateAsync(fileStream.Length).ConfigureAwait(false);
+                await fileClient.UploadAsync(fileStream).ConfigureAwait(false);
             }
             catch (RequestFailedException exception) when (exception.ErrorCode == ShareErrorCode.ShareNotFound)
             {
@@ -118,27 +129,33 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (_original.stream is null)
+            if (_disposables.IsDisposed)
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
-                {
-                    _logger.LogTeardownDeleteFile(Client.Name, Client.AccountName, Client.Path);
-                    await Client.DeleteIfExistsAsync();
-                }));
+                return;
             }
-            else
+
+            await using (_disposables.ConfigureAwait(false))
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
+                if (_original.stream is null)
                 {
-                    _logger.LogTeardownRevertFile(Client.Name, Client.AccountName, Client.Path);
+                    _disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        _logger.LogTeardownDeleteFile(_client.Name, _client.AccountName, _client.Path);
+                        await _client.DeleteIfExistsAsync().ConfigureAwait(false);
+                    }));
+                }
+                else
+                {
+                    _disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        _logger.LogTeardownRevertFile(_client.Name, _client.AccountName, _client.Path);
 
-                    await Client.CreateAsync(_original.length);
-                    await Client.UploadAsync(_original.stream);
+                        await _client.CreateAsync(_original.length).ConfigureAwait(false);
+                        await _client.UploadAsync(_original.stream).ConfigureAwait(false);
 
-                    await _original.stream.DisposeAsync();
-                }));
+                        await _original.stream.DisposeAsync().ConfigureAwait(false);
+                    }));
+                }
             }
 
             GC.SuppressFinalize(this);
