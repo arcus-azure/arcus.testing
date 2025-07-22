@@ -90,7 +90,7 @@ namespace Arcus.Testing
         {
             get
             {
-                ObjectDisposedException.ThrowIf(_isDisposed, typeof(TemporaryDataFlowDebugSession));
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
                 return _sessionId;
             }
         }
@@ -273,7 +273,7 @@ namespace Arcus.Testing
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
-            ObjectDisposedException.ThrowIf(_isDisposed, typeof(TemporaryDataFlowDebugSession));
+            ObjectDisposedException.ThrowIf(_isDisposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
             ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
 
