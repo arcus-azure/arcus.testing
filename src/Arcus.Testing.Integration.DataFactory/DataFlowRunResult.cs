@@ -117,11 +117,11 @@ namespace Arcus.Testing
             headersTxt = Regex.Replace(headersTxt, "^output\\(", string.Empty);
             headersTxt = headersTxt.Remove(headersTxt.Length - 1, 1);
             headersTxt =
-                headersTxt.Replace("\\n", "")
-                          .Replace(", ", ",")
-                          .Replace(" as string[]", " as string")
-                          .Replace("{", "")
-                          .Replace("}", "");
+                headersTxt.Replace("\\n", "", StringComparison.InvariantCulture)
+                          .Replace(", ", ",", StringComparison.InvariantCulture)
+                          .Replace(" as string[]", " as string", StringComparison.InvariantCulture)
+                          .Replace("{", "", StringComparison.InvariantCulture)
+                          .Replace("}", "", StringComparison.InvariantCulture);
 
             if (Regex.IsMatch(headersTxt, ",( )*,"))
             {
@@ -402,7 +402,7 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            JsonNode outputNode = JsonNode.Parse(outputJson.Replace("\n", ""));
+            JsonNode outputNode = JsonNode.Parse(outputJson.Replace("\n", "", StringComparison.InvariantCulture));
             if (outputNode is not JsonObject outputObj)
             {
                 throw new CsvException(
@@ -485,7 +485,7 @@ namespace Arcus.Testing
 
             string AsCsvCell(string value)
             {
-                return value.Replace("\\,", ",");
+                return value.Replace("\\,", ",", StringComparison.InvariantCulture);
             }
 
             if (dataArr.All(n => n is JsonArray arr && arr.All(elem => elem is JsonValue)))
