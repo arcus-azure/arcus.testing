@@ -266,7 +266,6 @@ namespace Arcus.Testing
             Action<RunDataFlowOptions> configureOptions)
         {
             ObjectDisposedException.ThrowIf(_isDisposed, typeof(TemporaryDataFlowDebugSession));
-
             ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
             ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
 
