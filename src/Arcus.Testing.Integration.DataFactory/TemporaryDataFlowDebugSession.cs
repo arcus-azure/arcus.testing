@@ -85,9 +85,15 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the session ID of the active data flow debug session.
         /// </summary>
-        public Guid SessionId => _isDisposed
-            ? throw new ObjectDisposedException(nameof(TemporaryDataFlowDebugSession), "[Test:Teardown] cannot access Azure Data Factory debug session after it has been disposed")
-            : _sessionId;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public Guid SessionId
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_isDisposed, typeof(TemporaryDataFlowDebugSession));
+                return _sessionId;
+            }
+        }
 
         /// <summary>
         /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="dataFactoryResourceId"/>.
