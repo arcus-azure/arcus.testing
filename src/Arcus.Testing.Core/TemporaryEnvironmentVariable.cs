@@ -13,6 +13,8 @@ namespace Arcus.Testing
         private readonly bool _isSecret;
         private readonly ILogger _logger;
 
+        private bool _isDisposed;
+
         private TemporaryEnvironmentVariable(string variableName, string currentValue, string originalValue, bool isSecret, ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(variableName);
@@ -97,6 +99,13 @@ namespace Arcus.Testing
         /// </summary>
         public void Dispose()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+
             switch (_originalValue, _isSecret)
             {
                 case (null, false):

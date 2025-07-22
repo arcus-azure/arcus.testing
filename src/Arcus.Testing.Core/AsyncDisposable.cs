@@ -9,6 +9,7 @@ namespace Arcus.Testing
     public class AsyncDisposable : IAsyncDisposable
     {
         private readonly Func<Task> _disposeAsync;
+        private bool _isDisposed;
 
         private AsyncDisposable(Func<Task> disposeAsync)
         {
@@ -60,6 +61,13 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _isDisposed = true;
+
             await _disposeAsync().ConfigureAwait(false);
             GC.SuppressFinalize(this);
         }

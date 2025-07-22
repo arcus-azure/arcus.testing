@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Unit.Core
@@ -21,6 +22,24 @@ namespace Arcus.Testing.Tests.Unit.Core
         public void Create_WithoutDisposeAsync_Fails()
         {
             Assert.ThrowsAny<ArgumentException>(() => AsyncDisposable.Create(disposeAsync: null));
+        }
+
+        [Fact]
+        public async Task Dispose_MultipleTimes_SucceedsByBeingRedundant()
+        {
+            // Arrange
+            int disposeCount = 0;
+            var disposable = AsyncDisposable.Create(() => ++disposeCount);
+
+            // Act
+            await disposable.DisposeAsync();
+
+            // Assert
+            await disposable.DisposeAsync();
+            await disposable.DisposeAsync();
+            await disposable.DisposeAsync();
+
+            Assert.Equal(1, disposeCount);
         }
     }
 }
