@@ -247,6 +247,7 @@ namespace Arcus.Testing
         /// <param name="dataFlowName">The name of the data flow to start.</param>
         /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
         /// <returns>The final result of the data flow run.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
@@ -263,6 +264,7 @@ namespace Arcus.Testing
         /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
         /// <param name="configureOptions">The function to configure the options of the data flow run.</param>
         /// <returns>The final result of the data flow run.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
