@@ -447,14 +447,13 @@ namespace Arcus.Testing
                 return;
             }
 
-            _isDisposed = true;
-
             if (_startedByUs)
             {
                 _logger.LogTeardownStopSession(DataFactory.Id.Name, _sessionId);
                 await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = _sessionId }).ConfigureAwait(false);
             }
 
+            _isDisposed = true;
             GC.SuppressFinalize(this);
         }
     }
