@@ -1,5 +1,5 @@
 variables:
-  DotNet.Sdk.Version: '10.0.100-preview.6'
+  DotNet.Sdk.Version: '10.0.x'
   # Backwards compatible .NET SDK version
   DotNet.Sdk.VersionBC: '8.0.x'
   DotNet.Sdk.IncludePreviewVersions: true
