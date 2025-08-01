@@ -38,6 +38,8 @@ namespace Arcus.Testing
             Exception exception,
             Func<TState, Exception, string> formatter)
         {
+            ArgumentNullException.ThrowIfNull(formatter);
+
             string message = formatter(state, exception);
             if (exception is null)
             {
