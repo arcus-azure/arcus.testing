@@ -292,7 +292,9 @@ namespace Arcus.Testing
         /// <exception cref="DirectoryNotFoundException">
         ///     Thrown when no test resource subdirectory is found within the current test resource directory with the given <paramref name="subDirectoryName"/>.
         /// </exception>
+#pragma warning disable CA2225 // Does not require public 'Divide' alternative, as this is the .WithSubDirectory(...) method.
         public static ResourceDirectory operator /(ResourceDirectory current, string subDirectoryName)
+#pragma warning restore CA2225
         {
             ArgumentNullException.ThrowIfNull(current);
             return current.WithSubDirectory(subDirectoryName);
