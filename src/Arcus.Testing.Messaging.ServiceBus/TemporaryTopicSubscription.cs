@@ -204,10 +204,10 @@ namespace Arcus.Testing
 
             CreateSubscriptionOptions createOptions = options.OnSetup.CreateSubscriptionOptions(topicName, subscriptionName);
 
-            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync();
+            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync().ConfigureAwait(false);
             string serviceBusNamespace = properties.Name;
 
-            if (!await adminClient.TopicExistsAsync(createOptions.TopicName))
+            if (!await adminClient.TopicExistsAsync(createOptions.TopicName).ConfigureAwait(false))
             {
                 throw new InvalidOperationException(
                     $"[Test:Setup] cannot create temporary subscription '{createOptions.SubscriptionName}' on Azure Service Bus topic '{serviceBusNamespace}/{createOptions.TopicName}' " +
@@ -215,14 +215,14 @@ namespace Arcus.Testing
                     $"Please make sure to have an available Azure Service Bus topic before using the temporary topic subscription test fixture");
             }
 
-            if (await adminClient.SubscriptionExistsAsync(createOptions.TopicName, createOptions.SubscriptionName))
+            if (await adminClient.SubscriptionExistsAsync(createOptions.TopicName, createOptions.SubscriptionName).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
                 return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: false, logger);
             }
 
             logger.LogSetupCreateNewSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
-            await adminClient.CreateSubscriptionAsync(createOptions);
+            await adminClient.CreateSubscriptionAsync(createOptions).ConfigureAwait(false);
 
             return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: true, logger);
         }
@@ -245,7 +245,7 @@ namespace Arcus.Testing
                     "Only custom Azure Service Bus topic subscription rules can be added to the test fixture, please provide a custom name for your test-managed rule", nameof(ruleName));
             }
 
-            if (await _client.RuleExistsAsync(TopicName, Name, ruleName))
+            if (await _client.RuleExistsAsync(TopicName, Name, ruleName).ConfigureAwait(false))
             {
                 _logger.LogSkipCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
             }
@@ -254,7 +254,7 @@ namespace Arcus.Testing
                 _logger.LogCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
 
                 var options = new CreateRuleOptions(ruleName, ruleFilter);
-                await _client.CreateRuleAsync(TopicName, Name, options);
+                await _client.CreateRuleAsync(TopicName, Name, options).ConfigureAwait(false);
 
                 _rules.Add(options);
             }
@@ -266,32 +266,34 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (await _client.SubscriptionExistsAsync(TopicName, Name))
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                if (_createdByUs)
+                if (await _client.SubscriptionExistsAsync(TopicName, Name).ConfigureAwait(false))
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    if (_createdByUs)
                     {
-                        _logger.LogTeardownDeleteSubscription(Name, FullyQualifiedNamespace, TopicName);
-                        await _client.DeleteSubscriptionAsync(TopicName, Name);
-                    }));
-                }
-                else
-                {
-                    disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () =>
-                    {
-                        if (await _client.RuleExistsAsync(TopicName, Name, r.Name))
+                        disposables.Add(AsyncDisposable.Create(async () =>
                         {
-                            _logger.LogTeardownDeleteSubscriptionRule(r.Name, FullyQualifiedNamespace, TopicName, Name);
-                            await _client.DeleteRuleAsync(TopicName, Name, r.Name);
-                        }
-                    })));
+                            _logger.LogTeardownDeleteSubscription(Name, FullyQualifiedNamespace, TopicName);
+                            await _client.DeleteSubscriptionAsync(TopicName, Name).ConfigureAwait(false);
+                        }));
+                    }
+                    else
+                    {
+                        disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () =>
+                        {
+                            if (await _client.RuleExistsAsync(TopicName, Name, r.Name).ConfigureAwait(false))
+                            {
+                                _logger.LogTeardownDeleteSubscriptionRule(r.Name, FullyQualifiedNamespace, TopicName, Name);
+                                await _client.DeleteRuleAsync(TopicName, Name, r.Name).ConfigureAwait(false);
+                            }
+                        })));
+                    }
                 }
-            }
 
-            GC.SuppressFinalize(this);
+                GC.SuppressFinalize(this);
+            }
         }
     }
 

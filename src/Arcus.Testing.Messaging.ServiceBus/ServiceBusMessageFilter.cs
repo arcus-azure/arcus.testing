@@ -100,7 +100,7 @@ namespace Arcus.Testing
         /// </param>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
-            List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken);
+            List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken).ConfigureAwait(false);
             return messages.Count > 0;
         }
 
@@ -139,15 +139,19 @@ namespace Arcus.Testing
                 SubQueue = _fromDeadLetter ? SubQueue.DeadLetter : SubQueue.None
             };
 
-            await using ServiceBusReceiver receiver =
+            ServiceBusReceiver receiver =
                 _subscriptionName is null
                     ? _client.CreateReceiver(_entityName, options)
                     : _client.CreateReceiver(_entityName, _subscriptionName, options);
 
-            IReadOnlyList<ServiceBusReceivedMessage> messages =
-                await receiver.PeekMessagesAsync(_maxMessages, cancellationToken: cancellationToken);
+            await using (receiver.ConfigureAwait(false))
+            {
+                IReadOnlyList<ServiceBusReceivedMessage> messages =
+                    await receiver.PeekMessagesAsync(_maxMessages, cancellationToken: cancellationToken)
+                                  .ConfigureAwait(false);
 
-            return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
+                return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
+            }
         }
     }
 }
