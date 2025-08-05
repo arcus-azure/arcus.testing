@@ -223,7 +223,8 @@ namespace Arcus.Testing
     public class TemporaryMongoDbCollection : IAsyncDisposable
 #pragma warning restore CA1711
     {
-        private readonly bool _createdByUs;
+        private readonly bool _createdByUs, _clientCreatedByUs;
+        private readonly MongoClient _client;
         private readonly IMongoDatabase _database;
         private readonly TemporaryMongoDbCollectionOptions _options;
         private readonly Collection<IAsyncDisposable> _documents = [];
@@ -232,15 +233,20 @@ namespace Arcus.Testing
         private TemporaryMongoDbCollection(
             bool createdByUs,
             string collectionName,
+            MongoClient client,
+            bool clientCreatedByUs,
             IMongoDatabase database,
             ILogger logger,
             TemporaryMongoDbCollectionOptions options)
         {
+            ArgumentNullException.ThrowIfNull(client);
             ArgumentNullException.ThrowIfNull(database);
             ArgumentNullException.ThrowIfNull(collectionName);
             ArgumentNullException.ThrowIfNull(options);
 
             _createdByUs = createdByUs;
+            _client = client;
+            _clientCreatedByUs = clientCreatedByUs;
             _database = database;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
@@ -276,13 +282,13 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
-        public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
             string collectionName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(cosmosDbResourceId, databaseName, collectionName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(cosmosDbResourceId, databaseName, collectionName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -316,10 +322,10 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
 
-            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger);
+            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger).ConfigureAwait(false);
             IMongoDatabase database = client.GetDatabase(databaseName);
 
-            return await CreateIfNotExistsAsync(database, collectionName, logger, configureOptions);
+            return await CreateIfNotExistsAsync(client, clientCreatedByUs: true, database, collectionName, logger, configureOptions).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -330,9 +336,9 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
-        public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(IMongoDatabase database, string collectionName, ILogger logger)
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(IMongoDatabase database, string collectionName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(database, collectionName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(database, collectionName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -344,7 +350,18 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
-        public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+            IMongoDatabase database,
+            string collectionName,
+            ILogger logger,
+            Action<TemporaryMongoDbCollectionOptions> configureOptions)
+        {
+            return CreateIfNotExistsAsync(client: null, clientCreatedByUs: false, database, collectionName, logger, configureOptions);
+        }
+
+        private static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+            MongoClient client,
+            bool clientCreatedByUs,
             IMongoDatabase database,
             string collectionName,
             ILogger logger,
@@ -361,26 +378,26 @@ namespace Arcus.Testing
             {
                 Filter = Builders<BsonDocument>.Filter.Eq("name", collectionName)
             };
-            using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions);
-            if (await collectionNames.AnyAsync())
+            using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions).ConfigureAwait(false);
+            if (await collectionNames.AnyAsync().ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingCollection(collectionName, database.DatabaseNamespace.DatabaseName);
 
-                await CleanCollectionOnSetupAsync(database, collectionName, options, logger);
-                return new TemporaryMongoDbCollection(createdByUs: false, collectionName, database, logger, options);
+                await CleanCollectionOnSetupAsync(database, collectionName, options, logger).ConfigureAwait(false);
+                return new TemporaryMongoDbCollection(createdByUs: false, collectionName, client, clientCreatedByUs, database, logger, options);
             }
 
             logger.LogSetupCreateNewCollection(collectionName, database.DatabaseNamespace.DatabaseName);
-            await database.CreateCollectionAsync(collectionName);
+            await database.CreateCollectionAsync(collectionName).ConfigureAwait(false);
 
-            return new TemporaryMongoDbCollection(createdByUs: true, collectionName, database, logger, options);
+            return new TemporaryMongoDbCollection(createdByUs: true, collectionName, client, clientCreatedByUs, database, logger, options);
         }
 
-        private static async Task CleanCollectionOnSetupAsync(IMongoDatabase database, string collectionName, TemporaryMongoDbCollectionOptions options, ILogger logger)
+        private static Task CleanCollectionOnSetupAsync(IMongoDatabase database, string collectionName, TemporaryMongoDbCollectionOptions options, ILogger logger)
         {
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.LeaveExisted)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             IMongoCollection<BsonDocument> collection = database.GetCollection<BsonDocument>(collectionName);
@@ -388,14 +405,16 @@ namespace Arcus.Testing
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
                 logger.LogSetupCleanAllDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
-                await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
+                return collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
                 logger.LogSetupCleanAllMatchingDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
-                await collection.DeleteManyAsync(options.OnSetup.IsMatched);
+                return collection.DeleteManyAsync(options.OnSetup.IsMatched);
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -420,9 +439,9 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
 #pragma warning restore S1133
-        public async Task AddDocumentAsync<TDocument>(TDocument document)
+        public Task AddDocumentAsync<TDocument>(TDocument document)
         {
-            await UpsertDocumentAsync(document);
+            return UpsertDocumentAsync(document);
         }
 
         /// <summary>
@@ -440,7 +459,7 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(document);
 
             IMongoCollection<TDocument> collection = GetCollectionClient<TDocument>();
-            _documents.Add(await TemporaryMongoDbDocument.UpsertDocumentAsync(collection, document, _logger));
+            _documents.Add(await TemporaryMongoDbDocument.UpsertDocumentAsync(collection, document, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -449,33 +468,38 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-            disposables.AddRange(_documents);
-
-            if (_createdByUs)
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
-                {
-                    _logger.LogTeardownDeleteCollection(Name, _database.DatabaseNamespace.DatabaseName);
-                    await _database.DropCollectionAsync(Name);
-                }));
-            }
-            else
-            {
-                disposables.Add(AsyncDisposable.Create(async () =>
-                {
-                    await CleanCollectionOnTeardownAsync();
-                }));
-            }
+                disposables.AddRange(_documents);
 
-            GC.SuppressFinalize(this);
+                if (_createdByUs)
+                {
+                    disposables.Add(AsyncDisposable.Create(() =>
+                    {
+                        _logger.LogTeardownDeleteCollection(Name, _database.DatabaseNamespace.DatabaseName);
+                        return _database.DropCollectionAsync(Name);
+                    }));
+                }
+                else
+                {
+                    disposables.Add(AsyncDisposable.Create(CleanCollectionOnTeardownAsync));
+                }
+
+                if (_clientCreatedByUs && _client != null)
+                {
+                    disposables.Add(_client);
+                }
+
+                GC.SuppressFinalize(this);
+            }
         }
 
-        private async Task CleanCollectionOnTeardownAsync()
+        private Task CleanCollectionOnTeardownAsync()
         {
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfUpserted)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(Name);
@@ -483,14 +507,16 @@ namespace Arcus.Testing
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanAll)
             {
                 _logger.LogTeardownCleanAllDocuments(_database.DatabaseNamespace.DatabaseName, Name);
-                await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
+                return collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
             }
 
             if (_options.OnTeardown.Documents is OnTeardownMongoDbCollection.CleanIfMatched)
             {
                 _logger.LogTeardownCleanAllMatchingDocuments(_database.DatabaseNamespace.DatabaseName, Name);
-                await collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
+                return collection.DeleteManyAsync(_options.OnTeardown.IsMatched);
             }
+
+            return Task.CompletedTask;
         }
     }
 
