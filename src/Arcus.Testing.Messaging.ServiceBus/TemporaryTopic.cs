@@ -404,6 +404,11 @@ namespace Arcus.Testing
         /// Gets the fully-qualified name of the Azure Service Bus namespace for which this test fixture managed a topic.
         /// </summary>
         public string FullyQualifiedNamespace { get; }
+        
+        /// <summary>
+        /// Gets the options related to tearing down the <see cref="TemporaryTopic"/>.
+        /// </summary>
+        public OnTeardownTemporaryTopicOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
         /// Gets the client to send messages to this Azure Service Bus test-managed topic.
