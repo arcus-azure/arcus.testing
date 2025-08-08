@@ -20,7 +20,10 @@ namespace Arcus.Testing
     public class OnSetupTemporaryTopicOptions
     {
         private readonly Collection<Action<CreateTopicOptions>> _configuredOptions = [];
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = [], _shouldDeadLetterMessages = [];
+
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages =
+                [],
+            _shouldDeadLetterMessages = [];
 
         internal OnSetupMessagesTopic Messages { get; private set; }
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
@@ -178,7 +181,9 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryTopicOptions
     {
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = [], _shouldDeadLetterMessages = [];
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages =
+                [],
+            _shouldDeadLetterMessages = [];
 
         private OnTeardownMessagesTopic Messages { get; set; }
         private TimeSpan MaxWaitTime { get; set; } = TimeSpan.FromSeconds(5);
@@ -310,14 +315,16 @@ namespace Arcus.Testing
             return this;
         }
 
-        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver, ILogger logger)
+        internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver,
+            ILogger logger)
         {
             bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
             bool shouldComplete = _shouldCompleteMessages.Any(func => func(message));
 
             if (shouldDeadLetter && shouldComplete)
             {
-                logger.LogTeardownAmbiguousMessageSettleOnTopic(message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
+                logger.LogTeardownAmbiguousMessageSettleOnTopic(message.MessageId, receiver.FullyQualifiedNamespace,
+                    receiver.EntityPath);
                 return MessageSettle.DeadLetter;
             }
 
@@ -348,12 +355,14 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the options related to setting up the <see cref="TemporaryTopic"/>.
         /// </summary>
-        public OnSetupTemporaryTopicOptions OnSetup { get; } = new OnSetupTemporaryTopicOptions().LeaveExistingMessages();
+        public OnSetupTemporaryTopicOptions OnSetup { get; } =
+            new OnSetupTemporaryTopicOptions().LeaveExistingMessages();
 
         /// <summary>
         /// Gets the options related to tearing down the <see cref="TemporaryTopic"/>.
         /// </summary>
-        public OnTeardownTemporaryTopicOptions OnTeardown { get; } = new OnTeardownTemporaryTopicOptions().DeadLetterMessages();
+        public OnTeardownTemporaryTopicOptions OnTeardown { get; } =
+            new OnTeardownTemporaryTopicOptions().DeadLetterMessages();
     }
 
     /// <summary>
@@ -451,7 +460,8 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="topicName"/> is blank.
         /// </exception>
-        public static Task<TemporaryTopic> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, ILogger logger)
+        public static Task<TemporaryTopic> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName,
+            ILogger logger)
         {
             return CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, logger, configureOptions: null);
         }
@@ -485,7 +495,8 @@ namespace Arcus.Testing
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
 #pragma warning restore CA2000
 
-            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName,
+                logger, configureOptions);
         }
 
         /// <summary>
@@ -529,7 +540,8 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryTopicOptions> configureOptions)
         {
-            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, topicName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, topicName,
+                logger, configureOptions);
         }
 
         private static async Task<TemporaryTopic> CreateIfNotExistsAsync(
@@ -613,7 +625,8 @@ namespace Arcus.Testing
         /// </param>
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        public async Task AddSubscriptionAsync(string subscriptionName, Action<TemporaryTopicSubscriptionOptions> configureOptions)
+        public async Task AddSubscriptionAsync(string subscriptionName,
+            Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             _subscriptions.Add(await TemporaryTopicSubscription
@@ -680,7 +693,8 @@ namespace Arcus.Testing
             }).ConfigureAwait(false);
         }
 
-        private async Task ForEachMessageOnTopicAsync(Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
+        private async Task ForEachMessageOnTopicAsync(
+            Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
             await foreach (SubscriptionProperties subscription in _adminClient.GetSubscriptionsAsync(Name)
                                .ConfigureAwait(false))
@@ -690,7 +704,8 @@ namespace Arcus.Testing
             }
         }
 
-        private async Task ForEachMessageOnTopicSubscriptionAsync(string subscriptionName, Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
+        private async Task ForEachMessageOnTopicSubscriptionAsync(string subscriptionName,
+            Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
             ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name, subscriptionName);
             await using (receiver.ConfigureAwait(false))
@@ -721,33 +736,44 @@ namespace Arcus.Testing
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
-            Message = "[Test:Setup] Use already existing Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'")]
+            Message =
+                "[Test:Setup] Use already existing Azure Service Bus topic '{TopicName}' in namespace '{Namespace}'")]
         internal static partial void LogSetupUseExistingTopic(this ILogger logger, string topicName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
-            Message = "[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogSetupDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+            Message =
+                "[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupDeadLetterMessageOnTopic(this ILogger logger, string messageId,
+            string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
-            Message = "[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogSetupCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+            Message =
+                "[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupCompleteMessageOnTopic(this ILogger logger, string messageId,
+            string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
-            Message = "[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogTeardownDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+            Message =
+                "[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownDeadLetterMessageOnTopic(this ILogger logger, string messageId,
+            string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
-            Message = "[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogTeardownCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
+            Message =
+                "[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownCompleteMessageOnTopic(this ILogger logger, string messageId,
+            string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = LogLevel.Warning,
-            Message = "[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'")]
-        internal static partial void LogTeardownAmbiguousMessageSettleOnTopic(this ILogger logger, string messageId, string @namespace, string topicName);
+            Message =
+                "[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'")]
+        internal static partial void LogTeardownAmbiguousMessageSettleOnTopic(this ILogger logger, string messageId,
+            string @namespace, string topicName);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
