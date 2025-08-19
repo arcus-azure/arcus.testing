@@ -462,7 +462,10 @@ namespace Arcus.Testing
 
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
+
+#pragma warning disable CA2000 // The client is disposed by the test fixture instance.
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
+#pragma warning restore CA2000
 
             return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
         }
@@ -524,6 +527,7 @@ namespace Arcus.Testing
             Action<TemporaryQueueOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(adminClient);
+            ArgumentNullException.ThrowIfNull(messagingClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
             logger ??= NullLogger.Instance;
 
@@ -532,22 +536,22 @@ namespace Arcus.Testing
 
             CreateQueueOptions createOptions = options.OnSetup.CreateQueueOptions(queueName);
 
-            if (await adminClient.QueueExistsAsync(createOptions.Name))
+            if (await adminClient.QueueExistsAsync(createOptions.Name).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: false, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync();
+                await queue.CleanOnSetupAsync().ConfigureAwait(false);
                 return queue;
             }
             else
             {
                 logger.LogSetupCreateNewQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                await adminClient.CreateQueueAsync(createOptions);
+                await adminClient.CreateQueueAsync(createOptions).ConfigureAwait(false);
 
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: true, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync();
+                await queue.CleanOnSetupAsync().ConfigureAwait(false);
                 return queue;
             }
         }
@@ -566,14 +570,15 @@ namespace Arcus.Testing
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogSetupDeadLetterMessageOnQueue(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
                     _logger.LogSetupCompleteMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -582,30 +587,32 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (await _adminClient.QueueExistsAsync(Name))
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                if (_queueCreatedByUs)
+                if (await _adminClient.QueueExistsAsync(Name).ConfigureAwait(false))
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    if (_queueCreatedByUs)
                     {
-                        _logger.LogTeardownDeleteQueue(Name, FullyQualifiedNamespace);
-                        await _adminClient.DeleteQueueAsync(Name);
-                    }));
+                        disposables.Add(AsyncDisposable.Create(async () =>
+                        {
+                            _logger.LogTeardownDeleteQueue(Name, FullyQualifiedNamespace);
+                            await _adminClient.DeleteQueueAsync(Name).ConfigureAwait(false);
+                        }));
+                    }
+                    else
+                    {
+                        disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    }
                 }
-                else
+
+                if (_messagingClientCreatedByUs)
                 {
-                    disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    disposables.Add(_messagingClient);
                 }
-            }
 
-            if (_messagingClientCreatedByUs)
-            {
-                disposables.Add(_messagingClient);
+                GC.SuppressFinalize(this);
             }
-
-            GC.SuppressFinalize(this);
         }
 
         private async Task CleanOnTeardownAsync()
@@ -618,29 +625,32 @@ namespace Arcus.Testing
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogTeardownDeadLetterMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
                     _logger.LogTeardownCompleteMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         private async Task ForEachMessageOnQueueAsync(TimeSpan waitTime, Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
-
-            while (true)
+            ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
+            await using (receiver.ConfigureAwait(false))
             {
-                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime);
-                if (message is null)
+                while (true)
                 {
-                    return;
-                }
+                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime).ConfigureAwait(false);
+                    if (message is null)
+                    {
+                        return;
+                    }
 
-                await operation(receiver, message);
+                    await operation(receiver, message).ConfigureAwait(false);
+                }
             }
         }
     }
