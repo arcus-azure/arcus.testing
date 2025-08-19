@@ -211,7 +211,9 @@ namespace Arcus.Testing
 
                     }).ConfigureAwait(false);
                 }
+#pragma warning disable CA1031 // Should catch all exceptions to determine if the fixture teardown failed.
                 catch (Exception exception)
+#pragma warning restore CA1031
                 {
                     exceptions.Add(exception);
                 }
