@@ -180,6 +180,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             // Assert
             await serviceBus.ShouldHaveTopicAsync(topicName);
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore1);
+            ServiceBusMessage messageDeadLetterAfter = serviceBus.WhenMessageUnsent();
+            temp.OnTeardown.DeadLetterMessages(msg => msg.MessageId == messageDeadLetterAfter.MessageId);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
             await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
