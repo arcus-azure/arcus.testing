@@ -136,7 +136,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Configures the <see cref="TemporaryBlobContainer"/> to delete all the blobs upon disposal - even if the test fixture didn't uploaded them.
+        /// Configures the <see cref="TemporaryBlobContainer"/> to delete all the blobs upon disposal - even if the test fixture didn't upload them.
         /// </summary>
         public OnTeardownBlobContainerOptions CleanAllBlobs()
         {
@@ -148,9 +148,9 @@ namespace Arcus.Testing
         /// Configures the <see cref="TemporaryBlobContainer"/> to delete the blobs upon disposal that matched the configured <paramref name="filters"/>.
         /// </summary>
         /// <remarks>
-        ///     The matching of blobs only happens on Azure Blobs instances that were created outside the scope of the test fixture.
-        ///     All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
-        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.
+        ///     <para>⚡ The matching of blobs only happens on Azure Blobs instances that were created outside the scope of the test fixture.</para>
+        ///     <para>⚡ All Blobs created by the test fixture will be deleted upon disposal, regardless of the filters.
+        ///     This follows the 'clean environment' principle where the test fixture should clean up after itself and not linger around any state it created.</para>
         /// </remarks>
         /// <param name="filters">The filters to match the blobs in the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="filters"/> is <c>null</c>.</exception>
@@ -266,24 +266,30 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        /// </remarks>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
-        public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger)
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
         /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        /// </remarks>
         /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
-        public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
             string accountName,
             string containerName,
             ILogger logger,
@@ -295,7 +301,7 @@ namespace Arcus.Testing
             var blobContainerUri = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}");
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
 
-            return await CreateIfNotExistsAsync(containerClient, logger, configureOptions);
+            return CreateIfNotExistsAsync(containerClient, logger, configureOptions);
         }
 
         /// <summary>
@@ -304,9 +310,9 @@ namespace Arcus.Testing
         /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(containerClient, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(containerClient, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -327,8 +333,8 @@ namespace Arcus.Testing
             var options = new TemporaryBlobContainerOptions();
             configureOptions?.Invoke(options);
 
-            bool createdByUs = await EnsureContainerCreatedAsync(containerClient, logger);
-            await CleanBlobContainerUponCreationAsync(containerClient, options, logger);
+            bool createdByUs = await EnsureContainerCreatedAsync(containerClient, logger).ConfigureAwait(false);
+            await CleanBlobContainerUponCreationAsync(containerClient, options, logger).ConfigureAwait(false);
 
             return new TemporaryBlobContainer(containerClient, createdByUs, options, logger);
         }
@@ -336,10 +342,10 @@ namespace Arcus.Testing
         private static async Task<bool> EnsureContainerCreatedAsync(BlobContainerClient containerClient, ILogger logger)
         {
             bool createdByUs = false;
-            if (!await containerClient.ExistsAsync())
+            if (!await containerClient.ExistsAsync().ConfigureAwait(false))
             {
                 logger.LogSetupCreateNewContainer(containerClient.Name, containerClient.AccountName);
-                await containerClient.CreateIfNotExistsAsync();
+                await containerClient.CreateIfNotExistsAsync().ConfigureAwait(false);
                 createdByUs = true;
             }
             else
@@ -360,9 +366,9 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality")]
 #pragma warning restore S1133
-        public async Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
+        public Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
-            return await UpsertBlobFileAsync(blobName, blobContent);
+            return UpsertBlobFileAsync(blobName, blobContent);
         }
 
         /// <summary>
@@ -382,7 +388,7 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(blobContent);
 
             BlobClient blobClient = Client.GetBlobClient(blobName);
-            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger));
+            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger).ConfigureAwait(false));
 
             return blobClient;
         }
@@ -393,21 +399,24 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            disposables.AddRange(_blobs);
-            disposables.Add(AsyncDisposable.Create(async () =>
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                await CleanBlobContainerUponDeletionAsync(Client, _options, _logger);
-            }));
 
-            if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
-            {
+                disposables.AddRange(_blobs);
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
-                    await Client.DeleteIfExistsAsync();
+                    await CleanBlobContainerUponDeletionAsync(Client, _options, _logger).ConfigureAwait(false);
                 }));
+
+                if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
+                {
+                    disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
+                        await Client.DeleteIfExistsAsync().ConfigureAwait(false);
+                    }));
+                }
             }
 
             GC.SuppressFinalize(this);
@@ -421,13 +430,13 @@ namespace Arcus.Testing
             }
 
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-            await foreach (BlobItem blob in containerClient.GetBlobsAsync())
+            await foreach (BlobItem blob in containerClient.GetBlobsAsync().ConfigureAwait(false))
 #pragma warning restore
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
                     logger.LogSetupDeleteFile(blob.Name, containerClient.AccountName, containerClient.Name);
-                    await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
+                    await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync().ConfigureAwait(false);
                 }
             }
         }
@@ -440,13 +449,13 @@ namespace Arcus.Testing
             }
 
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-            await foreach (BlobItem blob in containerClient.GetBlobsAsync())
+            await foreach (BlobItem blob in containerClient.GetBlobsAsync().ConfigureAwait(false))
 #pragma warning restore
             {
                 if (options.OnTeardown.IsMatched(blob))
                 {
                     logger.LogTeardownDeleteFile(blob.Name, containerClient.AccountName, containerClient.Name);
-                    await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync();
+                    await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync().ConfigureAwait(false);
                 }
             }
         }
