@@ -473,7 +473,10 @@ namespace Arcus.Testing
 
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
+
+#pragma warning disable CA2000 // The client is disposed by the test fixture instance.
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
+#pragma warning restore CA2000
 
             return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, topicName,
                 logger, configureOptions);
@@ -543,7 +546,7 @@ namespace Arcus.Testing
             CreateTopicOptions createOptions = options.OnSetup.CreateTopicOptions(topicName);
 
             bool topicCreatedByUs = false;
-            if (await adminClient.TopicExistsAsync(createOptions.Name))
+            if (await adminClient.TopicExistsAsync(createOptions.Name).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingTopic(createOptions.Name, messagingClient.FullyQualifiedNamespace);
             }
@@ -551,14 +554,14 @@ namespace Arcus.Testing
             {
                 logger.LogSetupCreateNewTopic(createOptions.Name, messagingClient.FullyQualifiedNamespace);
 
-                await adminClient.CreateTopicAsync(createOptions);
+                await adminClient.CreateTopicAsync(createOptions).ConfigureAwait(false);
                 topicCreatedByUs = true;
             }
 
             var topic = new TemporaryTopic(adminClient, messagingClient, messagingClientCreatedByUs, createOptions.Name,
                 topicCreatedByUs, options, logger);
 
-            await topic.CleanOnSetupAsync();
+            await topic.CleanOnSetupAsync().ConfigureAwait(false);
             return topic;
         }
 
@@ -575,17 +578,16 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogSetupDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath,
-                        FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    _logger.LogSetupDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogSetupCompleteMessageOnTopic(message.MessageId, receiver.EntityPath,
-                        FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    _logger.LogSetupCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -609,8 +611,7 @@ namespace Arcus.Testing
         public async Task AddSubscriptionAsync(string subscriptionName,
             Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
-            _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name,
-                subscriptionName, _logger, configureOptions));
+            _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -619,31 +620,33 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (await _adminClient.TopicExistsAsync(Name))
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                if (_topicCreatedByUs)
+                if (await _adminClient.TopicExistsAsync(Name).ConfigureAwait(false))
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    if (_topicCreatedByUs)
                     {
-                        _logger.LogTeardownDeleteTopic(Name, FullyQualifiedNamespace);
-                        await _adminClient.DeleteTopicAsync(Name);
-                    }));
+                        disposables.Add(AsyncDisposable.Create(async () =>
+                        {
+                            _logger.LogTeardownDeleteTopic(Name, FullyQualifiedNamespace);
+                            await _adminClient.DeleteTopicAsync(Name).ConfigureAwait(false);
+                        }));
+                    }
+                    else
+                    {
+                        disposables.AddRange(_subscriptions);
+                        disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    }
                 }
-                else
+
+                if (_messagingClientCreatedByUs)
                 {
-                    disposables.AddRange(_subscriptions);
-                    disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    disposables.Add(_messagingClient);
                 }
-            }
 
-            if (_messagingClientCreatedByUs)
-            {
-                disposables.Add(_messagingClient);
+                GC.SuppressFinalize(this);
             }
-
-            GC.SuppressFinalize(this);
         }
 
         private async Task CleanOnTeardownAsync()
@@ -654,42 +657,43 @@ namespace Arcus.Testing
 
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogTeardownDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath,
-                        FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    _logger.LogTeardownDeadLetterMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogTeardownCompleteMessageOnTopic(message.MessageId, receiver.EntityPath,
-                        FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    _logger.LogTeardownCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         private async Task ForEachMessageOnTopicAsync(
             Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
-            await foreach (SubscriptionProperties subscription in _adminClient.GetSubscriptionsAsync(Name))
+            await foreach (SubscriptionProperties subscription in _adminClient.GetSubscriptionsAsync(Name).ConfigureAwait(false))
             {
-                await ForEachMessageOnTopicSubscriptionAsync(subscription.SubscriptionName, operation);
+                await ForEachMessageOnTopicSubscriptionAsync(subscription.SubscriptionName, operation).ConfigureAwait(false);
             }
         }
 
         private async Task ForEachMessageOnTopicSubscriptionAsync(string subscriptionName,
             Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name, subscriptionName);
-
-            while (true)
+            ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name, subscriptionName);
+            await using (receiver.ConfigureAwait(false))
             {
-                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(_options.OnSetup.MaxWaitTime);
-                if (message is null)
+                while (true)
                 {
-                    return;
-                }
+                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(_options.OnSetup.MaxWaitTime).ConfigureAwait(false);
+                    if (message is null)
+                    {
+                        return;
+                    }
 
-                await operation(receiver, message);
+                    await operation(receiver, message).ConfigureAwait(false);
+                }
             }
         }
     }
