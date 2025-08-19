@@ -513,18 +513,18 @@ namespace Arcus.Testing
             var options = new TemporaryNoSqlContainerOptions();
             configureOptions?.Invoke(options);
 
-            CosmosDBAccountResource cosmosDb = await GetCosmosDbResourceAsync(cosmosDbAccountResourceId, credential);
-            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(databaseName);
+            CosmosDBAccountResource cosmosDb = await GetCosmosDbResourceAsync(cosmosDbAccountResourceId, credential).ConfigureAwait(false);
+            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(databaseName).ConfigureAwait(false);
 
             var cosmosClient = new CosmosClient(cosmosDb.Data.DocumentEndpoint, credential);
             Container containerClient = cosmosClient.GetContainer(databaseName, containerName);
 
-            if (await database.GetCosmosDBSqlContainers().ExistsAsync(containerName))
+            if (await database.GetCosmosDBSqlContainers().ExistsAsync(containerName).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingContainer(containerName, databaseName);
-                await CleanContainerOnSetupAsync(containerClient, options, logger);
+                await CleanContainerOnSetupAsync(containerClient, options, logger).ConfigureAwait(false);
 
-                CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName);
+                CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName).ConfigureAwait(false);
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: false, options, logger);
             }
             else
@@ -532,7 +532,7 @@ namespace Arcus.Testing
                 logger.LogSetupCreateNewContainer(containerName, databaseName);
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
-                CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties);
+                CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties).ConfigureAwait(false);
 
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: true, options, logger);
             }
@@ -555,59 +555,63 @@ namespace Arcus.Testing
             };
             var request = new CosmosDBSqlContainerCreateOrUpdateContent(cosmosDb.Data.Location, newContainer);
             await database.GetCosmosDBSqlContainers()
-                          .CreateOrUpdateAsync(WaitUntil.Completed, properties.Id, request);
+                          .CreateOrUpdateAsync(WaitUntil.Completed, properties.Id, request)
+                          .ConfigureAwait(false);
 
-            return await database.GetCosmosDBSqlContainerAsync(properties.Id);
+            return await database.GetCosmosDBSqlContainerAsync(properties.Id).ConfigureAwait(false);
         }
 
-        private static async Task<CosmosDBAccountResource> GetCosmosDbResourceAsync(ResourceIdentifier cosmosDbAccountResourceId, TokenCredential credential)
+        private static Task<Azure.Response<CosmosDBAccountResource>> GetCosmosDbResourceAsync(ResourceIdentifier cosmosDbAccountResourceId, TokenCredential credential)
         {
             var arm = new ArmClient(credential);
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(cosmosDbAccountResourceId);
 
-            return await cosmosDb.GetAsync();
+            return cosmosDb.GetAsync();
         }
 
-        private static async Task CleanContainerOnSetupAsync(Container container, TemporaryNoSqlContainerOptions options, ILogger logger)
+        private static Task CleanContainerOnSetupAsync(Container container, TemporaryNoSqlContainerOptions options, ILogger logger)
         {
             if (options.OnSetup.Items is OnSetupNoSqlContainer.LeaveExisted)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
-                await ForEachItemAsync(container, async (id, partitionKey, _) =>
+                return ForEachItemAsync(container, async (id, partitionKey, _) =>
                 {
                     logger.LogSetupDeleteItem(id, partitionKey, container.Database.Id, container.Id);
-                    using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
+                    using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
-                        throw new RequestFailedException(
+                        throw new RequestFailedException((int) response.StatusCode,
                             $"[Test:Setup] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}' " +
                             $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                     }
                 });
             }
-            else if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
+
+            if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
             {
-                await ForEachItemAsync(container, async (id, partitionKey, doc) =>
+                return ForEachItemAsync(container, async (id, partitionKey, doc) =>
                 {
                     if (options.OnSetup.IsMatched(id, partitionKey, doc, container.Database.Client))
                     {
                         logger.LogSetupDeleteMatchedItem(id, partitionKey, container.Database.Id, container.Id);
-                        using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey);
+                        using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
-                            throw new RequestFailedException(
+                            throw new RequestFailedException((int) response.StatusCode,
                                 $"[Test:Setup] Failed to delete matched NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}' " +
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }
                 });
             }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -619,9 +623,9 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality")]
 #pragma warning restore S1133
-        public async Task AddItemAsync<T>(T item)
+        public Task AddItemAsync<T>(T item)
         {
-            await UpsertItemAsync(item);
+            return UpsertItemAsync(item);
         }
 
         /// <summary>
@@ -636,7 +640,7 @@ namespace Arcus.Testing
         public async Task UpsertItemAsync<TItem>(TItem item)
         {
             ArgumentNullException.ThrowIfNull(item);
-            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(Client, item, _logger));
+            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(Client, item, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -645,25 +649,28 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-            disposables.AddRange(_items);
-
-            if (_createdByUs)
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
+                disposables.AddRange(_items);
+
+                if (_createdByUs)
                 {
-                    _logger.LogTeardownDeleteContainer(_container.Id.Name, _container.Id.Parent?.Name ?? "<not-available>");
-                    await _container.DeleteAsync(WaitUntil.Completed);
-                }));
-            }
-            else
-            {
-                await CleanContainerOnTeardownAsync(disposables);
-            }
+                    disposables.Add(AsyncDisposable.Create(() =>
+                    {
+                        _logger.LogTeardownDeleteContainer(_container.Id.Name, _container.Id.Parent?.Name ?? "<not-available>");
+                        return _container.DeleteAsync(WaitUntil.Completed);
+                    }));
+                }
+                else
+                {
+                    await CleanContainerOnTeardownAsync(disposables).ConfigureAwait(false);
+                }
 
-            disposables.Add(_resourceClient);
+                disposables.Add(_resourceClient);
 
-            GC.SuppressFinalize(this);
+                GC.SuppressFinalize(this);
+            }
         }
 
         private async Task CleanContainerOnTeardownAsync(DisposableCollection disposables)
@@ -680,18 +687,19 @@ namespace Arcus.Testing
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
                         _logger.LogTeardownDeleteItem(id, partitionKey, Client.Database.Id, Client.Id);
-                        using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey);
+                        using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
-                            throw new RequestFailedException(
+                            throw new RequestFailedException((int) response.StatusCode,
                                 $"[Test:Teardown] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }));
 
                     return Task.CompletedTask;
-                });
+
+                }).ConfigureAwait(false);
             }
             else if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfMatched)
             {
@@ -702,11 +710,11 @@ namespace Arcus.Testing
                         if (_options.OnTeardown.IsMatched(id, partitionKey, doc, Client.Database.Client))
                         {
                             _logger.LogTeardownDeleteMatchedItem(id, partitionKey, Client.Database.Id, Client.Id);
-                            using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey);
+                            using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
-                                throw new RequestFailedException(
+                                throw new RequestFailedException((int) response.StatusCode,
                                     $"[Test:Teardown] Failed to delete matched NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
                                     $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                             }
@@ -714,30 +722,31 @@ namespace Arcus.Testing
                     }));
 
                     return Task.CompletedTask;
-                });
+
+                }).ConfigureAwait(false);
             }
         }
 
-        private async Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
+        private Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
-            await ForEachItemAsync(Client, deleteItemAsync);
+            return ForEachItemAsync(Client, deleteItemAsync);
         }
 
         private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
-            ContainerResponse resp = await container.ReadContainerAsync();
+            ContainerResponse resp = await container.ReadContainerAsync().ConfigureAwait(false);
             ContainerProperties properties = resp.Resource;
 
             using FeedIterator iterator = container.GetItemQueryStreamIterator();
             while (iterator.HasMoreResults)
             {
-                using ResponseMessage message = await iterator.ReadNextAsync();
+                using ResponseMessage message = await iterator.ReadNextAsync().ConfigureAwait(false);
                 if (!message.IsSuccessStatusCode)
                 {
                     continue;
                 }
 
-                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions);
+                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions).ConfigureAwait(false);
 
                 if (json is not JsonObject root
                     || !root.TryGetPropertyValue("Documents", out JsonNode docs)
@@ -755,7 +764,7 @@ namespace Arcus.Testing
                     }
 
                     PartitionKey partitionKey = ExtractPartitionKeyFromItem(doc, properties);
-                    await deleteItemAsync(id, partitionKey, doc);
+                    await deleteItemAsync(id, partitionKey, doc).ConfigureAwait(false);
                 }
             }
         }

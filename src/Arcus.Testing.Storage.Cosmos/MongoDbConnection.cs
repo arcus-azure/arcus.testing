@@ -23,8 +23,8 @@ namespace Arcus.Testing
         /// </summary>
         internal static async Task<MongoClient> AuthenticateMongoClientAsync(ResourceIdentifier cosmosDbResourceId, string databaseName, string collectionName, ILogger logger)
         {
-            AccessToken accessToken = await RequestAccessTokenAsync(logger);
-            string responseBody = await RequestConnectionStringsAsync(cosmosDbResourceId, databaseName, collectionName, accessToken, logger);
+            AccessToken accessToken = await RequestAccessTokenAsync(logger).ConfigureAwait(false);
+            string responseBody = await RequestConnectionStringsAsync(cosmosDbResourceId, databaseName, collectionName, accessToken, logger).ConfigureAwait(false);
 
             string connectionString = ParseConnectionString(responseBody);
             return new MongoClient(connectionString);
@@ -36,7 +36,7 @@ namespace Arcus.Testing
             var tokenProvider = new DefaultAzureCredential();
 
             logger.LogRequestAccessToken(scope);
-            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: [scope]));
+            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: [scope])).ConfigureAwait(false);
         }
 
         private static async Task<string> RequestConnectionStringsAsync(
@@ -52,8 +52,8 @@ namespace Arcus.Testing
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
 
-            using HttpResponseMessage response = await HttpClient.SendAsync(request);
-            string responseBody = await response.Content.ReadAsStringAsync();
+            using HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
+            string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
