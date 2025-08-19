@@ -290,10 +290,10 @@ namespace Arcus.Testing
             var options = new TemporaryTableOptions();
             configureOptions?.Invoke(options);
 
-            bool createdByUs = await EnsureTableCreatedAsync(serviceClient, tableName, logger);
+            bool createdByUs = await EnsureTableCreatedAsync(serviceClient, tableName, logger).ConfigureAwait(false);
             TableClient tableClient = serviceClient.GetTableClient(tableName);
 
-            await CleanTableUponSetupAsync(tableClient, options, logger);
+            await CleanTableUponSetupAsync(tableClient, options, logger).ConfigureAwait(false);
             return new TemporaryTable(tableClient, createdByUs, options, logger);
         }
 
@@ -302,7 +302,7 @@ namespace Arcus.Testing
             var createdByUs = false;
 
             var exists = false;
-            await foreach (TableItem _ in serviceClient.QueryAsync(t => t.Name == tableName))
+            await foreach (TableItem _ in serviceClient.QueryAsync(t => t.Name == tableName).ConfigureAwait(false))
             {
                 exists = true;
             }
@@ -314,7 +314,7 @@ namespace Arcus.Testing
             else
             {
                 logger.LogSetupCreateNewTable(tableName, serviceClient.AccountName);
-                await serviceClient.CreateTableIfNotExistsAsync(tableName);
+                await serviceClient.CreateTableIfNotExistsAsync(tableName).ConfigureAwait(false);
 
                 createdByUs = true;
             }
@@ -331,20 +331,20 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Entities is OnSetupTable.CleanIfExisted)
             {
-                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
                 {
-                    await DeleteEntityOnSetupAsync(tableClient, item, logger);
+                    await DeleteEntityOnSetupAsync(tableClient, item, logger).ConfigureAwait(false);
                 }
             }
             else if (options.OnSetup.Entities is OnSetupTable.CleanIfMatched)
             {
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
 #pragma warning restore
                 {
                     if (options.OnSetup.IsMatch(item))
                     {
-                        await DeleteEntityOnSetupAsync(tableClient, item, logger);
+                        await DeleteEntityOnSetupAsync(tableClient, item, logger).ConfigureAwait(false);
                     }
                 }
             }
@@ -359,9 +359,9 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead that provides exactly the same functionality")]
 #pragma warning restore S1133
-        public async Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
+        public Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
-            await UpsertEntityAsync(entity);
+            return UpsertEntityAsync(entity);
         }
 
         /// <summary>
@@ -377,7 +377,7 @@ namespace Arcus.Testing
         public async Task UpsertEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
             ArgumentNullException.ThrowIfNull(entity);
-            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger));
+            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -386,28 +386,30 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (_createdByUs)
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                _logger.LogTeardownDeleteTable(Client.Name, Client.AccountName);
-                using Response response = await Client.DeleteAsync();
-
-                if (response.IsError && response.Status != NotFound)
+                if (_createdByUs)
                 {
-                    throw new RequestFailedException(
-                        $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
-                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                        new RequestFailedException(response));
-                }
-            }
-            else
-            {
-                disposables.AddRange(_entities);
-                await CleanTableUponTeardownAsync(disposables);
-            }
+                    _logger.LogTeardownDeleteTable(Client.Name, Client.AccountName);
+                    using Response response = await Client.DeleteAsync().ConfigureAwait(false);
 
-            GC.SuppressFinalize(this);
+                    if (response.IsError && response.Status != NotFound)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
+                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
+                            new RequestFailedException(response));
+                    }
+                }
+                else
+                {
+                    disposables.AddRange(_entities);
+                    await CleanTableUponTeardownAsync(disposables).ConfigureAwait(false);
+                }
+
+                GC.SuppressFinalize(this);
+            }
         }
 
         private async Task CleanTableUponTeardownAsync(DisposableCollection disposables)
@@ -419,7 +421,7 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Entities is OnTeardownTable.CleanAll)
             {
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
                 {
                     disposables.Add(AsyncDisposable.Create(() => DeleteEntityOnTeardownAsync(item)));
                 }
@@ -427,7 +429,7 @@ namespace Arcus.Testing
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
 #pragma warning restore S3267
                 {
                     if (_options.OnTeardown.IsMatch(item))
@@ -438,21 +440,21 @@ namespace Arcus.Testing
             }
         }
 
-        private static async Task DeleteEntityOnSetupAsync(TableClient client, TableEntity entity, ILogger logger)
+        private static Task DeleteEntityOnSetupAsync(TableClient client, TableEntity entity, ILogger logger)
         {
             logger.LogSetupDeleteEntity(entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-            await DeleteEntityAsync(client, entity, "[Test:Setup]");
+            return DeleteEntityAsync(client, entity, "[Test:Setup]");
         }
 
-        private async Task DeleteEntityOnTeardownAsync(TableEntity entity)
+        private Task DeleteEntityOnTeardownAsync(TableEntity entity)
         {
             _logger.LogTeardownDeleteEntity(entity.RowKey, entity.PartitionKey, Client.AccountName, Client.Name);
-            await DeleteEntityAsync(Client, entity, "[Test:Teardown]");
+            return DeleteEntityAsync(Client, entity, "[Test:Teardown]");
         }
 
         private static async Task DeleteEntityAsync(TableClient client, TableEntity entity, string testOperation)
         {
-            using Response response = await client.DeleteEntityAsync(entity);
+            using Response response = await client.DeleteEntityAsync(entity).ConfigureAwait(false);
 
             if (response.IsError && response.Status != NotFound)
             {
