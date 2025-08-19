@@ -168,10 +168,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await temp.WhenFileFileUploadAsync(file);
             await share.WhenFileAvailableAsync(await share.WhenDirectoryAvailableAsync(temp.Client));
 
-            await temp.DisposeAsync();
+            await WhenTestFixtureTeardownAsync(temp);
 
             await share.ShouldNotHaveFilesAsync(file);
             await share.ShouldNotHaveDirectoriesAsync(dir);
+        }
+
+        private static async Task WhenTestFixtureTeardownAsync(TemporaryShareDirectory temp)
+        {
+            // Calling dispose multiple times should be redundant.
+            await temp.DisposeAsync();
+            await temp.DisposeAsync();
         }
 
         [Fact]
