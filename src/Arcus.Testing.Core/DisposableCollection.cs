@@ -54,6 +54,7 @@ namespace Arcus.Testing
     public sealed class DisposableCollection : IAsyncDisposable, IReadOnlyCollection<IAsyncDisposable>
     {
         private readonly Collection<IAsyncDisposable> _disposables = [];
+        private readonly DisposeOptions _options = new();
         private readonly ILogger _logger;
 
         /// <summary>
@@ -66,23 +67,47 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the boolean flag to indicate whether the collection was already teared down.
+        /// Useful to determine in a test fixture as a condition for throwing <see cref="ObjectDisposedException"/> exceptions.
+        /// </summary>
+        public bool IsDisposed { get; private set; }
+
+        /// <summary>
         /// Gets the available options to manipulate the dispose behavior of the collection.
         /// </summary>
-        public DisposeOptions Options { get; } = new();
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public DisposeOptions Options
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(IsDisposed, this);
+                return _options;
+            }
+        }
 
         /// <summary>
         /// Gets the number of disposable elements in the collection.
         /// </summary>
         /// <returns>The number of disposable elements in the collection.</returns>
-        public int Count => _disposables.Count;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public int Count
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(IsDisposed, this);
+                return _disposables.Count;
+            }
+        }
 
         /// <summary>
         /// Adds a <paramref name="disposable"/> to this collection which will get disposed when this collection gets disposed.
         /// </summary>
         /// <param name="disposable">The disposable instance to add to the collection.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public void Add(IAsyncDisposable disposable)
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             ArgumentNullException.ThrowIfNull(disposable);
             _disposables.Add(disposable);
         }
@@ -91,9 +116,11 @@ namespace Arcus.Testing
         /// Adds a <paramref name="disposable"/> to this collection which will get disposed when this collection gets disposed.
         /// </summary>
         /// <param name="disposable">The disposable instance to add to the collection.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposable"/> is <c>null</c>.</exception>
         public void Add(IDisposable disposable)
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             ArgumentNullException.ThrowIfNull(disposable);
             Add(AsyncDisposable.Create(disposable));
         }
@@ -102,9 +129,11 @@ namespace Arcus.Testing
         /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
         /// </summary>
         /// <param name="disposables">The disposable instances to add to the collection.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
         public void AddRange(IEnumerable<IAsyncDisposable> disposables)
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             ArgumentNullException.ThrowIfNull(disposables);
 
             foreach (IAsyncDisposable disposable in disposables)
@@ -117,9 +146,11 @@ namespace Arcus.Testing
         /// Adds a range of <paramref name="disposables"/> to this collection which will get disposed when this collection gets disposed.
         /// </summary>
         /// <param name="disposables">The disposable instances to add to the collection.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="disposables"/> or any of its elements are <c>null</c>.</exception>
         public void AddRange(IEnumerable<IDisposable> disposables)
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             ArgumentNullException.ThrowIfNull(disposables);
 
             foreach (IDisposable disposable in disposables)
@@ -132,8 +163,10 @@ namespace Arcus.Testing
         /// Returns an enumerator that iterates through the collection.
         /// </summary>
         /// <returns>An enumerator that can be used to iterate through the collection.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public IEnumerator<IAsyncDisposable> GetEnumerator()
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             return _disposables.GetEnumerator();
         }
 
@@ -141,8 +174,10 @@ namespace Arcus.Testing
         /// Returns an enumerator that iterates through a collection.
         /// </summary>
         /// <returns>An <see cref="IEnumerator" /> object that can be used to iterate through the collection.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         IEnumerator IEnumerable.GetEnumerator()
         {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
             return GetEnumerator();
         }
 
@@ -152,13 +187,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             AsyncRetryPolicy policy =
                 Policy.Handle<Exception>(ex =>
                       {
-                          _logger.LogTearDownError(ex, ex.Message, Options.RetryInterval);
+                          _logger.LogTearDownError(ex, ex.Message, _options.RetryInterval);
                           return true;
                       })
-                      .WaitAndRetryAsync(Options.RetryCount, _ => Options.RetryInterval);
+                      .WaitAndRetryAsync(_options.RetryCount, _ => _options.RetryInterval);
 
             var exceptions = new Collection<Exception>();
             foreach (IAsyncDisposable fixture in _disposables)
@@ -188,6 +228,8 @@ namespace Arcus.Testing
                     "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information",
                     exceptions);
             }
+
+            IsDisposed = true;
         }
     }
 
