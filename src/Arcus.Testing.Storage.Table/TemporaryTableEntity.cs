@@ -53,14 +53,14 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
 #pragma warning restore S1133
-        public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
+        public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
             string accountName,
             string tableName,
             TEntity entity,
             ILogger logger)
             where TEntity : class, ITableEntity
         {
-            return await UpsertEntityAsync(accountName, tableName, entity, logger);
+            return UpsertEntityAsync(accountName, tableName, entity, logger);
         }
 
         /// <summary>
@@ -74,9 +74,9 @@ namespace Arcus.Testing
 #pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
 #pragma warning restore S1133
-        public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
+        public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
         {
-            return await UpsertEntityAsync(client, entity, logger);
+            return UpsertEntityAsync(client, entity, logger);
         }
 
         /// <summary>
@@ -132,14 +132,14 @@ namespace Arcus.Testing
             Type entityType = typeof(TEntity);
 
             NullableResponse<TEntity> entityExists =
-                await client.GetEntityIfExistsAsync<TEntity>(entity.PartitionKey, entity.RowKey);
+                await client.GetEntityIfExistsAsync<TEntity>(entity.PartitionKey, entity.RowKey).ConfigureAwait(false);
 
             if (entityExists.HasValue)
             {
                 ITableEntity originalEntity = entityExists.Value;
 
                 logger.LogSetupReplaceEntity(entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-                using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
+                using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
@@ -155,7 +155,7 @@ namespace Arcus.Testing
             else
             {
                 logger.LogSetupAddNewEntity(entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-                using Response response = await client.AddEntityAsync(entity);
+                using Response response = await client.AddEntityAsync(entity).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
@@ -178,7 +178,7 @@ namespace Arcus.Testing
             if (_createdByUs)
             {
                 _logger.LogTeardownDeleteEntity(_entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                using Response response = await _tableClient.DeleteEntityAsync(_entity);
+                using Response response = await _tableClient.DeleteEntityAsync(_entity).ConfigureAwait(false);
 
                 if (response.IsError && response.Status != NotFound)
                 {
@@ -191,7 +191,7 @@ namespace Arcus.Testing
             else
             {
                 _logger.LogTeardownRevertEntity(_entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                using Response response = await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace);
+                using Response response = await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
