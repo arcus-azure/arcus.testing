@@ -221,7 +221,7 @@ namespace Arcus.Testing
 
 #pragma warning disable S2583 // False positive (due to configure-await): Change this condition so that it does not always evaluate to 'False'. Some code paths are unreachable.
             if (exceptions.Count == 1)
-#pragma warning enable
+#pragma warning restore S2583
             {
                 throw exceptions[0];
             }
