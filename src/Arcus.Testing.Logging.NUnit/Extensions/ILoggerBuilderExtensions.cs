@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.Logging
     public static class ILoggerBuilderExtensions
     {
         /// <summary>
-        /// Adds the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given NUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
         /// <param name="builder">The logging builder to add the NUnit logging test messages to.</param>
         /// <param name="outputWriter">The NUnit test writer to write custom test output.</param>
@@ -23,7 +23,9 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter);
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             var provider = new NUnitLoggerProvider(logger);
+#pragma warning restore CA2000
 
             return builder.AddProvider(provider);
         }
@@ -41,7 +43,9 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(outputWriter);
 
             var logger = new NUnitTestLogger(outputWriter, errorWriter);
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             var provider = new NUnitLoggerProvider(logger);
+#pragma warning restore CA2000
 
             return builder.AddProvider(provider);
         }

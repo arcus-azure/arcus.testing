@@ -22,7 +22,9 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             return builder.AddProvider(new XunitLoggerProvider(outputWriter));
+#pragma warning restore CA2000
         }
 
         [ProviderAlias("Xunit")]
