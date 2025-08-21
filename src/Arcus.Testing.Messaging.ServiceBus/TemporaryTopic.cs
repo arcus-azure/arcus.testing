@@ -362,7 +362,9 @@ namespace Arcus.Testing
     public class TemporaryTopic : IAsyncDisposable
     {
         private readonly ServiceBusAdministrationClient _adminClient;
+#pragma warning disable CA2213 // Azure Service Bus sender is disposed via disposable collection.
         private readonly ServiceBusSender _sender;
+#pragma warning restore CA2213
         private readonly ServiceBusClient _messagingClient;
         private readonly Collection<TemporaryTopicSubscription> _subscriptions = [];
 
@@ -642,6 +644,7 @@ namespace Arcus.Testing
                     }
                 }
 
+                _disposables.Add(_sender);
                 if (_messagingClientCreatedByUs)
                 {
                     _disposables.Add(_messagingClient);
