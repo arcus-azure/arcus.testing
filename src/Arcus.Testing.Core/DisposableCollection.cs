@@ -226,7 +226,9 @@ namespace Arcus.Testing
                 throw exceptions[0];
             }
 
+#pragma warning disable S2583 // False positive (due to configure-await): Change this condition so that it does not always evaluate to 'False'. Some code paths are unreachable.
             if (exceptions.Count > 1)
+#pragma warning restore S2583
             {
                 throw new AggregateException(
                     "[Test:Teardown] Some test fixtures failed to tear down correctly, please check the collected exceptions for more information",
