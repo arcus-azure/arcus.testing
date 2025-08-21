@@ -7,7 +7,6 @@ namespace Arcus.Testing
     /// <para>Represents the exception implementation that gets thrown when an actual result does not match an expectation.</para>
     /// <para>See also: <see cref="AssertXml"/>, <see cref="AssertJson"/>.</para>
     /// </summary>
-    [Serializable]
 #pragma warning disable S3925 // Custom exceptions are serializable by default in modern .NET.
     public class EqualAssertionException : AssertionException
 #pragma warning restore S3925

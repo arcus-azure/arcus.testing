@@ -5,7 +5,6 @@ namespace Arcus.Testing.Failure
     /// <summary>
     /// Represents an exception that is thrown when invalid CSV is encountered.
     /// </summary>
-    [Serializable]
 #pragma warning disable S3925 // Custom exceptions are serializable by default in modern .NET.
     public class CsvException : Exception
 #pragma warning restore S3925
