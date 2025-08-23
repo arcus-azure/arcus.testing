@@ -6,7 +6,7 @@
 	exclude-result-prefixes="xs math" version="3.0">
 	<xsl:output method="text" indent="yes" omit-xml-declaration="yes" />
 
-	<xsl:variable name="separator" select="';'"/>
+	<xsl:param name="separator" select="';'"/>
 
 	<xsl:template match="/">
 		<xsl:apply-templates select="Data"/>
