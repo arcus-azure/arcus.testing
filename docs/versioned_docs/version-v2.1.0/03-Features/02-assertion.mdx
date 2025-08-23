@@ -327,11 +327,9 @@ using Arcus.Testing;
 // ----------------------------------------------------
 string input = "<data>...</data>";
 string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
-var arguments = new XsltArgumentList();
 
 string expected = "<other-data>...</other-data>"
 string actual = AssertXslt.TransformToXml(xslt, input);
-string actual = AssertXslt.TransformToXml(xslt, input, arguments);
 // Use `AssertXml.Equal` to do the equalization.
 
 // XML -> JSON
@@ -341,7 +339,6 @@ string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 
 string expected = "{ \"data\": ... }";
 string actual = AssertXslt.TransformToJson(xslt, input);
-string actual = AssertXslt.TransformToJson(xslt, input, arguments);
 // Use `AssertJson.Equal` to do the equalization.
 
 // XML -> CSV
@@ -351,23 +348,10 @@ string xslt = "<xsl:stylesheet>...</xsl:stylesheet>";
 
 string expected = "data;cost\nsome-data;123,45";
 string actual = AssertXslt.TransformToCsv(xslt, input);
-string actual = AssertXslt.TransformToCsv(xslt, input, arguments);
-string actual = AssertXslt.TransformToCsv(xslt, input, options =>
-{
-    options.Arguments = arguments;
-    options.WithResult((AssertCsvOptions csv) =>
-    {
-        // Additional options to control how the output CSV should look like.
-        // 👀 Note that when using equalization after transformation, 
-        // it is best to use the `TransformToCsv` overload that returns a `CsvTable`.
-        // That way, the load options defined here will be embedded in the 'actual' value. 
-
-        csv.Separator = ',';
-    })
-});
-
 // Use `AssertCsv.Equal` to do the equalization.
 ```
+
+> ⚡ Both types of transformations can be adapted by passing any runtime XSLT arguments.
 
 <details>
   <summary><strong>Why use the `AssertXslt` to load something that is already available with `XsltCompiledTransform.Load`?</strong></summary>
