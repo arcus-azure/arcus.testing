@@ -65,6 +65,7 @@ namespace Arcus.Testing
         private readonly Collection<CreateRuleOptions> _rules = [];
 
         private readonly bool _createdByUs;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryTopicSubscription(
@@ -80,7 +81,8 @@ namespace Arcus.Testing
 
             _client = client;
             _createdByUs = createdByUs;
-            _logger = logger;
+            _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Name = options.SubscriptionName;
             TopicName = options.TopicName;
@@ -232,10 +234,12 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="ruleName">The name to describe the subscription rule.</param>
         /// <param name="ruleFilter">The filter expression used to match messages.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="ruleName"/> or <paramref name="ruleFilter"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="ruleName"/> represents the default rule name.</exception>
         public async Task AddRuleIfNotExistsAsync(string ruleName, RuleFilter ruleFilter)
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(ruleName);
             ArgumentNullException.ThrowIfNull(ruleFilter);
 
@@ -266,14 +270,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
+            {
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
             {
                 if (await _client.SubscriptionExistsAsync(TopicName, Name).ConfigureAwait(false))
                 {
                     if (_createdByUs)
                     {
-                        disposables.Add(AsyncDisposable.Create(async () =>
+                        _disposables.Add(AsyncDisposable.Create(async () =>
                         {
                             _logger.LogTeardownDeleteSubscription(Name, FullyQualifiedNamespace, TopicName);
                             await _client.DeleteSubscriptionAsync(TopicName, Name).ConfigureAwait(false);
@@ -281,7 +289,7 @@ namespace Arcus.Testing
                     }
                     else
                     {
-                        disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () =>
+                        _disposables.AddRange(_rules.Select(r => AsyncDisposable.Create(async () =>
                         {
                             if (await _client.RuleExistsAsync(TopicName, Name, r.Name).ConfigureAwait(false))
                             {

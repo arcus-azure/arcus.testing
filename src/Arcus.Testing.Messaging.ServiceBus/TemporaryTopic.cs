@@ -362,11 +362,15 @@ namespace Arcus.Testing
     public class TemporaryTopic : IAsyncDisposable
     {
         private readonly ServiceBusAdministrationClient _adminClient;
+#pragma warning disable CA2213 // Azure Service Bus sender is disposed via disposable collection.
+        private readonly ServiceBusSender _sender;
+#pragma warning restore CA2213
         private readonly ServiceBusClient _messagingClient;
         private readonly Collection<TemporaryTopicSubscription> _subscriptions = [];
 
         private readonly bool _topicCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryTopicOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryTopic(
@@ -384,15 +388,16 @@ namespace Arcus.Testing
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _messagingClientCreatedByUs = messagingClientCreatedByUs;
+            _sender = messagingClient.CreateSender(topicName);
 
             _topicCreatedByUs = topicCreatedByUs;
 
             _options = options ?? new TemporaryTopicOptions();
-            _logger = logger;
+            _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Name = topicName;
             FullyQualifiedNamespace = messagingClient.FullyQualifiedNamespace;
-            Sender = messagingClient.CreateSender(topicName);
         }
 
         /// <summary>
@@ -408,14 +413,27 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the client to send messages to this Azure Service Bus test-managed topic.
         /// </summary>
-        public ServiceBusSender Sender { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public ServiceBusSender Sender
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _sender;
+            }
+        }
 
         /// <summary>
         /// creates a filter topic subscription client to search for messages on the Azure Service Bus test-managed topic (a.k.a. 'spy test fixture').
         /// </summary>
         /// <param name="subscriptionName">The subscription specific to the test-managed Azure Service Bus topic to create a filter for.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        public ServiceBusMessageFilter MessagesOn(string subscriptionName) => new(Name, subscriptionName, _messagingClient);
+        public ServiceBusMessageFilter MessagesOn(string subscriptionName)
+        {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+            return new ServiceBusMessageFilter(Name, subscriptionName, _messagingClient);
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTopic"/> which creates a new Azure Service Bus topic if it doesn't exist yet.
@@ -588,9 +606,11 @@ namespace Arcus.Testing
         /// <param name="configureOptions">
         ///     The function to configure the additional options that describes how the Azure Service Bus topic subscription should be created.
         /// </param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
         public async Task AddSubscriptionAsync(string subscriptionName, Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions).ConfigureAwait(false));
         }
 
@@ -600,14 +620,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
+            {
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
             {
                 if (await _adminClient.TopicExistsAsync(Name).ConfigureAwait(false))
                 {
                     if (_topicCreatedByUs)
                     {
-                        disposables.Add(AsyncDisposable.Create(async () =>
+                        _disposables.Add(AsyncDisposable.Create(async () =>
                         {
                             _logger.LogTeardownDeleteTopic(Name, FullyQualifiedNamespace);
                             await _adminClient.DeleteTopicAsync(Name).ConfigureAwait(false);
@@ -615,14 +639,15 @@ namespace Arcus.Testing
                     }
                     else
                     {
-                        disposables.AddRange(_subscriptions);
-                        disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                        _disposables.AddRange(_subscriptions);
+                        _disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
                     }
                 }
 
+                _disposables.Add(_sender);
                 if (_messagingClientCreatedByUs)
                 {
-                    disposables.Add(_messagingClient);
+                    _disposables.Add(_messagingClient);
                 }
 
                 GC.SuppressFinalize(this);

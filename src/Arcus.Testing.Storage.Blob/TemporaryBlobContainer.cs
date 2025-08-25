@@ -230,6 +230,7 @@ namespace Arcus.Testing
         private readonly Collection<TemporaryBlobFile> _blobs = [];
         private readonly bool _createdByUs;
         private readonly TemporaryBlobContainerOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryBlobContainer(
@@ -244,6 +245,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Client = containerClient;
         }
@@ -380,10 +382,12 @@ namespace Arcus.Testing
         /// </remarks>
         /// <param name="blobName">The name of the blob to upload.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
         public async Task<BlobClient> UpsertBlobFileAsync(string blobName, BinaryData blobContent)
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
 
@@ -399,19 +403,22 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
             {
+                return;
+            }
 
-                disposables.AddRange(_blobs);
-                disposables.Add(AsyncDisposable.Create(async () =>
+            await using (_disposables.ConfigureAwait(false))
+            {
+                _disposables.AddRange(_blobs);
+                _disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     await CleanBlobContainerUponDeletionAsync(Client, _options, _logger).ConfigureAwait(false);
                 }));
 
                 if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    _disposables.Add(AsyncDisposable.Create(async () =>
                     {
                         _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
                         await Client.DeleteIfExistsAsync().ConfigureAwait(false);

@@ -374,6 +374,7 @@ namespace Arcus.Testing
 
         private readonly bool _queueCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryQueueOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryQueue(
@@ -397,6 +398,7 @@ namespace Arcus.Testing
 
             _options = options ?? new TemporaryQueueOptions();
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Name = queueName;
             FullyQualifiedNamespace = messagingClient.FullyQualifiedNamespace;
@@ -420,7 +422,15 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the filter client to search for messages on the Azure Service Bus test-managed queue (a.k.a. 'spy test fixture').
         /// </summary>
-        public ServiceBusMessageFilter Messages => new(Name, _messagingClient);
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public ServiceBusMessageFilter Messages
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return new(Name, _messagingClient);
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
@@ -587,14 +597,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
+            {
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
             {
                 if (await _adminClient.QueueExistsAsync(Name).ConfigureAwait(false))
                 {
                     if (_queueCreatedByUs)
                     {
-                        disposables.Add(AsyncDisposable.Create(async () =>
+                        _disposables.Add(AsyncDisposable.Create(async () =>
                         {
                             _logger.LogTeardownDeleteQueue(Name, FullyQualifiedNamespace);
                             await _adminClient.DeleteQueueAsync(Name).ConfigureAwait(false);
@@ -602,13 +616,13 @@ namespace Arcus.Testing
                     }
                     else
                     {
-                        disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                        _disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
                     }
                 }
 
                 if (_messagingClientCreatedByUs)
                 {
-                    disposables.Add(_messagingClient);
+                    _disposables.Add(_messagingClient);
                 }
 
                 GC.SuppressFinalize(this);

@@ -192,6 +192,7 @@ namespace Arcus.Testing
         private readonly bool _createdByUs;
         private readonly Collection<TemporaryTableEntity> _entities = [];
         private readonly TemporaryTableOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryTable(TableClient client, bool createdByUs, TemporaryTableOptions options, ILogger logger)
@@ -202,6 +203,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Client = client;
         }
@@ -373,9 +375,11 @@ namespace Arcus.Testing
         /// </remarks>
         /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
         /// <param name="entity">The entity to temporary add to the table.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
         public async Task UpsertEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(entity);
             _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger).ConfigureAwait(false));
         }
@@ -386,8 +390,12 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
+            {
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
             {
                 if (_createdByUs)
                 {
@@ -404,8 +412,8 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    disposables.AddRange(_entities);
-                    await CleanTableUponTeardownAsync(disposables).ConfigureAwait(false);
+                    _disposables.AddRange(_entities);
+                    await CleanTableUponTeardownAsync(_disposables).ConfigureAwait(false);
                 }
 
                 GC.SuppressFinalize(this);

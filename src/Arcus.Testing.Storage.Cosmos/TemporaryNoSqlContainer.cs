@@ -311,6 +311,7 @@ namespace Arcus.Testing
         private readonly bool _createdByUs;
         private readonly Collection<IAsyncDisposable> _items = [];
         private readonly TemporaryNoSqlContainerOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryNoSqlContainer(
@@ -331,6 +332,7 @@ namespace Arcus.Testing
             _options = options;
             _resourceClient = resourceClient;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Client = containerClient;
         }
@@ -636,9 +638,11 @@ namespace Arcus.Testing
         ///     when the <see cref="TemporaryNoSqlContainer"/> is disposed.
         /// </remarks>
         /// <param name="item">The item to create in the Azure Cosmos DB for NoSQL container.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
         public async Task UpsertItemAsync<TItem>(TItem item)
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(item);
             _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(Client, item, _logger).ConfigureAwait(false));
         }
@@ -649,14 +653,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
             {
-                disposables.AddRange(_items);
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
+            {
+                _disposables.AddRange(_items);
 
                 if (_createdByUs)
                 {
-                    disposables.Add(AsyncDisposable.Create(() =>
+                    _disposables.Add(AsyncDisposable.Create(() =>
                     {
                         _logger.LogTeardownDeleteContainer(_container.Id.Name, _container.Id.Parent?.Name ?? "<not-available>");
                         return _container.DeleteAsync(WaitUntil.Completed);
@@ -664,10 +672,10 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    await CleanContainerOnTeardownAsync(disposables).ConfigureAwait(false);
+                    await CleanContainerOnTeardownAsync(_disposables).ConfigureAwait(false);
                 }
 
-                disposables.Add(_resourceClient);
+                _disposables.Add(_resourceClient);
 
                 GC.SuppressFinalize(this);
             }
