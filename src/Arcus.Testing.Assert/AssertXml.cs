@@ -331,8 +331,8 @@ namespace Arcus.Testing
                 if (expectedAttr.NamespaceURI != actualAttr.NamespaceURI)
                 {
                     return new(ActualOtherNamespace,
-                        expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI,
-                        actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path)
+                        string.IsNullOrEmpty(expectedAttr.NamespaceURI) ? "no namespace" : expectedAttr.NamespaceURI,
+                        string.IsNullOrEmpty(actualAttr.NamespaceURI) ? "no namespace" : actualAttr.NamespaceURI, path)
                     {
                         ExpectedNodeDiff = expected.ToString(),
                         ActualNodeDiff = actual.ToString()
