@@ -228,6 +228,7 @@ namespace Arcus.Testing
         private readonly IMongoDatabase _database;
         private readonly TemporaryMongoDbCollectionOptions _options;
         private readonly Collection<IAsyncDisposable> _documents = [];
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryMongoDbCollection(
@@ -250,6 +251,7 @@ namespace Arcus.Testing
             _database = database;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Name = collectionName;
         }
@@ -421,8 +423,10 @@ namespace Arcus.Testing
         /// Gets the client to interact with the collection that is temporary available.
         /// </summary>
         /// <typeparam name="TDocument">The type of the document in the MongoDb collection.</typeparam>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public IMongoCollection<TDocument> GetCollectionClient<TDocument>()
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             return _database.GetCollection<TDocument>(Name);
         }
 
@@ -453,9 +457,11 @@ namespace Arcus.Testing
         /// </remarks>
         /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
         /// <param name="document">The document to upload to the MongoDB collection.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
         public async Task UpsertDocumentAsync<TDocument>(TDocument document)
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(document);
 
             IMongoCollection<TDocument> collection = GetCollectionClient<TDocument>();
@@ -468,14 +474,18 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            var disposables = new DisposableCollection(_logger);
-            await using (disposables.ConfigureAwait(false))
+            if (_disposables.IsDisposed)
             {
-                disposables.AddRange(_documents);
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
+            {
+                _disposables.AddRange(_documents);
 
                 if (_createdByUs)
                 {
-                    disposables.Add(AsyncDisposable.Create(() =>
+                    _disposables.Add(AsyncDisposable.Create(() =>
                     {
                         _logger.LogTeardownDeleteCollection(Name, _database.DatabaseNamespace.DatabaseName);
                         return _database.DropCollectionAsync(Name);
@@ -483,12 +493,12 @@ namespace Arcus.Testing
                 }
                 else
                 {
-                    disposables.Add(AsyncDisposable.Create(CleanCollectionOnTeardownAsync));
+                    _disposables.Add(AsyncDisposable.Create(CleanCollectionOnTeardownAsync));
                 }
 
                 if (_clientCreatedByUs && _client != null)
                 {
-                    disposables.Add(_client);
+                    _disposables.Add(_client);
                 }
 
                 GC.SuppressFinalize(this);
