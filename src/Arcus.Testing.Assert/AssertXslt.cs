@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -8,6 +9,41 @@ using Arcus.Testing.Failure;
 
 namespace Arcus.Testing
 {
+    /// <summary>
+    /// Represents the options to configure the behavior of the <see cref="AssertXslt"/> methods that output CSV results.
+    /// </summary>
+    public class AssertXsltOutCsvOptions
+    {
+        private readonly Collection<Action<AssertCsvOptions>> _configureResultOptions = [];
+
+        /// <summary>
+        /// Specify arguments which gets passed as input to the XSLT-asserted transformation.
+        /// </summary>
+        public XsltArgumentList Arguments { get; set; }
+
+        /// <summary>
+        /// Specifies how the XSLT transformation CSV output result is expected to look like.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Multiple calls gets aggregated.
+        /// </remarks>
+        /// <param name="configureResultOptions">The function to configure certain 'load' options, similar to <see cref="AssertCsv.Load(string,Action{AssertCsvOptions})"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configureResultOptions"/> is <c>null</c>.</exception>
+        public void WithResult(Action<AssertCsvOptions> configureResultOptions)
+        {
+            ArgumentNullException.ThrowIfNull(configureResultOptions);
+            _configureResultOptions.Add(configureResultOptions);
+        }
+
+        internal void ConfigureCsvOptions(AssertCsvOptions options)
+        {
+            foreach (var configure in _configureResultOptions)
+            {
+                configure(options);
+            }
+        }
+    }
+
     /// <summary>
     /// Represents assertion-like functionality related to transforming XML documents with XSLT transformer contents.
     /// </summary>
@@ -215,6 +251,25 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Transforms the <paramref name="inputXml"/> with the given <paramref name="xsltTransformer"/>to a CSV output.
+        /// </summary>
+        /// <param name="xsltTransformer">The XSLT stylesheet that describes the transformation of the <paramref name="inputXml"/> XML contents.</param>
+        /// <param name="inputXml">The XML input contents, subject to the XSLT transformation.</param>
+        /// <param name="configureOptions">The function to configure additional options to manipulate the XSLT-asserted transformation.</param>
+        /// <returns>The CSV result of the XSLT stylesheet transformation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="xsltTransformer"/> the <paramref name="inputXml"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
+        /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
+        public static string TransformToCsv(string xsltTransformer, string inputXml, Action<AssertXsltOutCsvOptions> configureOptions)
+        {
+            XslCompiledTransform transformer = Load(xsltTransformer);
+            XmlNode input = AssertXml.Load(inputXml);
+
+            CsvTable csvTable = TransformToCsv(transformer, input, configureOptions);
+            return csvTable.ToString();
+        }
+
+        /// <summary>
         /// Transforms the <paramref name="input"/> with the given <paramref name="transformer"/> to a CSV output.
         /// </summary>
         /// <param name="transformer">The XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
@@ -240,13 +295,31 @@ namespace Arcus.Testing
         /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
         public static CsvTable TransformToCsv(XslCompiledTransform transformer, XmlNode input, XsltArgumentList arguments)
         {
+            return TransformToCsv(transformer, input, options => options.Arguments = arguments);
+        }
+
+        /// <summary>
+        /// Transforms the <paramref name="input"/> with the given <paramref name="transformer"/> to a CSV output.
+        /// </summary>
+        /// <param name="transformer">The XSLT stylesheet that describes the transformation of the <paramref name="input"/> XML contents.</param>
+        /// <param name="input">The XML input contents, subject to the XSLT transformation.</param>
+        /// <param name="configureOptions">The function to configure additional options to manipulate the XSLT-asserted transformation.</param>
+        /// <returns>The CSV result of the XSLT stylesheet transformation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transformer"/> or the <paramref name="input"/> is <c>null</c>.</exception>
+        /// <exception cref="XsltException">Thrown when the XSLT transformation was not successful.</exception>
+        /// <exception cref="CsvException">Thrown when the output could not be successfully loaded into a structured CSV table.</exception>
+        public static CsvTable TransformToCsv(XslCompiledTransform transformer, XmlNode input, Action<AssertXsltOutCsvOptions> configureOptions)
+        {
             ArgumentNullException.ThrowIfNull(input);
             ArgumentNullException.ThrowIfNull(transformer);
 
+            var options = new AssertXsltOutCsvOptions();
+            configureOptions?.Invoke(options);
+
             try
             {
-                string json = Transform(transformer, input, arguments);
-                return AssertCsv.Load(json);
+                string json = Transform(transformer, input, options.Arguments);
+                return AssertCsv.Load(json, options.ConfigureCsvOptions);
             }
             catch (XsltException exception)
             {
