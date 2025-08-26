@@ -574,7 +574,7 @@ namespace Arcus.Testing
 
         private static string QuoteValueUponSpaces(string value)
         {
-            return value.Contains(' ')
+            return value.Contains(' ', StringComparison.InvariantCulture)
                    && !value.StartsWith('"')
                    && !value.EndsWith('"') ? $"\"{value}\"" : value;
         }
@@ -1018,7 +1018,9 @@ namespace Arcus.Testing
 
             const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
             const char blankSpace = ' ';
-            bool containsSpaces = Value.Contains(blankSpace) || other.Value.Contains(blankSpace);
+            bool containsSpaces =
+                Value.Contains(blankSpace, StringComparison.InvariantCulture)
+                || other.Value.Contains(blankSpace, StringComparison.InvariantCulture);
 
             if (!containsSpaces
                 && float.TryParse(Value, style, _culture, out float expectedValue)
@@ -1057,7 +1059,7 @@ namespace Arcus.Testing
         /// <returns>A hash code for the current object.</returns>
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return Value.GetHashCode(StringComparison.InvariantCulture);
         }
     }
 }
