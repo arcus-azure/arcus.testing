@@ -179,9 +179,7 @@ namespace Arcus.Testing
         /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSQL items
         /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
         /// </summary>
-#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedItems) + " instead that provides exactly the same on-teardown functionality")]
-#pragma warning restore S1133
         public OnTeardownNoSqlContainerOptions CleanCreatedItems()
         {
             return CleanUpsertedItems();
@@ -622,9 +620,7 @@ namespace Arcus.Testing
         /// <typeparam name="T">The custom NoSQL model.</typeparam>
         /// <param name="item">The item to create in the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
-#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality")]
-#pragma warning restore S1133
         public Task AddItemAsync<T>(T item)
         {
             return UpsertItemAsync(item);
