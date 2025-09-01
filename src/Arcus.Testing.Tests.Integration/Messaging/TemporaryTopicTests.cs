@@ -182,6 +182,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore1);
             ServiceBusMessage messageDeadLetterAfter = serviceBus.WhenMessageUnsent();
             temp.OnTeardown.DeadLetterMessages(msg => msg.MessageId == messageDeadLetterAfter.MessageId);
+            await serviceBus.ShouldDeadLetteredMessageAsync(topicName, messageDeadLetterAfter);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
             await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
