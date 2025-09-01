@@ -727,32 +727,27 @@ namespace Arcus.Testing
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
             Message = "[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogSetupDeadLetterMessageOnTopic(this ILogger logger, string messageId,
-            string topicSubscriptionName, string @namespace);
+        internal static partial void LogSetupDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
             Message = "[Test:Setup] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogSetupCompleteMessageOnTopic(this ILogger logger, string messageId,
-            string topicSubscriptionName, string @namespace);
+        internal static partial void LogSetupCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
             Message = "[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogTeardownDeadLetterMessageOnTopic(this ILogger logger, string messageId,
-            string topicSubscriptionName, string @namespace);
+        internal static partial void LogTeardownDeadLetterMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
             Message = "[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from topic subscription '{TopicSubscriptionName}' in namespace '{Namespace}'")]
-        internal static partial void LogTeardownCompleteMessageOnTopic(this ILogger logger, string messageId,
-            string topicSubscriptionName, string @namespace);
+        internal static partial void LogTeardownCompleteMessageOnTopic(this ILogger logger, string messageId, string topicSubscriptionName, string @namespace);
 
         [LoggerMessage(
             Level = LogLevel.Warning,
             Message = "[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in topic '{Namespace}/{TopicName}'")]
-        internal static partial void LogTeardownAmbiguousMessageSettleOnTopic(this ILogger logger, string messageId,
-            string @namespace, string topicName);
+        internal static partial void LogTeardownAmbiguousMessageSettleOnTopic(this ILogger logger, string messageId, string @namespace, string topicName);
 
         [LoggerMessage(
             Level = SetupTeardownLogLevel,
