@@ -629,9 +629,7 @@ namespace Arcus.Testing
             Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
-            _subscriptions.Add(await TemporaryTopicSubscription
-                .CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions)
-                .ConfigureAwait(false));
+            _subscriptions.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_adminClient, Name, subscriptionName, _logger, configureOptions).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -696,11 +694,9 @@ namespace Arcus.Testing
         private async Task ForEachMessageOnTopicAsync(
             Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
-            await foreach (SubscriptionProperties subscription in _adminClient.GetSubscriptionsAsync(Name)
-                               .ConfigureAwait(false))
+            await foreach (SubscriptionProperties subscription in _adminClient.GetSubscriptionsAsync(Name).ConfigureAwait(false))
             {
-                await ForEachMessageOnTopicSubscriptionAsync(subscription.SubscriptionName, operation)
-                    .ConfigureAwait(false);
+                await ForEachMessageOnTopicSubscriptionAsync(subscription.SubscriptionName, operation).ConfigureAwait(false);
             }
         }
 
@@ -712,8 +708,7 @@ namespace Arcus.Testing
             {
                 while (true)
                 {
-                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(_options.OnSetup.MaxWaitTime)
-                        .ConfigureAwait(false);
+                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(_options.OnSetup.MaxWaitTime).ConfigureAwait(false);
                     if (message is null)
                     {
                         return;
