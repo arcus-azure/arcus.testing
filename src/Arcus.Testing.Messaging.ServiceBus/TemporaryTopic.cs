@@ -20,7 +20,6 @@ namespace Arcus.Testing
     public class OnSetupTemporaryTopicOptions
     {
         private readonly Collection<Action<CreateTopicOptions>> _configuredOptions = [];
-
         private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldCompleteMessages = [], _shouldDeadLetterMessages = [];
 
         internal OnSetupMessagesTopic Messages { get; private set; }
