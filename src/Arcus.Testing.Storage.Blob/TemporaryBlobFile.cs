@@ -62,9 +62,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-#pragma warning disable S1133 // Will be removed in v3.0
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
-#pragma warning restore S1133
         public static Task<TemporaryBlobFile> UploadIfNotExistsAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
             return UpsertFileAsync(blobContainerUri, blobName, blobContent, logger);
@@ -77,9 +75,7 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-#pragma warning disable S1133 // Will be removed in v3.0
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertFileAsync) + " instead which provides the exact same functionality")]
-#pragma warning restore S1133
         public static Task<TemporaryBlobFile> UploadIfNotExistsAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
         {
             return UpsertFileAsync(blobClient, blobContent, logger);
