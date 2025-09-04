@@ -60,7 +60,7 @@ stages:
           - task: CopyFiles@2
             displayName: 'Copy build artifacts'
             inputs:
-              contents: '**/bin/**'
+              contents: 'src/**'
               targetFolder: '$(Pipeline.Workspace)/build'
           - task: PublishPipelineArtifact@0
             displayName: 'Publish build artifacts'
