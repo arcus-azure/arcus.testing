@@ -25,7 +25,6 @@ jobs:
 
       - script: |
           dotnet test $(Pipeline.Workspace)/src/**/bin/$(Build.Configuration)/net*/$(Project).Tests.Unit.dll \
-            --no-build \
             --configuration $(Build.Configuration) \
             --collect:"XPlat Code Coverage" \
             --verbosity detailed \
