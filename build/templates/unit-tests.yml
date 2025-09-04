@@ -4,11 +4,8 @@ jobs:
     pool:
       vmImage: '$(Vm.Image)'
     steps:
-      - task: DownloadPipelineArtifact@2
-        displayName: 'Download build artifacts'
-        inputs:
-          artifact: 'Build'
-          path: '$(Pipeline.Workspace)/build'
+      - download: current
+        artifact: Build
 
       - task: UseDotNet@2
         displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
@@ -24,7 +21,9 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test $(Pipeline.Workspace)/build/src/$(Project).Tests.Unit/bin/$(Build.Configuration)/net*/$(Project).Tests.Unit.dll \
+          dotnet test **/$(Project).Tests.Unit.csproj \
+            --no-build \
+            --configuration $(Build.Configuration) \
             --collect:"XPlat Code Coverage" \
             --verbosity normal \
             --logger trx \

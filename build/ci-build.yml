@@ -57,16 +57,16 @@ stages:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               versionSuffix: '$(packageVersion)'
               includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
-          - task: CopyFiles@2
-            displayName: 'Copy build artifacts'
+          - task: DotNetCoreCLI@2
+            displayName: 'Publish Build Output'
             inputs:
-              contents: '**/bin/**'
-              targetFolder: '$(Pipeline.Workspace)/build'
-          - task: PublishPipelineArtifact@0
-            displayName: 'Publish build artifacts'
-            inputs:
-              targetPath: '$(Pipeline.Workspace)/build'
-              artifactName: Build
+              command: 'publish'
+              publishWebProjects: false
+              projects: '**/*.csproj'
+              arguments: '--configuration $(Build.Configuration) --output $(Build.ArtifactStagingDirectory)'
+              zipAfterPublish: false
+          - publish: $(Build.ArtifactStagingDirectory)
+            artifact: Build
 
   - stage: Tests
     dependsOn: Build
