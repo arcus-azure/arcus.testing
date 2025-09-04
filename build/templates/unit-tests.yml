@@ -24,11 +24,12 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test $(Pipeline.Workspace)/build/src/**/*.Tests.Unit.dll \
+          dotnet test $(Pipeline.Workspace)/**/*.Tests.Unit.dll \
             --collect:"XPlat Code Coverage" \
             --verbosity detailed \
             --logger trx \
-            --results-directory $(Pipeline.Workspace)
+            --results-directory $(Pipeline.Workspace)/TestResults \
+            /p:CoverletOutput=$(Pipeline.Workspace)/Coverage/coverage.xml
         displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
@@ -36,10 +37,10 @@ jobs:
         condition: always()
         inputs:
           testResultsFormat: 'VSTest'
-          testResultsFiles: '$(Pipeline.Workspace)/*.trx'
+          testResultsFiles: '$(Pipeline.Workspace)/TestResults/*.trx'
 
-      - task: PublishPipelineArtifact@0
+      - task: PublishPipelineArtifact@1
         displayName: 'Publish code coverage artifacts'
         inputs:
-          targetPath: '$(Pipeline.Workspace)'
+          targetPath: '$(Pipeline.Workspace)/Coverage'
           artifactName: Coverage-Unit
