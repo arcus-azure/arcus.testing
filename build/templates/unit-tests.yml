@@ -24,7 +24,7 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test src/**/$(Project).Tests.Unit.csproj --no-build --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
+          dotnet test src/**/$(Project).Tests.Unit.csproj --no-build --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --verbosity detailed --logger trx --results-directory $(Pipeline.Workspace)
         displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
