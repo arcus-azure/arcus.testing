@@ -98,6 +98,11 @@ await TemporaryTopic.CreateIfNotExistsAsync(..., options =>
         return msg.ApplicationProperties.ContainsKey("<key>"); 
     });
 });
+
+// `OnTeardown` is also still available after the temporary topic is created:
+await using TemporaryTopic topic = ...
+
+topic.OnTeardown.DeadLetterMessages();
 ```
 
 ### Peek for messages
@@ -232,6 +237,11 @@ await TemporaryQueue.CreateIfNotExistsAsync(..., options =>
         return msg.ApplicationProperties.ContainsKey("<key>"); 
     });
 });
+
+// `OnTeardown` is also still available after the temporary queue is created:
+await using TemporaryQueue queue = ...
+
+queue.OnTeardown.DeadLetterMessages();
 ```
 
 ### Peek for messages

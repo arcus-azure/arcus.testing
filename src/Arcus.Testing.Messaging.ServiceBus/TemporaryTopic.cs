@@ -411,6 +411,11 @@ namespace Arcus.Testing
         public string FullyQualifiedNamespace { get; }
 
         /// <summary>
+        /// Gets the options related to tearing down the <see cref="TemporaryTopic"/>.
+        /// </summary>
+        public OnTeardownTemporaryTopicOptions OnTeardown => _options.OnTeardown;
+
+        /// <summary>
         /// Gets the client to send messages to this Azure Service Bus test-managed topic.
         /// </summary>
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
@@ -585,7 +590,6 @@ namespace Arcus.Testing
                     _logger.LogSetupCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-
             }).ConfigureAwait(false);
         }
 
@@ -670,7 +674,6 @@ namespace Arcus.Testing
                     _logger.LogTeardownCompleteMessageOnTopic(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
                     await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-
             }).ConfigureAwait(false);
         }
 
