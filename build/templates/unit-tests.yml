@@ -29,7 +29,7 @@ jobs:
             --verbosity detailed \
             --logger trx \
             --results-directory $(Pipeline.Workspace)/TestResults \
-            /p:CoverletOutput=$(Pipeline.Workspace)/Coverage/coverage.xml
+            -p:CoverletOutput=$(Pipeline.Workspace)/Coverage/coverage.xml
         displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
