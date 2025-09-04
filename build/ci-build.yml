@@ -57,6 +57,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.Version)'
+              includePreviewVersions: true
           - task: DotNetCoreCLI@2
             displayName: 'Publish Build Output'
             inputs:
