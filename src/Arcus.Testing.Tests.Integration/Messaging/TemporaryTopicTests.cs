@@ -180,9 +180,9 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             // Assert
             await serviceBus.ShouldHaveTopicAsync(topicName);
             await serviceBus.ShouldLeaveMessageAsync(topicName, subscriptionName, messageBefore1);
-            ServiceBusMessage messageDeadLetterAfter = serviceBus.WhenMessageUnsent();
+
+            ServiceBusMessage messageDeadLetterAfter = await serviceBus.WhenMessageSentAsync(topicName);
             temp.OnTeardown.DeadLetterMessages(msg => msg.MessageId == messageDeadLetterAfter.MessageId);
-            await serviceBus.ShouldDeadLetteredMessageAsync(topicName, messageDeadLetterAfter);
 
             ServiceBusMessage messageAfter = serviceBus.WhenMessageUnsent();
             await temp.Sender.SendMessageAsync(messageAfter, TestContext.Current.CancellationToken);
@@ -192,6 +192,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             await serviceBus.ShouldCompletedMessageAsync(topicName, subscriptionName, messageAfter);
             await serviceBus.ShouldDeadLetteredMessageAsync(topicName, subscriptionName, messageBeforeDeadLetter1);
             await serviceBus.ShouldDeadLetteredMessageAsync(topicName, subscriptionName, messageBeforeDeadLetter2);
+            await serviceBus.ShouldDeadLetteredMessageAsync(topicName, subscriptionName, messageDeadLetterAfter);
         }
 
         [Fact]
