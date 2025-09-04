@@ -24,7 +24,7 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test $(Pipeline.Workspace)/**/*.Tests.Unit.csproj \
+          dotnet test $(Pipeline.Workspace)/build/src/$(Project).Tests.Unit/$(Project).Tests.Unit.csproj \
             --configuration $(Build.Configuration) \
             --no-build \
             --collect:"XPlat Code Coverage" \
