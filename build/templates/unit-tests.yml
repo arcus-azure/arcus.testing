@@ -8,7 +8,7 @@ jobs:
         displayName: 'Download build artifacts'
         inputs:
           artifact: 'Build'
-          path: '$(Build.SourcesDirectory)'
+          path: '$(Pipeline.Workspace)'
 
       - task: UseDotNet@2
         displayName: 'Import .NET SDK ($(DotNet.Sdk.VersionBC))'
@@ -24,7 +24,13 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test src/**/$(Project).Tests.Unit.csproj --no-build --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --verbosity detailed --logger trx --results-directory $(Pipeline.Workspace)
+          dotnet test $(Pipeline.Workspace)/src/**/$(Project).Tests.Unit.csproj \
+            --no-build \
+            --configuration $(Build.Configuration) \
+            --collect:"XPlat Code Coverage" \
+            --verbosity detailed \
+            --logger trx \
+            --results-directory $(Pipeline.Workspace)
         displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
