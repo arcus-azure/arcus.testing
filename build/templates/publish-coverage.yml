@@ -5,7 +5,7 @@ jobs:
       vmImage: '$(Vm.Image)'
     dependsOn:
       - UnitTests
-      - IntegrationTests
+      # - IntegrationTests
     steps:
       - task: DownloadPipelineArtifact@2
         displayName: 'Download coverage unit artifacts'
@@ -34,7 +34,7 @@ jobs:
       - powershell: |
           gh auth login --with-token $(GITHUB_TOKEN)
           gh repo view
-          
+
           $summary = Get-Content -Path './coveragereport/SummaryGithub.md' -Raw
           Write-Host "Summary: $summary"
 
@@ -61,7 +61,7 @@ jobs:
           $branchCoverageValue = [double]($branchCoverage -replace '%', '')
           $buildId = $env:BUILD_BUILDID
           $reportUrl = "https://dev.azure.com/codit/Arcus/_build/results?buildId=$buildId&view=codecoverage-tab"
-          
+
           $minCoverage = 80
           if ($lineCoverageValue -ge $minCoverage -and $branchCoverage -ge $minCoverage) {
             $motivationalMessage = "Great job! 😎 Your code coverage is higher than my caffeine levels! ☕"
@@ -77,7 +77,7 @@ jobs:
 
           $comments = gh pr view $env:PR_NUMBER --json comments --jq '.comments[].body'
           $commentExists = $comments | Where-Object { $_ -like "*Code coverage*" -and $_ -like "*summary*" }
-          
+
           $content = @"
           ## 🧪 [Code coverage]($reportUrl) summary
           | Metric | Value |
