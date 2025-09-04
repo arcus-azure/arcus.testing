@@ -28,8 +28,7 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --verbosity detailed \
             --logger trx \
-            --results-directory $(Pipeline.Workspace)/TestResults \
-            -p:CoverletOutput=$(Pipeline.Workspace)/Coverage/coverage.xml
+            --results-directory $(Pipeline.Workspace)
         displayName: 'Run unit tests'
 
       - task: PublishTestResults@2
@@ -37,10 +36,10 @@ jobs:
         condition: always()
         inputs:
           testResultsFormat: 'VSTest'
-          testResultsFiles: '$(Pipeline.Workspace)/TestResults/*.trx'
+          testResultsFiles: '$(Pipeline.Workspace)/*.trx'
 
       - task: PublishPipelineArtifact@1
         displayName: 'Publish code coverage artifacts'
         inputs:
-          targetPath: '$(Pipeline.Workspace)/Coverage'
+          targetPath: '$(Pipeline.Workspace)'
           artifactName: Coverage-Unit
