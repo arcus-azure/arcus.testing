@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
+    [Collection(DataFactoryDebugSessionCollection.CollectionName)]
     public class TemporaryDataFlowDebugSessionTests : IntegrationTest
     {
         private readonly DataFactoryDebugSession _fixture;

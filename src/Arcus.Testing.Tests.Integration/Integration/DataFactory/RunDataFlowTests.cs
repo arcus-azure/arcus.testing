@@ -19,6 +19,7 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
+    [Collection(DataFactoryDebugSessionCollection.CollectionName)]
     public class RunDataFlowTests : IntegrationTest
     {
         private readonly DataFactoryDebugSession _session;
