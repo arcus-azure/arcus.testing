@@ -11,7 +11,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Runner.InProc.SystemConsole.TestingPlatform;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
