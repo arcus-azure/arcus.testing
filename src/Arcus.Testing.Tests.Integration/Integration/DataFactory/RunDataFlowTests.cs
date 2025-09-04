@@ -351,14 +351,14 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         {
             await using (var disposables = new DisposableCollection(NullLogger.Instance))
             {
-                if (Value != null)
+                disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
-                    {
-                        await Value.DisposeAsync();
-                        await ShouldNotFindActiveSessionAsync(SessionId);
-                    }));
-                }
+                    // Expected to dispose the debug session multiple times to verify redundancy.
+                    await Value.DisposeAsync();
+                    await Value.DisposeAsync();
+
+                    await ShouldNotFindActiveSessionAsync(SessionId);
+                }));
 
                 disposables.Add(_connection);
             }
