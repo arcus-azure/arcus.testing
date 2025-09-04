@@ -64,7 +64,7 @@ stages:
               command: 'publish'
               publishWebProjects: false
               projects: '**/*.csproj'
-              arguments: '--configuration $(Build.Configuration) --target-framework net10.0 --version-suffix $(packageVersion) --output $(Build.ArtifactStagingDirectory)'
+              arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion) --output $(Build.ArtifactStagingDirectory)'
               zipAfterPublish: false
           - publish: $(Build.ArtifactStagingDirectory)
             artifact: Build
