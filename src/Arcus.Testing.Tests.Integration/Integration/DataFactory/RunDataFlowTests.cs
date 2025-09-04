@@ -19,7 +19,6 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 {
-    [Collection(DataFactoryDebugSessionCollection.CollectionName)]
     public class RunDataFlowTests : IntegrationTest
     {
         private readonly DataFactoryDebugSession _session;
@@ -350,18 +349,22 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(NullLogger.Instance);
-
-            if (Value != null)
+            await using (var disposables = new DisposableCollection(NullLogger.Instance))
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
+                if (Value != null)
                 {
-                    await Value.DisposeAsync();
-                    await ShouldNotFindActiveSessionAsync(SessionId);
-                }));
+                    disposables.Add(AsyncDisposable.Create(async () =>
+                    {
+                        await Value.DisposeAsync();
+                        await ShouldNotFindActiveSessionAsync(SessionId);
+                    }));
+                }
+
+                disposables.Add(_connection);
             }
 
-            disposables.Add(_connection);
+            Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
         }
     }
 }
