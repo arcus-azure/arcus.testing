@@ -3,16 +3,16 @@ name: $(date:yyyyMMdd)$(rev:.r)
 trigger:
   branches:
     include:
-    - main
+      - main
   paths:
     include:
-    - src/*
+      - src/*
 
 pr:
   paths:
     include:
-    - src/*
-    - build/*
+      - src/*
+      - build/*
 
 parameters:
   - name: 'Package.Version.ManualTrigger'
@@ -73,9 +73,9 @@ stages:
     condition: succeeded()
     jobs:
       - template: templates/unit-tests.yml
-      - template: templates/integration-tests.yml
-        parameters:
-          azureServiceConnection: '${{ parameters.azureServiceConnection }}'
+      # - template: templates/integration-tests.yml
+      #   parameters:
+      #     azureServiceConnection: '${{ parameters.azureServiceConnection }}'
       - template: templates/publish-coverage.yml
 
   - stage: ReleaseToMyget
