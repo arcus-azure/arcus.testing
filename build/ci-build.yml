@@ -66,10 +66,16 @@ stages:
               projects: '**/*.sln'
               arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion)'
               zipAfterPublish: false
-          - task: PublishPipelineArtifact@1
+          - task: CopyFiles@2
+            displayName: 'Copy build artifacts'
             inputs:
-              targetPath: '**/src/**'
-              artifact: Build
+              contents: '**/src/**'
+              targetFolder: '$(Pipeline.Workspace)/build'
+          - task: PublishPipelineArtifact@0
+            displayName: 'Publish build artifacts'
+            inputs:
+              targetPath: '$(Pipeline.Workspace)/build'
+              artifactName: Build
 
   - stage: Tests
     dependsOn: Build
