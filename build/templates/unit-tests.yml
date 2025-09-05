@@ -21,9 +21,7 @@ jobs:
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
       - script: |
-          dotnet test $(Pipeline.Workspace)/Build/src/$(Project).Tests.Unit/$(Project).Tests.Unit.csproj \
-            --no-build \
-            --configuration $(Build.Configuration) \
+          dotnet test $(Pipeline.Workspace)/Build/src/$(Project).Tests.Unit.dll \
             --collect:"XPlat Code Coverage" \
             --verbosity normal \
             --logger trx \

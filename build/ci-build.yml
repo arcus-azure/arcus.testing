@@ -61,7 +61,7 @@ stages:
           - task: DotNetCoreCLI@2
             displayName: 'Publish Build Output'
             inputs:
-              command: 'publish'
+              command: 'build'
               publishWebProjects: false
               projects: '**/*.sln'
               arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion) --output $(Build.ArtifactStagingDirectory)'
