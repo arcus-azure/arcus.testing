@@ -64,9 +64,9 @@ stages:
               command: 'build'
               publishWebProjects: false
               projects: '**/*.sln'
-              arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion) --output $(Build.ArtifactStagingDirectory)'
+              arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion)'
               zipAfterPublish: false
-          - publish: $(Build.ArtifactStagingDirectory)
+          - publish: src/*
             artifact: Build
 
   - stage: Tests
