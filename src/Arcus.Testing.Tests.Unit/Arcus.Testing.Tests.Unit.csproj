@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
     <NoWarn>CA2007<!-- unit tests do not have a synchronization context, only sync 'hidden' as async --></NoWarn>
   </PropertyGroup>
