@@ -66,8 +66,10 @@ stages:
               projects: '**/*.sln'
               arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion)'
               zipAfterPublish: false
-          - publish: **/src/**
-            artifact: Build
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Pipeline.Workspace)/src/*'
+              artifact: Build
 
   - stage: Tests
     dependsOn: Build
