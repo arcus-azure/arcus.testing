@@ -25,6 +25,7 @@ jobs:
             --no-build \
             --configuration $(Build.Configuration) \
             --collect:"XPlat Code Coverage" \
+            --verbosity normal \
             --logger trx \
             --results-directory $(Pipeline.Workspace)
         displayName: 'Run unit tests'
