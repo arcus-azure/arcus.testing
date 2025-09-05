@@ -64,7 +64,7 @@ stages:
               command: 'build'
               publishWebProjects: false
               projects: '**/*.sln'
-              arguments: '--configuration $(Build.Configuration) --framework net10.0 --version-suffix $(packageVersion)'
+              arguments: '--configuration $(Build.Configuration) --framework net8.0 --version-suffix $(packageVersion)'
               zipAfterPublish: false
           - task: CopyFiles@2
             displayName: 'Copy build artifacts'
