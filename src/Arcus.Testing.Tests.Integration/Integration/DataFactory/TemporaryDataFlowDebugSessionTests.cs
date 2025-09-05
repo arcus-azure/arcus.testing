@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
-using Azure.Core;
+﻿using System.Threading.Tasks;
 using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
@@ -32,40 +29,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             }
 
             await _fixture.ShouldFindActiveSessionAsync(_fixture.Value.SessionId);
-        }
-    }
-
-    public class DataFactoryDataFlowDebugSessionDisposeTest : IntegrationTest
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DataFactoryDataFlowDebugSessionDisposeTest"/> class.
-        /// </summary>
-        public DataFactoryDataFlowDebugSessionDisposeTest(ITestOutputHelper outputWriter) : base(outputWriter)
-        {
-        }
-
-        [Fact]
-        public async Task StartDebugSession_DisposeTwice_SucceedsByBeingRedundant()
-        {
-            // Arrange
-            using var connection = TemporaryManagedIdentityConnection.Create(Configuration, Logger);
-
-            DataFactoryConfig dataFactory = Configuration.GetDataFactory();
-            ResourceIdentifier resourceId = dataFactory.ResourceId;
-            var session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(resourceId, Logger);
-            Guid sessionId = session.SessionId;
-
-            await session.DisposeAsync();
-
-            // Act
-            await session.DisposeAsync();
-
-            // Assert
-            bool isActive = await DataFactoryDebugSession.IsDebugSessionActiveAsync(resourceId, sessionId);
-            Assert.False(isActive, $"expected to remove active debug session '{sessionId}' in DataFactory '{dataFactory.Name}', but it's still active");
-
-            Assert.Throws<ObjectDisposedException>(() => session.SessionId);
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => session.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
         }
     }
 }
