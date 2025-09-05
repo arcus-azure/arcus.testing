@@ -68,7 +68,7 @@ stages:
               zipAfterPublish: false
           - task: PublishPipelineArtifact@1
             inputs:
-              targetPath: '**/src/*'
+              targetPath: '**/src/**'
               artifact: Build
 
   - stage: Tests
