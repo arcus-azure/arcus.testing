@@ -68,7 +68,7 @@ stages:
               zipAfterPublish: false
           - task: PublishPipelineArtifact@1
             inputs:
-              targetPath: '$(Pipeline.Workspace)/src/*'
+              targetPath: '$(Pipeline.Workspace)/**/src/*'
               artifact: Build
 
   - stage: Tests
