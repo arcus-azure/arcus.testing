@@ -11,6 +11,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
@@ -283,9 +284,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            await Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
+
+                IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+                Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            });
         }
 
         /// <summary>
