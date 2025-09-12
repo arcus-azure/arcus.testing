@@ -22,9 +22,8 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
-            var logger = new NUnitTestLogger(outputWriter);
 #pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
-            var provider = new NUnitLoggerProvider(logger);
+            var provider = new NUnitLoggerProvider(outputWriter, errorWriter: null);
 #pragma warning restore CA2000
 
             return builder.AddProvider(provider);
@@ -41,21 +40,28 @@ namespace Microsoft.Extensions.Logging
         {
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
+            ArgumentNullException.ThrowIfNull(errorWriter);
 
-            var logger = new NUnitTestLogger(outputWriter, errorWriter);
 #pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
-            var provider = new NUnitLoggerProvider(logger);
+            var provider = new NUnitLoggerProvider(outputWriter, errorWriter);
 #pragma warning restore CA2000
 
             return builder.AddProvider(provider);
         }
 
         [ProviderAlias("NUnit")]
-        private sealed class NUnitLoggerProvider(NUnitTestLogger logger) : ILoggerProvider
+        private sealed class NUnitLoggerProvider(TextWriter outputWriter, TextWriter errorWriter) : ILoggerProvider, ISupportExternalScope
         {
+            private IExternalScopeProvider _scopeProvider;
+
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+            {
+                _scopeProvider = scopeProvider;
+            }
+
             public ILogger CreateLogger(string categoryName)
             {
-                return logger;
+                return new NUnitTestLogger(outputWriter, errorWriter, _scopeProvider, categoryName);
             }
 
             public void Dispose()
