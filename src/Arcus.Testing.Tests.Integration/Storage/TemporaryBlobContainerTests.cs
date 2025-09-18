@@ -6,7 +6,6 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.BlobStorage)]
     public class TemporaryBlobContainerTests : IntegrationTest
     {
         /// <summary>
