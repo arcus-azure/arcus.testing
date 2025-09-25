@@ -270,7 +270,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         // ICollectionFixture<> interfaces.
     }
 
-    public class DataFactoryDebugSession : IAsyncLifetime
+    public sealed class DataFactoryDebugSession : IAsyncLifetime
     {
         private readonly TestConfig _config;
         private static readonly Faker Bogus = new();
@@ -346,16 +346,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(NullLogger.Instance);
-
-            if (Value != null)
+            await using (var disposables = new DisposableCollection(NullLogger.Instance))
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
+                    // Expected to dispose the debug session multiple times to verify redundancy.
                     await Value.DisposeAsync();
+                    await Value.DisposeAsync();
+
                     await ShouldNotFindActiveSessionAsync(SessionId);
                 }));
             }
+
+            Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
         }
     }
 }
