@@ -356,8 +356,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
                     await ShouldNotFindActiveSessionAsync(SessionId);
                 }));
-
-                disposables.Add(_connection);
             }
 
             Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
