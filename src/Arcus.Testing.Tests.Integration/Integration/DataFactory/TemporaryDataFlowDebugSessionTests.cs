@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Azure.Core;
 using Xunit;
 
@@ -48,8 +47,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task StartDebugSession_DisposeTwice_SucceedsByBeingRedundant()
         {
             // Arrange
-            using var connection = TemporaryManagedIdentityConnection.Create(Configuration, Logger);
-
             DataFactoryConfig dataFactory = Configuration.GetDataFactory();
             ResourceIdentifier resourceId = dataFactory.ResourceId;
             var session = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(resourceId, Logger);
