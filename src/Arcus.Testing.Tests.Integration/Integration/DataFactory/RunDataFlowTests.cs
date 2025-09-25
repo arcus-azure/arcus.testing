@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
 using Azure.Core;
 using Azure.Identity;
@@ -274,7 +273,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
     public sealed class DataFactoryDebugSession : IAsyncLifetime
     {
         private readonly TestConfig _config;
-        private TemporaryManagedIdentityConnection _connection;
         private static readonly Faker Bogus = new();
 
         /// <summary>
@@ -298,8 +296,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask InitializeAsync()
         {
-            _connection = TemporaryManagedIdentityConnection.Create(_config, NullLogger.Instance);
-
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
 

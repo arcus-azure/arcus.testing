@@ -9,7 +9,6 @@ using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.MongoDb)]
     public class TemporaryMongoDbDocumentTests : IntegrationTest
     {
         /// <summary>

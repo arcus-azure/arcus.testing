@@ -6,7 +6,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Azure.Core;
 using Azure.Identity;
 using Bogus;
@@ -23,7 +22,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     /// </summary>
     public class MongoDbTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly IMongoDatabase _database;
         private readonly Collection<string> _collectionNames = new();
         private readonly ILogger _logger;
@@ -35,11 +33,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// Initializes a new instance of the <see cref="MongoDbTestContext" /> class.
         /// </summary>
         private MongoDbTestContext(
-            TemporaryManagedIdentityConnection connection,
             IMongoDatabase database,
             ILogger logger)
         {
-            _connection = connection;
             _database = database;
             _logger = logger;
         }
@@ -49,11 +45,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static async Task<MongoDbTestContext> GivenAsync(TestConfig config, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             MongoClient mongoDbClient = await AuthenticateMongoDbClientAsync(config);
             IMongoDatabase database = mongoDbClient.GetDatabase(config["Arcus:Cosmos:MongoDb:DatabaseName"]);
 
-            return new MongoDbTestContext(connection, database, logger);
+            return new MongoDbTestContext(database, logger);
         }
 
         private static async Task<MongoClient> AuthenticateMongoDbClientAsync(TestConfig config)
@@ -259,7 +254,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(_logger);
-            disposables.Add(_connection);
 
             foreach (string collectionName in _collectionNames)
             {
