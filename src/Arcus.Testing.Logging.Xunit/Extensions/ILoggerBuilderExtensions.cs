@@ -29,13 +29,18 @@ namespace Microsoft.Extensions.Logging
         }
 
         [ProviderAlias("Xunit")]
-        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider
+        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly ILogger _logger = new XunitTestLogger(outputWriter);
+            private IExternalScopeProvider _scopeProvider;
+
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+            {
+                _scopeProvider = scopeProvider;
+            }
 
             public ILogger CreateLogger(string categoryName)
             {
-                return _logger;
+                return new XunitTestLogger(outputWriter, _scopeProvider, categoryName);
             }
 
             public void Dispose()
