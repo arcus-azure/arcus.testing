@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
@@ -20,7 +19,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
     /// </summary>
     internal class ServiceBusTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
         private readonly Collection<string> _topicNames = new(), _queueNames = new();
@@ -31,12 +29,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         private static readonly Faker Bogus = new();
 
         private ServiceBusTestContext(
-            TemporaryManagedIdentityConnection connection,
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             ILogger logger)
         {
-            _connection = connection;
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _logger = logger;
@@ -49,12 +45,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             ServiceBusNamespace serviceBus = config.GetServiceBus();
 
-            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
             var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
 
-            return new ServiceBusTestContext(connection, adminClient, messagingClient, logger);
+            return new ServiceBusTestContext(adminClient, messagingClient, logger);
         }
 
         /// <summary>
@@ -387,7 +382,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             })));
 
             disposables.Add(_messagingClient);
-            disposables.Add(_connection);
         }
     }
 }
