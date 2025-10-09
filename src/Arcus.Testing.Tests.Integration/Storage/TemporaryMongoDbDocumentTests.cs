@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Bogus;
 using MongoDB.Bson;
@@ -162,7 +161,6 @@ namespace Arcus.Testing.Tests.Integration.Storage
         [Fact]
         public async Task CreateTempMongoDbDocument_WithoutIdProperty_Fails()
         {
-            using var _ = TemporaryManagedIdentityConnection.Create(Configuration, Logger);
             await Assert.ThrowsAnyAsync<InvalidOperationException>(() => WhenTempDocumentCreatedAsync("<collection-name>", new DocWithoutId()));
         }
 
