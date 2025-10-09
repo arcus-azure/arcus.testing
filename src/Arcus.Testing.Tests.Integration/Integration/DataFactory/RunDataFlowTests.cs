@@ -6,7 +6,6 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
 using Azure.Core;
 using Azure.Identity;
@@ -271,10 +270,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         // ICollectionFixture<> interfaces.
     }
 
-    public class DataFactoryDebugSession : IAsyncLifetime
+    public sealed class DataFactoryDebugSession : IAsyncLifetime
     {
         private readonly TestConfig _config;
-        private TemporaryManagedIdentityConnection _connection;
         private static readonly Faker Bogus = new();
 
         /// <summary>
@@ -298,8 +296,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask InitializeAsync()
         {
-            _connection = TemporaryManagedIdentityConnection.Create(_config, NullLogger.Instance);
-
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
 
@@ -350,18 +346,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(NullLogger.Instance);
-
-            if (Value != null)
+            await using (var disposables = new DisposableCollection(NullLogger.Instance))
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
+                    // Expected to dispose the debug session multiple times to verify redundancy.
                     await Value.DisposeAsync();
+                    await Value.DisposeAsync();
+
                     await ShouldNotFindActiveSessionAsync(SessionId);
                 }));
             }
 
-            disposables.Add(_connection);
+            Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
         }
     }
 }

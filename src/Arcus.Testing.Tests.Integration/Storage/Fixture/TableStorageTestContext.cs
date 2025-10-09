@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
 using Azure.Data.Tables;
@@ -19,7 +18,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     /// </summary>
     public class TableStorageTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly Collection<string> _tableNames = new();
         private readonly TableServiceClient _serviceClient;
         private readonly ILogger _logger;
@@ -27,11 +25,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private static readonly Faker Bogus = new();
 
         private TableStorageTestContext(
-            TemporaryManagedIdentityConnection connection,
             TableServiceClient serviceClient,
             ILogger logger)
         {
-            _connection = connection;
             _serviceClient = serviceClient;
             _logger = logger;
         }
@@ -41,14 +37,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static Task<TableStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(configuration, logger);
-
             StorageAccount storageAccount = configuration.GetStorageAccount();
             var serviceClient = new TableServiceClient(
                 new Uri($"https://{storageAccount.Name}.table.core.windows.net"),
                 new DefaultAzureCredential());
 
-            return Task.FromResult(new TableStorageTestContext(connection, serviceClient, logger));
+            return Task.FromResult(new TableStorageTestContext(serviceClient, logger));
         }
 
         /// <summary>
@@ -186,8 +180,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                     await _serviceClient.DeleteTableAsync(tableName);
                 });
             }));
-
-            disposables.Add(_connection);
         }
     }
 }

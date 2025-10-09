@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Net;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Azure;
 using Azure.Identity;
 using Azure.ResourceManager;
@@ -32,20 +31,17 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     /// </summary>
     public class NoSqlTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly CosmosDbConfig _config;
         private readonly CosmosClient _client;
         private readonly Collection<string> _containerNames = new();
         private readonly ILogger _logger;
 
         private NoSqlTestContext(
-            TemporaryManagedIdentityConnection connection,
             CosmosClient client,
             Database database,
             CosmosDbConfig config,
             ILogger logger)
         {
-            _connection = connection;
             _config = config;
             _client = client;
             Database = database;
@@ -62,13 +58,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static NoSqlTestContext Given(TestConfig config, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             CosmosDbConfig noSql = config.GetNoSql();
 
             var client = new CosmosClient(noSql.AccountEndpoint.ToString(), new DefaultAzureCredential());
             Database database = client.GetDatabase(noSql.DatabaseName);
 
-            return new NoSqlTestContext(connection, client, database, noSql, logger);
+            return new NoSqlTestContext(client, database, noSql, logger);
         }
 
         /// <summary>
@@ -236,7 +231,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
                     // Ignore when the client is not active anymore.
                 }
             }));
-            disposables.Add(_connection);
         }
     }
 }
