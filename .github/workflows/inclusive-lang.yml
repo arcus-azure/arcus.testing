@@ -2,9 +2,7 @@ name: Inclusive Language Check
 
 on:
   pull_request_target:
-    paths:
-      - 'docs/preview/**'
-      - 'docs/versioned_docs/**'
+    types: [assigned, opened, synchronize, reopened]
   push:
     paths:
       - 'docs/preview/**'
