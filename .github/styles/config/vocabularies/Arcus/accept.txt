@@ -2,7 +2,6 @@ Arcus
 boolean
 codeblocks
 Codit
-codit
 Docusaurus
 namespace
 namespaces
