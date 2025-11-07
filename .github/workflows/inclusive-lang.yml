@@ -1,9 +1,11 @@
 name: Inclusive Language Check
 
 on:
-  pull_request_target:
-    types: [assigned, opened, synchronize, reopened]
   push:
+    paths:
+      - 'docs/preview/**'
+      - 'docs/versioned_docs/**'
+  pull_request:
     paths:
       - 'docs/preview/**'
       - 'docs/versioned_docs/**'
@@ -13,22 +15,19 @@ jobs:
     name: Check inclusive language in Markdown files
     runs-on: windows-latest
 
-    permissions:
-      contents: read
-      pull-requests: write
-      actions: read
-      security-events: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run inclusive language check
-        id: check
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Continue'
+          $WorkingDirectory = "$(Get-Location)"
           $FileWildCard = "*.md?"
+
+          Write-Host "🔍 Scanning Markdown files in docs/preview and docs/versioned_docs..."
+
           $json = Invoke-RestMethod -Method GET https://inclusivenaming.org/word-lists/index.json
 
           $paths = @("docs/preview", "docs/versioned_docs")
@@ -39,48 +38,34 @@ jobs:
             }
           }
 
-          $violations = @()
+          $violationFound = $false
+
           foreach ($file in $files) {
             $content = Get-Content -Raw $file.FullName
+            $violation = $false
             foreach ($check in $json.data) {
               if ($content -match [regex]::Escape($check.term)) {
-                $violations += @{
-                  file = $file.FullName
-                  term = $check.term
-                  recommendation = $check.recommendation
-                  replacements = ($check.recommended_replacements -join ', ')
-                  tier = $check.tier
-                  page = $check.term_page
+                $violation = $true
+                $violationFound = $true
+
+                $message = "[inclusive language violation] file '$($file.FullName)' contains inappropriate language: '$($check.term)' => $($check.recommendation)`nReplacements: $([System.String]::Join(', ', $check.recommended_replacements))`nMore info: $($check.term_page)"
+                switch ($check.tier) {
+                  "1" { Write-Error "❌ $($message)" }
+                  "2" { Write-Warning "⚠️ $($message)" }
+                  "3" { Write-Warning "🚩 $($message)" }
+                  "0" { Write-Output "ℹ️ $($message)" }
                 }
               }
             }
-          }
 
-          if ($violations.Count -gt 0) {
-            $body = "### ⚠️ Inclusive Language Violations Detected`n"
-            foreach ($v in $violations) {
-              $body += "`n- **File:** $($v.file)`n  - Term: **$($v.term)**`n  - Recommendation: $($v.recommendation)`n  - Replacements: $($v.replacements)`n  - [More info]($($v.page))`n"
+            if (-not $violation) {
+              Write-Host "✔️ [inclusive language approved] file '$($file.FullName)'"
             }
-
-            # save the markdown to an output file
-            $body | Out-File -FilePath violations.md -Encoding utf8
-
-            # expose to next step
-            echo "found=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "found=false" >> $env:GITHUB_OUTPUT
           }
 
-      - name: Comment on PR if violations found
-        if: steps.check.outputs.found == 'true' && github.event_name == 'pull_request'
-        uses: thollander/actions-comment-pull-request@v3
-        with:
-          file-path: violations.md
-          comment-tag: 'inclusive-lang'
-          mode: 'recreate'
-
-      - name: Fail if violations found
-        if: steps.check.outputs.found == 'true'
-        run: |
-          Write-Error "❌ Inclusive language violations found. See PR comment for details."
-          exit 1
+          if ($violationFound) {
+            Write-Error "❌ Inclusive language violations found. Please review the logs above."
+            exit 1
+          } else {
+            Write-Host "✅ No inclusive language issues detected."
+          }
