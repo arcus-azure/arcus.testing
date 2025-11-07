@@ -9,4 +9,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: errata-ai/vale-action@v2.1.1
         with:
+          reporter: github-check
           fail_on_error: true
