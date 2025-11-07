@@ -1,0 +1,71 @@
+name: Inclusive Language Check
+
+on:
+  push:
+    paths:
+      - 'docs/preview/**'
+      - 'docs/versioned_docs/**'
+  pull_request:
+    paths:
+      - 'docs/preview/**'
+      - 'docs/versioned_docs/**'
+
+jobs:
+  check-inclusive-language:
+    name: Check inclusive language in Markdown files
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run inclusive language check
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $WorkingDirectory = "$(Get-Location)"
+          $FileWildCard = "*.md?"
+
+          Write-Host "🔍 Scanning Markdown files in docs/preview and docs/versioned_docs..."
+
+          $json = Invoke-RestMethod -Method GET https://inclusivenaming.org/word-lists/index.json
+
+          $paths = @("docs/preview", "docs/versioned_docs")
+          $files = @()
+          foreach ($path in $paths) {
+            if (Test-Path $path) {
+              $files += Get-ChildItem $path -Recurse -Filter $FileWildCard
+            }
+          }
+
+          $violationFound = $false
+
+          foreach ($file in $files) {
+            $content = Get-Content -Raw $file.FullName
+            $violation = $false
+            foreach ($check in $json.data) {
+              if ($content -match [regex]::Escape($check.term)) {
+                $violation = $true
+                $violationFound = $true
+
+                $message = "[inclusive language violation] file '$($file.FullName)' contains inappropriate language: '$($check.term)' => $($check.recommendation)`nReplacements: $([System.String]::Join(', ', $check.recommended_replacements))`nMore info: $($check.term_page)"
+                switch ($check.tier) {
+                  "1" { Write-Error "❌ $($message)" }
+                  "2" { Write-Warning "⚠️ $($message)" }
+                  "3" { Write-Warning "🚩 $($message)" }
+                  "0" { Write-Output "ℹ️ $($message)" }
+                }
+              }
+            }
+
+            if (-not $violation) {
+              Write-Host "✔️ [inclusive language approved] file '$($file.FullName)'"
+            }
+          }
+
+          if ($violationFound) {
+            Write-Error "❌ Inclusive language violations found. Please review the logs above."
+            exit 1
+          } else {
+            Write-Host "✅ No inclusive language issues detected."
+          }
