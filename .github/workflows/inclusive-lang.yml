@@ -1,7 +1,7 @@
 name: Inclusive Language Check
 
 on:
-  pull_request:
+  pull_request_target:
     paths:
       - 'docs/preview/**'
       - 'docs/versioned_docs/**'
