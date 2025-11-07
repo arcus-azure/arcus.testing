@@ -1,9 +1,9 @@
-name: reviewdog
+name: Prose linting
 on: [pull_request]
 
 jobs:
   vale:
-    name: runner / vale
+    name: Vale
     runs-on: ubuntu-latest
     permissions:
       contents: read
