@@ -41,7 +41,7 @@ IMongoCollection<Shipment> client = collection.GetCollectionClient<Shipment>();
 
 > 🎖️ Overloads are available that takes in the `IMongoDatabase` for custom authentication mechanisms. By default, it uses the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential).
 
-Upserting documents in the collection can also be done via the test fixture. It always make sure that any upserted documents are removed (if new) or reverted (if existing) afterwards.
+Upserting documents in the collection can also be done via the test fixture. It always makes sure that any upserted documents are removed (if new) or reverted (if existing) afterwards.
 
 ```csharp
 using Arcus.Testing;
