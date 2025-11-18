@@ -108,7 +108,7 @@ collection.OnTeardown.CleanAllDocuments();
 ### Temporary MongoDB document
 The `TemporaryMongoDbDocument` provides a solution when the integration test requires a document during the test run. A MongoDB document is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
 
-When the document already existed (already a document with a same configured document ID), then the test fixture will revert to the original content of the document upon the test fixture disposal.
+When the document already existed (a document with a same configured document ID), then the test fixture will revert to the original content of the document upon the test fixture disposal.
 
 > ⚡ Whether or not the test fixture should use an existing document is set by using an existing document ID (`_id` by default).
 
