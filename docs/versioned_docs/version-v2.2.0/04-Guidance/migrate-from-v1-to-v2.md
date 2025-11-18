@@ -3,7 +3,7 @@ This guide will walk you through the process of migrating your test suite from A
 
 ## General
 * 🗑️ .NET 6 support is removed
-Starting from v2, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
+Starting from v2, all `Arcus.Testing.*` packages support .NET 8 and stop supporting .NET 6. (.NET 10 support starts from v2.2.)
 
 ## 📦 Arcus.Testing.Logging.*
 ### 👋 Arcus.Testing.Logging.Core is archived
