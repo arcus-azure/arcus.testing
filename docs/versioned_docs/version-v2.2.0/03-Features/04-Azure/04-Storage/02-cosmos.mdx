@@ -134,7 +134,7 @@ BsonValue documentId = document.Id;
 <TabItem value="nosql" label="NoSQL">
 
 :::info
-Make sure that the test client that interacts with the Cosmos storage has at least [`Cosmos DB Built-in Data Contributor`](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/security/reference-data-plane-roles)-rights if the test needs to create/update/delete containers.
+Make sure that the test client that interacts with the Cosmos storage has at least [`Cosmos DB Built-in Data Contributor`](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/security/reference-data-plane-roles) rights if the test needs to create/update/delete containers.
 
 **This role is not a built-in Azure RBAC, but a role specific for NoSQL**. One can [assign this role with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/cosmosdb/sql/role/assignment?view=azure-cli-latest#az-cosmosdb-sql-role-assignment-create):
 ```powershell
@@ -233,7 +233,7 @@ container.OnTeardown.CleanAllItems();
 ### Temporary NoSQL item
 The `TemporaryNoSqlItem` provides a solution when the integration test requires a item during the test run. A NoSQL item is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
 
-> ⚡ When the item already existed (already a item with a same configured item ID), then the test fixture will revert to the original content of the item upon the test fixture disposal.
+> ⚡ When the item already existed (an item with a same configured item ID), then the test fixture will revert to the original content of the item upon the test fixture disposal.
 
 ```csharp
 using Arcus.Testing;

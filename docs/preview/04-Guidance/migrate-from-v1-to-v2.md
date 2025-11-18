@@ -1,9 +1,9 @@
 # Migrate your test suite from Arcus.Testing v1 to v2
-This guide will walk you through the process of migrating your test suite from the Arcus.Testing v1 to the new major v2 release.
+This guide will walk you through the process of migrating your test suite from Arcus.Testing v1 to the new major v2 release.
 
 ## General
 * 🗑️ .NET 6 support is removed
-Starting from v2, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
+Starting from v2, all `Arcus.Testing.*` packages support .NET 8 and stop supporting .NET 6. (.NET 10 support starts from v2.2.)
 
 ## 📦 Arcus.Testing.Logging.*
 ### 👋 Arcus.Testing.Logging.Core is archived

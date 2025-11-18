@@ -58,7 +58,7 @@ All classes described here are available in the same namespace : `Arcus.Testing`
 <details>
   <summary><strong>Do you write log messages to the test output?</strong></summary>
   
-  The test output is usually the first place you look when a test fails. Either the testing framework has written the exception message to the output, assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
+  The test output is usually the first place you look when a test fails. Either the testing framework has written the exception message to the output, the assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
 
   Testing frameworks all have their different ways of writing log messages to the test output, which means that each piece of test code that interacts with these test framework-specifics is more tightly coupled to that framework.
 

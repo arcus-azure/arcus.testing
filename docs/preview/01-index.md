@@ -19,7 +19,7 @@ Specifically designed to help with integration testing against Azure resources, 
 In short: Arcus Testing is a set of libraries that makes tests more fun to write!
 
 ## Why should I use Arcus Testing?
-Testing is a fact of life. Writing those tests often comes with an effort to set up a test code infrastructure to interact with all the parts of the system.
+Testing is a fact of life. Writing tests often comes with an effort to set up a test code infrastructure to interact with all the parts of the system.
 
 Arcus Testing lessens the burden of re-creating the same boilerplate test code infrastructure for similar projects.
 
