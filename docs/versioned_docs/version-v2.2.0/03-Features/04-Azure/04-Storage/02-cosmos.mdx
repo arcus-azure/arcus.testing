@@ -52,7 +52,7 @@ await collection.UpsertDocumentAsync(new Shipment { BoatName = "The Alice"  });
 ```
 
 :::praise
-The `TemporaryMongoDbCollection` will always remove/revert any MongoDB documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principal that any test should not leave any state it created behind after the test has run.
+The `TemporaryMongoDbCollection` will always remove/revert any MongoDB documents that were upserted via the temporary collection itself with the `collection.UpsertDocumentAsync`. This follows the 'clean environment' testing principle. This means that any test should not leave any state it created behind after it has run.
 :::
 
 #### Customization
