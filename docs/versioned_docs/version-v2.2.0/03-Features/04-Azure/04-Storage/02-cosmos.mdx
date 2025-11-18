@@ -19,7 +19,7 @@ Make sure that the test client that interacts with the Azure Cosmos DB storage h
 :::
 
 ### Temporary MongoDB collection
-The `TemporaryMongoDbCollection` provides a solution when the integration test requires a storage system (collection) during the test run. An Azure Cosmos DB for MongoDB collection is created upon setup of the test fixture and is deleted again when the test fixture disposed.
+The `TemporaryMongoDbCollection` provides a solution when the integration test requires a storage system (collection) during the test run. An Azure Cosmos DB for MongoDB collection is created upon setup of the test fixture and is deleted again when the test fixture is disposed.
 
 > ⚡ The test fixture automatically uses an existing MongoDB collection - if exists, but does not remove it if it was not responsible for creating the collection.
 
