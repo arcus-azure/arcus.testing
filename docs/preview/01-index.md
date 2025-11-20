@@ -26,7 +26,9 @@ Arcus Testing lessens the burden of re-creating the same boilerplate test code i
 ## How to use Arcus Testing?
 See our dedicated [getting started](02-getting-started.md) page to take your first steps with Arcus Testing.
 
+<!-- vale write-good.Passive = NO -->
 # License
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.
+<!-- vale write-good.Passive = YES -->
 
 _[Full license here](https://github.com/arcus-azure/arcus.testing/blob/master/LICENSE)_

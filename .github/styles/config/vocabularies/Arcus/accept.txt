@@ -11,6 +11,6 @@ NUnit
 Serilog
 sublicense
 teardown
-Xunit
-xUnit
+[Xx][Uu]nit
+walkthrough
 ws
