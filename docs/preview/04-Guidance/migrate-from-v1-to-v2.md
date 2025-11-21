@@ -2,12 +2,14 @@
 This guide will walk you through the process of migrating your test suite from the Arcus.Testing v1 to the new major v2 release.
 
 ## General
+<!-- vale write-good.Passive = NO -->
 * 🗑️ .NET 6 support is removed
 Starting from v2, all `Arcus.Testing.*` packages solely support .NET 8 and stop supporting .NET 6.
 
 ## 📦 Arcus.Testing.Logging.*
 ### 👋 Arcus.Testing.Logging.Core is archived
-Starting from v2, the `Arcus.Testing.Logging.Core` package of the set of logging packages is being archived and is not included anymore as a transient reference in any of the testing framework-specific packages.
+Starting from v2, the `Arcus.Testing.Logging.Core` package of the set of logging packages is archived and is not included anymore as a transient reference in any of the testing framework-specific packages.
+<!-- vale write-good.Passive = YES -->
 
 This means that the following types are not included anymore when you install v2 via a testing framework package (xUnit, NUnit, MSTest):
 * `InMemoryLogger`
@@ -26,11 +28,13 @@ xUnit v3 is out for a while now, but migration in both extension open-source pac
 
 By working with two different packages, the migration process is only a matter of changing logging package. The type names and namespaces are in both packages identical. Only the used xUnit transient dependency will be different.
 
-> 👀 **BUT** note that migrating to Arcus.Testing v2 does not mean that you are forced to migrate to xUnit v3 straightaway. We provide continued support for xUnit v2 as long as the package remains active. 
+> 👀 **BUT** note that migrating to Arcus.Testing v2 does not mean that it forces you to migrate to xUnit v3 straightaway. We provide continued support for xUnit v2 as long as the package remains active. 
 
+<!-- vale write-good.Passive = NO -->
 ## 📦 Arcus.Testing.Storage.Blob
 ### `BlobNameFilter` ➡️ `Func<BlobItem, bool>`
-Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
+Previous versions had a dedicated type called `BlobNameFilter` to filter out certain Azure Blob items subject for deletion during the setup/teardown of the container. The type is removed in v2 in favor of a built-in delegation.
+<!-- vale write-good.Passive = YES -->
 
 ```diff
 TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
@@ -44,8 +48,10 @@ TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
 });
 ```
 
+<!-- vale write-good.Passive = NO -->
 ### `TemporaryBlobFileOptions` ➡️ `TemporaryBlobContainerOptions`
-Previous versions had additional options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture has been removed in v2 - as it is already implicitly available on the `TemporaryBlobContainerOptions`.
+Previous versions had additional options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture is removed in v2 - because already implicitly available on the `TemporaryBlobContainerOptions`.
+<!-- vale write-good.Passive = YES -->
 
 1. When you want to 'use an existing blob file instead of overriding it + remove it nonetheless afterwards' you can use either `.CleanAllBlobs` or `.CleanMatchingBlobs` on the container options:
     ```diff
@@ -88,8 +94,10 @@ TemporaryNoSqlContainer.CreateIfNotExistsAsync(..., options =>
 });
 ```
 
+<!-- vale write-good.Passive = NO -->
 ### `NoSqlItemFilter` ➡️ `Func<NoSqlItem, bool>`
-Previous versions had a dedicated type called `NoSqlItemFilter` to filter out certain Azure Cosmos DB for NoSQL items subject for deletion during the setup/teardown of the container. The type has been removed in v2 in favor of a built-in delegation.
+Previous versions had a dedicated type called `NoSqlItemFilter` to filter out certain Azure Cosmos DB for NoSQL items subject for deletion during the setup/teardown of the container. The type is removed in v2 in favor of a built-in delegation.
+<!-- vale write-good.Passive = YES -->
 
 ```diff
 TemporaryNoSqlContainer.CreateIfNoExistsAsync(..., options =>
@@ -105,9 +113,11 @@ TemporaryNoSqlContainer.CreateIfNoExistsAsync(..., options =>
 });
 ```
 
+<!-- vale write-good.Passive = NO -->
 ## 📦 Arcus.Testing.Storage.Table
 ### `TableEntityFilter` ➡️ `Func<TableEntity, bool>`
-Previous versions had a dedicated type called `TableEntityFilter` to filter out certain Azure Table entities subject for deletion during the setup/teardown of the table. The type has been removed in v2 in favor of a built-in delegation.
+Previous versions had a dedicated type called `TableEntityFilter` to filter out certain Azure Table entities subject for deletion during the setup/teardown of the table. The type is removed in v2 in favor of a built-in delegation.
+<!-- vale write-good.Passive = YES -->
 
 ```diff
 TemporaryTable.CreateIfNotExistsAsync(..., options =>
