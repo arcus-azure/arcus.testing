@@ -16,7 +16,7 @@ PM> Install-Package -Name Arcus.Testing.Storage.Blob
 ```
 
 :::info
-Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights if the test needs to create/update/delete containers.
+Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor) rights if the test needs to create/update/delete containers.
 :::
 
 ## Temporary Blob container
@@ -131,7 +131,7 @@ PM> Install-Package -Name Arcus.Testing.Storage.Table
 ```
 
 :::info
-Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)-rights if the test needs to create/update/delete tables.
+Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor) rights if the test needs to create/update/delete tables.
 :::
 
 ## Temporary Table
@@ -241,7 +241,7 @@ PM> Install-Package -Name Arcus.Testing.Storage.File.Share
 :::warning
 When using `TokenCredential` overloads (recommended: managed-identity), make sure to:
 * 🛡️ enable [Identity-based access for file shares](https://learn.microsoft.com/en-us/azure/storage/files/storage-files-identity-auth-domain-services-enable?tabs=azure-portal) to make sure that the file shares can be accessed via Entra ID.
-* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor)-rights if the test needs to create/update/delete share directories/files.
+* 🛡️ Make sure that the test client that interacts with the File share storage has at least [`Storage File Data SMB Share Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-file-data-smb-share-contributor) rights if the test needs to create/update/delete share directories/files.
 * 🛡️ include the [Share token intent](https://learn.microsoft.com/en-us/azure/storage/files/authorize-oauth-rest?tabs=portal#authorize-access-to-file-data-in-application-code), otherwise the file operations won't get authorized correctly.
 :::
 
