@@ -28,16 +28,25 @@ namespace Microsoft.Extensions.Logging
         }
 
         [ProviderAlias("Xunit")]
-        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider
+        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly ILogger _logger = new XunitTestLogger(outputWriter);
+            private IExternalScopeProvider _scopeProvider;
+
+            /// <summary>
+            /// Sets external scope information source for logger provider.
+            /// </summary>
+            /// <param name="scopeProvider">The provider of scope data.</param>
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+            {
+                _scopeProvider = scopeProvider;
+            }
 
             /// <summary>
             /// Creates a new <see cref="ILogger" /> instance.
             /// </summary>
             /// <param name="categoryName">The category name for messages produced by the logger.</param>
             /// <returns>The instance of <see cref="ILogger" /> that was created.</returns>
-            public ILogger CreateLogger(string categoryName) => _logger;
+            public ILogger CreateLogger(string categoryName) => new XunitTestLogger(outputWriter, _scopeProvider, categoryName);
 
             /// <summary>
             /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
