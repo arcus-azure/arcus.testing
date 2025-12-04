@@ -21,8 +21,8 @@ namespace Arcus.Testing
     /// </summary>
     public class OnSetupTemporaryQueueOptions
     {
-        private readonly Collection<Action<CreateQueueOptions>> _configuredOptions = new();
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = new(), _shouldCompleteMessages = new();
+        private readonly Collection<Action<CreateQueueOptions>> _configuredOptions = [];
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = [], _shouldCompleteMessages = [];
 
         internal OnSetupQueue Messages { get; private set; }
         internal TimeSpan MaxWaitTime { get; private set; } = TimeSpan.FromSeconds(5);
@@ -77,7 +77,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.DeadLetterMessages;
-            
+
             return this;
         }
 
@@ -128,7 +128,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnSetupQueue.CompleteMessages;
-            
+
             return this;
         }
 
@@ -183,7 +183,7 @@ namespace Arcus.Testing
     /// </summary>
     public class OnTeardownTemporaryQueueOptions
     {
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = new(), _shouldCompleteMessages = new();
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _shouldDeadLetterMessages = [], _shouldCompleteMessages = [];
 
         private OnTeardownQueue Messages { get; set; }
 
@@ -290,7 +290,7 @@ namespace Arcus.Testing
 
             MaxWaitTime = maxWaitTime;
             Messages = OnTeardownQueue.CompleteMessages;
-            
+
             return this;
         }
 
@@ -318,22 +318,23 @@ namespace Arcus.Testing
 
         internal MessageSettle DetermineMessageSettle(ServiceBusReceivedMessage message, ServiceBusReceiver receiver, ILogger logger)
         {
-            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
             bool shouldComplete = _shouldCompleteMessages.Any(func => func(message));
+            bool shouldDeadLetter = _shouldDeadLetterMessages.Any(func => func(message));
 
-            if (shouldDeadLetter && shouldComplete)
+            if (shouldComplete && shouldDeadLetter)
             {
-                logger.LogWarning("[Test:Teardown] Service bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, receiver.EntityPath, receiver.FullyQualifiedNamespace);
-                return MessageSettle.DeadLetter;
-            }
-            if (shouldDeadLetter)
-            {
+                logger.LogTeardownAmbiguousMessageSettleOnQueue(message.MessageId, receiver.FullyQualifiedNamespace, receiver.EntityPath);
                 return MessageSettle.DeadLetter;
             }
 
             if (shouldComplete)
             {
                 return MessageSettle.Complete;
+            }
+
+            if (shouldDeadLetter)
+            {
+                return MessageSettle.DeadLetter;
             }
 
             if (Messages is OnTeardownQueue.CompleteMessages)
@@ -362,15 +363,18 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a temporary Azure Service bus queue that will be deleted when the instance is disposed.
+    /// Represents a temporary Azure Service Bus queue that will be deleted when the instance is disposed.
     /// </summary>
+#pragma warning disable CA1711 // '...Queue' suffix represents an Azure Service Bus queue, not a .NET type.
     public class TemporaryQueue : IAsyncDisposable
+#pragma warning restore CA1711
     {
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
 
         private readonly bool _queueCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryQueueOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryQueue(
@@ -389,23 +393,24 @@ namespace Arcus.Testing
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _messagingClientCreatedByUs = messagingClientCreatedByUs;
-            
+
             _queueCreatedByUs = queueCreatedByUs;
-            
+
             _options = options ?? new TemporaryQueueOptions();
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Name = queueName;
             FullyQualifiedNamespace = messagingClient.FullyQualifiedNamespace;
         }
 
         /// <summary>
-        /// Gets the name of the Azure Service bus queue that is possibly created by the test fixture.
+        /// Gets the name of the Azure Service Bus queue that is possibly created by the test fixture.
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        /// Gets the fully-qualified name of the Azure Service bus namespace for which this test fixture managed a queue.
+        /// Gets the fully-qualified name of the Azure Service Bus namespace for which this test fixture managed a queue.
         /// </summary>
         public string FullyQualifiedNamespace { get; }
 
@@ -415,41 +420,49 @@ namespace Arcus.Testing
         public OnTeardownTemporaryQueueOptions OnTeardown => _options.OnTeardown;
 
         /// <summary>
-        /// Gets the filter client to search for messages on the Azure Service bus test-managed queue (a.k.a. 'spy test fixture').
+        /// Gets the filter client to search for messages on the Azure Service Bus test-managed queue (a.k.a. 'spy test fixture').
         /// </summary>
-        public ServiceBusMessageFilter Messages => new(Name, _messagingClient);
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
-        /// </summary>
-        /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
-        /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
-        /// </exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger)
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public ServiceBusMessageFilter Messages
         {
-            return await CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null);
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return new(Name, _messagingClient);
+            }
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
         /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
+        /// </exception>
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger)
+        {
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
+        /// </summary>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service bus queue should be created.
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
         /// </param>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
         /// </exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(
             string fullyQualifiedNamespace,
             string queueName,
             ILogger logger,
@@ -459,57 +472,60 @@ namespace Arcus.Testing
 
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
+
+#pragma warning disable CA2000 // The client is disposed by the test fixture instance.
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
-            
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
+#pragma warning restore CA2000
+
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service bus resource where the topic should be created.</param>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the queue should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string queueName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions: null);
         }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service bus queue if it doesn't exist yet.
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
         /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service bus resource where the topic should be created.</param>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the queue should be created.</param>
         /// <param name="messagingClient">
-        ///     The messaging client to both send and receive messages on the Azure Service bus, as well as handling setup and teardown actions.
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
         /// </param>
-        /// <param name="queueName">The name of the Azure Service bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service bus queue.</param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
         /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service bus queue should be created.
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
         /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string queueName,
             ILogger logger,
             Action<TemporaryQueueOptions> configureOptions)
         {
-            return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, queueName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, queueName, logger, configureOptions);
         }
 
         private static async Task<TemporaryQueue> CreateIfNotExistsAsync(
@@ -521,6 +537,7 @@ namespace Arcus.Testing
             Action<TemporaryQueueOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(adminClient);
+            ArgumentNullException.ThrowIfNull(messagingClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
             logger ??= NullLogger.Instance;
 
@@ -529,22 +546,22 @@ namespace Arcus.Testing
 
             CreateQueueOptions createOptions = options.OnSetup.CreateQueueOptions(queueName);
 
-            if (await adminClient.QueueExistsAsync(createOptions.Name))
+            if (await adminClient.QueueExistsAsync(createOptions.Name).ConfigureAwait(false))
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                logger.LogSetupUseExistingQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: false, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync();
+                await queue.CleanOnSetupAsync().ConfigureAwait(false);
                 return queue;
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Service bus queue '{Queue}' in namespace '{Namespace}'", createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                await adminClient.CreateQueueAsync(createOptions);
+                logger.LogSetupCreateNewQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
+                await adminClient.CreateQueueAsync(createOptions).ConfigureAwait(false);
 
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: true, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync();
+                await queue.CleanOnSetupAsync().ConfigureAwait(false);
                 return queue;
             }
         }
@@ -562,15 +579,16 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnSetup.DetermineMessageSettle(message);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Setup] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    _logger.LogSetupDeadLetterMessageOnQueue(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Setup] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    _logger.LogSetupCompleteMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -579,30 +597,36 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (await _adminClient.QueueExistsAsync(Name))
+            if (_disposables.IsDisposed)
             {
-                if (_queueCreatedByUs)
+                return;
+            }
+
+            await using (_disposables.ConfigureAwait(false))
+            {
+                if (await _adminClient.QueueExistsAsync(Name).ConfigureAwait(false))
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    if (_queueCreatedByUs)
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure Service bus queue '{QueueName}' in namespace '{Namespace}'", Name, FullyQualifiedNamespace);
-                        await _adminClient.DeleteQueueAsync(Name);
-                    }));
+                        _disposables.Add(AsyncDisposable.Create(async () =>
+                        {
+                            _logger.LogTeardownDeleteQueue(Name, FullyQualifiedNamespace);
+                            await _adminClient.DeleteQueueAsync(Name).ConfigureAwait(false);
+                        }));
+                    }
+                    else
+                    {
+                        _disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    }
                 }
-                else
+
+                if (_messagingClientCreatedByUs)
                 {
-                    disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
+                    _disposables.Add(_messagingClient);
                 }
-            }
 
-            if (_messagingClientCreatedByUs)
-            {
-                disposables.Add(_messagingClient);
+                GC.SuppressFinalize(this);
             }
-
-            GC.SuppressFinalize(this);
         }
 
         private async Task CleanOnTeardownAsync()
@@ -614,31 +638,79 @@ namespace Arcus.Testing
                 MessageSettle settle = _options.OnTeardown.DetermineMessageSettle(message, receiver, _logger);
                 if (settle is MessageSettle.DeadLetter)
                 {
-                    _logger.LogDebug("[Test:Teardown] Dead-letter Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message);
+                    _logger.LogTeardownDeadLetterMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
+                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
-                    _logger.LogDebug("[Test:Teardown] Complete Azure Service bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'", message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message);
+                    _logger.LogTeardownCompleteMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
+                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
-            });
+
+            }).ConfigureAwait(false);
         }
 
         private async Task ForEachMessageOnQueueAsync(TimeSpan waitTime, Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
         {
-            await using ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
-
-            while (true)
+            ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
+            await using (receiver.ConfigureAwait(false))
             {
-                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime);
-                if (message is null)
+                while (true)
                 {
-                    return;
-                }
+                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime).ConfigureAwait(false);
+                    if (message is null)
+                    {
+                        return;
+                    }
 
-                await operation(receiver, message);
+                    await operation(receiver, message).ConfigureAwait(false);
+                }
             }
         }
+    }
+
+    internal static partial class TempQueueILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupCreateNewQueue(this ILogger logger, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupUseExistingQueue(this ILogger logger, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Dead-letter Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupDeadLetterMessageOnQueue(this ILogger logger, string messageId, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Complete Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogSetupCompleteMessageOnQueue(this ILogger logger, string messageId, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Dead-letter Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownDeadLetterMessageOnQueue(this ILogger logger, string messageId, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Complete Azure Service Bus message '{MessageId}' from queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownCompleteMessageOnQueue(this ILogger logger, string messageId, string queueName, string @namespace);
+
+        [LoggerMessage(
+            Level = LogLevel.Warning,
+            Message = "[Test:Teardown] Service Bus message '{MessageId}' matches both for dead-letter as completion in custom message filters, uses dead-letter, happening in queue '{Namespace}/{QueueName}'")]
+        internal static partial void LogTeardownAmbiguousMessageSettleOnQueue(this ILogger logger, string messageId, string @namespace, string queueName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'")]
+        internal static partial void LogTeardownDeleteQueue(this ILogger logger, string queueName, string @namespace);
     }
 }

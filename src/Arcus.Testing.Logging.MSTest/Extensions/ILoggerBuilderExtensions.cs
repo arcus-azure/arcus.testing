@@ -12,9 +12,9 @@ namespace Microsoft.Extensions.Logging
     public static class ILoggerBuilderExtensions
     {
         /// <summary>
-        /// Adds the logging messages from the given xUnit <paramref name="testContext"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given MSTest <paramref name="testContext"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
-        /// <param name="builder">The logging builder to add the NUnit logging test messages to.</param>
+        /// <param name="builder">The logging builder to add the MSTest logging test messages to.</param>
         /// <param name="testContext">The MSTest writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> or the <paramref name="testContext"/> is <c>null</c>.</exception>
         public static ILoggingBuilder AddMSTestLogging(this ILoggingBuilder builder, TestContext testContext)
@@ -22,23 +22,25 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(testContext);
 
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             var provider = new MSTestLoggerProvider(testContext);
+#pragma warning restore CA2000
             return builder.AddProvider(provider);
         }
 
         [ProviderAlias("MSTest")]
-        private sealed class MSTestLoggerProvider : ILoggerProvider
+        private sealed class MSTestLoggerProvider(TestContext context) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly ILogger _logger;
+            private IExternalScopeProvider _scopeProvider;
 
-            public MSTestLoggerProvider(TestContext context)
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
             {
-                _logger = new MSTestLogger(context);
+                _scopeProvider = scopeProvider;
             }
 
             public ILogger CreateLogger(string categoryName)
             {
-                return _logger;
+                return new MSTestLogger(context, _scopeProvider, categoryName);
             }
 
             public void Dispose()

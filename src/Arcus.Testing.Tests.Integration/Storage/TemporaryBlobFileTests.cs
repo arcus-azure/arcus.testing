@@ -3,11 +3,9 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.BlobStorage)]
     public class TemporaryBlobFileTests : IntegrationTest
     {
         /// <summary>
@@ -65,8 +63,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryBlobFile temp =
                 Bogus.Random.Bool()
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
                     ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
                     : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             Assert.Equal(blobName, temp.Name);
             Assert.Equal(client.Name, temp.ContainerName);

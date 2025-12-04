@@ -190,6 +190,7 @@ namespace Arcus.Testing
         private readonly bool _createdByUs;
         private readonly Collection<TemporaryTableEntity> _entities = [];
         private readonly TemporaryTableOptions _options;
+        private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
 
         private TemporaryTable(TableClient client, bool createdByUs, TemporaryTableOptions options, ILogger logger)
@@ -200,6 +201,7 @@ namespace Arcus.Testing
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
+            _disposables = new DisposableCollection(_logger);
 
             Client = client;
         }
@@ -226,9 +228,9 @@ namespace Arcus.Testing
         /// <param name="tableName">The name of the Azure Table to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="tableName"/> is blank.</exception>
-        public static async Task<TemporaryTable> CreateIfNotExistsAsync(string accountName, string tableName, ILogger logger)
+        public static Task<TemporaryTable> CreateIfNotExistsAsync(string accountName, string tableName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(accountName, tableName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(accountName, tableName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -239,7 +241,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="tableName"/> is blank.</exception>
-        public static async Task<TemporaryTable> CreateIfNotExistsAsync(
+        public static Task<TemporaryTable> CreateIfNotExistsAsync(
             string accountName,
             string tableName,
             ILogger logger,
@@ -250,7 +252,7 @@ namespace Arcus.Testing
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var serviceClient = new TableServiceClient(tableEndpoint, new DefaultAzureCredential());
 
-            return await CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions);
+            return CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions);
         }
 
         /// <summary>
@@ -261,9 +263,9 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tableName"/> is blank.</exception>
-        public static async Task<TemporaryTable> CreateIfNotExistsAsync(TableServiceClient serviceClient, string tableName, ILogger logger)
+        public static Task<TemporaryTable> CreateIfNotExistsAsync(TableServiceClient serviceClient, string tableName, ILogger logger)
         {
-            return await CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(serviceClient, tableName, logger, configureOptions: null);
         }
 
         /// <summary>
@@ -288,10 +290,10 @@ namespace Arcus.Testing
             var options = new TemporaryTableOptions();
             configureOptions?.Invoke(options);
 
-            bool createdByUs = await EnsureTableCreatedAsync(serviceClient, tableName, logger);
+            bool createdByUs = await EnsureTableCreatedAsync(serviceClient, tableName, logger).ConfigureAwait(false);
             TableClient tableClient = serviceClient.GetTableClient(tableName);
 
-            await CleanTableUponSetupAsync(tableClient, options, logger);
+            await CleanTableUponSetupAsync(tableClient, options, logger).ConfigureAwait(false);
             return new TemporaryTable(tableClient, createdByUs, options, logger);
         }
 
@@ -300,19 +302,20 @@ namespace Arcus.Testing
             var createdByUs = false;
 
             var exists = false;
-            await foreach (TableItem _ in serviceClient.QueryAsync(t => t.Name == tableName))
+            await foreach (TableItem _ in serviceClient.QueryAsync(t => t.Name == tableName).ConfigureAwait(false))
             {
                 exists = true;
             }
 
             if (exists)
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure Table '{TableName}' in account '{AccountName}'", tableName, serviceClient.AccountName);
+                logger.LogSetupUseExistingTable(tableName, serviceClient.AccountName);
             }
             else
             {
-                logger.LogDebug("[Test:Setup] Create new Azure Table '{TableName}' in account '{AccountName}'", tableName, serviceClient.AccountName);
-                await serviceClient.CreateTableIfNotExistsAsync(tableName);
+                logger.LogSetupCreateNewTable(tableName, serviceClient.AccountName);
+                await serviceClient.CreateTableIfNotExistsAsync(tableName).ConfigureAwait(false);
+
                 createdByUs = true;
             }
 
@@ -328,20 +331,20 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Entities is OnSetupTable.CleanIfExisted)
             {
-                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
                 {
-                    await DeleteEntityOnSetupAsync(tableClient, item, logger);
+                    await DeleteEntityOnSetupAsync(tableClient, item, logger).ConfigureAwait(false);
                 }
             }
             else if (options.OnSetup.Entities is OnSetupTable.CleanIfMatched)
             {
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in tableClient.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
 #pragma warning restore
                 {
                     if (options.OnSetup.IsMatch(item))
                     {
-                        await DeleteEntityOnSetupAsync(tableClient, item, logger);
+                        await DeleteEntityOnSetupAsync(tableClient, item, logger).ConfigureAwait(false);
                     }
                 }
             }
@@ -354,9 +357,9 @@ namespace Arcus.Testing
         /// <param name="entity">The entity to temporary add to the table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead that provides exactly the same functionality")]
-        public async Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
+        public Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
-            await UpsertEntityAsync(entity);
+            return UpsertEntityAsync(entity);
         }
 
         /// <summary>
@@ -368,11 +371,13 @@ namespace Arcus.Testing
         /// </remarks>
         /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
         /// <param name="entity">The entity to temporary add to the table.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
         public async Task UpsertEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
+            ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(entity);
-            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger));
+            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -381,28 +386,34 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (_createdByUs)
+            if (_disposables.IsDisposed)
             {
-                _logger.LogDebug("[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'", Client.Name, Client.AccountName);
-                using Response response = await Client.DeleteAsync();
+                return;
+            }
 
-                if (response.IsError && response.Status != NotFound)
+            await using (_disposables.ConfigureAwait(false))
+            {
+                if (_createdByUs)
                 {
-                    throw new RequestFailedException(
-                        $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
-                        $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
-                        new RequestFailedException(response));
-                }
-            }
-            else
-            {
-                disposables.AddRange(_entities);
-                await CleanTableUponTeardownAsync(disposables);
-            }
+                    _logger.LogTeardownDeleteTable(Client.Name, Client.AccountName);
+                    using Response response = await Client.DeleteAsync().ConfigureAwait(false);
 
-            GC.SuppressFinalize(this);
+                    if (response.IsError && response.Status != NotFound)
+                    {
+                        throw new RequestFailedException(
+                            $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
+                            $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
+                            new RequestFailedException(response));
+                    }
+                }
+                else
+                {
+                    _disposables.AddRange(_entities);
+                    await CleanTableUponTeardownAsync(_disposables).ConfigureAwait(false);
+                }
+
+                GC.SuppressFinalize(this);
+            }
         }
 
         private async Task CleanTableUponTeardownAsync(DisposableCollection disposables)
@@ -414,7 +425,7 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Entities is OnTeardownTable.CleanAll)
             {
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
                 {
                     disposables.Add(AsyncDisposable.Create(() => DeleteEntityOnTeardownAsync(item)));
                 }
@@ -422,7 +433,7 @@ namespace Arcus.Testing
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true))
+                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
 #pragma warning restore S3267
                 {
                     if (_options.OnTeardown.IsMatch(item))
@@ -433,20 +444,21 @@ namespace Arcus.Testing
             }
         }
 
-        private static async Task DeleteEntityOnSetupAsync(TableClient client, TableEntity entity, ILogger logger)
+        private static Task DeleteEntityOnSetupAsync(TableClient client, TableEntity entity, ILogger logger)
         {
-            await DeleteEntityAsync(client, entity, "[Test:Setup]", logger);
+            logger.LogSetupDeleteEntity(entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
+            return DeleteEntityAsync(client, entity, "[Test:Setup]");
         }
 
-        private async Task DeleteEntityOnTeardownAsync(TableEntity entity)
+        private Task DeleteEntityOnTeardownAsync(TableEntity entity)
         {
-            await DeleteEntityAsync(Client, entity, "[Test:Teardown]", _logger);
+            _logger.LogTeardownDeleteEntity(entity.RowKey, entity.PartitionKey, Client.AccountName, Client.Name);
+            return DeleteEntityAsync(Client, entity, "[Test:Teardown]");
         }
 
-        private static async Task DeleteEntityAsync(TableClient client, TableEntity entity, string testOperation, ILogger logger)
+        private static async Task DeleteEntityAsync(TableClient client, TableEntity entity, string testOperation)
         {
-            logger.LogDebug("{TestOperation} Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", testOperation, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-            using Response response = await client.DeleteEntityAsync(entity);
+            using Response response = await client.DeleteEntityAsync(entity).ConfigureAwait(false);
 
             if (response.IsError && response.Status != NotFound)
             {
@@ -456,5 +468,35 @@ namespace Arcus.Testing
                     new RequestFailedException(response));
             }
         }
+    }
+
+    internal static partial class TempTableILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Create new Azure Table '{TableName}' in account '{AccountName}'")]
+        internal static partial void LogSetupCreateNewTable(this ILogger logger, string tableName, string accountName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Use already existing Azure Table '{TableName}' in account '{AccountName}'")]
+        internal static partial void LogSetupUseExistingTable(this ILogger logger, string tableName, string accountName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'")]
+        internal static partial void LogSetupDeleteEntity(this ILogger logger, string rowKey, string partitionKey, string accountName, string tableName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Table entity (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'")]
+        internal static partial void LogTeardownDeleteEntity(this ILogger logger, string rowKey, string partitionKey, string accountName, string tableName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Table '{TableName}' in account '{AccountName}'")]
+        internal static partial void LogTeardownDeleteTable(this ILogger logger, string tableName, string accountName);
     }
 }

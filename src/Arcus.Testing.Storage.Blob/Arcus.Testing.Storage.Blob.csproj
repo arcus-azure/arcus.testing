@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <RootNamespace>Arcus.Testing</RootNamespace>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
-    <Description>Provides capabilities during testing of Azure Blob storage interactions</Description>
+    <Description>Provides capabilities during testing of Azure Blob Storage interactions</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.testing</RepositoryUrl>
@@ -19,6 +19,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <NoWarn>S1133</NoWarn>
+    <AnalysisMode>All</AnalysisMode>
   </PropertyGroup>
 
   <ItemGroup>

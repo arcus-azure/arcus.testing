@@ -6,11 +6,9 @@ using Bogus;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.NoSql)]
     public class TemporaryNoSqlItemTests : IntegrationTest
     {
         /// <summary>
@@ -164,7 +162,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Assert.Equal(expected.Category, actual.Category);
         }
 
-        private class Product : INoSqlItem<Product>
+        private sealed class Product : INoSqlItem<Product>
         {
             [JsonProperty(PropertyName = "id")]
             public string Id { get; set; }
@@ -214,7 +212,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             where T : INoSqlItem
         {
             container ??= context.Database.GetContainer(containerName);
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             var temp = await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             Assert.Equal(item.GetId(), temp.Id);
             Assert.Equal(item.GetPartitionKey(), temp.PartitionKey);

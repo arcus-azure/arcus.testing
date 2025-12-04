@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
@@ -11,6 +10,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
@@ -19,7 +19,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
     /// </summary>
     internal class ServiceBusTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
         private readonly Collection<string> _topicNames = new(), _queueNames = new();
@@ -30,12 +29,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         private static readonly Faker Bogus = new();
 
         private ServiceBusTestContext(
-            TemporaryManagedIdentityConnection connection,
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             ILogger logger)
         {
-            _connection = connection;
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _logger = logger;
@@ -48,12 +45,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             ServiceBusNamespace serviceBus = config.GetServiceBus();
 
-            var connection = TemporaryManagedIdentityConnection.Create(config, logger);
             var credential = new DefaultAzureCredential();
             var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
             var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
 
-            return new ServiceBusTestContext(connection, adminClient, messagingClient, logger);
+            return new ServiceBusTestContext(adminClient, messagingClient, logger);
         }
 
         /// <summary>
@@ -138,7 +134,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         {
             string ruleName = $"rule-{Guid.NewGuid()}";
             _ruleNames.Add((topicName, subscriptionName, ruleName));
-            
+
             return ruleName;
         }
 
@@ -283,9 +279,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
-            await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            await Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
+
+                IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+                Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            });
         }
 
         /// <summary>
@@ -382,7 +382,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             })));
 
             disposables.Add(_messagingClient);
-            disposables.Add(_connection);
         }
     }
 }

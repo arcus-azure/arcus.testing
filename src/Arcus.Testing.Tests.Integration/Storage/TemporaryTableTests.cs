@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Data.Tables;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
@@ -141,7 +140,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             // Assert
             await context.ShouldNotStoreTableEntityAsync(client, matchedEntity);
             await context.ShouldStoreTableEntityAsync(client, notMatchedEntity);
-            await client.AddEntityAsync(matchedEntity);
+            await client.AddEntityAsync(matchedEntity, TestContext.Current.CancellationToken);
 
             await temp.DisposeAsync();
             await context.ShouldStoreTableEntityAsync(client, matchedEntity);
@@ -219,7 +218,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static async Task<TableEntity> AddTableEntityAsync(TableStorageTestContext context, TemporaryTable table)
         {
             TableEntity entity = context.WhenTableEntityUnavailable();
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             await table.AddEntityAsync(entity);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             return entity;
         }

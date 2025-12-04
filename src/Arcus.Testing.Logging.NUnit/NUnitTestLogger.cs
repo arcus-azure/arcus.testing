@@ -10,6 +10,8 @@ namespace Arcus.Testing
     public class NUnitTestLogger : ILogger
     {
         private readonly TextWriter _testContextOut, _testContextError;
+        private readonly IExternalScopeProvider _scopeProvider;
+        private readonly string _categoryName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NUnitTestLogger" /> class.
@@ -17,9 +19,8 @@ namespace Arcus.Testing
         /// <param name="testContextOut">The writer of the test context of the current test that will send output to the current test result. <code>TestContext.Out</code></param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut)
+            : this(testContextOut, testContextError: null, scopeProvider: null, categoryName: null)
         {
-            ArgumentNullException.ThrowIfNull(testContextOut);
-            _testContextOut = testContextOut;
         }
 
         /// <summary>
@@ -29,12 +30,27 @@ namespace Arcus.Testing
         /// <param name="testContextError">The writer of the text context of the current test that will send output directly to the console error stream. <code>TestContext.Error</code></param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> or the <paramref name="testContextError"/> is <c>null</c>.</exception>
         public NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError)
+            : this(testContextOut, testContextError, scopeProvider: null, categoryName: null)
+        {
+            ArgumentNullException.ThrowIfNull(testContextError);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NUnitTestLogger" /> class.
+        /// </summary>
+        /// <param name="testContextOut">The writer of the test context of the current test that will send output to the current test result. <code>TestContext.Out</code></param>
+        /// <param name="testContextError">The writer of the text context of the current test that will send output directly to the console error stream. <code>TestContext.Error</code></param>
+        /// <param name="scopeProvider">The instance to provide logging scopes.</param>
+        /// <param name="categoryName">The category name for messages produced by the logger.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> is <c>null</c>.</exception>
+        internal NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError, IExternalScopeProvider scopeProvider, string categoryName)
         {
             ArgumentNullException.ThrowIfNull(testContextOut);
-            ArgumentNullException.ThrowIfNull(testContextError);
 
             _testContextOut = testContextOut;
             _testContextError = testContextError;
+            _scopeProvider = scopeProvider;
+            _categoryName = categoryName;
         }
 
         /// <summary>
@@ -53,27 +69,22 @@ namespace Arcus.Testing
             Exception exception,
             Func<TState, Exception, string> formatter)
         {
+            ArgumentNullException.ThrowIfNull(formatter);
             string message = formatter(state, exception);
-            void WriteToContext(TextWriter writer)
-            {
-                if (exception is null)
-                {
-                    writer.WriteLine("{0:s} {1} > {2}", DateTimeOffset.UtcNow, logLevel, message);
-                }
-                else
-                {
-                    writer.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
-                }
-            }
 
-            if (logLevel != LogLevel.Error)
-            {
-                WriteToContext(_testContextOut);
-            }
-            else
-            {
-                WriteToContext(_testContextError ?? _testContextOut);
-            }
+            var builder = new LogMessageBuilder(logLevel);
+            builder.AddCategory(_categoryName)
+                   .AddUserMessage(message)
+                   .AddException(exception);
+
+            _scopeProvider?.ForEachScope((st, lb) => lb.AddScope(st), builder);
+
+            var writer =
+                logLevel is LogLevel.Error && _testContextError != null
+                    ? _testContextError
+                    : _testContextOut;
+
+            writer.WriteLine(builder.ToString());
         }
 
         /// <summary>
@@ -91,10 +102,10 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
-        /// <returns>An <see cref="T:System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
+        /// <returns>An <see cref="IDisposable" /> that ends the logical operation scope on dispose.</returns>
         public IDisposable BeginScope<TState>(TState state)
         {
-            return null;
+            return _scopeProvider?.Push(state);
         }
     }
 
@@ -109,7 +120,8 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="testContextOut">The writer of the test context of the current test that will send output to the current test result. <code>TestContext.Out</code></param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> is <c>null</c>.</exception>
-        public NUnitTestLogger(TextWriter testContextOut) : base(testContextOut)
+        public NUnitTestLogger(TextWriter testContextOut)
+            : base(testContextOut, testContextError: null, scopeProvider: null, categoryName: typeof(TCategoryName).FullName)
         {
         }
 
@@ -119,7 +131,8 @@ namespace Arcus.Testing
         /// <param name="testContextOut">The writer of the test context of the current test that will send output to the current test result. <code>TestContext.Out</code></param>
         /// <param name="testContextError">The writer of the text context of the current test that will send output directly to the console error stream. <code>TestContext.Error</code></param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="testContextOut"/> or the <paramref name="testContextError"/> is <c>null</c>.</exception>
-        public NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError) : base(testContextOut, testContextError)
+        public NUnitTestLogger(TextWriter testContextOut, TextWriter testContextError)
+            : base(testContextOut, testContextError, scopeProvider: null, categoryName: typeof(TCategoryName).FullName)
         {
         }
     }

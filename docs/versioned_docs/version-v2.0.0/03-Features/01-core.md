@@ -76,7 +76,7 @@ var config = TestConfig.Create((options, IConfigurationBuilder builder) =>
 ```
 
 :::tip
-By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key Vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
 :::
 
 It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:

@@ -2,7 +2,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Data Factory
-The `Arcus.Testing.Integration.DataFactory` package provides test fixtures related to [Azure DataFactory](https://learn.microsoft.com/en-us/azure/data-factory/introduction). By using the common test practice 'clean environment', it provides things like an automatic temporary DataFlow debug session to help with testing DataFlow pipelines.
+The `Arcus.Testing.Integration.DataFactory` package provides test fixtures related to [Azure Data Factory](https://learn.microsoft.com/en-us/azure/data-factory/introduction). By using the common test practice 'clean environment', it provides things like an automatic temporary data flow debug session to help with testing data flow pipelines.
 
 ## Installation
 The following functionality is available when installing this package:
@@ -11,8 +11,8 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Integration.DataFactory
 ```
 
-## Temporary DataFlow debug session
-The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatically tracking the process of a DataFactory DataFlow under test. More information on DataFlow debugging can be found on [Mapping data flow Debug Mode](https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-debug-mode?tabs=data-factory).
+## Temporary data flow debug session
+The `TemporaryDataFlowDebugSession` test fixture provides an answer to automatically tracking the process of an Azure Data Factory data flow under test. More information on data flow debugging can be found on [Mapping data flow Debug Mode](https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-debug-mode?tabs=data-factory).
 
 The test fixture instance is meant to be used across tests. By all using the same instance, the performance of the tests is greatly improved.
 
@@ -182,10 +182,10 @@ The following snippet provides a full examples of how the `TemporaryDataFlowDebu
   </TabItem>
 </Tabs>
 
-## Run DataFlow within Debug Session
-To run a specific DataFlow separately within a DataFactory resource, the manual process would be to start the debug session yourself, start the flow and wait for the result in the preview window.
+## Run data flow within Debug Session
+To run a specific data flow separately within an Azure Data Factory resource, the manual process would be to start the debug session yourself, start the flow and wait for the result in the preview window.
 
-The `TemporaryDataFlowDebugSession` provides an automated approach on activating and reusing debug sessions across tests. Running DataFlows on this automated debug session requires you to provide the name of the DataFlow and the target sink where the result of the DataFlow will be sent to.
+The `TemporaryDataFlowDebugSession` provides an automated approach on activating and reusing debug sessions across tests. Running data flows on this automated debug session requires you to provide the name of the data flow and the target sink where the result of the data flow will be sent to.
 
 ```csharp
 using Arcus.Testing;
@@ -207,17 +207,17 @@ JsonNode json = result.GetDataAsJson();
 ```
 
 :::warning
-**IMPORTANT** to note on the `GetDataAs...()` calls is that the DataFactory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
+**IMPORTANT** to note on the `GetDataAs...()` calls is that the Azure Data Factory data preview functionality does not support the full format of all types of file formats. Therefore, take these warnings in consideration.
 * For **CSV**: only the upper header names are considered being a part of the CSV table. Object or arrays expressed in the data preview will be in a single cell.
 * For **JSON**:
-  * Based on the `SingleDocument` or `ArrayOfDocuments`, DataFactory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
+  * Based on the `SingleDocument` or `ArrayOfDocuments`, Azure Data Factory can load one or more documents in one run, but there is no distinction in the data preview. Arcus, therefore, assumes that a single row is considered a `JsonObject` and multiple rows is a `JsonArray`.
   * The data preview does not support the full JSON format, only objects and array of objects at the root level are supported. Arcus therefore also only supports these two formats in parsing the data preview.
   * The data preview does not support the full JSON format, an array with objects that have different property names is valid JSON, but is not supported in the data preview. 
   * The data preview does not support the full JSON format, be careful of using `null`s for JSON nodes (objects and arrays), as these are also not fully supported.
 :::
 
 ### Customization
-The process of running a DataFlow can be manipulated with several options described here:
+The process of running a data flow can be manipulated with several options described here:
 
 ```csharp
 using Arcus.Testing;
@@ -231,17 +231,17 @@ await session.RunDataFlowAsync(..., options =>
     options.AddDataFlowParameter("<name>", "'<value>'");
 
     // Adds a dataset parameter to the data flow upon starting.
-    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the DataFlow, not the actual DataSet name.
+    // 👀 Note that the source or sink name should be the "Output stream name" of the source or sink dataset in the data flow, not the actual dataset name.
     // For more info: https://learn.microsoft.com/en-us/azure/data-factory/data-flow-source#source-settings
-    options.AddDataSetParameter("<soure-or-sink-name>", "<parameter-name>", "<parameter-value>");
+    options.AddDataSetParameter("<source-or-sink-name>", "<parameter-name>", "<parameter-value>");
 
     // Adds a flowlet to the data flow upon starting.
-    // 👀 Note that the flowlet must exist in DataFactory before to be added.
+    // 👀 Note that the flowlet must exist in Azure Data Factory before to be added.
     // For more info: https://learn.microsoft.com/en-us/azure/data-factory/concepts-data-flow-flowlet
     options.AddFlowlet("<flowlet-name>");
 
     // Add additional linked services to the debug session.
-    // 💡 This can be useful to add, for example, an additional Key vault linked services for certain authentication types of datasets.
+    // 💡 This can be useful to add, for example, an additional Key Vault linked services for certain authentication types of datasets.
     options.AddLinkedService("datafactory_sales_keyvaultLS");
 
     // The maximum amount of rows to include in the preview response (default: 100 rows).
@@ -253,7 +253,7 @@ await session.RunDataFlowAsync(..., options =>
 When the `RunDataFlow` method gives obscure Microsoft failures, it might be a problem with missing linked services that are being passed to the debug session. By default, all datasets are loaded automatically, but additional dependent linked services might not. 
 :::
 
-## Run a Data pipeline
+## Run an Azure Data Factory pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../../01-core.md) packages:
 
 ```csharp
@@ -273,5 +273,5 @@ DataFactoryPipelineRunInfo finalStatus =
               .Until(current => current.Status == "Succeeded")
               .Every(TimeSpan.FromSeconds(5))
               .Timeout(TimeSpan.FromMinutes(1))
-              .FailWith("DataFactory pipeline did not succeeded within the expected time frame");
+              .FailWith("Azure Data Factory pipeline did not succeeded within the expected time frame");
 ```

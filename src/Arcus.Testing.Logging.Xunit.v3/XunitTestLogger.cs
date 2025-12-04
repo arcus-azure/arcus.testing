@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -11,6 +10,8 @@ namespace Arcus.Testing
     public class XunitTestLogger : ILogger
     {
         private readonly ITestOutputHelper _outputWriter;
+        private readonly IExternalScopeProvider _scopeProvider;
+        private readonly string _categoryName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="XunitTestLogger"/> class.
@@ -18,9 +19,24 @@ namespace Arcus.Testing
         /// <param name="outputWriter">The xUnit test output logger.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public XunitTestLogger(ITestOutputHelper outputWriter)
+            : this(outputWriter, null, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="XunitTestLogger"/> class.
+        /// </summary>
+        /// <param name="outputWriter">The xUnit test output logger.</param>
+        /// <param name="scopeProvider">The instance to provide logging scopes.</param>
+        /// <param name="categoryName">The category name for messages produced by the logger.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="outputWriter"/> or <paramref name="scopeProvider"/> is <c>null</c>.</exception>
+        internal XunitTestLogger(ITestOutputHelper outputWriter, IExternalScopeProvider scopeProvider, string categoryName)
         {
             ArgumentNullException.ThrowIfNull(outputWriter);
+
             _outputWriter = outputWriter;
+            _scopeProvider = scopeProvider;
+            _categoryName = categoryName;
         }
 
         /// <summary>
@@ -36,14 +52,12 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(formatter);
             string message = formatter(state, exception);
 
-            var builder = new StringBuilder();
-            builder.Append($"{DateTimeOffset.UtcNow:s} {logLevel} > {message}");
+            var builder = new LogMessageBuilder(logLevel);
+            builder.AddCategory(_categoryName)
+                   .AddUserMessage(message)
+                   .AddException(exception);
 
-            if (exception is not null)
-            {
-                builder.Append($": {exception}");
-            }
-
+            _scopeProvider?.ForEachScope((st, lb) => lb.AddScope(st), builder);
             _outputWriter.WriteLine(builder.ToString());
         }
 
@@ -57,7 +71,7 @@ namespace Arcus.Testing
         /// <summary>Begins a logical operation scope.</summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <returns>An IDisposable that ends the logical operation scope on dispose.</returns>
-        public IDisposable BeginScope<TState>(TState state) => null;
+        public IDisposable BeginScope<TState>(TState state) => _scopeProvider?.Push(state);
     }
 
     /// <summary>
@@ -70,7 +84,7 @@ namespace Arcus.Testing
         /// Initializes a new instance of the <see cref="XunitTestLogger"/> class.
         /// </summary>
         /// <param name="outputWriter">The xUnit test output logger.</param>
-        public XunitTestLogger(ITestOutputHelper outputWriter) : base(outputWriter)
+        public XunitTestLogger(ITestOutputHelper outputWriter) : base(outputWriter, scopeProvider: null, categoryName: typeof(TCategoryName).FullName)
         {
         }
     }

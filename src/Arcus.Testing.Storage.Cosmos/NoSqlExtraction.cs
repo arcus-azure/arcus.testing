@@ -8,7 +8,7 @@ using Microsoft.Azure.Cosmos;
 namespace Arcus.Testing
 {
     /// <summary>
-    /// Represents how the NoSql-related information is extracted from items.
+    /// Represents how the Azure Cosmos DB for NoSQL-related information is extracted from items.
     /// </summary>
     internal static class NoSqlExtraction
     {
@@ -24,14 +24,14 @@ namespace Arcus.Testing
             if (node is not JsonObject item || !item.TryGetPropertyValue("id", out JsonNode idNode) || idNode is not JsonValue id)
             {
                 throw new NotSupportedException(
-                    $"[Test:Setup] Cannot temporary insert/delete NoSql items in NoSql container as no required 'id' JSON property was found for the {typeDescription}, " +
+                    $"[Test:Setup] Cannot temporary insert/delete NoSQL items in Azure Cosmos DB for NoSQL container as no required 'id' JSON property was found for the {typeDescription}, " +
                     $"please make sure that there exists such a property in the type (Microsoft uses Newtonsoft.Json behind the scenes)");
             }
 
             if (!id.TryGetValue(out string itemId) || string.IsNullOrWhiteSpace(itemId))
             {
                 throw new InvalidOperationException(
-                    $"[Test:Setup] Cannot temporary insert NoSql item because the 'id' property of the serialized {typeDescription} is blank, " +
+                    $"[Test:Setup] Cannot temporary insert NoSQL item because the 'id' property of the serialized {typeDescription} is blank, " +
                     $"please provide an unique identifier to your item model");
             }
 

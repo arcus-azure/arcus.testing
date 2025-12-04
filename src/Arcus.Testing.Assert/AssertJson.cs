@@ -29,7 +29,7 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertJsonOptions
     {
-        private readonly Collection<string> _ignoredNodeNames = new();
+        private readonly Collection<string> _ignoredNodeNames = [];
         private AssertJsonOrder _order = AssertJsonOrder.Ignore;
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 
@@ -438,7 +438,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the single found difference between two JSON contents.
     /// </summary>
-    internal class JsonDifference
+    internal sealed class JsonDifference
     {
         private readonly JsonDifferenceKind _kind;
         private readonly string _path;

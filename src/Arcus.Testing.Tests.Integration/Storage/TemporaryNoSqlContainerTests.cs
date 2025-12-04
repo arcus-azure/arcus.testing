@@ -6,11 +6,9 @@ using Bogus;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.NoSql)]
     public class TemporaryNoSqlContainerTests : IntegrationTest
     {
         private static string[] PartitionKeyPaths => new[]
@@ -216,7 +214,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static async Task<Ship> AddItemAsync(TemporaryNoSqlContainer container)
         {
             Ship item = CreateShip("own");
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             await container.AddItemAsync(item);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             return item;
         }

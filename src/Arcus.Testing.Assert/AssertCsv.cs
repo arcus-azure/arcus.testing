@@ -46,8 +46,8 @@ namespace Arcus.Testing
     /// </summary>
     public class AssertCsvOptions
     {
-        private readonly Collection<string> _ignoredColumns = new();
-        private readonly Collection<int> _ignoredColumnIndexes = new();
+        private readonly Collection<string> _ignoredColumns = [];
+        private readonly Collection<int> _ignoredColumnIndexes = [];
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
         private string _newRow = Environment.NewLine;
         private AssertCsvHeader _header = AssertCsvHeader.Present;
@@ -539,7 +539,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the single found difference between two JSON contents.
     /// </summary>
-    internal class CsvDifference
+    internal sealed class CsvDifference
     {
         private readonly CsvDifferenceKind _kind;
         private readonly string _expected, _actual, _column;
@@ -560,7 +560,7 @@ namespace Arcus.Testing
         }
 
         internal CsvDifference(CsvDifferenceKind kind, int expected, int actual)
-            : this(kind, expected.ToString(), actual.ToString(), rowNumber: 0)
+            : this(kind, expected.ToString(CultureInfo.InvariantCulture), actual.ToString(CultureInfo.InvariantCulture), rowNumber: 0)
         {
         }
 
@@ -574,7 +574,7 @@ namespace Arcus.Testing
 
         private static string QuoteValueUponSpaces(string value)
         {
-            return value.Contains(' ')
+            return value.Contains(' ', StringComparison.InvariantCulture)
                    && !value.StartsWith('"')
                    && !value.EndsWith('"') ? $"\"{value}\"" : value;
         }
@@ -783,7 +783,9 @@ namespace Arcus.Testing
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="rowLines"/> or the <paramref name="headerNames"/> is <c>null</c></exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="rowLines"/> and <paramref name="headerNames"/> index count does not match.</exception>
+#pragma warning disable S2368 // The two-dimensional array is the simplest way to represent a matrix.
         protected static CsvRow[] ParseCsvRows(string[][] rowLines, string[] headerNames, AssertCsvOptions options)
+#pragma warning restore S2368
         {
             ArgumentNullException.ThrowIfNull(rowLines);
             ArgumentNullException.ThrowIfNull(headerNames);
@@ -1016,7 +1018,9 @@ namespace Arcus.Testing
 
             const NumberStyles style = NumberStyles.Float | NumberStyles.AllowThousands;
             const char blankSpace = ' ';
-            bool containsSpaces = Value.Contains(blankSpace) || other.Value.Contains(blankSpace);
+            bool containsSpaces =
+                Value.Contains(blankSpace, StringComparison.InvariantCulture)
+                || other.Value.Contains(blankSpace, StringComparison.InvariantCulture);
 
             if (!containsSpaces
                 && float.TryParse(Value, style, _culture, out float expectedValue)
@@ -1055,7 +1059,7 @@ namespace Arcus.Testing
         /// <returns>A hash code for the current object.</returns>
         public override int GetHashCode()
         {
-            return Value.GetHashCode();
+            return Value.GetHashCode(StringComparison.InvariantCulture);
         }
     }
 }
