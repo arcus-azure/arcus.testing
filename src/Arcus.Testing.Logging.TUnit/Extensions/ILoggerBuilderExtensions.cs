@@ -22,13 +22,17 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
-            return builder.AddProvider(new TUnitLoggerProvider(outputWriter));
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
+            var provider = new TUnitLoggerProvider(outputWriter);
+#pragma warning restore CA2000
+            return builder.AddProvider(provider);
         }
 
         [ProviderAlias("TUnit")]
-        private sealed class TUnitLoggerProvider : ILoggerProvider
+        private sealed class TUnitLoggerProvider : ILoggerProvider, ISupportExternalScope
         {
             private readonly ITUnitLogger _testLogger;
+            private IExternalScopeProvider _scopeProvider;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="TUnitLoggerProvider"/> class.
@@ -45,7 +49,16 @@ namespace Microsoft.Extensions.Logging
             /// <returns>The instance of <see cref="ILogger" /> that was created.</returns>
             public ILogger CreateLogger(string categoryName)
             {
-                return new TUnitTestLogger(_testLogger);
+                return new TUnitTestLogger(_testLogger, _scopeProvider, categoryName);
+            }
+
+            /// <summary>
+            /// Sets external scope information source for logger provider.
+            /// </summary>
+            /// <param name="scopeProvider">The provider of scope data.</param>
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+            {
+                _scopeProvider = scopeProvider;
             }
 
             /// <summary>

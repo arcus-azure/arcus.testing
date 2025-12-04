@@ -185,9 +185,12 @@ namespace Arcus.Testing.Tests.Unit.Logging
             using IHost host = builder.Build();
             var logger = host.Services.GetRequiredService<ILogger<ILoggerBuilderExtensionsTests>>();
 
+            string state = Bogus.Lorem.Word();
+            using var _ = logger.BeginScope(state);
+
             string expected = Bogus.Lorem.Sentence();
             logger.LogInformation(expected);
-            mockLogger.VerifyWritten(LogLevel.Information, expected);
+            mockLogger.VerifyWritten(LogLevel.Information, expected, state: state);
         }
 
         [Fact]

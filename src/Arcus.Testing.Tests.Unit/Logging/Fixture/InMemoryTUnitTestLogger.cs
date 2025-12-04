@@ -28,9 +28,18 @@ namespace Arcus.Testing.Tests.Unit.Logging.Fixture
         /// <summary>
         /// Verifies that there was a <paramref name="message"/> written for the given <paramref name="level"/> to this logger.
         /// </summary>
-        public void VerifyWritten(Microsoft.Extensions.Logging.LogLevel level, string message)
+        public void VerifyWritten(Microsoft.Extensions.Logging.LogLevel level, string message, Exception exception = null, string state = null)
         {
-            Assert.Contains(Logs, log => (int) level == (int) log.level && message == log.message);
+            Assert.Contains(Logs, log =>
+            {
+                bool hasException = exception is null || log.message.Contains(exception.Message);
+                bool hasState = state is null || log.message.Contains(state);
+
+                return (int) level == (int) log.level
+                       && log.message.Contains(message)
+                       && hasState
+                       && hasException;
+            });
         }
     }
 }

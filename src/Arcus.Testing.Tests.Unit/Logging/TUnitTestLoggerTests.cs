@@ -15,15 +15,16 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Arrange
             string expectedMessage = Bogus.Lorem.Sentence();
             var expectedLevel = Bogus.PickRandom<LogLevel>();
+            var exception = Bogus.System.Exception().OrNull(Bogus);
 
             var mockLogger = new MockTUnitTestLogger();
             var logger = new TUnitTestLogger(mockLogger);
 
             // Act
-            logger.Log(expectedLevel, expectedMessage);
+            logger.Log(expectedLevel, exception, expectedMessage);
 
             // Assert
-            mockLogger.VerifyWritten(expectedLevel, expectedMessage);
+            mockLogger.VerifyWritten(expectedLevel, expectedMessage, exception);
         }
     }
 }

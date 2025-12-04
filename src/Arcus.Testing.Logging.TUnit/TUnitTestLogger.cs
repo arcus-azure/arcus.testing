@@ -11,6 +11,8 @@ namespace Arcus.Testing
     public class TUnitTestLogger : ILogger
     {
         private readonly ITUnitLogger _outputWriter;
+        private readonly IExternalScopeProvider _scopeProvider;
+        private readonly string _categoryName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TUnitTestLogger"/> class.
@@ -18,9 +20,23 @@ namespace Arcus.Testing
         /// <param name="outputWriter">The TUnit test writer to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public TUnitTestLogger(ITUnitLogger outputWriter)
+            : this(outputWriter, scopeProvider: null, categoryName: null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TUnitTestLogger"/> class.
+        /// </summary>
+        /// <param name="outputWriter">The TUnit test writer to write custom test output.</param>
+        /// <param name="scopeProvider">The instance to provide logging scopes.</param>
+        /// <param name="categoryName">The category name for messages produced by the logger.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="outputWriter"/> is <c>null</c>.</exception>
+        internal TUnitTestLogger(ITUnitLogger outputWriter, IExternalScopeProvider scopeProvider, string categoryName)
         {
             ArgumentNullException.ThrowIfNull(outputWriter);
             _outputWriter = outputWriter;
+            _scopeProvider = scopeProvider;
+            _categoryName = categoryName;
         }
 
         /// <summary>
@@ -36,7 +52,18 @@ namespace Arcus.Testing
         {
             TUnitLogLevel level = ConvertToTUnitLogLevel(logLevel);
 
-            _outputWriter.Log(level, state, exception, formatter);
+            ArgumentNullException.ThrowIfNull(formatter);
+            string message = formatter(state, exception);
+
+            var builder = new LogMessageBuilder(logLevel);
+            builder.AddCategory(_categoryName)
+                   .AddUserMessage(message)
+                   .AddException(exception);
+
+            _scopeProvider?.ForEachScope((st, lb) => lb.AddScope(st), builder);
+
+            string result = builder.ToString();
+            _outputWriter.Log(level, result, exception, formatter: (st, _) => st);
         }
 
         /// <summary>
@@ -60,7 +87,6 @@ namespace Arcus.Testing
                 LogLevel.Information => TUnitLogLevel.Information,
                 LogLevel.Debug => TUnitLogLevel.Debug,
                 LogLevel.Trace => TUnitLogLevel.Trace,
-                LogLevel.None => TUnitLogLevel.None,
                 _ => TUnitLogLevel.None
             };
         }
@@ -73,7 +99,7 @@ namespace Arcus.Testing
         /// <returns>An <see cref="IDisposable" /> that ends the logical operation scope on dispose.</returns>
         public IDisposable BeginScope<TState>(TState state) where TState : notnull
         {
-            return null;
+            return _scopeProvider?.Push(state);
         }
     }
 
@@ -86,7 +112,8 @@ namespace Arcus.Testing
         /// <summary>
         /// Initializes a new instance of the <see cref="TUnitTestLogger"/> class.
         /// </summary>
-        public TUnitTestLogger(ITUnitLogger outputWriter) : base(outputWriter)
+        public TUnitTestLogger(ITUnitLogger outputWriter)
+            : base(outputWriter, scopeProvider: null, categoryName: typeof(TCategoryName).FullName)
         {
         }
     }
