@@ -23,6 +23,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Arcus.Testing.Logging.Xunit.v3\LogMessageBuilder.cs" Link="LogMessageBuilder.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
     <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
