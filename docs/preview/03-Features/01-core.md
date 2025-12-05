@@ -252,7 +252,7 @@ using var clientSecret = TemporaryEnvironmentVariable.SetSecretIfNotExits("AZURE
 ```
 
 ## Disposable collection
-The `DisposableCollection` provides a solution for when the test needs to tear down multiple temporary/disposable test fixtures down independently from each other, meaning: when one test fixture fails, it should not stop another fixture from tearing down. You can add synchronous and asynchronous test fixtures to the collection. Upon disposing the collection itself, it will try to dispose each registered test fixture. When one or more failures occur, it will collect them and throw an `AggregateException`.
+The `DisposableCollection` provides a solution for when the test needs to tear down temporary/disposable test fixtures down independently from each other, meaning: when one test fixture fails, it should not stop another fixture from tearing down. You can add synchronous and asynchronous test fixtures to the collection. Upon disposing the collection itself, it will try to dispose each registered test fixture. When one or more failures occur, it will collect them and throw an `AggregateException`.
 
 ```csharp
 using Arcus.Testing;
