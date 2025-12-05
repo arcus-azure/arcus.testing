@@ -15,7 +15,7 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Storage.Blob
 ```
 
-> 🛡️ Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor)-rights if the test needs to create/update/delete containers.
+> 🛡️ Make sure that the test client that interacts with the Blob storage has at least [`Storage Blob Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-blob-data-contributor) rights if the test needs to create/update/delete containers.
 
 ## Temporary Blob container
 The `TemporaryBlobContainer` provides a solution when the integration test requires a storage system (container) during the test run. An Azure Blob container is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
@@ -126,7 +126,7 @@ The following functionality is available when installing this package:
 PM> Install-Package -Name Arcus.Testing.Storage.Table
 ```
 
-> 🛡️ Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor)-rights if the test needs to create/update/delete tables.
+> 🛡️ Make sure that the test client that interacts with the Table storage has at least [`Storage Table Data Contributor`](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/storage#storage-table-data-contributor) rights if the test needs to create/update/delete tables.
 
 ## Temporary Table
 The `TemporaryTable` provides a solution when the integration test requires a storage system (table) during the test run. An Azure Table is created upon the setup of the test fixture and is deleted again when the test fixture is disposed.
