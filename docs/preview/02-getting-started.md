@@ -76,7 +76,7 @@ It also helps with passing arguments to implementation code that relies on `ILog
 <details>
   <summary><strong>Do you interact with Azure resources in your test?</strong></summary>
   
-  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need additional test infrastructure to interact with those resources in a test-friendly way. If a resource stores a state, you might want to clear that state at the end of the test, for example.
+  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need test infrastructure to interact with those resources in a test-friendly way. If a resource stores a state, you might want to clear that state at the end of the test, for example.
 
   ⚡ Arcus Testing provides Azure technology-specific packages that helps with this interaction. If your system interacts with Azure Blob storage, you can use the `TemporaryBlobContainer` in the `Arcus.Testing.Storage.Blob` package, which clears up any lingering state before/after the actual test.
 
