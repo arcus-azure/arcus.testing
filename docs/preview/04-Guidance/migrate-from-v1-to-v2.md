@@ -50,7 +50,7 @@ TemporaryBlobContainer.CreateIfNotExistsAsync(..., options =>
 
 <!-- vale write-good.Passive = NO -->
 ### `TemporaryBlobFileOptions` ➡️ `TemporaryBlobContainerOptions`
-Previous versions had additional options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture is removed in v2 - because already implicitly available on the `TemporaryBlobContainerOptions`.
+Previous versions had options on the `TemporaryBlobFile` test fixture to override/use Azure Blob files. This and the entire options on this fixture is removed in v2 - because already implicitly available on the `TemporaryBlobContainerOptions`.
 <!-- vale write-good.Passive = YES -->
 
 1. When you want to 'use an existing blob file instead of overriding it + remove it nonetheless afterwards' you can use either `.CleanAllBlobs` or `.CleanMatchingBlobs` on the container options:
