@@ -55,7 +55,7 @@ string _ = config["Unknown:Value"];
 ```
 
 ### Customization
-You can customize the `TestConfig` with additional local alternatives (like for different environment testing) and with a different main JSON file.
+You can customize the `TestConfig` with local alternatives (like for different environment testing) and with a different main JSON file.
 
 ```csharp
 var config = TestConfig.Create(options =>
