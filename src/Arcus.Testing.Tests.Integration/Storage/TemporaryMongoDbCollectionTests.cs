@@ -26,7 +26,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = context.WhenCollectionNameUnavailable();
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context);
 
             await context.ShouldStoreCollectionAsync(collectionName);
 
@@ -47,7 +47,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Shipment shipment = CreateShipment();
             BsonValue existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
 
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context);
             Shipment createdByUs = CreateShipment();
 #pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
             await collection.AddDocumentAsync(createdByUs);
@@ -77,7 +77,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             Shipment shipment = CreateShipment();
             BsonValue existingId = await context.WhenDocumentAvailableAsync(collectionName, shipment);
 
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context, options =>
             {
                 options.OnSetup.CleanAllDocuments();
             });
@@ -105,7 +105,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BsonValue unmatchedId = await context.WhenDocumentAvailableAsync(collectionName, unmatched);
 
             // Act
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context, options =>
             {
                 options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatId == (ObjectId) matchedId)
                                .CleanMatchingDocuments((Shipment s) => s.BoatName == matched.BoatName);
@@ -126,7 +126,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = await context.WhenCollectionNameAvailableAsync();
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context, options =>
             {
                 options.OnTeardown.CleanAllDocuments();
             });
@@ -151,7 +151,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             Shipment matched = CreateShipment();
             Shipment unmatched = CreateShipment();
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context, options =>
             {
                 options.OnTeardown.CleanMatchingDocuments((Shipment s) => s.BoatName != unmatched.BoatName)
                                   .CleanMatchingDocuments((Shipment s) => s.BoatName == matched.BoatName);
@@ -182,7 +182,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BsonValue matchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, matchedOnSetup);
             BsonValue unmatchedOnSetupId = await context.WhenDocumentAvailableAsync(collectionName, unmatchedOnSetup);
 
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, options =>
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context, options =>
             {
                 options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatName == matchedOnSetup.BoatName);
             });
@@ -225,7 +225,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await using MongoDbTestContext context = await GivenCosmosMongoDbAsync();
 
             string collectionName = context.WhenCollectionNameUnavailable();
-            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName);
+            TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context);
             await context.WhenCollectionDeletedAsync(collectionName);
 
             // Act
@@ -235,13 +235,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
             await context.ShouldNotStoreCollectionAsync(collectionName);
         }
 
-        private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
+        private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, MongoDbTestContext context, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
             return await MongoDbTestContext.WhenMongoDbAvailableAsync(async () =>
             {
-                var collection = configureOptions is null
-                    ? await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger)
-                    : await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions);
+                var collection = (Bogus.Random.Bool(), configureOptions is null) switch
+                {
+                    (false, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions),
+                    (false, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger),
+                    (true, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger, configureOptions),
+                    (true, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger)
+                };
 
                 Assert.Equal(collectionName, collection.Name);
                 return collection;
