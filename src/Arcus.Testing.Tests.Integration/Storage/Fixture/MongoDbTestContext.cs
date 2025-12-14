@@ -22,7 +22,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     /// </summary>
     public class MongoDbTestContext : IAsyncDisposable
     {
-        private readonly IMongoDatabase _database;
         private readonly Collection<string> _collectionNames = new();
         private readonly ILogger _logger;
 
@@ -36,9 +35,14 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             IMongoDatabase database,
             ILogger logger)
         {
-            _database = database;
             _logger = logger;
+            Database = database;
         }
+
+        /// <summary>
+        /// Gets the current database client to interact with the Mongo DB.
+        /// </summary>
+        public IMongoDatabase Database { get; }
 
         /// <summary>
         /// Creates an authenticated <see cref="MongoDbTestContext"/>.
@@ -104,7 +108,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             _logger.LogTrace("[Test] create MongoDb collection '{CollectionName}' outside the fixture's scope", collectionName);
 
             await WhenMongoDbAvailableAsync(
-                () => _database.CreateCollectionAsync(collectionName),
+                () => Database.CreateCollectionAsync(collectionName),
                 $"[Test] cannot create MongoDb collection '{collectionName}' outside the fixture's scope, due to a high-rate failure");
 
             return collectionName;
@@ -144,7 +148,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task WhenCollectionDeletedAsync(string collectionName)
         {
             _logger.LogTrace("[Test] delete MongoDb collection '{CollectionName}' outside test fixture's scope", collectionName);
-            await _database.DropCollectionAsync(collectionName);
+            await Database.DropCollectionAsync(collectionName);
         }
 
         /// <summary>
@@ -152,7 +156,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task<BsonValue> WhenDocumentAvailableAsync<T>(string collectionName, T document)
         {
-            IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>(collectionName);
+            IMongoCollection<BsonDocument> collection = Database.GetCollection<BsonDocument>(collectionName);
 
             var bson = document.ToBsonDocument();
 
@@ -176,7 +180,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         {
             _logger.LogTrace("[Test] delete MongoDb document '{DocId}' in collection '{CollectionName}' outside test fixture's scope", id, collectionName);
 
-            IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
+            IMongoCollection<T> collection = Database.GetCollection<T>(collectionName);
             FilterDefinition<T> filter = CreateIdFilter<T>(id);
 
             await collection.DeleteOneAsync(filter);
@@ -208,7 +212,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             {
                 Filter = Builders<BsonDocument>.Filter.Eq("name", collectionName)
             };
-            using IAsyncCursor<string> collectionNames = await _database.ListCollectionNamesAsync(options);
+            using IAsyncCursor<string> collectionNames = await Database.ListCollectionNamesAsync(options);
             return await collectionNames.AnyAsync();
         }
 
@@ -217,7 +221,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldStoreDocumentAsync<T>(string collectionName, BsonValue id, Action<T> assertion = null)
         {
-            IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
+            IMongoCollection<T> collection = Database.GetCollection<T>(collectionName);
             FilterDefinition<T> filter = CreateIdFilter<T>(id);
 
             List<T> matchingDocs = await collection.Find(filter).ToListAsync();
@@ -231,7 +235,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldNotStoreDocumentAsync<T>(string collectionName, BsonValue id)
         {
-            IMongoCollection<T> collection = _database.GetCollection<T>(collectionName);
+            IMongoCollection<T> collection = Database.GetCollection<T>(collectionName);
             FilterDefinition<T> filter = CreateIdFilter<T>(id);
 
             List<T> matchingDocs = await collection.Find(filter).ToListAsync();
@@ -259,7 +263,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    await _database.DropCollectionAsync(collectionName);
+                    await Database.DropCollectionAsync(collectionName);
                 }));
             }
         }

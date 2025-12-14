@@ -238,7 +238,6 @@ namespace Arcus.Testing
             ILogger logger,
             TemporaryMongoDbCollectionOptions options)
         {
-            ArgumentNullException.ThrowIfNull(client);
             ArgumentNullException.ThrowIfNull(database);
             ArgumentNullException.ThrowIfNull(collectionName);
             ArgumentNullException.ThrowIfNull(options);
