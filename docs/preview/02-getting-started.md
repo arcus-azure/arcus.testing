@@ -5,11 +5,11 @@ sidebar_label: Getting started
 # Getting started with Arcus Testing
 **Welcome to Arcus Testing! 🎉**
 
-This page is dedicated to be used as a walkthrough on how to integrate Arcus Testing in new and existing projects.
+This page provides a walkthrough on how to integrate Arcus Testing in new and existing projects.
 Arcus Testing is an umbrella term for a set of `Arcus.Testing.*` NuGet packages that kick-start your code testing. 
 
 ## The basics
-The packages in the Arcus Testing space are split into the following categories:
+We split the packages in the Arcus Testing space into the following categories:
 - **Core infrastructure** (contains tech-independent functionality)
 - **Assertions** (contains ways to verify functionality)
 - **Logging** (contains ways to use Microsoft's `ILogger` to write to the test output)
@@ -26,7 +26,7 @@ All classes described here are available in the same namespace : `Arcus.Testing`
 <details>
   <summary><strong>Where do your integration tests get their values from?</strong></summary>
 
-  Usually, integration tests projects need to have configuration values: HTTP endpoints of deployed applications, access keys to authenticate to a deployed service... In your project, these values might come in from environment variables, `appsettings.json` files, or other places.
+  Integration tests projects need to have configuration values: HTTP endpoints of deployed applications, access keys to authenticate to a deployed service... In your project, these values might come in from environment variables, `appsettings.json` files, or other places.
 
   ⚡ Arcus Testing provides a `TestConfig` class that implements Microsoft's `IConfiguration`. This class already has the `appsettings.json` and optional (local) `appsetting.local.json` files embedded upon creation. Meaning that you don't have to re-create this in each test project.
 
@@ -42,9 +42,9 @@ All classes described here are available in the same namespace : `Arcus.Testing`
 <details>
   <summary><strong>How do you handle assertions for data equality?</strong></summary>
   
-  Integration tests usually use content types like XML, JSON or CSV to pass data between systems. When asserting on whether the system used or transformed the data correctly, you have to do an 'equal' check on that data. The problem arises when elements are in a different order, have different casing or contain values that you don't care about, but are there anyway.
+  Integration tests use content types like XML, JSON or CSV to pass data between systems. When asserting on whether the system used or transformed the data correctly, you have to do an 'equal' check on that data. The problem arises when elements are in a different order, have different casing or contain values that you don't care about, but are there anyway.
 
-  ⚡ Arcus Testing provides several `Assert[Xml/Json/Csv].Equal` classes to make this equalization check easier for you. Fully customizable with options to ignore elements, node order, and each time with a clear assertion failure message (including line number and element names) on what part is considered 'not equal'.
+  ⚡ Arcus Testing provides `Assert[Xml/Json/Csv].Equal` classes to make this equalization check easier for you. Fully customizable with options to ignore elements, node order, and each time with a clear assertion failure message (including line number and element names) on what part is 'not equal'.
 
   1. Install the `Arcus.Testing.Assert` NuGet package;
   2. Locate the places where you do an equalization check;
@@ -58,11 +58,11 @@ All classes described here are available in the same namespace : `Arcus.Testing`
 <details>
   <summary><strong>Do you write log messages to the test output?</strong></summary>
   
-  The test output is usually the first place you look when a test fails. Either the testing framework has written the exception message to the output, the assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
+  The test output is the first place you look when a test fails. Either the testing framework has written the exception message to the output, and the assertion method has collected some failure message, or you have written some necessary context to understand (without debugging) why a test failed.
 
   Testing frameworks all have their different ways of writing log messages to the test output, which means that each piece of test code that interacts with these test framework-specifics is more tightly coupled to that framework.
 
-  ⚡ Arcus Testing provides a way to use Microsoft's `ILogger` infrastructure in your tests instead of relying on test framework specifics. This way, you are free to write framework-independent test infrastructure.
+  ⚡ Arcus Testing provides a way to use Microsoft's `ILogger` infrastructure in your tests instead of relying on test framework specifics. This allows you to write framework-independent test infrastructure.
 It also helps with passing arguments to implementation code that relies on `ILogger`.
 
   1. Install the `Arcus.Testing.Logging.[Xunit/NUnit/MSTest]` package, according to your test framework;
@@ -76,9 +76,9 @@ It also helps with passing arguments to implementation code that relies on `ILog
 <details>
   <summary><strong>Do you interact with Azure resources in your test?</strong></summary>
   
-  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need additional test infrastructure to interact with those resources in a test-friendly way. If a resource stores a state, you might want to clear that state at the end of the test, for example.
+  Integration-like tests (meaning: tests that interact with resources outside the code environment), often need test infrastructure to interact with those resources in a test-friendly way. If a resource stores a state, you might want to clear that state at the end of the test, for example.
 
-  ⚡ Arcus Testing provides several Azure technology-specific packages that helps with this interaction. If your system is interacting with Azure Blob storage, you can use the `TemporaryBlobContainer` in the `Arcus.Testing.Storage.Blob` package, which clears up any lingering state before/after the actual test.
+  ⚡ Arcus Testing provides Azure technology-specific packages that helps with this interaction. If your system interacts with Azure Blob storage, you can use the `TemporaryBlobContainer` in the `Arcus.Testing.Storage.Blob` package, which clears up any lingering state before/after the actual test.
 
   In the same fashion, Arcus Testing has packages for all sorts of Azure technologies, each time with the test-usability in mind.
 
