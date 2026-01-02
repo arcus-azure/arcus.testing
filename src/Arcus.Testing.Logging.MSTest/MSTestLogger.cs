@@ -10,6 +10,8 @@ namespace Arcus.Testing
     public class MSTestLogger : ILogger
     {
         private readonly TestContext _testContext;
+        private readonly IExternalScopeProvider _scopeProvider;
+        private readonly string _categoryName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MSTestLogger" /> class.
@@ -17,9 +19,24 @@ namespace Arcus.Testing
         /// <param name="testContext">The MSTest context to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testContext"/> is <c>null</c>.</exception>
         public MSTestLogger(TestContext testContext)
+            : this(testContext, scopeProvider: null, categoryName: null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MSTestLogger" /> class.
+        /// </summary>
+        /// <param name="testContext">The MSTest context to write custom test output.</param>
+        /// <param name="scopeProvider">The instance to provide logging scopes.</param>
+        /// <param name="categoryName">The category name for messages produced by the logger.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testContext"/> is <c>null</c>.</exception>
+        internal MSTestLogger(TestContext testContext, IExternalScopeProvider scopeProvider, string categoryName)
         {
             ArgumentNullException.ThrowIfNull(testContext);
+
             _testContext = testContext;
+            _scopeProvider = scopeProvider;
+            _categoryName = categoryName;
         }
 
         /// <summary>
@@ -29,7 +46,7 @@ namespace Arcus.Testing
         /// <param name="eventId">Id of the event.</param>
         /// <param name="state">The entry to be written. Can be also an object.</param>
         /// <param name="exception">The exception related to this entry.</param>
-        /// <param name="formatter">Function to create a <see cref="T:System.String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
+        /// <param name="formatter">Function to create a <see cref="String" /> message of the <paramref name="state" /> and <paramref name="exception" />.</param>
         /// <typeparam name="TState">The type of the object to be written.</typeparam>
         public void Log<TState>(
             LogLevel logLevel,
@@ -38,15 +55,16 @@ namespace Arcus.Testing
             Exception exception,
             Func<TState, Exception, string> formatter)
         {
+            ArgumentNullException.ThrowIfNull(formatter);
             string message = formatter(state, exception);
-            if (exception is null)
-            {
-                _testContext.WriteLine("{0:s} {1} > {2}", DateTimeOffset.UtcNow, logLevel, message);
-            }
-            else
-            {
-                _testContext.WriteLine("{0:s} {1} > {2}: {3}", DateTimeOffset.UtcNow, logLevel, message, exception);
-            }
+
+            var builder = new LogMessageBuilder(logLevel);
+            builder.AddCategory(_categoryName)
+                   .AddUserMessage(message)
+                   .AddException(exception);
+
+            _scopeProvider?.ForEachScope((st, lb) => lb.AddScope(st), builder);
+            _testContext.WriteLine(builder.ToString());
         }
 
         /// <summary>
@@ -64,10 +82,10 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <typeparam name="TState">The type of the state to begin scope for.</typeparam>
-        /// <returns>An <see cref="T:System.IDisposable" /> that ends the logical operation scope on dispose.</returns>
+        /// <returns>An <see cref="IDisposable" /> that ends the logical operation scope on dispose.</returns>
         public IDisposable BeginScope<TState>(TState state)
         {
-            return null;
+            return _scopeProvider?.Push(state);
         }
     }
 
@@ -82,7 +100,7 @@ namespace Arcus.Testing
         /// </summary>
         /// <param name="testContext">The MSTest context to write custom test output.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="testContext"/> is <c>null</c>.</exception>
-        public MSTestLogger(TestContext testContext) : base(testContext)
+        public MSTestLogger(TestContext testContext) : base(testContext, scopeProvider: null, categoryName: typeof(TCategoryName).FullName)
         {
         }
     }

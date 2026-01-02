@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text.Json;
 using System.Xml;
 using System.Xml.Xsl;
@@ -12,22 +11,31 @@ namespace Arcus.Testing.Tests.Unit.Assert_
 {
     public class AssertXsltTests
     {
+        private readonly ResourceDirectory _resources;
         private static readonly Faker Bogus = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AssertXsltTests"/> class.
+        /// </summary>
+        public AssertXsltTests()
+        {
+            _resources = ResourceDirectory.CurrentDirectory / nameof(Assert_) / "Resources";
+        }
 
         [Fact]
         public void TransformToXml_ToXml_Succeeds()
         {
             // Arrange
             string sampleName = "xslt-transform.xml-xml.sample";
-            string xslt = ReadResourceFileByName($"{sampleName}.transformer.xslt");
+            string xslt = _resources.ReadFileText($"{sampleName}.transformer.xslt");
 
-            string input = ReadResourceFileByName($"{sampleName}.input.xml");
+            string input = _resources.ReadFileText($"{sampleName}.input.xml");
 
             // Act
             string actual = TransformToXml(xslt, input);
 
             // Assert
-            string expected = ReadResourceFileByName($"{sampleName}.output.xml");
+            string expected = _resources.ReadFileText($"{sampleName}.output.xml");
             AssertXml.Equal(expected, actual);
         }
 
@@ -36,9 +44,9 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string sampleName = "xslt-transform.xml-json.sample";
-            string xslt = ReadResourceFileByName($"{sampleName}.transformer.xslt");
-            string input = ReadResourceFileByName($"{sampleName}.input.xml");
-            string expected = ReadResourceFileByName($"{sampleName}.output.json");
+            string xslt = _resources.ReadFileText($"{sampleName}.transformer.xslt");
+            string input = _resources.ReadFileText($"{sampleName}.input.xml");
+            string expected = _resources.ReadFileText($"{sampleName}.output.json");
 
             // Act
             string actual = TransformToJson(xslt, input);
@@ -52,12 +60,12 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         {
             // Arrange
             string sampleName = "xslt-transform.xml-csv.sample";
-            string xslt = ReadResourceFileByName($"{sampleName}.transformer.xslt");
-            string input = ReadResourceFileByName($"{sampleName}.input.xml");
-            string expected = ReadResourceFileByName($"{sampleName}.output.csv");
+            var xslt = AssertXslt.Load(_resources.ReadFileText($"{sampleName}.transformer.xslt"));
+            var input = AssertXml.Load(_resources.ReadFileText($"{sampleName}.input.xml"));
+            var expected = AssertCsv.Load(_resources.ReadFileText($"{sampleName}.output.csv"));
 
             // Act
-            string actual = TransformToCsv(xslt, input);
+            CsvTable actual = TransformToCsv(xslt, input);
 
             // Assert
             AssertCsv.Equal(expected, actual);
@@ -67,7 +75,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToJson_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
                 "<xsl:template match=\"/\"><root/></xsl:template></xsl:stylesheet>";
 
@@ -83,7 +91,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToXml_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">{ \"root\": [] }</xsl:template></xsl:stylesheet>";
 
@@ -99,7 +107,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void TransformToCsv_WithInvalidOutput_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
                 "<xsl:template match=\"/\">a;b;c\n1;3</xsl:template></xsl:stylesheet>";
 
@@ -116,7 +124,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
         public void Transform_WithInvalidTransformation_FailsWithDescription()
         {
             // Arrange
-            string xslt = 
+            string xslt =
                 "<xsl:stylesheet xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\" version=\"1.0\">" +
                     "<xsl:template match=\"/\"><xsl:message terminate=\"yes\">NotImplementedException</xsl:message></xsl:template></xsl:stylesheet>";
 
@@ -130,14 +138,6 @@ namespace Arcus.Testing.Tests.Unit.Assert_
                 Assert.Contains(nameof(AssertXslt), exception.Message);
                 Assert.Contains("transformation failure", exception.Message);
             });
-        }
-
-        private static string ReadResourceFileByName(string fileName)
-        {
-            string directoryPath = Path.Combine(Directory.GetCurrentDirectory(), nameof(Assert_), "Resources");
-            string filePath = Path.Combine(directoryPath, fileName);
-
-            return File.ReadAllText(filePath);
         }
 
         private static string TransformToXml(string xslt, string xml)
@@ -170,6 +170,21 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             return AssertXslt.TransformToCsv(AssertXslt.Load(xslt), AssertXml.Load(xml)).ToString();
         }
 
+        private static CsvTable TransformToCsv(XslCompiledTransform xslt, XmlDocument xml)
+        {
+            return AssertXslt.TransformToCsv(xslt, xml, options =>
+            {
+                if (Bogus.Random.Bool())
+                {
+                    var args = new XsltArgumentList();
+                    args.AddParam("separator", namespaceUri: "", ",");
+
+                    options.Arguments = args;
+                    options.WithResult(csv => csv.Separator = ',');
+                }
+            });
+        }
+
         [Fact]
         public void Load_WithInvalidXml_ThrowsWithDescription()
         {
@@ -177,7 +192,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_
             Assert.Contains(nameof(AssertXslt), exception.Message);
             Assert.Contains("XSLT contents", exception.Message);
         }
-        
+
         [Fact]
         public void TransformXml_WithoutArgs_Fails()
         {

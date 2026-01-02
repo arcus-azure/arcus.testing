@@ -106,7 +106,7 @@ namespace Arcus.Testing
         {
             if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
                 || headersNode is not JsonValue header
-                || !header.ToString().StartsWith("output"))
+                || !header.ToString().StartsWith("output", StringComparison.InvariantCulture))
             {
                 throw new JsonException(
                     $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
@@ -116,12 +116,12 @@ namespace Arcus.Testing
             var headersTxt = header.GetValue<string>();
             headersTxt = Regex.Replace(headersTxt, "^output\\(", string.Empty);
             headersTxt = headersTxt.Remove(headersTxt.Length - 1, 1);
-            headersTxt = 
-                headersTxt.Replace("\\n", "")
-                          .Replace(", ", ",")
-                          .Replace(" as string[]", " as string")
-                          .Replace("{", "")
-                          .Replace("}", "");
+            headersTxt =
+                headersTxt.Replace("\\n", "", StringComparison.InvariantCulture)
+                          .Replace(", ", ",", StringComparison.InvariantCulture)
+                          .Replace(" as string[]", " as string", StringComparison.InvariantCulture)
+                          .Replace("{", "", StringComparison.InvariantCulture)
+                          .Replace("}", "", StringComparison.InvariantCulture);
 
             if (Regex.IsMatch(headersTxt, ",( )*,"))
             {
@@ -129,7 +129,7 @@ namespace Arcus.Testing
                     $"[Test] Cannot load the content of the Azure Data Factory preview as the headers are not considered in a valid format: {headersTxt}, " +
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
-                
+
             (int _, PreviewHeader[] parsed) = ParseSchemeAsPreviewHeaders(startIndex: 0, headersTxt);
             return parsed;
         }
@@ -210,17 +210,17 @@ namespace Arcus.Testing
             return (-1, headers.ToArray());
         }
 
-         private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
-         {
-             JsonArray dataArray = ParseDataAsArray(outputObj);
-             JsonNode[] results =
-                dataArray.Where(elem => elem is JsonArray)
-                         .Cast<JsonArray>()
-                         .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
-                         .ToArray();
+        private static JsonNode ParseDataAsNode(PreviewHeader[] headers, JsonObject outputObj, DataPreviewJsonOptions options)
+        {
+            JsonArray dataArray = ParseDataAsArray(outputObj);
+            JsonNode[] results =
+               dataArray.Where(elem => elem is JsonArray)
+                        .Cast<JsonArray>()
+                        .Select(arr => FillJsonDataFromHeaders(headers, arr, options))
+                        .ToArray();
 
-            return results.Length == 1 
-                ? results[0] 
+            return results.Length == 1
+                ? results[0]
                 : JsonSerializer.SerializeToNode(results);
         }
 
@@ -244,17 +244,17 @@ namespace Arcus.Testing
                     case PreviewDataType.DirectValue:
                         result[headerName.Name] = ParseDirectValue(headerValue, options);
                         break;
-                    
+
                     case PreviewDataType.Array when headerValue is JsonArray arr:
                         JsonNode[] elements = arr.Cast<JsonArray>().Select(elem => FillJsonDataFromHeaders(headerName.Children, elem, options)).ToArray();
                         result[headerName.Name] = JsonSerializer.SerializeToNode(elements);
                         break;
-                    
+
                     case PreviewDataType.Object when headerValue is JsonArray inner:
                         JsonNode children = FillJsonDataFromHeaders(headerName.Children, inner, options);
                         result[headerName.Name] = JsonSerializer.SerializeToNode(children);
                         break;
-                    
+
                     default:
                         throw new JsonException(
                             $"[Test] Cannot load the content of the Azure Data Factory preview expression as the header and data is not representing the same types: {dataArray}, " +
@@ -317,7 +317,7 @@ namespace Arcus.Testing
 
             public static PreviewHeader CreateAsValue(string headerName)
             {
-                return new PreviewHeader(DirectValueTrail.Replace(headerName, ""), PreviewDataType.DirectValue, Array.Empty<PreviewHeader>());
+                return new PreviewHeader(DirectValueTrail.Replace(headerName, ""), PreviewDataType.DirectValue, []);
             }
 
             public static PreviewHeader CreateAsArray(string headerName, PreviewHeader[] parsed)
@@ -402,7 +402,7 @@ namespace Arcus.Testing
                     $"consider parsing the raw run data yourself as this parsing only supports limited structures");
             }
 
-            JsonNode outputNode = JsonNode.Parse(outputJson.Replace("\n", ""));
+            JsonNode outputNode = JsonNode.Parse(outputJson.Replace("\n", "", StringComparison.InvariantCulture));
             if (outputNode is not JsonObject outputObj)
             {
                 throw new CsvException(
@@ -415,9 +415,9 @@ namespace Arcus.Testing
 
         private static string[] ParseSchemeAsCsvHeaders(JsonObject outputObj)
         {
-            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode) 
-                || headersNode is not JsonValue headersValue 
-                || !headersValue.ToString().StartsWith("output"))
+            if (!outputObj.TryGetPropertyValue("schema", out JsonNode headersNode)
+                || headersNode is not JsonValue headersValue
+                || !headersValue.ToString().StartsWith("output", StringComparison.InvariantCulture))
             {
                 throw new CsvException(
                     $"[Test] Cannot load the content of the Azure Data Factory preview expression as the headers are not available in the 'output.schema' node: {outputObj}, " +
@@ -485,7 +485,7 @@ namespace Arcus.Testing
 
             string AsCsvCell(string value)
             {
-                return value.Replace("\\,", ",");
+                return value.Replace("\\,", ",", StringComparison.InvariantCulture);
             }
 
             if (dataArr.All(n => n is JsonArray arr && arr.All(elem => elem is JsonValue)))
@@ -494,7 +494,7 @@ namespace Arcus.Testing
                               .ToArray();
             }
 
-            return new[] { dataArr.Select(n => AsCsvCell(n.ToString())).ToArray() };
+            return [dataArr.Select(n => AsCsvCell(n.ToString())).ToArray()];
         }
 
         private static JsonArray ParseDataAsArray(JsonObject outputObj)
@@ -522,14 +522,14 @@ namespace Arcus.Testing
                 string[] headerNames,
                 CsvRow[] rows,
                 string originalCsv,
-                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options) 
+                AssertCsvOptions options) : base(headerNames, rows, originalCsv, options)
             {
             }
 
             /// <summary>
-            /// Loads the raw <paramref name="headerNames"/> and <paramref name="rows"/> to a validly parsed <see cref="CsvTable"/>.
+            /// Loads the raw <paramref name="headerNames"/> and <paramref name="rows"/> to a validly parsed <see cref="DataFlowPreviewCsvTable"/>.
             /// </summary>
-            internal static CsvTable Load(
+            internal static DataFlowPreviewCsvTable Load(
                 IEnumerable<string> headerNames,
                 IEnumerable<IEnumerable<string>> rows,
                 AssertCsvOptions options)

@@ -22,17 +22,23 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             return builder.AddProvider(new XunitLoggerProvider(outputWriter));
+#pragma warning restore CA2000
         }
 
         [ProviderAlias("Xunit")]
-        private sealed class XunitLoggerProvider : ILoggerProvider
+        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly ILogger _logger;
+            private IExternalScopeProvider _scopeProvider;
 
-            internal XunitLoggerProvider(ITestOutputHelper outputWriter)
+            /// <summary>
+            /// Sets external scope information source for logger provider.
+            /// </summary>
+            /// <param name="scopeProvider">The provider of scope data.</param>
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
             {
-                _logger = new XunitTestLogger(outputWriter);
+                _scopeProvider = scopeProvider;
             }
 
             /// <summary>
@@ -40,7 +46,7 @@ namespace Microsoft.Extensions.Logging
             /// </summary>
             /// <param name="categoryName">The category name for messages produced by the logger.</param>
             /// <returns>The instance of <see cref="ILogger" /> that was created.</returns>
-            public ILogger CreateLogger(string categoryName) => _logger;
+            public ILogger CreateLogger(string categoryName) => new XunitTestLogger(outputWriter, _scopeProvider, categoryName);
 
             /// <summary>
             /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

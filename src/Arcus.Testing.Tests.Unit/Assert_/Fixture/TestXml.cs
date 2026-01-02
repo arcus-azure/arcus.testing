@@ -26,7 +26,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         public static TestXml Generate()
         {
             var doc = new XmlDocument();
-            
+
             XmlElement root = doc.CreateElement(GenPrefix(), GenNodeName(), GenNamespace());
             Assert.All(GenAttributes(doc), a => root.Attributes.Append(a));
             doc.AppendChild(root);
@@ -39,7 +39,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                     return;
                 }
 
-                XmlElement[] children = 
+                XmlElement[] children =
                     Bogus.Make(Bogus.Random.Int(1, 5), GenNodeName)
                          .Select(name =>
                          {
@@ -207,7 +207,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
         {
             if (Bogus.Random.Bool())
             {
-                
+
                 return doc.CreateAttribute(name ?? GenAttributeName());
             }
 
@@ -248,7 +248,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 Bogus.Random.Int(1, 10),
                 () => _doc.CreateComment(Bogus.Lorem.Sentence()));
 
-            Assert.All(comments, 
+            Assert.All(comments,
                 comment => SelectRandomlyElement().AppendChild(comment));
         }
 
@@ -272,19 +272,19 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
 
         private static XmlElement SelectRandomly(XmlElement node, Func<XmlElement, bool> filter)
         {
-            IEnumerable<XmlElement> elements = 
+            IEnumerable<XmlElement> elements =
                 node.ChildNodes.OfType<XmlElement>()
                     .Select(n => SelectRandomly(n, filter))
                     .Where(n => filter?.Invoke(n) ?? true)
                     .Concat(filter?.Invoke(node) ?? true ? new[] { node } : Array.Empty<XmlElement>());
-            
+
             return Bogus.PickRandom(elements);
         }
 
         public void Shuffle()
         {
             XmlNode shuffled = Shuffle(_doc.DocumentElement);
-            
+
             var xml = new XmlDocument();
             xml.LoadXml(shuffled.OuterXml);
             _doc = xml;
@@ -297,7 +297,7 @@ namespace Arcus.Testing.Tests.Unit.Assert_.Fixture
                 XmlAttribute[] attributes = Bogus.Random.Shuffle(
                     element.Attributes.OfType<XmlAttribute>()
                            .Where(a => a.NamespaceURI != "http://www.w3.org/2000/xmlns/")).ToArray();
-                
+
                 Assert.All(attributes, attr => element.RemoveAttribute(attr.Name));
 
                 foreach (XmlAttribute attr in attributes)

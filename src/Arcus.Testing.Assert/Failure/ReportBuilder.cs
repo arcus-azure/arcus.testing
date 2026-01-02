@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
+// ReSharper disable once CheckNamespace
 namespace Arcus.Testing
 {
     /// <summary>
@@ -49,7 +51,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the additional options to configure the failure report written to the test output.
     /// </summary>
-    internal class ReportOptions
+    internal sealed class ReportOptions
     {
         /// <summary>
         /// Gets or sets the maximum characters of the expected and actual inputs should be written to the test output.
@@ -70,7 +72,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents a buildable humanly-readable report of a test assertion failure.
     /// </summary>
-    internal class ReportBuilder
+    internal sealed class ReportBuilder
     {
         private readonly StringBuilder _report;
 
@@ -85,7 +87,7 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(generalMessage);
 
             _report = new StringBuilder();
-            _report.AppendLine($"{methodName} failure: {generalMessage}");
+            _report.AppendLine(CultureInfo.InvariantCulture, $"{methodName} failure: {generalMessage}");
         }
 
         /// <summary>

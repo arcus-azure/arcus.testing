@@ -6,8 +6,8 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture;
+using Azure.Core;
 using Azure.Identity;
 using Azure.ResourceManager;
 using Azure.ResourceManager.DataFactory;
@@ -270,10 +270,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         // ICollectionFixture<> interfaces.
     }
 
-    public class DataFactoryDebugSession : IAsyncLifetime
+    public sealed class DataFactoryDebugSession : IAsyncLifetime
     {
         private readonly TestConfig _config;
-        private TemporaryManagedIdentityConnection _connection;
         private static readonly Faker Bogus = new();
 
         /// <summary>
@@ -297,8 +296,6 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask InitializeAsync()
         {
-            _connection = TemporaryManagedIdentityConnection.Create(_config, NullLogger.Instance);
-
             DataFactoryConfig dataFactory = _config.GetDataFactory();
             Guid unknownSessionId = Guid.NewGuid();
 
@@ -316,20 +313,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
 
         public async Task ShouldFindActiveSessionAsync(Guid sessionId)
         {
-            bool isActive = await IsDebugSessionActiveAsync(sessionId);
+            bool isActive = await IsDebugSessionActiveAsync(DataFactory.ResourceId, sessionId);
             Assert.True(isActive, $"expected to have an active debug session in DataFactory '{DataFactory.Name}' for session ID: '{sessionId}', but got none");
         }
 
         public async Task ShouldNotFindActiveSessionAsync(Guid sessionId)
         {
-            bool isActive = await IsDebugSessionActiveAsync(sessionId);
+            bool isActive = await IsDebugSessionActiveAsync(DataFactory.ResourceId, sessionId);
             Assert.False(isActive, $"expected to remove active debug session '{sessionId}' in DataFactory '{DataFactory.Name}', but it's still active");
         }
 
-        private async Task<bool> IsDebugSessionActiveAsync(Guid sessionId)
+        public static async Task<bool> IsDebugSessionActiveAsync(ResourceIdentifier resourceId, Guid sessionId)
         {
             var armClient = new ArmClient(new DefaultAzureCredential());
-            DataFactoryResource resource = armClient.GetDataFactoryResource(DataFactory.ResourceId);
+            DataFactoryResource resource = armClient.GetDataFactoryResource(resourceId);
 
             var isActive = false;
             await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync())
@@ -349,18 +346,20 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         /// </summary>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(NullLogger.Instance);
-
-            if (Value != null)
+            await using (var disposables = new DisposableCollection(NullLogger.Instance))
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
+                    // Expected to dispose the debug session multiple times to verify redundancy.
                     await Value.DisposeAsync();
+                    await Value.DisposeAsync();
+
                     await ShouldNotFindActiveSessionAsync(SessionId);
                 }));
             }
 
-            disposables.Add(_connection);
+            Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
         }
     }
 }

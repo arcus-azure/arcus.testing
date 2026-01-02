@@ -3,11 +3,9 @@ using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Fixture;
 using Azure.Storage.Blobs;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Testing.Tests.Integration.Storage
 {
-    [Collection(TestCollections.BlobStorage)]
     public class TemporaryBlobContainerTests : IntegrationTest
     {
         /// <summary>
@@ -246,13 +244,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
 #pragma warning disable S3358 // Sonar suggests extracting nested condition, but that will create the container twice + does not help with readability.
 
+            var logger = CreateLogger<TemporaryBlobContainer>();
             TemporaryBlobContainer temp = configureOptions is null
                 ? Bogus.Random.Bool()
-                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger)
-                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, Logger)
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger)
                 : Bogus.Random.Bool()
-                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, Logger, configureOptions)
-                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, Logger, configureOptions);
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger, configureOptions)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger, configureOptions);
 
 #pragma warning restore
 

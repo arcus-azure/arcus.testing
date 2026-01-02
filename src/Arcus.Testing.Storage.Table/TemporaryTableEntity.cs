@@ -50,15 +50,17 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or the <paramref name="tableName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
-        public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
+#pragma warning restore S1133
+        public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
             string accountName,
             string tableName,
             TEntity entity,
             ILogger logger)
             where TEntity : class, ITableEntity
         {
-            return await UpsertEntityAsync(accountName, tableName, entity, logger);
+            return UpsertEntityAsync(accountName, tableName, entity, logger);
         }
 
         /// <summary>
@@ -69,10 +71,12 @@ namespace Arcus.Testing
         /// <param name="entity">The entity to add to the Azure Table.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> or the <paramref name="entity"/> is <c>null</c>.</exception>
+#pragma warning disable S1133 // Will be removed in v3.0.
         [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
-        public static async Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
+#pragma warning restore S1133
+        public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
         {
-            return await UpsertEntityAsync(client, entity, logger);
+            return UpsertEntityAsync(client, entity, logger);
         }
 
         /// <summary>
@@ -89,7 +93,8 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or the <paramref name="tableName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryTableEntity> UpsertEntityAsync<TEntity>(
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure Table Storage failed.</exception>
+        public static Task<TemporaryTableEntity> UpsertEntityAsync<TEntity>(
             string accountName,
             string tableName,
             TEntity entity,
@@ -102,7 +107,7 @@ namespace Arcus.Testing
             var tableEndpoint = new Uri($"https://{accountName}.table.core.windows.net");
             var tableClient = new TableClient(tableEndpoint, tableName, new DefaultAzureCredential());
 
-            return await UpsertEntityAsync(tableClient, entity, logger);
+            return UpsertEntityAsync(tableClient, entity, logger);
         }
 
         /// <summary>
@@ -117,6 +122,7 @@ namespace Arcus.Testing
         /// <param name="entity">The entity to add to the Azure Table.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> or the <paramref name="entity"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure Table Storage failed.</exception>
         public static async Task<TemporaryTableEntity> UpsertEntityAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
         {
             ArgumentNullException.ThrowIfNull(client);
@@ -126,14 +132,14 @@ namespace Arcus.Testing
             Type entityType = typeof(TEntity);
 
             NullableResponse<TEntity> entityExists =
-                await client.GetEntityIfExistsAsync<TEntity>(entity.PartitionKey, entity.RowKey);
+                await client.GetEntityIfExistsAsync<TEntity>(entity.PartitionKey, entity.RowKey).ConfigureAwait(false);
 
             if (entityExists.HasValue)
             {
                 ITableEntity originalEntity = entityExists.Value;
 
-                logger.LogDebug("[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-                using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace);
+                logger.LogSetupReplaceEntity(entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
+                using Response response = await client.UpsertEntityAsync(entity, TableUpdateMode.Replace).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
@@ -148,8 +154,8 @@ namespace Arcus.Testing
 
             else
             {
-                logger.LogDebug("[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'", entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
-                using Response response = await client.AddEntityAsync(entity);
+                logger.LogSetupAddNewEntity(entityType.Name, entity.RowKey, entity.PartitionKey, client.AccountName, client.Name);
+                using Response response = await client.AddEntityAsync(entity).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
@@ -171,8 +177,8 @@ namespace Arcus.Testing
         {
             if (_createdByUs)
             {
-                _logger.LogDebug("[Test:Teardown] Delete Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", _entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                using Response response = await _tableClient.DeleteEntityAsync(_entity);
+                _logger.LogTeardownDeleteEntity(_entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
+                using Response response = await _tableClient.DeleteEntityAsync(_entity).ConfigureAwait(false);
 
                 if (response.IsError && response.Status != NotFound)
                 {
@@ -184,8 +190,8 @@ namespace Arcus.Testing
             }
             else
             {
-                _logger.LogDebug("[Test:Teardown] Revert replaced Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'", _entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
-                using Response response = await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace);
+                _logger.LogTeardownRevertEntity(_entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
+                using Response response = await _tableClient.UpsertEntityAsync(_entity, TableUpdateMode.Replace).ConfigureAwait(false);
 
                 if (response.IsError)
                 {
@@ -198,5 +204,30 @@ namespace Arcus.Testing
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TempTableEntityILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Add new Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'")]
+        internal static partial void LogSetupAddNewEntity(this ILogger logger, string entityType, string rowKey, string partitionKey, string accountName, string tableName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Setup] Replace already existing Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') in table '{AccountName}/{TableName}'")]
+        internal static partial void LogSetupReplaceEntity(this ILogger logger, string entityType, string rowKey, string partitionKey, string accountName, string tableName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Delete Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'")]
+        internal static partial void LogTeardownDeleteEntity(this ILogger logger, string entityType, string rowKey, string partitionKey, string accountName, string tableName);
+
+        [LoggerMessage(
+            Level = SetupTeardownLogLevel,
+            Message = "[Test:Teardown] Revert replaced Azure Table entity '{EntityType}' (rowKey: '{RowKey}', partitionKey: '{PartitionKey}') from table '{AccountName}/{TableName}'")]
+        internal static partial void LogTeardownRevertEntity(this ILogger logger, string entityType, string rowKey, string partitionKey, string accountName, string tableName);
     }
 }

@@ -22,23 +22,25 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
             var provider = new XunitLoggerProvider(outputWriter);
+#pragma warning restore CA2000
             return builder.AddProvider(provider);
         }
 
         [ProviderAlias("Xunit")]
-        private sealed class XunitLoggerProvider : ILoggerProvider
+        private sealed class XunitLoggerProvider(ITestOutputHelper outputWriter) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly ILogger _logger;
+            private IExternalScopeProvider _scopeProvider;
 
-            public XunitLoggerProvider(ITestOutputHelper outputWriter)
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
             {
-                _logger = new XunitTestLogger(outputWriter);
+                _scopeProvider = scopeProvider;
             }
 
             public ILogger CreateLogger(string categoryName)
             {
-                return _logger;
+                return new XunitTestLogger(outputWriter, _scopeProvider, categoryName);
             }
 
             public void Dispose()

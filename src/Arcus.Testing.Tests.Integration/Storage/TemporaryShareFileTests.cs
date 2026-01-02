@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Azure.Storage.Files.Shares;
 using Xunit;
-using Xunit.Abstractions;
 using DirClient = Azure.Storage.Files.Shares.ShareDirectoryClient;
 using FileClient = Azure.Storage.Files.Shares.ShareFileClient;
 
@@ -59,10 +58,17 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BinaryData actualBefore = await share.ShouldHaveFileAsync(file);
             AssertEqualContents(newContents, actualBefore);
 
-            await temp.DisposeAsync();
+            await WhenTestFixtureTeardownAsync(temp);
 
             BinaryData actualAfter = await share.ShouldHaveFileAsync(file);
             AssertEqualContents(originalContents, actualAfter);
+        }
+
+        private static async Task WhenTestFixtureTeardownAsync(TemporaryShareFile temp)
+        {
+            // Calling dispose multiple times should be redundant.
+            await temp.DisposeAsync();
+            await temp.DisposeAsync();
         }
 
         private static void AssertEqualContents(Stream expectedStream, BinaryData actual)

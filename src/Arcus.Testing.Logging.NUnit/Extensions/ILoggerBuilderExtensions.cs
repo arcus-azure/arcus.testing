@@ -12,7 +12,7 @@ namespace Microsoft.Extensions.Logging
     public static class ILoggerBuilderExtensions
     {
         /// <summary>
-        /// Adds the logging messages from the given xUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
+        /// Adds the logging messages from the given NUnit <paramref name="outputWriter"/> as a provider to the <paramref name="builder"/>.
         /// </summary>
         /// <param name="builder">The logging builder to add the NUnit logging test messages to.</param>
         /// <param name="outputWriter">The NUnit test writer to write custom test output.</param>
@@ -22,8 +22,9 @@ namespace Microsoft.Extensions.Logging
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
 
-            var logger = new NUnitTestLogger(outputWriter);
-            var provider = new NUnitLoggerProvider(logger);
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
+            var provider = new NUnitLoggerProvider(outputWriter, errorWriter: null);
+#pragma warning restore CA2000
 
             return builder.AddProvider(provider);
         }
@@ -39,26 +40,28 @@ namespace Microsoft.Extensions.Logging
         {
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(outputWriter);
+            ArgumentNullException.ThrowIfNull(errorWriter);
 
-            var logger = new NUnitTestLogger(outputWriter, errorWriter);
-            var provider = new NUnitLoggerProvider(logger);
+#pragma warning disable CA2000 // Responsibility of disposing the created object is transferred to the caller
+            var provider = new NUnitLoggerProvider(outputWriter, errorWriter);
+#pragma warning restore CA2000
 
             return builder.AddProvider(provider);
         }
 
         [ProviderAlias("NUnit")]
-        private sealed class NUnitLoggerProvider : ILoggerProvider
+        private sealed class NUnitLoggerProvider(TextWriter outputWriter, TextWriter errorWriter) : ILoggerProvider, ISupportExternalScope
         {
-            private readonly NUnitTestLogger _logger;
+            private IExternalScopeProvider _scopeProvider;
 
-            public NUnitLoggerProvider(NUnitTestLogger logger)
+            public void SetScopeProvider(IExternalScopeProvider scopeProvider)
             {
-                _logger = logger;
+                _scopeProvider = scopeProvider;
             }
 
             public ILogger CreateLogger(string categoryName)
             {
-                return _logger;
+                return new NUnitTestLogger(outputWriter, errorWriter, _scopeProvider, categoryName);
             }
 
             public void Dispose()

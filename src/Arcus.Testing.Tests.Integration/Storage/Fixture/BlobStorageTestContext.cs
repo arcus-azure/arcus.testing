@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
 using Azure.Identity;
@@ -20,14 +19,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
     {
         private readonly BlobServiceClient _serviceClient;
         private readonly Collection<BlobContainerClient> _blobContainers = new();
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
 
-        private BlobStorageTestContext(TemporaryManagedIdentityConnection connection, BlobServiceClient serviceClient, StorageAccount storageAccount, ILogger logger)
+        private BlobStorageTestContext(BlobServiceClient serviceClient, StorageAccount storageAccount, ILogger logger)
         {
-            _connection = connection;
             _serviceClient = serviceClient;
             _logger = logger;
 
@@ -44,14 +41,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public static Task<BlobStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
         {
-            var connection = TemporaryManagedIdentityConnection.Create(configuration, logger);
-
             StorageAccount storageAccount = configuration.GetStorageAccount();
             var serviceClient = new BlobServiceClient(
                 new Uri($"https://{storageAccount.Name}.blob.core.windows.net"),
                 new DefaultAzureCredential());
 
-            return Task.FromResult(new BlobStorageTestContext(connection, serviceClient, storageAccount, logger));
+            return Task.FromResult(new BlobStorageTestContext(serviceClient, storageAccount, logger));
         }
 
         /// <summary>
@@ -152,7 +147,6 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(_logger);
-            disposables.Add(_connection);
 
             foreach (BlobContainerClient container in _blobContainers)
             {

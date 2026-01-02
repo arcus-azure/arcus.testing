@@ -15,7 +15,7 @@ namespace Arcus.Testing
     public class Poll<TException> : Poll<int, TException> where TException : Exception
     {
         internal Poll(Func<Task> getTargetWithoutResultAsync, PollOptions options)
-            : base(async () => { await getTargetWithoutResultAsync(); return 0; }, options)
+            : base(async () => { await getTargetWithoutResultAsync().ConfigureAwait(false); return 0; }, options)
         {
             ArgumentNullException.ThrowIfNull(getTargetWithoutResultAsync);
         }
@@ -30,7 +30,7 @@ namespace Arcus.Testing
     {
         private readonly Func<Task<TResult>> _getTargetWithResultAsync;
         private readonly PollOptions _options;
-        private readonly Collection<Func<TResult, bool>> _untilTargets = new();
+        private readonly Collection<Func<TResult, bool>> _untilTargets = [];
 
         internal Poll(Func<Task<TResult>> getTargetWithResultAsync, PollOptions options)
         {
@@ -153,7 +153,8 @@ namespace Arcus.Testing
             PolicyResult<TResult> target =
                 await Policy.TimeoutAsync(_options.Timeout)
                             .WrapAsync(retryPolicy)
-                            .ExecuteAndCaptureAsync(_getTargetWithResultAsync);
+                            .ExecuteAndCaptureAsync(_getTargetWithResultAsync)
+                            .ConfigureAwait(false);
 
             if (target.Outcome is OutcomeType.Failure)
             {
@@ -174,7 +175,7 @@ namespace Arcus.Testing
         private TimeSpan _interval = TimeSpan.FromSeconds(1);
         private TimeSpan _timeout = TimeSpan.FromSeconds(30);
         private string _failureMessage = "operation did not succeed within the given time frame";
-        private readonly Collection<Func<Exception, bool>> _exceptionFilters = new();
+        private readonly Collection<Func<Exception, bool>> _exceptionFilters = [];
 
         /// <summary>
         /// Gets the default set of polling options.

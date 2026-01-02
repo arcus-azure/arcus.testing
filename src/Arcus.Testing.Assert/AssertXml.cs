@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Xml;
@@ -24,13 +25,12 @@ namespace Arcus.Testing
         Include
     }
 
-
     /// <summary>
     /// Represents the available options when asserting on different XML documents in <see cref="AssertXml"/>.
     /// </summary>
     public class AssertXmlOptions
     {
-        private readonly Collection<string> _ignoredNodeNames = new();
+        private readonly Collection<string> _ignoredNodeNames = [];
         private AssertXmlOrder _order = AssertXmlOrder.Ignore;
         private int _maxInputCharacters = ReportBuilder.DefaultMaxInputCharacters;
 
@@ -331,8 +331,8 @@ namespace Arcus.Testing
                 if (expectedAttr.NamespaceURI != actualAttr.NamespaceURI)
                 {
                     return new(ActualOtherNamespace,
-                        expectedAttr.NamespaceURI == string.Empty ? "no namespace" : expectedAttr.NamespaceURI,
-                        actualAttr.NamespaceURI == string.Empty ? "no namespace" : actualAttr.NamespaceURI, path)
+                        string.IsNullOrEmpty(expectedAttr.NamespaceURI) ? "no namespace" : expectedAttr.NamespaceURI,
+                        string.IsNullOrEmpty(actualAttr.NamespaceURI) ? "no namespace" : actualAttr.NamespaceURI, path)
                     {
                         ExpectedNodeDiff = expected.ToString(),
                         ActualNodeDiff = actual.ToString()
@@ -410,7 +410,7 @@ namespace Arcus.Testing
                     ?.OfType<XmlAttribute>()
                     .Where(a => a.NamespaceURI != namespaceDefinition
                                 && !options.IgnoredNodeNames.Contains(a.LocalName))
-                    .ToArray() ?? Array.Empty<XmlAttribute>();
+                    .ToArray() ?? [];
         }
 
         /// <summary>
@@ -473,7 +473,7 @@ namespace Arcus.Testing
             return new XPathXmlNode(CreateNode(doc.DocumentElement, $"/{doc.DocumentElement.LocalName}", options), options);
         }
 
-        private static Node CreateNode(XmlNode xml, string path, AssertXmlOptions options)
+        private static Node CreateNode(XmlElement xml, string path, AssertXmlOptions options)
         {
             XmlElement[] children =
                 xml.ChildNodes.OfType<XmlElement>()
@@ -498,7 +498,7 @@ namespace Arcus.Testing
 
         private sealed class Node
         {
-            public XmlNode Current { get; init; }
+            public XmlElement Current { get; init; }
             public string Path { get; init; }
             public XPathXmlNode[] Children { get; init; }
         }
@@ -539,7 +539,7 @@ namespace Arcus.Testing
     /// <summary>
     /// Represents the single found difference between two XML contents.
     /// </summary>
-    internal class XmlDifference
+    internal sealed class XmlDifference
     {
         private readonly XmlDifferenceKind _kind;
         private readonly string _expected, _actual, _path;
@@ -581,8 +581,8 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(path);
 
             _kind = kind;
-            _expected = expected.ToString();
-            _actual = actual.ToString();
+            _expected = expected.ToString(CultureInfo.InvariantCulture);
+            _actual = actual.ToString(CultureInfo.InvariantCulture);
             _path = path;
         }
 

@@ -17,7 +17,7 @@ namespace Arcus.Testing
     {
         private readonly string _entityName, _subscriptionName;
         private readonly ServiceBusClient _client;
-        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _predicates = new();
+        private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _predicates = [];
 
         private bool _fromDeadLetter;
         private int _maxMessages = 100;
@@ -84,9 +84,9 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
-        public async Task<bool> AnyAsync()
+        public Task<bool> AnyAsync()
         {
-            return await AnyAsync(CancellationToken.None);
+            return AnyAsync(CancellationToken.None);
         }
 
         /// <summary>
@@ -100,8 +100,8 @@ namespace Arcus.Testing
         /// </param>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
-            List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken);
-            return messages.Any();
+            List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken).ConfigureAwait(false);
+            return messages.Count > 0;
         }
 
         /// <summary>
@@ -118,9 +118,9 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
-        public async Task<List<ServiceBusReceivedMessage>> ToListAsync()
+        public Task<List<ServiceBusReceivedMessage>> ToListAsync()
         {
-            return await ToListAsync(CancellationToken.None);
+            return ToListAsync(CancellationToken.None);
         }
 
         /// <summary>
@@ -139,15 +139,19 @@ namespace Arcus.Testing
                 SubQueue = _fromDeadLetter ? SubQueue.DeadLetter : SubQueue.None
             };
 
-            await using ServiceBusReceiver receiver =
+            ServiceBusReceiver receiver =
                 _subscriptionName is null
                     ? _client.CreateReceiver(_entityName, options)
                     : _client.CreateReceiver(_entityName, _subscriptionName, options);
 
-            IReadOnlyList<ServiceBusReceivedMessage> messages = 
-                await receiver.PeekMessagesAsync(_maxMessages, cancellationToken: cancellationToken);
+            await using (receiver.ConfigureAwait(false))
+            {
+                IReadOnlyList<ServiceBusReceivedMessage> messages =
+                    await receiver.PeekMessagesAsync(_maxMessages, cancellationToken: cancellationToken)
+                                  .ConfigureAwait(false);
 
-            return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
+                return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
+            }
         }
     }
 }

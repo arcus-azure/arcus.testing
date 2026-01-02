@@ -12,7 +12,7 @@ parameters:
     displayName: 'Resource group name'
     default: arcus-testing-dev-we-rg
   - name: keyVaultName
-    displayName: 'Key vault name'
+    displayName: 'Key Vault name'
     default: 'arcus-testing-kv'
 
 variables:
@@ -55,14 +55,14 @@ stages:
                   --parameters location=westeurope `
                   --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
                   --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
-                  --parameters cosmosDb_mongoDb_name=${{ variables['Arcus.Testing.Cosmos.MongoDb.Name'] }} `
-                  --parameters cosmosDb_mongoDb_databaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
-                  --parameters cosmosDb_noSql_name=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
-                  --parameters cosmosDb_noSql_databaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
+                  --parameters cosmosDbMongoDbName=${{ variables['Arcus.Testing.Cosmos.MongoDb.Name'] }} `
+                  --parameters cosmosDbMongoDbDatabaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
+                  --parameters cosmosDbnoSqlName=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
+                  --parameters cosmosDbNoSqlDatabaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
                   --parameters eventHubsNamespaceName=${{ variables['Arcus.Testing.EventHubs.Namespace'] }} `
                   --parameters serviceBusNamespaceName=${{ variables['Arcus.Testing.ServiceBus.Namespace'] }} `
                   --parameters keyVaultName=${{ parameters.keyVaultName }} `
-                  --parameters servicePrincipal_objectId=$objectId
+                  --parameters servicePrincipalObjectId=$objectId
 
                 $accountKey = (az storage account keys list --account-name ${{ variables['Arcus.Testing.StorageAccount.Name'] }} | ConvertFrom-Json)[0].value
                 az keyvault secret set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}

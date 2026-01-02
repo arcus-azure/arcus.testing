@@ -1,10 +1,9 @@
-﻿﻿using System;
+﻿using System;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Arcus.Testing.Tests.Integration.Messaging.Fixture;
 using Azure.Messaging.ServiceBus.Administration;
 using Xunit;
-using Xunit.Abstractions;
 using static Azure.Messaging.ServiceBus.Administration.CreateRuleOptions;
 
 namespace Arcus.Testing.Tests.Integration.Messaging
@@ -59,10 +58,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             // Assert
             await serviceBus.ShouldHaveTopicSubscriptionAsync(topicName, subscriptionName);
             await serviceBus.ShouldHaveTopicSubscriptionRuleAsync(topicName, subscriptionName, theirRuleName);
-            
+
             string ourRuleName = await temp.WhenRuleAvailableAsync();
             await serviceBus.ShouldHaveTopicSubscriptionRuleAsync(topicName, subscriptionName, ourRuleName);
-            
+
             await temp.DisposeAsync();
             await serviceBus.ShouldHaveTopicSubscriptionAsync(topicName, subscriptionName);
             await serviceBus.ShouldHaveTopicSubscriptionRuleAsync(topicName, subscriptionName, theirRuleName);
@@ -147,7 +146,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
         {
             string fullyQualifiedNamespace = Configuration.GetServiceBus().HostName;
 
-            var temp = 
+            var temp =
                 Bogus.Random.Bool()
                     ? await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, Logger)
                     : await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, "otherTopic", subscriptionName, Logger, configureOptions: options =>

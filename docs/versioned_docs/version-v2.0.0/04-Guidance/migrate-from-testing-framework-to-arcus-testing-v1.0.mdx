@@ -285,7 +285,7 @@ arguments.AddExtensionObject("mycompany.azure.common.extensions.components", map
 ```
 
 ## Replace `Codit.Testing.DataFactory` with `Arcus.Testing.Integration.DataFactory`
-The `Codit.Testing.DataFactory` handled start/stop functionality on DataFlow/Pipelines in DataFactory with and without debug sessions. Testing DataFlow's and managing debug sessions is now fully managed with `Arcus.Testing.Integration.DataFactory`.
+The `Codit.Testing.DataFactory` handled start/stop functionality on data flow/pipelines in Azure Data Factory with and without debug sessions. Testing data flows and managing debug sessions is now fully managed with `Arcus.Testing.Integration.DataFactory`.
 
 Start by installing this library:
 ```powershell
@@ -321,8 +321,8 @@ Arcus wraps the start/stop functionality previously defined in the testing frame
 +     await TemporaryDataFlowDebugSession.StartDebugSessionAsync(resourceId, logger);
 ```
 
-### Run a DataFlow in debug session
-Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDebugSession` test fixture. A method is available to run a particular DataFlow, while expecting the result to become available in a passed-in sink.
+### Run a data flow in debug session
+Starting data flows in a debug session is now linked to the `TemporaryDataFlowDebugSession` test fixture. A method is available to run a particular data flow, while expecting the result to become available in a passed-in sink.
 
 ```diff
 - using Codit.Testing.DataFactory;
@@ -358,7 +358,7 @@ Starting DataFlow's in a debug session is now linked to the `TemporaryDataFlowDe
 ### Run a Data pipeline
 Arcus does not provide any additional functionality to run a pipeline and wait for its result, as all this can be easily done with the [`Azure.ResourceManager.DataFactory`](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/resourcemanager.datafactory-readme?view=azure-dotnet) and [`Arcus.Testing.Core`](../03-Features/01-core.md) packages.
 
-> 🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing DataFactory functionality.
+> 🔗 See the [feature documentation](../03-Features/04-Azure/06-Integration/01-data-factory.mdx) for more information on testing Azure Data Factory functionality.
 
 ## Replace storage account interactions
 
@@ -473,7 +473,7 @@ Start by installing this library:
 PM > Install-Package -Name Arcus.Testing.Storage.Cosmos
 ```
 
-### Interact with a NoSql container
+### Interact with a NoSQL container
 The testing framework separated storage operations, which are now collected in a single `TemporaryNoSqlContainer` test fixture. Based on the needs of the test, the fixture can be adapted. Interacting with the container can be done with the Azure SDK.
 
 ```diff

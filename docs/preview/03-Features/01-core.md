@@ -4,7 +4,7 @@ sidebar_label: Core infrastructure
 
 # Test core infrastructure
 The `Arcus.Testing.Core` package provides general testing infrastructure that is independent of technology, SUT (system-under-test) or testing framework.
-The features provided in this package are very often used and/or required for a functional integration/system test suite.
+The features provided in this package are often used and/or required for a functional integration/system test suite.
 
 ## Installation
 The following infrastructure is available when installing this package:
@@ -14,9 +14,9 @@ PM> Install-Package -Name Arcus.Testing.Core
 ```
 
 ## Test configuration
-The `TestConfig` (implements Microsoft's [`IConfiguration`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfiguration)) provides a solution on retrieving application configuration values during testing. Integration/system tests often require values that are only known at runtime. These values can be injected into an `appsettings.json` in your test project, but without a good configuration setup, retrieving and using those values can often be obscure (what with missing/blank values, for example?).
+The `TestConfig` (implements Microsoft's [`IConfiguration`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.configuration.iconfiguration)) provides a solution on retrieving application configuration values during testing. Integration/system tests often require values that are only known at runtime. You can choose to inject these values into an `appsettings.json` in your test project, but without a good configuration setup, retrieving and using those values can often be obscure (what with missing/blank values, for example?).
 
-The default `TestConfig` uses the `appsettings.json` as main file where the tokens could be set, for example:
+The default `TestConfig` uses the `appsettings.json` as main file where the test infrastructure replaces the tokens with values, for example:
 ```json
 {
     "MyProject": {
@@ -26,10 +26,10 @@ The default `TestConfig` uses the `appsettings.json` as main file where the toke
 ```
 
 :::warning
-Make sure that you have such an `appsettings.json` file in your project and that this is copied to the test project's output. 
+Make sure that you have such an `appsettings.json` file in your project that gets copied to the test project's output. 
 :::
 
-The default local alternative is called `appsettings.local.json` (for local integration/system testing) could include the endpoint to a locally run endpoint:
+The default local alternative name is `appsettings.local.json` (for local integration/system testing) could include the endpoint to a locally run endpoint:
 ```json
 {
     "MyProject": {
@@ -55,8 +55,7 @@ string _ = config["Unknown:Value"];
 ```
 
 ### Customization
-
-The `TestConfig` can be customized with additional local alternatives (like for different environment testing) and with a different main JSON file.
+You can customize the `TestConfig` with local alternatives (like for different environment testing) and with a different main JSON file.
 
 ```csharp
 var config = TestConfig.Create(options =>
@@ -76,10 +75,10 @@ var config = TestConfig.Create((options, IConfigurationBuilder builder) =>
 ```
 
 :::tip
-By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
+By using the `IConfigurationBuilder` overload, other possible configuration sources are available to include, like [environment variables](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/configuration#evcp), but also [Azure Key Vault secrets](https://learn.microsoft.com/en-us/aspnet/core/security/key-vault-configuration).
 :::
 
-It can also be used as a base for your custom configuration, by inheriting from the `TestConfig`:
+You can also it as a base for your custom configuration, by inheriting from the `TestConfig`:
 
 ```csharp
 using Arcus.Testing;
@@ -107,7 +106,7 @@ public class MyTestConfig : TestConfig
 ```
 
 :::note
-The added benefit from having your own instance of the test configuration, is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
+The added-value of having your own instance of the test configuration is that you are free to add project-specific properties and methods, possibly with caching, instead of extension methods on Arcus types.
 :::
 
 ## Polling
@@ -139,7 +138,7 @@ The returned `Poll` model implements `GetAwaiter`, which means that the `StartAs
 :::
 
 ### Customization
-The `Poll` model can be customized with several options to override existing functionality or to manipulate the polling operations to your needs.
+You can customize the `Poll` model with options to override existing functionality or to manipulate the polling operations to your needs.
 
 ```csharp
 // Set options directly with the `Poll.UntilAvailableAsync` overloads.
@@ -193,13 +192,13 @@ MyResult endResult =
 ```
 
 :::note
-Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to be run on any environment, in all conditions.
+Try to come up with a sweet spot that does not wait too long for the target resource, but takes enough margin to run on any environment, in all conditions.
 :::
 
 ## Resource directory
-The `ResourceDirectory` provides a solution to retrieving local files during the test run. It points by default to the root output directory where the test suite is running, and from there any sub-directory can be navigated to in a test-friendly manner. Each time a directory or a file does not exists, an IO exception will be thrown with a clear message on what is missing on disk.
+The `ResourceDirectory` provides a solution to retrieving local files during the test run. It points by default to the root output directory where the test suite is running, and navigates to any sub-directory in a test-friendly manner. Each time a directory or a file does not exists, the `ResourceDirectory` throws an IO exception with a clear message on what is missing on disk.
 
-> 🔗 More information on search patterns can be found on [Microsoft's documentation site](https://learn.microsoft.com/en-us/dotnet/api/system.io.directoryinfo.getfiles).
+> 🔗 More information on search patterns: [Microsoft's documentation site](https://learn.microsoft.com/en-us/dotnet/api/system.io.directoryinfo.getfiles).
 
 ```csharp
 using Arcus.Testing;
@@ -235,9 +234,9 @@ ResourceDirectory sub =
 :::
 
 ## Temporary environment variable
-The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is fairly common when testing locally and spinning up the application on your own system. It can also be used for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.
+The `TemporaryEnvironmentVariable` provides a solution when the test needs to set certain environment information on the hosting system itself. This is common when testing locally and spinning up the application on your own system. You can also use it for authentication, like managed identity connections. The test fixture will temporarily set or override an environment variable and remove or revert it upon disposal.
 
-> ⚡ By using one of the exposed methods, you can specify if you want the original/new environment variables to be written to the test output. With secrets, only the names will be written.
+> ⚡ By using one of the exposed methods, you can specify if you want to write the original/new environment variables to the test output. With secrets, the test fixture only writes the names to the test output.
 
 ```csharp
 using Arcus.Testing;
@@ -253,7 +252,7 @@ using var clientSecret = TemporaryEnvironmentVariable.SetSecretIfNotExits("AZURE
 ```
 
 ## Disposable collection
-The `DisposableCollection` provides a solution for when multiple temporary/disposable test fixtures need to be teared down independently from each other, meaning: when one test fixture fails, it should not stop another fixture from tearing down. Multiple synchronous/asynchronous test fixtures can be added to the collection. Upon disposing the collection itself, it will try to dispose each registered test fixture. When one or more failures occur, it will collect them and throw an `AggregateException`.
+The `DisposableCollection` provides a solution for when the test needs to tear down temporary/disposable test fixtures down independently from each other, meaning: when one test fixture fails, it should not stop another fixture from tearing down. You can add synchronous and asynchronous test fixtures to the collection. Upon disposing the collection itself, it will try to dispose each registered test fixture. When one or more failures occur, it will collect them and throw an `AggregateException`.
 
 ```csharp
 using Arcus.Testing;
@@ -269,8 +268,7 @@ disposables.Add(temporaryStorageState);
 ```
 
 ### Customization
-
-The teardown of each test fixture will be retried, in case of a delay during network interaction, for example.
+The `DisposableCollection` retries the teardown of each test fixture, in case of a delay during network interaction or any other transient failure.
 
 ```csharp
 await using var disposables = new DisposableCollection(logger);
