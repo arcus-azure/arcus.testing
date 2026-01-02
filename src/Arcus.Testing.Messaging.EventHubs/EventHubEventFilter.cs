@@ -106,7 +106,7 @@ namespace Arcus.Testing
         /// </returns>
         public async Task<bool> AnyAsync()
         {
-            return await AnyAsync(CancellationToken.None);
+            return await AnyAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -118,8 +118,8 @@ namespace Arcus.Testing
         /// </returns>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
-            List<PartitionEvent> events = await ToListAsync(cancellationToken);
-            return events.Any();
+            List<PartitionEvent> events = await ToListAsync(cancellationToken).ConfigureAwait(false);
+            return events.Count > 0;
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Arcus.Testing
         /// </summary>
         public async Task<List<PartitionEvent>> ToListAsync()
         {
-            return await ToListAsync(CancellationToken.None);
+            return await ToListAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Arcus.Testing
                     : _client.ReadEventsFromPartitionAsync(_partitionId, _startingPosition, _options, cancellationToken);
 
             var events = new Collection<PartitionEvent>();
-            await foreach (PartitionEvent ev in reading)
+            await foreach (PartitionEvent ev in reading.ConfigureAwait(false).WithCancellation(cancellationToken))
             {
                 if (ev.Data is null)
                 {

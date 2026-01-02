@@ -21,7 +21,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Configures the <see cref="Azure.ResourceManager.EventHubs.EventHubData"/> when an Azure EvenHubs hub is being created.
         /// </summary>
-        /// <param name="configureHub">The additional function to manipulate how the Azure EventHubs hub is created by the test fixture.</param>
+        /// <param name="configureHub">The additional function to manipulate how the Azure Event Hubs hub is created by the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configureHub"/> is <c>null</c>.</exception>
         public OnSetupTemporaryEventHubOptions CreateHubWith(Action<EventHubData> configureHub)
         {
@@ -44,7 +44,7 @@ namespace Arcus.Testing
     }
 
     /// <summary>
-    /// Represents a temporary Azure EventHubs hub that will be deleted when the instance is disposed.
+    /// Represents a temporary Azure Event Hubs hub that will be deleted when the instance is disposed.
     /// </summary>
     public class TemporaryEventHub : IAsyncDisposable
     {
@@ -74,7 +74,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets the filter client to search for events on the Azure EventHubs test-managed hub (a.k.a. 'spy test fixture').
+        /// Gets the filter client to search for events on the Azure Event Hubs test-managed hub (a.k.a. 'spy test fixture').
         /// </summary>
         public EventHubEventFilter Events => new(_consumerClient);
 
@@ -82,7 +82,7 @@ namespace Arcus.Testing
         /// Creates a new instance of the <see cref="TemporaryEventHub"/> which creates a new Azure Event Hub if it doesn't exist yet.
         /// </summary>
         /// <param name="eventHubsNamespaceResourceId">
-        ///   <para>The resource ID pointing to the Azure EventHubs namespace where a hub should be test-managed.</para>
+        ///   <para>The resource ID pointing to the Azure Event Hubs namespace where a hub should be test-managed.</para>
         ///   <para>The resource ID can be easily constructed via the <see cref="EventHubsNamespaceResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -106,14 +106,14 @@ namespace Arcus.Testing
             string eventHubName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(eventHubsNamespaceResourceId, consumerGroup, eventHubName, logger, configureOptions: null);
+            return await CreateIfNotExistsAsync(eventHubsNamespaceResourceId, consumerGroup, eventHubName, logger, configureOptions: null).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryEventHub"/> which creates a new Azure Event Hub if it doesn't exist yet.
         /// </summary>
         /// <param name="eventHubsNamespaceResourceId">
-        ///   <para>The resource ID pointing to the Azure EventHubs namespace where a hub should be test-managed.</para>
+        ///   <para>The resource ID pointing to the Azure Event Hubs namespace where a hub should be test-managed.</para>
         ///   <para>The resource ID can be easily constructed via the <see cref="EventHubsNamespaceResource.CreateResourceIdentifier"/>:</para>
         ///   <example>
         ///     <code>
@@ -140,29 +140,28 @@ namespace Arcus.Testing
             Action<TemporaryEventHubOptions> configureOptions)
         {
             ArgumentNullException.ThrowIfNull(eventHubsNamespaceResourceId);
-
-            if (string.IsNullOrWhiteSpace(consumerGroup))
-            {
-                throw new ArgumentException("Requires a non-blank Azure EventHubs consumer group to set up the test fixture", nameof(consumerGroup));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(consumerGroup);
 
             var credential = new DefaultAzureCredential();
             var arm = new ArmClient(credential);
 
             EventHubsNamespaceResource resource =
                 await arm.GetEventHubsNamespaceResource(eventHubsNamespaceResourceId)
-                         .GetAsync();
+                         .GetAsync()
+                         .ConfigureAwait(false);
 
+#pragma warning disable CA2000 // Responsibility of disposing the client is transferred to the test fixture instance.
             var consumerClient = new EventHubConsumerClient(consumerGroup, resource.Data.ServiceBusEndpoint, eventHubName, credential);
+#pragma warning restore CA2000
 
-            return await CreateIfNotExistsAsync(resource, consumerClient, consumerClientCreatedByUs: true, eventHubName, logger, configureOptions);
+            return await CreateIfNotExistsAsync(resource, consumerClient, consumerClientCreatedByUs: true, eventHubName, logger, configureOptions).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryEventHub"/> which creates a new Azure Event Hub if it doesn't exist yet.
         /// </summary>
         /// <param name="eventHubsNamespace">
-        ///   <para>The Azure EventHubs namespace resource where the Azure Event Hub should be test-managed.</para>
+        ///   <para>The Azure Event Hubs namespace resource where the Azure Event Hub should be test-managed.</para>
         ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
         ///   <example>
         ///     <code>
@@ -182,20 +181,20 @@ namespace Arcus.Testing
         ///     Thrown when the <paramref name="eventHubsNamespace"/> or <paramref name="consumerClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubName"/> is blank.</exception>
-        public static async Task<TemporaryEventHub> CreateIfNotExistsAsync(
+        public static Task<TemporaryEventHub> CreateIfNotExistsAsync(
             EventHubsNamespaceResource eventHubsNamespace,
             EventHubConsumerClient consumerClient,
             string eventHubName,
             ILogger logger)
         {
-            return await CreateIfNotExistsAsync(eventHubsNamespace, consumerClient, eventHubName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(eventHubsNamespace, consumerClient, eventHubName, logger, configureOptions: null);
         }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryEventHub"/> which creates a new Azure Event Hub if it doesn't exist yet.
         /// </summary>
         /// <param name="eventHubsNamespace">
-        ///   <para>The Azure EventHubs namespace resource where the Azure Event Hub should be test-managed.</para>
+        ///   <para>The Azure Event Hubs namespace resource where the Azure Event Hub should be test-managed.</para>
         ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
         ///   <example>
         ///     <code>
@@ -216,14 +215,14 @@ namespace Arcus.Testing
         ///     Thrown when the <paramref name="eventHubsNamespace"/> or <paramref name="consumerClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubName"/> is blank.</exception>
-        public static async Task<TemporaryEventHub> CreateIfNotExistsAsync(
+        public static Task<TemporaryEventHub> CreateIfNotExistsAsync(
             EventHubsNamespaceResource eventHubsNamespace,
             EventHubConsumerClient consumerClient,
             string eventHubName,
             ILogger logger,
             Action<TemporaryEventHubOptions> configureOptions)
         {
-            return await CreateIfNotExistsAsync(eventHubsNamespace, consumerClient, consumerClientCreatedByUs: false, eventHubName, logger, configureOptions);
+            return CreateIfNotExistsAsync(eventHubsNamespace, consumerClient, consumerClientCreatedByUs: false, eventHubName, logger, configureOptions);
         }
 
         private static async Task<TemporaryEventHub> CreateIfNotExistsAsync(
@@ -236,26 +235,22 @@ namespace Arcus.Testing
         {
             ArgumentNullException.ThrowIfNull(eventHubsNamespace);
             ArgumentNullException.ThrowIfNull(consumerClient);
+            ArgumentException.ThrowIfNullOrWhiteSpace(eventHubName);
             logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(eventHubName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure EventHubs hub name to set up the test fixture", nameof(eventHubName));
-            }
 
             var options = new TemporaryEventHubOptions();
             configureOptions?.Invoke(options);
 
             EventHubCollection eventHubs = eventHubsNamespace.GetEventHubs();
-            if (await eventHubs.ExistsAsync(eventHubName))
+            if (await eventHubs.ExistsAsync(eventHubName).ConfigureAwait(false))
             {
-                logger.LogDebug("[Test:Setup] Use already existing Azure EventHubs hub '{EventHubName}' in namespace '{Namespace}'", eventHubName, eventHubsNamespace.Id.Name);
+                logger.LogSetupUseExistingHub(eventHubName, eventHubsNamespace.Id.Name);
 
                 return new TemporaryEventHub(eventHubsNamespace, consumerClient, consumerClientCreatedByUs, eventHubName, hubCreatedByUs: false, logger);
             }
 
-            logger.LogDebug("[Test:Setup] Create new Azure EventHubs hub '{EventHubName}' in namespace '{Namespace}'", eventHubName, eventHubsNamespace.Id.Name);
-            await eventHubs.CreateOrUpdateAsync(WaitUntil.Completed, eventHubName, options.OnSetup.EventHubData);
+            logger.LogSetupCreateNewHub(eventHubName, eventHubsNamespace.Id.Name);
+            await eventHubs.CreateOrUpdateAsync(WaitUntil.Completed, eventHubName, options.OnSetup.EventHubData).ConfigureAwait(false);
 
             return new TemporaryEventHub(eventHubsNamespace, consumerClient, consumerClientCreatedByUs, eventHubName, hubCreatedByUs: true, logger);
         }
@@ -266,30 +261,47 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            await using var disposables = new DisposableCollection(_logger);
-
-            if (_hubCreatedByUs)
+            var disposables = new DisposableCollection(_logger);
+            await using (disposables.ConfigureAwait(false))
             {
-                disposables.Add(AsyncDisposable.Create(async () =>
+                if (_hubCreatedByUs)
                 {
-                    NullableResponse<EventHubResource> eventHub =
-                        await _eventHubsNamespace.GetEventHubs()
-                                                 .GetIfExistsAsync(_eventHubName);
-
-                    if (eventHub.HasValue && eventHub.Value != null)
+                    disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogDebug("[Test:Teardown] Delete Azure EventHubs hub '{EventHubName}' in namespace '{Namespace}'", _eventHubName, _eventHubsNamespace.Id.Name);
-                        await eventHub.Value.DeleteAsync(WaitUntil.Completed);
-                    }
-                }));
-            }
+                        NullableResponse<EventHubResource> eventHub =
+                            await _eventHubsNamespace.GetEventHubs()
+                                                     .GetIfExistsAsync(_eventHubName)
+                                                     .ConfigureAwait(false);
 
-            if (_consumerClientCreatedByUs)
-            {
-                disposables.Add(_consumerClient);
+                        if (eventHub.HasValue && eventHub.Value != null)
+                        {
+                            _logger.LogTeardownDeleteHub(_eventHubName, _eventHubsNamespace.Id.Name);
+                            await eventHub.Value.DeleteAsync(WaitUntil.Completed).ConfigureAwait(false);
+                        }
+                    }));
+                }
+
+                if (_consumerClientCreatedByUs)
+                {
+                    disposables.Add(_consumerClient);
+                }
             }
 
             GC.SuppressFinalize(this);
         }
+    }
+
+    internal static partial class TemporaryEventHubILoggerExtensions
+    {
+        private const LogLevel SetupTeardownLogLevel = LogLevel.Debug;
+
+        [LoggerMessage(SetupTeardownLogLevel, "[Test:Setup] Create new Azure Event Hubs '{HubName}' hub in namespace '{HubNamespace}'")]
+        internal static partial void LogSetupCreateNewHub(this ILogger logger, string hubName, string hubNamespace);
+
+        [LoggerMessage(SetupTeardownLogLevel, "[Test:Setup] Use already existing Azure Event Hubs '{HubName}' hub in namespace '{HubNamespace}'")]
+        internal static partial void LogSetupUseExistingHub(this ILogger logger, string hubName, string hubNamespace);
+
+        [LoggerMessage(SetupTeardownLogLevel, "[Test:Teardown] Delete Azure Event Hubs '{HubName}' hub in namespace '{HubNamespace}'")]
+        internal static partial void LogTeardownDeleteHub(this ILogger logger, string hubName, string hubNamespace);
     }
 }

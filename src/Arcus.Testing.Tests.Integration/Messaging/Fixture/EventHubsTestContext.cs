@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
-using Arcus.Testing.Tests.Integration.Configuration;
-using Arcus.Testing.Tests.Integration.Fixture;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure;
 using Azure.Identity;
@@ -24,19 +22,16 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
     /// </summary>
     public class EventHubsTestContext : IAsyncDisposable
     {
-        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly EventHubsNamespaceResource _namespace;
-        private readonly Collection<string> _eventHubNames = new();
+        private readonly Collection<string> _eventHubNames = [];
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
 
         private EventHubsTestContext(
-            TemporaryManagedIdentityConnection connection,
             EventHubsNamespaceResource @namespace,
             ILogger logger)
         {
-            _connection = connection;
             _namespace = @namespace;
             _logger = logger;
         }
@@ -46,18 +41,15 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public static async Task<EventHubsTestContext> GivenAsync(TestConfig config, ILogger logger)
         {
-            ServicePrincipal servicePrincipal = config.GetServicePrincipal();
             EventHubsConfig eventHubs = config.GetEventHubs();
 
-            var connection = TemporaryManagedIdentityConnection.Create(servicePrincipal);
             var credential = new DefaultAzureCredential();
-
             var arm = new ArmClient(credential);
             EventHubsNamespaceResource resource =
                 await arm.GetEventHubsNamespaceResource(eventHubs.NamespaceResourceId)
                          .GetAsync();
 
-            return new EventHubsTestContext(connection, resource, logger);
+            return new EventHubsTestContext(resource, logger);
         }
 
         /// <summary>
@@ -156,8 +148,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
                     }
                 }));
             }
-
-            disposables.Add(_connection);
 
             GC.SuppressFinalize(this);
         }
