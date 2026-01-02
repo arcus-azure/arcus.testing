@@ -96,7 +96,7 @@ stages:
               releaseNotes: |
                 Install the $(Project) packages that you need via NuGet, for instance [$(Project).Logging.Xunit](https://www.nuget.org/packages/$(Project).Logging.Xunit/$(Build.BuildNumber)):
                 ```shell
-                PM > Install-Package $(Project).Logging.Xunit --Version $(Build.BuildNumber)
+                PM > Install-Package $(Project).Logging.Xunit.v3 --Version $(Build.BuildNumber)
                 ```
                 For a complete list of all $(Project) packages see the [documentation](https://testing.arcus-azure.net/).
                 ## What's new?
