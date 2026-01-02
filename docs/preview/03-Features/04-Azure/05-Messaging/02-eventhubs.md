@@ -9,9 +9,9 @@ PM> Install-Package -Name Arcus.Testing.Messaging.EventHubs
 ```
 
 ## Temporary hub
-The `TemporaryEventHub` provides a solution when the integration test requires an Azure Event Hub during the test run. A hub is created upon the upon the setup of the test fixture and is deleted again when the fixture is disposed.
+The `TemporaryEventHub` provides a solution when the integration test requires an Azure Event Hub during the test run. The test fixture creates a hub upon the setup of the fixture and deletes it again when the fixture disposes.
 
-> ✨ Only when the test fixture was responsible for creating the hub, will the hub be deleted upon the fixture's disposal. This follows the 'clean environment' testing principle that describes that after the test run, the same state should be achieved as before the test run.
+> ✨ Only when the test fixture was responsible for creating the hub, will the fixture delete the hub upon disposal. This follows the 'clean environment' testing principle that describes that after the test run, the test should revert the state back to its original state.
 
 ```csharp
 using Arcus.Testing;
@@ -23,7 +23,7 @@ await using var hub = await TemporaryEventHub.CreateIfNotExistsAsync(
     eventHubsNamespaceResourceId, consumerGroup: "$Default", "<event-hub-name>", logger);
 ```
 
-> ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads that take in the `EventHubsNamespaceResource` directly:
+> ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but supports other authentication mechanisms with overloads that take in the `EventHubsNamespaceResource` directly:
 > ```csharp
 >  var credential = new DefaultAzureCredential();
 >  var arm = new ArmClient(credential);
@@ -53,7 +53,7 @@ await TemporaryEventHub.CreateIfNotExistsAsync(..., options =>
 ```
 
 ### Search for events
-The `TemporaryEventHub` is equipped with an event filtering system that allows testers to search for events during the lifetime of the test fixture. This can be useful to verify the current state of a hub, or as a test assertion to verify EventHubs-related implementations.
+The `TemporaryEventHub` has an event filtering system that allows testers to search for events during the lifetime of the test fixture. This can be useful to verify the current state of a hub, or as a test assertion to verify EventHubs-related implementations.
 
 ```csharp
 using Arcus.Testing;
