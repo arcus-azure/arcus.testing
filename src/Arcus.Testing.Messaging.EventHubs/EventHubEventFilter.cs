@@ -134,7 +134,7 @@ namespace Arcus.Testing
         /// Collects all events currently matching on the configured Azure Event Hub into a <see cref="List{T}"/>.
         /// </summary>
         /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
-        public async Task<List<PartitionEvent>> ToListAsync(CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<PartitionEvent>> ToListAsync(CancellationToken cancellationToken)
         {
             IAsyncEnumerable<PartitionEvent> reading =
                 _partitionId is null
