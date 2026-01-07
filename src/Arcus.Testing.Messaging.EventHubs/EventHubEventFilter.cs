@@ -125,7 +125,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Collects all events currently matching on the configured Azure Event Hub into a <see cref="List{T}"/>.
         /// </summary>
-        public async Task<List<PartitionEvent>> ToListAsync()
+        public async Task<IReadOnlyList<PartitionEvent>> ToListAsync()
         {
             return await ToListAsync(CancellationToken.None).ConfigureAwait(false);
         }
