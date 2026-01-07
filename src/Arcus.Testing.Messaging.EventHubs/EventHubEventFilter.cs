@@ -17,7 +17,7 @@ namespace Arcus.Testing
     {
         private readonly EventHubConsumerClient _client;
         private readonly ReadEventOptions _options = new() { MaximumWaitTime = TimeSpan.FromMinutes(1) };
-        private readonly Collection<Func<PartitionEvent, bool>> _predicates = new();
+        private readonly Collection<Func<PartitionEvent, bool>> _predicates = [];
 
         private string _partitionId;
         private EventPosition _startingPosition;
@@ -118,7 +118,7 @@ namespace Arcus.Testing
         /// </returns>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
-            List<PartitionEvent> events = await ToListAsync(cancellationToken).ConfigureAwait(false);
+            var events = await ToListAsync(cancellationToken).ConfigureAwait(false);
             return events.Count > 0;
         }
 

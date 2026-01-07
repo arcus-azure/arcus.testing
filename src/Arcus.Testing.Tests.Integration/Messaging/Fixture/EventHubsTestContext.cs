@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure;
 using Azure.Identity;
 using Azure.Messaging.EventHubs;
-using Azure.Messaging.EventHubs.Consumer;
 using Azure.Messaging.EventHubs.Producer;
 using Azure.ResourceManager;
 using Azure.ResourceManager.EventHubs;
@@ -163,7 +161,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public static async Task ShouldHaveSingleAsync(this EventHubEventFilter filter)
         {
-            List<PartitionEvent> events = await filter.ReadWith(opt => opt.MaximumWaitTime = TimeSpan.FromSeconds(10)).ToListAsync();
+            var events = await filter.ReadWith(opt => opt.MaximumWaitTime = TimeSpan.FromSeconds(10)).ToListAsync();
             Assert.True(events.Count == 1, $"Azure EventHubs hub should have a single event available, but there were '{events.Count}' events");
         }
     }
