@@ -93,7 +93,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the awaiter used to await the <see cref="ToListAsync()"/>.
         /// </summary>
-        public TaskAwaiter<List<PartitionEvent>> GetAwaiter()
+        public TaskAwaiter<IReadOnlyList<PartitionEvent>> GetAwaiter()
         {
             return ToListAsync().GetAwaiter();
         }
