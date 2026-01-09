@@ -30,8 +30,7 @@ namespace Arcus.Testing
             Type documentType,
             FilterDefinition<BsonDocument> filter,
             BsonDocument originalDoc,
-            MongoClient client,
-            bool clientCreatedByUs,
+            (MongoClient value, bool createdByUs) client,
             IMongoCollection<BsonDocument> collection,
             ILogger logger)
         {
@@ -43,8 +42,8 @@ namespace Arcus.Testing
             _documentType = documentType;
             _filter = filter;
             _originalDoc = originalDoc;
-            _client = client;
-            _clientCreatedByUs = clientCreatedByUs;
+            _client = client.value;
+            _clientCreatedByUs = client.createdByUs;
             _collection = collection;
             _logger = logger ?? NullLogger.Instance;
 
@@ -75,7 +74,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
         public static Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -94,7 +93,7 @@ namespace Arcus.Testing
         /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
         public static Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
         {
             return UpsertDocumentAsync(collection, document, logger);
@@ -136,11 +135,21 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
 
+#pragma warning disable CA2000 // Responsibility of disposing the client in case of non-failure is passed to the returned temporary document test fixture.
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger).ConfigureAwait(false);
-            IMongoDatabase database = client.GetDatabase(databaseName);
-            IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
+#pragma warning restore CA2000
+            try
+            {
+                IMongoDatabase database = client.GetDatabase(databaseName);
+                IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
 
-            return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger).ConfigureAwait(false);
+                return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger).ConfigureAwait(false);
+            }
+            catch (MongoException)
+            {
+                client.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -185,13 +194,13 @@ namespace Arcus.Testing
                 logger.LogSetupInsertNewDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
 
                 await collectionBson.InsertOneAsync(bson).ConfigureAwait(false);
-                return new(id, documentType, findOneDocument, originalDoc: null, client, clientCreatedByUs, collectionBson, logger);
+                return new(id, documentType, findOneDocument, originalDoc: null, (client, clientCreatedByUs), collectionBson, logger);
             }
 
             logger.LogSetupReplaceDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
             await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson).ConfigureAwait(false);
 
-            return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, client, clientCreatedByUs, collectionBson, logger);
+            return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, (client, clientCreatedByUs), collectionBson, logger);
         }
 
         private static async Task<BsonDocument> FindOriginalDocumentAsync(
