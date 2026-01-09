@@ -100,14 +100,14 @@ namespace Arcus.Testing
         /// </param>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
-            List<ServiceBusReceivedMessage> messages = await ToListAsync(cancellationToken).ConfigureAwait(false);
+            var messages = await ToListAsync(cancellationToken).ConfigureAwait(false);
             return messages.Count > 0;
         }
 
         /// <summary>
         /// Gets the awaiter used to await the <see cref="ToListAsync()"/>.
         /// </summary>
-        public TaskAwaiter<List<ServiceBusReceivedMessage>> GetAwaiter()
+        public TaskAwaiter<IReadOnlyList<ServiceBusReceivedMessage>> GetAwaiter()
         {
             return ToListAsync().GetAwaiter();
         }
@@ -118,7 +118,7 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
-        public Task<List<ServiceBusReceivedMessage>> ToListAsync()
+        public Task<IReadOnlyList<ServiceBusReceivedMessage>> ToListAsync()
         {
             return ToListAsync(CancellationToken.None);
         }
@@ -132,7 +132,7 @@ namespace Arcus.Testing
         /// <param name="cancellationToken">
         ///     The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.
         /// </param>
-        public async Task<List<ServiceBusReceivedMessage>> ToListAsync(CancellationToken cancellationToken)
+        public async Task<IReadOnlyList<ServiceBusReceivedMessage>> ToListAsync(CancellationToken cancellationToken)
         {
             var options = new ServiceBusReceiverOptions
             {
