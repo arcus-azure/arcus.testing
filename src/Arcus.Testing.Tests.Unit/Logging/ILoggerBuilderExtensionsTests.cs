@@ -170,5 +170,40 @@ namespace Arcus.Testing.Tests.Unit.Logging
             // Assert
             Assert.ThrowsAny<ArgumentException>(() => builder.Build());
         }
+
+        [Fact]
+        public void AddTUnitTestLogging_WithTestLogger_LogsMessage()
+        {
+            // Arrange
+            var mockLogger = new MockTUnitTestLogger();
+            var builder = new HostBuilder();
+
+            // Act
+            builder.ConfigureLogging(logging => logging.AddTUnitTestLogging(mockLogger));
+
+            // Assert
+            using IHost host = builder.Build();
+            var logger = host.Services.GetRequiredService<ILogger<ILoggerBuilderExtensionsTests>>();
+
+            string state = Bogus.Lorem.Word();
+            using var _ = logger.BeginScope(state);
+
+            string expected = Bogus.Lorem.Sentence();
+            logger.LogInformation(expected);
+            mockLogger.VerifyWritten(LogLevel.Information, expected, state: state);
+        }
+
+        [Fact]
+        public void AddTUnitTestLogging_WithoutTestLogger_Throws()
+        {
+            // Arrange
+            var builder = new HostBuilder();
+
+            // Act
+            builder.ConfigureLogging(logging => logging.AddTUnitTestLogging(outputWriter: null));
+
+            // Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.Build());
+        }
     }
 }
