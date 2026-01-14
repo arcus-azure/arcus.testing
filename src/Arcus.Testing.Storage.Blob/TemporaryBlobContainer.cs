@@ -405,7 +405,7 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
 
-            BlobClient blobClient = Client.GetBlobClient(blobName);
+            BlobClient blobClient = _containerClient.GetBlobClient(blobName);
             _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger).ConfigureAwait(false));
 
             return blobClient;
@@ -427,15 +427,15 @@ namespace Arcus.Testing
                 _disposables.AddRange(_blobs);
                 _disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    await CleanBlobContainerUponDeletionAsync(Client, _options, _logger).ConfigureAwait(false);
+                    await CleanBlobContainerUponDeletionAsync(_containerClient, _options, _logger).ConfigureAwait(false);
                 }));
 
                 if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
                 {
                     _disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
-                        await Client.DeleteIfExistsAsync().ConfigureAwait(false);
+                        _logger.LogTeardownDeleteContainer(_containerClient.Name, _containerClient.AccountName);
+                        await _containerClient.DeleteIfExistsAsync().ConfigureAwait(false);
                     }));
                 }
             }
