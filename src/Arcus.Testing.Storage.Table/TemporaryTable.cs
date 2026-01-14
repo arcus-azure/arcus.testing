@@ -103,7 +103,7 @@ namespace Arcus.Testing
         /// (default for cleaning documents) Configures the <see cref="TemporaryTable"/> to only delete the Azure Table entities upon disposal
         /// if the document was inserted by the test fixture (using <see cref="TemporaryTable.UpsertEntityAsync{TEntity}"/>).
         /// </summary>
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(CleanUpsertedEntities) + " instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CleanUpsertedEntities) + " instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public OnTeardownTemporaryTableOptions CleanCreatedEntities()
         {
             return CleanUpsertedEntities();
@@ -356,7 +356,7 @@ namespace Arcus.Testing
         /// <typeparam name="TEntity">A custom model type that implements <see cref="ITableEntity" /> or an instance of <see cref="TableEntity" />.</typeparam>
         /// <param name="entity">The entity to temporary add to the table.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : class, ITableEntity
         {
             return UpsertEntityAsync(entity);

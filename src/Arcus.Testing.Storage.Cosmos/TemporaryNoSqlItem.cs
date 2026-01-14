@@ -65,7 +65,7 @@ namespace Arcus.Testing
         /// <param name="item">The item to temporary create in the NoSQL container.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " instead which provides the exact same functionality")]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " instead which provides the exact same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryNoSqlItem> InsertIfNotExistsAsync<TItem>(Container container, TItem item, ILogger logger)
         {
             return UpsertItemAsync(container, item, logger);
