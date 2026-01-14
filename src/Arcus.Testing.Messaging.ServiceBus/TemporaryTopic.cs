@@ -413,7 +413,15 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the options related to tearing down the <see cref="TemporaryTopic"/>.
         /// </summary>
-        public OnTeardownTemporaryTopicOptions OnTeardown => _options.OnTeardown;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public OnTeardownTemporaryTopicOptions OnTeardown
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _options.OnTeardown;
+            }
+        }
 
         /// <summary>
         /// Gets the client to send messages to this Azure Service Bus test-managed topic.

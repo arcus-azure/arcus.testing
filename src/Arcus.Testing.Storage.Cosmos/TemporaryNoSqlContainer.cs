@@ -304,51 +304,75 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryNoSqlContainer : IAsyncDisposable
     {
-        private readonly CosmosDBSqlContainerResource _container;
+        private readonly CosmosDBSqlContainerResource _containerResource;
         private readonly CosmosClient _resourceClient;
         private readonly bool _createdByUs;
         private readonly Collection<IAsyncDisposable> _items = [];
         private readonly TemporaryNoSqlContainerOptions _options;
         private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
+        private readonly Container _containerClient;
 
         private TemporaryNoSqlContainer(
             CosmosClient resourceClient,
             Container containerClient,
-            CosmosDBSqlContainerResource container,
+            CosmosDBSqlContainerResource containerResource,
             bool createdByUs,
             TemporaryNoSqlContainerOptions options,
             ILogger logger)
         {
-            ArgumentNullException.ThrowIfNull(container);
+            ArgumentNullException.ThrowIfNull(containerResource);
             ArgumentNullException.ThrowIfNull(containerClient);
             ArgumentNullException.ThrowIfNull(resourceClient);
             ArgumentNullException.ThrowIfNull(options);
 
-            _container = container;
+            _containerResource = containerResource;
+            _containerClient = containerClient;
             _createdByUs = createdByUs;
             _options = options;
             _resourceClient = resourceClient;
             _logger = logger ?? NullLogger.Instance;
             _disposables = new DisposableCollection(_logger);
-
-            Client = containerClient;
         }
 
         /// <summary>
         /// Gets the unique name of the NoSQL container, currently available on Azure Cosmos DB.
         /// </summary>
-        public string Name => Client.Id;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public string Name
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _containerClient.Id;
+            }
+        }
 
         /// <summary>
         /// Gets the client to interact with the Azure Cosmos DB for NoSQL container.
         /// </summary>
-        public Container Client { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public Container Client
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _containerClient;
+            }
+        }
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryNoSqlContainer"/>.
         /// </summary>
-        public OnTeardownNoSqlContainerOptions OnTeardown => _options.OnTeardown;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public OnTeardownNoSqlContainerOptions OnTeardown
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _options.OnTeardown;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB NoSQL container if it doesn't exist yet.
@@ -640,7 +664,7 @@ namespace Arcus.Testing
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(item);
-            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(Client, item, _logger).ConfigureAwait(false));
+            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(_containerClient, item, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -662,8 +686,8 @@ namespace Arcus.Testing
                 {
                     _disposables.Add(AsyncDisposable.Create(() =>
                     {
-                        _logger.LogTeardownDeleteContainer(_container.Id.Name, _container.Id.Parent?.Name ?? "<not-available>");
-                        return _container.DeleteAsync(WaitUntil.Completed);
+                        _logger.LogTeardownDeleteContainer(_containerResource.Id.Name, _containerResource.Id.Parent?.Name ?? "<not-available>");
+                        return _containerResource.DeleteAsync(WaitUntil.Completed);
                     }));
                 }
                 else
@@ -690,13 +714,13 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTeardownDeleteItem(id, partitionKey, Client.Database.Id, Client.Id);
-                        using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                        _logger.LogTeardownDeleteItem(id, partitionKey, _containerClient.Database.Id, _containerClient.Id);
+                        using ResponseMessage response = await _containerClient.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
                             throw new RequestFailedException((int) response.StatusCode,
-                                $"[Test:Teardown] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
+                                $"[Test:Teardown] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{_containerClient.Database.Id}/{_containerClient.Id}' " +
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }));
@@ -711,15 +735,15 @@ namespace Arcus.Testing
                 {
                     disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        if (_options.OnTeardown.IsMatched(id, partitionKey, doc, Client.Database.Client))
+                        if (_options.OnTeardown.IsMatched(id, partitionKey, doc, _containerClient.Database.Client))
                         {
-                            _logger.LogTeardownDeleteMatchedItem(id, partitionKey, Client.Database.Id, Client.Id);
-                            using ResponseMessage response = await Client.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                            _logger.LogTeardownDeleteMatchedItem(id, partitionKey, _containerClient.Database.Id, _containerClient.Id);
+                            using ResponseMessage response = await _containerClient.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
 
                             if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                             {
                                 throw new RequestFailedException((int) response.StatusCode,
-                                    $"[Test:Teardown] Failed to delete matched NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{Client.Database.Id}/{Client.Id}' " +
+                                    $"[Test:Teardown] Failed to delete matched NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{_containerClient.Database.Id}/{_containerClient.Id}' " +
                                     $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                             }
                         }
@@ -733,7 +757,7 @@ namespace Arcus.Testing
 
         private Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
         {
-            return ForEachItemAsync(Client, deleteItemAsync);
+            return ForEachItemAsync(_containerClient, deleteItemAsync);
         }
 
         private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)

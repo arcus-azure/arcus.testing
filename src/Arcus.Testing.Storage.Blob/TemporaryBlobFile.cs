@@ -16,6 +16,9 @@ namespace Arcus.Testing
         private readonly bool _createdByUs;
         private readonly BinaryData _originalData;
         private readonly ILogger _logger;
+        private readonly BlobClient _client;
+
+        private bool _isDisposed;
 
         private TemporaryBlobFile(
             BlobClient blobClient,
@@ -29,23 +32,33 @@ namespace Arcus.Testing
             _originalData = originalData;
             _logger = logger ?? NullLogger.Instance;
 
-            Client = blobClient;
+            _client = blobClient;
         }
 
         /// <summary>
         /// Gets the name of the Azure Blob file currently in storage.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public string Name => Client.Name;
 
         /// <summary>
         /// Gets the name of the Azure Blob container where the Azure Blob file is currently stored.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public string ContainerName => Client.BlobContainerName;
 
         /// <summary>
         /// Gets the client to interact with the temporary stored Azure Blob file currently in storage.
         /// </summary>
-        public BlobClient Client { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public BlobClient Client
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
+                return _client;
+            }
+        }
 
         /// <summary>
         /// Uploads a temporary blob to the Azure Blob container.
@@ -157,17 +170,23 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             if (_createdByUs)
             {
-                _logger.LogTeardownDeleteFile(Client.Name, Client.AccountName, Client.BlobContainerName);
-                await Client.DeleteIfExistsAsync().ConfigureAwait(false);
+                _logger.LogTeardownDeleteFile(_client.Name, _client.AccountName, _client.BlobContainerName);
+                await _client.DeleteIfExistsAsync().ConfigureAwait(false);
             }
             else if (_originalData != null)
             {
-                _logger.LogTeardownRevertFile(Client.Name, Client.AccountName, Client.BlobContainerName);
-                await Client.UploadAsync(_originalData, overwrite: true).ConfigureAwait(false);
+                _logger.LogTeardownRevertFile(_client.Name, _client.AccountName, _client.BlobContainerName);
+                await _client.UploadAsync(_originalData, overwrite: true).ConfigureAwait(false);
             }
 
+            _isDisposed = true;
             GC.SuppressFinalize(this);
         }
     }

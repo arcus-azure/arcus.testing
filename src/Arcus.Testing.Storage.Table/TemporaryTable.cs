@@ -187,7 +187,9 @@ namespace Arcus.Testing
     {
         private const int NotFound = 404;
 
+        private readonly TableClient _client;
         private readonly bool _createdByUs;
+
         private readonly Collection<TemporaryTableEntity> _entities = [];
         private readonly TemporaryTableOptions _options;
         private readonly DisposableCollection _disposables;
@@ -198,28 +200,45 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(client);
             ArgumentNullException.ThrowIfNull(options);
 
+            _client = client;
             _createdByUs = createdByUs;
+
             _options = options;
             _logger = logger ?? NullLogger.Instance;
             _disposables = new DisposableCollection(_logger);
-
-            Client = client;
         }
 
         /// <summary>
         /// Gets the name of the currently remotely available Azure Table being set up by the test fixture.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public string Name => Client.Name;
 
         /// <summary>
         /// Gets the client to interact with the Azure Table currently being set up by the test fixture.
         /// </summary>
-        public TableClient Client { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public TableClient Client
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _client;
+            }
+        }
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryTable"/>.
         /// </summary>
-        public OnTeardownTemporaryTableOptions OnTeardown => _options.OnTeardown;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public OnTeardownTemporaryTableOptions OnTeardown
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _options.OnTeardown;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTable"/> which creates a new Azure Table container if it doesn't exist yet.
@@ -377,7 +396,8 @@ namespace Arcus.Testing
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(entity);
-            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(Client, entity, _logger).ConfigureAwait(false));
+
+            _entities.Add(await TemporaryTableEntity.UpsertEntityAsync(_client, entity, _logger).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -395,13 +415,13 @@ namespace Arcus.Testing
             {
                 if (_createdByUs)
                 {
-                    _logger.LogTeardownDeleteTable(Client.Name, Client.AccountName);
-                    using Response response = await Client.DeleteAsync().ConfigureAwait(false);
+                    _logger.LogTeardownDeleteTable(_client.Name, _client.AccountName);
+                    using Response response = await _client.DeleteAsync().ConfigureAwait(false);
 
                     if (response.IsError && response.Status != NotFound)
                     {
                         throw new RequestFailedException(
-                            $"[Test:Teardown] Failed to delete Azure Table {Client.AccountName}/{Client.Name}' " +
+                            $"[Test:Teardown] Failed to delete Azure Table {_client.AccountName}/{_client.Name}' " +
                             $"since the delete operation responded with a failure: {response.Status} {(HttpStatusCode) response.Status}",
                             new RequestFailedException(response));
                     }
@@ -425,7 +445,7 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Entities is OnTeardownTable.CleanAll)
             {
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
+                await foreach (TableEntity item in _client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
                 {
                     disposables.Add(AsyncDisposable.Create(() => DeleteEntityOnTeardownAsync(item)));
                 }
@@ -433,7 +453,7 @@ namespace Arcus.Testing
             else if (_options.OnTeardown.Entities is OnTeardownTable.CleanIfMatched)
             {
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-                await foreach (TableEntity item in Client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
+                await foreach (TableEntity item in _client.QueryAsync<TableEntity>(_ => true).ConfigureAwait(false))
 #pragma warning restore S3267
                 {
                     if (_options.OnTeardown.IsMatch(item))
@@ -452,8 +472,8 @@ namespace Arcus.Testing
 
         private Task DeleteEntityOnTeardownAsync(TableEntity entity)
         {
-            _logger.LogTeardownDeleteEntity(entity.RowKey, entity.PartitionKey, Client.AccountName, Client.Name);
-            return DeleteEntityAsync(Client, entity, "[Test:Teardown]");
+            _logger.LogTeardownDeleteEntity(entity.RowKey, entity.PartitionKey, _client.AccountName, _client.Name);
+            return DeleteEntityAsync(_client, entity, "[Test:Teardown]");
         }
 
         private static async Task DeleteEntityAsync(TableClient client, TableEntity entity, string testOperation)
