@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Arcus.Testing
+﻿namespace Arcus.Testing
 {
     /// <summary>
     /// Represents the deprecation defaults used throughout deprecated Arcus functionality.
@@ -11,5 +9,5 @@ namespace Arcus.Testing
         /// Gets the diagnostic identifier to group Arcus deprecated functionality.
         /// </summary>
         internal const string DiagnosticId = "ARCUS";
-    } 
+    }
 }
