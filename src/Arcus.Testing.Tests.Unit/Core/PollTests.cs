@@ -215,17 +215,11 @@ namespace Arcus.Testing.Tests.Unit.Core
             Assert.True(timeout <= watch.Elapsed, $"elapsed: {watch.Elapsed}");
         }
 
-        private Action<PollOptions> WithMessage(string message, string resultPart = null)
+        private Action<PollOptions> WithMessage(string message)
         {
             return options =>
             {
                 options.FailureMessage = message;
-
-                if (resultPart != null)
-                {
-                    options.FormatResult<object>(result => $"got {result}, but should be {resultPart}");
-                }
-
                 LowestTimeFrame(options);
             };
         }
