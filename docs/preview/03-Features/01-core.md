@@ -156,6 +156,10 @@ await Poll.UntilAvailableAsync(..., options =>
     // Same as doing `Poll.FailWith(...)`
     options.FailureMessage = "my polling operation description that gives the test failure more context";
 
+    // Sets the formatting of the last polled result that did not match the 'until' filters (default: regular 'result.ToString()`).
+    // Same as doing `Poll.FailWith(..., result => $"got {result}, but should be this")
+    options.FormatResult(result => $"got {result}, but should be this");
+
     // Add one or more additional exception filters to specify for which exact exception the polling operation should run.
     // Same as doing 'Poll.When(ex => ...)`
     options.AddExceptionFilter((RequestFailedException ex) => ex.Status == 429);
@@ -184,9 +188,12 @@ MyResult endResult =
               .Timeout(TimeSpan.FromSeconds(5))
               
               // Sets the message that describes the failure of the polling operation.
-              // Same as doing `options.FailureMessage = ...`
+              // Same as doing `options.FailureMessage = ...` & `options.FormatResult(...)`
               .FailWith("my polling operation description that gives the test failure more context")
-    
+              .FailWith(
+                  "my polling operation description that gives the test failure more context", 
+                  lastResult => $"got {lastResult}, but should be this")
+
               // Start the polling operation.
               .StartAsync();
 ```

@@ -136,6 +136,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         {
             // Arrange
             string expected = Bogus.Lorem.Sentence();
+            string resultAddition = Bogus.Lorem.Word();
 
             // Act / Assert
             await FailsByResultAsync(async () =>
@@ -152,7 +153,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
-                          .FailWith(expected), errorParts: expected);
+                          .FailWith(expected, value => $"{value}, but should be {resultAddition}"), errorParts: [expected, resultAddition]);
         }
 
         [Fact]
@@ -214,11 +215,17 @@ namespace Arcus.Testing.Tests.Unit.Core
             Assert.True(timeout <= watch.Elapsed, $"elapsed: {watch.Elapsed}");
         }
 
-        private Action<PollOptions> WithMessage(string message)
+        private Action<PollOptions> WithMessage(string message, string resultPart = null)
         {
             return options =>
             {
                 options.FailureMessage = message;
+
+                if (resultPart != null)
+                {
+                    options.FormatResult<object>(result => $"got {result}, but should be {resultPart}");
+                }
+
                 LowestTimeFrame(options);
             };
         }
@@ -300,6 +307,11 @@ namespace Arcus.Testing.Tests.Unit.Core
         }
 
         private static async Task FailsByExceptionAsync(Func<Task> pollAsync, params string[] errorParts)
+        {
+            await ShouldFailAsync<TestPollException>(pollAsync, errorParts);
+        }
+
+        private static async Task FailsByExceptionAsync<TResult>(Func<Task<TResult>> pollAsync, params string[] errorParts)
         {
             await ShouldFailAsync<TestPollException>(pollAsync, errorParts);
         }
