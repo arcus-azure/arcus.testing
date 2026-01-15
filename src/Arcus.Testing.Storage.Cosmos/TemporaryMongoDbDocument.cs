@@ -30,8 +30,7 @@ namespace Arcus.Testing
             Type documentType,
             FilterDefinition<BsonDocument> filter,
             BsonDocument originalDoc,
-            MongoClient client,
-            bool clientCreatedByUs,
+            (MongoClient value, bool createdByUs) client,
             IMongoCollection<BsonDocument> collection,
             ILogger logger)
         {
@@ -43,8 +42,8 @@ namespace Arcus.Testing
             _documentType = documentType;
             _filter = filter;
             _originalDoc = originalDoc;
-            _client = client;
-            _clientCreatedByUs = clientCreatedByUs;
+            _client = client.value;
+            _clientCreatedByUs = client.createdByUs;
             _collection = collection;
             _logger = logger ?? NullLogger.Instance;
 
@@ -136,11 +135,21 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
 
+#pragma warning disable CA2000 // Responsibility of disposing the client in case of non-failure is passed to the returned temporary document test fixture.
             MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger).ConfigureAwait(false);
-            IMongoDatabase database = client.GetDatabase(databaseName);
-            IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
+#pragma warning restore CA2000
+            try
+            {
+                IMongoDatabase database = client.GetDatabase(databaseName);
+                IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
 
-            return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger).ConfigureAwait(false);
+                return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger).ConfigureAwait(false);
+            }
+            catch (MongoException)
+            {
+                client.Dispose();
+                throw;
+            }
         }
 
         /// <summary>
@@ -185,13 +194,13 @@ namespace Arcus.Testing
                 logger.LogSetupInsertNewDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
 
                 await collectionBson.InsertOneAsync(bson).ConfigureAwait(false);
-                return new(id, documentType, findOneDocument, originalDoc: null, client, clientCreatedByUs, collectionBson, logger);
+                return new(id, documentType, findOneDocument, originalDoc: null, (client, clientCreatedByUs), collectionBson, logger);
             }
 
             logger.LogSetupReplaceDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
             await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson).ConfigureAwait(false);
 
-            return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, client, clientCreatedByUs, collectionBson, logger);
+            return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, (client, clientCreatedByUs), collectionBson, logger);
         }
 
         private static async Task<BsonDocument> FindOriginalDocumentAsync(
