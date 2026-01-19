@@ -22,6 +22,8 @@ namespace Arcus.Testing
         private readonly ITableEntity _entity;
         private readonly ILogger _logger;
 
+        private bool _isDisposed;
+
         private TemporaryTableEntity(
             TableClient tableClient,
             Type entityType,
@@ -175,6 +177,11 @@ namespace Arcus.Testing
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             if (_createdByUs)
             {
                 _logger.LogTeardownDeleteEntity(_entityType.Name, _entity.RowKey, _entity.PartitionKey, _tableClient.AccountName, _tableClient.Name);
@@ -202,6 +209,7 @@ namespace Arcus.Testing
                 }
             }
 
+            _isDisposed = true;
             GC.SuppressFinalize(this);
         }
     }

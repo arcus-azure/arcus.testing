@@ -25,13 +25,14 @@ namespace Arcus.Testing.Tests.Integration.Storage
             BinaryData content = context.CreateBlobContent();
 
             TemporaryBlobFile file = await WhenBlobUploadedAsync(containerClient, blobContent: content);
-            await context.ShouldStoreBlobFileAsync(containerClient, file.Name, content);
+            string fileName = file.Name;
+            await context.ShouldStoreBlobFileAsync(containerClient, fileName, content);
 
             // Act
             await file.DisposeAsync();
 
             // Assert
-            await context.ShouldDeleteBlobFileAsync(containerClient, file.Name);
+            await context.ShouldDeleteBlobFileAsync(containerClient, fileName);
         }
 
         [Fact]

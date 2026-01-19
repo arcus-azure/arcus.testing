@@ -225,8 +225,10 @@ namespace Arcus.Testing
     /// </summary>
     public class TemporaryBlobContainer : IAsyncDisposable
     {
-        private readonly Collection<TemporaryBlobFile> _blobs = [];
+        private readonly BlobContainerClient _containerClient;
         private readonly bool _createdByUs;
+
+        private readonly Collection<TemporaryBlobFile> _blobs = [];
         private readonly TemporaryBlobContainerOptions _options;
         private readonly DisposableCollection _disposables;
         private readonly ILogger _logger;
@@ -240,28 +242,44 @@ namespace Arcus.Testing
             ArgumentNullException.ThrowIfNull(containerClient);
             ArgumentNullException.ThrowIfNull(options);
 
+            _containerClient = containerClient;
             _createdByUs = createdByUs;
             _options = options;
             _logger = logger ?? NullLogger.Instance;
             _disposables = new DisposableCollection(_logger);
-
-            Client = containerClient;
         }
 
         /// <summary>
         /// Gets the name of the temporary Azure Blob container currently in storage.
         /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         public string Name => Client.Name;
 
         /// <summary>
         /// Gets the <see cref="BlobContainerClient"/> instance that represents the temporary Azure Blob container.
         /// </summary>
-        public BlobContainerClient Client { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public BlobContainerClient Client
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _containerClient;
+            }
+        }
 
         /// <summary>
         /// Gets the additional options to manipulate the deletion of the <see cref="TemporaryBlobContainer"/>.
         /// </summary>
-        public OnTeardownBlobContainerOptions OnTeardown => _options.OnTeardown;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public OnTeardownBlobContainerOptions OnTeardown
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _options.OnTeardown;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
@@ -387,7 +405,7 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
 
-            BlobClient blobClient = Client.GetBlobClient(blobName);
+            BlobClient blobClient = _containerClient.GetBlobClient(blobName);
             _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger).ConfigureAwait(false));
 
             return blobClient;
@@ -409,15 +427,15 @@ namespace Arcus.Testing
                 _disposables.AddRange(_blobs);
                 _disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    await CleanBlobContainerUponDeletionAsync(Client, _options, _logger).ConfigureAwait(false);
+                    await CleanBlobContainerUponDeletionAsync(_containerClient, _options, _logger).ConfigureAwait(false);
                 }));
 
                 if (_createdByUs || _options.OnTeardown.Container is OnTeardownContainer.DeleteIfExists)
                 {
                     _disposables.Add(AsyncDisposable.Create(async () =>
                     {
-                        _logger.LogTeardownDeleteContainer(Client.Name, Client.AccountName);
-                        await Client.DeleteIfExistsAsync().ConfigureAwait(false);
+                        _logger.LogTeardownDeleteContainer(_containerClient.Name, _containerClient.AccountName);
+                        await _containerClient.DeleteIfExistsAsync().ConfigureAwait(false);
                     }));
                 }
             }

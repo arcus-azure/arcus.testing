@@ -417,7 +417,15 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the options related to tearing down the <see cref="TemporaryQueue"/>.
         /// </summary>
-        public OnTeardownTemporaryQueueOptions OnTeardown => _options.OnTeardown;
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public OnTeardownTemporaryQueueOptions OnTeardown
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _options.OnTeardown;
+            }
+        }
 
         /// <summary>
         /// Gets the filter client to search for messages on the Azure Service Bus test-managed queue (a.k.a. 'spy test fixture').
