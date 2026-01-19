@@ -136,6 +136,7 @@ namespace Arcus.Testing.Tests.Unit.Core
         {
             // Arrange
             string expected = Bogus.Lorem.Sentence();
+            string resultAddition = Bogus.Lorem.Word();
 
             // Act / Assert
             await FailsByResultAsync(async () =>
@@ -152,7 +153,7 @@ namespace Arcus.Testing.Tests.Unit.Core
                           .Until(AlwaysTrue)
                           .Until(AlwaysFalse)
                           .Until(AlwaysTrue)
-                          .FailWith(expected), errorParts: expected);
+                          .FailWith(expected, value => $"{value}, but should be {resultAddition}"), errorParts: [expected, resultAddition]);
         }
 
         [Fact]
@@ -300,6 +301,11 @@ namespace Arcus.Testing.Tests.Unit.Core
         }
 
         private static async Task FailsByExceptionAsync(Func<Task> pollAsync, params string[] errorParts)
+        {
+            await ShouldFailAsync<TestPollException>(pollAsync, errorParts);
+        }
+
+        private static async Task FailsByExceptionAsync<TResult>(Func<Task<TResult>> pollAsync, params string[] errorParts)
         {
             await ShouldFailAsync<TestPollException>(pollAsync, errorParts);
         }

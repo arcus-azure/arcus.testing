@@ -58,11 +58,19 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Sets the interval between each poll operation.
+        /// <para>Sets the interval between each poll operation (default: 1 second).</para>
+        /// <para>Same as doing:</para>
+        /// <example>
+        ///   <code>
+        ///     await Poll.UntilAvailableAsync(..., options =>
+        ///     {
+        ///         options.Interval = TimeSpan.FromSeconds(1);
+        ///     });
+        ///   </code>
+        /// </example>
         /// </summary>
         /// <param name="interval">The interval between each polling operation to the target.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="interval"/>"> represents a negative time frame.</exception>
-        /// Same as <seealso cref="PollOptions.Interval"/>
         public Poll<TResult, TException> Every(TimeSpan interval)
         {
             _options.Interval = interval;
@@ -70,11 +78,19 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Sets the time frame in which the polling operation has to succeed.
+        /// <para>Sets the time frame in which the polling operation has to succeed (default: 30 seconds).</para>
+        /// <para>Same as doing:</para>
+        /// <example>
+        ///   <code>
+        ///     await Poll.UntilAvailableAsync(..., options =>
+        ///     {
+        ///         options.Timeout = TimeSpan.FromSeconds(30);
+        ///     });
+        ///   </code>
+        /// </example>
         /// </summary>
         /// <param name="timeout">The time frame in which the entire polling should succeed.</param>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="timeout"/>"> represents a negative or zero time frame.</exception>
-        /// Same as <seealso cref="PollOptions.Timeout"/>
         public Poll<TResult, TException> Timeout(TimeSpan timeout)
         {
             _options.Timeout = timeout;
@@ -107,18 +123,58 @@ namespace Arcus.Testing
 
         /// <summary>
         /// Sets the message that describes the failure of the polling operation.
+        /// <para>Same as doing:</para>
+        /// <example>
+        ///   <code>
+        ///     await Poll.UntilAvailableAsync(..., options =>
+        ///     {
+        ///         options.FailureMessage = "my-error-message";
+        ///     });
+        ///   </code>
+        /// </example>
         /// </summary>
         /// <param name="errorMessage">
         ///     The message that will be used as the final failure message of the <see cref="TimeoutException"/>
         ///     when the polling operation fails to succeed within the configured time frame.
         /// </param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="errorMessage"/> is blank.</exception>
-        /// Same as <seealso cref="PollOptions.FailureMessage"/>
         public Poll<TResult, TException> FailWith(string errorMessage)
         {
+            return FailWith(errorMessage, result => result.ToString());
+        }
+
+        /// <summary>
+        /// Sets the message that describes the failure of the polling operation.
+        /// <para>Same as doing:</para>
+        /// <example>
+        ///   <code>
+        ///     await Poll.UntilAvailableAsync(..., options =>
+        ///     {
+        ///         options.FailureMessage = "my-error-message";
+        ///         options.FormatResult(lastResult => $"got {lastResult}, but should be this");
+        ///     });
+        ///   </code>
+        /// </example>
+        /// </summary>
+        /// <param name="errorMessage">
+        ///     The message that will be used as the final failure message of the <see cref="TimeoutException"/>
+        ///     when the polling operation fails to succeed within the configured time frame.
+        /// </param>
+        /// <param name="resultFormatter">The function to provide a custom format for the last polled result (default: <see cref="object.ToString()"/>).</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="errorMessage"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resultFormatter"/> is <c>null</c>.</exception>
+        public Poll<TResult, TException> FailWith(string errorMessage, Func<TResult, string> resultFormatter)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(errorMessage);
+            ArgumentNullException.ThrowIfNull(resultFormatter);
+
             _options.FailureMessage = errorMessage;
+            _options.FormatResult(resultFormatter);
+
             return this;
         }
+
+
 
         /// <summary>
         /// Gets the awaiter used to await this <see cref="Poll{TResult,TException}"/>.
@@ -158,7 +214,7 @@ namespace Arcus.Testing
 
             if (target.Outcome is OutcomeType.Failure)
             {
-                string resultDescription = results.Count > 0 ? $" (last result: {results[^1]})" : string.Empty;
+                string resultDescription = results.Count > 0 ? $" (last result: {_options.FormatResult(results[^1])})" : string.Empty;
                 throw new TimeoutException(_options.FailureMessage + resultDescription, exceptions.LastOrDefault() ?? target.FinalException);
             }
 
@@ -175,6 +231,7 @@ namespace Arcus.Testing
         private TimeSpan _interval = TimeSpan.FromSeconds(1);
         private TimeSpan _timeout = TimeSpan.FromSeconds(30);
         private string _failureMessage = "operation did not succeed within the given time frame";
+        private Func<object, string> _lastResultFormatting = result => result.ToString();
         private readonly Collection<Func<Exception, bool>> _exceptionFilters = [];
 
         /// <summary>
@@ -183,7 +240,7 @@ namespace Arcus.Testing
         internal static PollOptions Default => new();
 
         /// <summary>
-        /// Gets or sets the interval between each poll operation.
+        /// Gets or sets the interval between each poll operation (default: 1 second).
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/>"> represents a negative time frame.</exception>
         public TimeSpan Interval
@@ -197,7 +254,7 @@ namespace Arcus.Testing
         }
 
         /// <summary>
-        /// Gets or sets the time frame in which the polling operation has to succeed.
+        /// Gets or sets the time frame in which the polling operation has to succeed (default: 30 seconds).
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/>"> represents a negative time frame.</exception>
         public TimeSpan Timeout
@@ -222,6 +279,24 @@ namespace Arcus.Testing
                 ArgumentException.ThrowIfNullOrWhiteSpace(value);
                 _failureMessage = value;
             }
+        }
+
+        /// <summary>
+        /// <para>Sets the formatting of the last polled result that did not match the <see cref="Poll{TResult,TException}.Until"/> filters.</para>
+        /// <para>This gets included in the final <see cref="TimeoutException"/> upon failed polling operations.</para>
+        /// </summary>
+        /// <typeparam name="TResult">The custom type of the result which gets polled for.</typeparam>
+        /// <param name="formatter">The function to provide a custom format for the last polled result (default: <see cref="object.ToString()"/>).</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="formatter"/> is <c>null</c>.</exception>
+        public void FormatResult<TResult>(Func<TResult, string> formatter)
+        {
+            ArgumentNullException.ThrowIfNull(formatter);
+            _lastResultFormatting = result => result is TResult concrete ? formatter(concrete) : result.ToString();
+        }
+
+        internal string FormatResult(object lastResult)
+        {
+            return _lastResultFormatting(lastResult);
         }
 
         /// <summary>
