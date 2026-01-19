@@ -15,6 +15,7 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using static Arcus.Testing.NoSqlExtraction;
+using PartitionKey = Microsoft.Azure.Cosmos.PartitionKey;
 
 namespace Arcus.Testing
 {
@@ -179,7 +180,7 @@ namespace Arcus.Testing
         /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete the NoSQL items
         /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.AddItemAsync{TItem}"/>).
         /// </summary>
-        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedItems) + " instead that provides exactly the same on-teardown functionality")]
+        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedItems) + " instead that provides exactly the same on-teardown functionality", DiagnosticId = "ARCUS")]
         public OnTeardownNoSqlContainerOptions CleanCreatedItems()
         {
             return CleanUpsertedItems();
@@ -644,7 +645,7 @@ namespace Arcus.Testing
         /// <typeparam name="T">The custom NoSQL model.</typeparam>
         /// <param name="item">The item to create in the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
         public Task AddItemAsync<T>(T item)
         {
             return UpsertItemAsync(item);
@@ -708,50 +709,42 @@ namespace Arcus.Testing
                 return;
             }
 
-            if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanAll)
+            await ForEachItemAsync((id, partitionKey, doc) =>
             {
-                await ForEachItemAsync((id, partitionKey, _) =>
+                disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    disposables.Add(AsyncDisposable.Create(async () =>
+                    switch (_options.OnTeardown.Items)
                     {
-                        _logger.LogTeardownDeleteItem(id, partitionKey, _containerClient.Database.Id, _containerClient.Id);
-                        using ResponseMessage response = await _containerClient.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                        case OnTeardownNoSqlContainer.CleanAll:
+                            _logger.LogTeardownDeleteItem(id, partitionKey, _containerClient.Database.Id, _containerClient.Id);
+                            await DeleteItemAsync(id, partitionKey).ConfigureAwait(false);
+                            break;
 
-                        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
-                        {
-                            throw new RequestFailedException((int) response.StatusCode,
-                                $"[Test:Teardown] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{_containerClient.Database.Id}/{_containerClient.Id}' " +
-                                $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
-                        }
-                    }));
-
-                    return Task.CompletedTask;
-
-                }).ConfigureAwait(false);
-            }
-            else if (_options.OnTeardown.Items is OnTeardownNoSqlContainer.CleanIfMatched)
-            {
-                await ForEachItemAsync((id, partitionKey, doc) =>
-                {
-                    disposables.Add(AsyncDisposable.Create(async () =>
-                    {
-                        if (_options.OnTeardown.IsMatched(id, partitionKey, doc, _containerClient.Database.Client))
-                        {
+                        case OnTeardownNoSqlContainer.CleanIfMatched when _options.OnTeardown.IsMatched(id, partitionKey, doc, _containerClient.Database.Client):
                             _logger.LogTeardownDeleteMatchedItem(id, partitionKey, _containerClient.Database.Id, _containerClient.Id);
-                            using ResponseMessage response = await _containerClient.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                            await DeleteItemAsync(id, partitionKey).ConfigureAwait(false);
+                            break;
 
-                            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
-                            {
-                                throw new RequestFailedException((int) response.StatusCode,
-                                    $"[Test:Teardown] Failed to delete matched NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{_containerClient.Database.Id}/{_containerClient.Id}' " +
-                                    $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
-                            }
-                        }
-                    }));
+                        case OnTeardownNoSqlContainer.CleanIfUpserted:
+                        default:
+                            break;
+                    }
+                }));
 
-                    return Task.CompletedTask;
+                return Task.CompletedTask;
 
-                }).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+        }
+
+        private async Task DeleteItemAsync(string id, PartitionKey partitionKey)
+        {
+            using ResponseMessage response = await _containerClient.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+
+            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
+            {
+                throw new RequestFailedException((int) response.StatusCode,
+                    $"[Test:Teardown] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{_containerClient.Database.Id}/{_containerClient.Id}' " +
+                    $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
             }
         }
 

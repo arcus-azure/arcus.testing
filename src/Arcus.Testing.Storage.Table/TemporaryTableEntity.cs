@@ -53,7 +53,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or the <paramref name="tableName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="entity"/> is <c>null</c>.</exception>
 #pragma warning disable S1133 // Will be removed in v3.0.
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality", DiagnosticId = "ARCUS")]
 #pragma warning restore S1133
         public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(
             string accountName,
@@ -74,7 +74,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> or the <paramref name="entity"/> is <c>null</c>.</exception>
 #pragma warning disable S1133 // Will be removed in v3.0.
-        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality")]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertEntityAsync) + " instead which provides exactly the same functionality", DiagnosticId = "ARCUS")]
 #pragma warning restore S1133
         public static Task<TemporaryTableEntity> AddIfNotExistsAsync<TEntity>(TableClient client, TEntity entity, ILogger logger) where TEntity : class, ITableEntity
         {
