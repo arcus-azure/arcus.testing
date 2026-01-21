@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.ObjectModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using TestContext = Microsoft.VisualStudio.TestTools.UnitTesting.TestContext;
 
 namespace Arcus.Testing.Tests.Unit.Logging.Fixture
 {
