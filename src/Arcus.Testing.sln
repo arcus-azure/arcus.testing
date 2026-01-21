@@ -40,6 +40,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A2E34D15-F081-478D-A17E-EB61BB5C0511}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		ObsoleteDefaults.cs = ObsoleteDefaults.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Messaging", "Messaging", "{4992B48D-3C17-45A9-979B-B79CE1E987CB}"

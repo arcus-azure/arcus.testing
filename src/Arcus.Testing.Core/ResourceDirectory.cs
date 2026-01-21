@@ -80,7 +80,7 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public string ReadFileTextByName(string fileName)
         {
             return ReadFileText(fileName);
@@ -98,7 +98,7 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileText) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public string ReadFileTextByPattern(string searchPattern)
         {
             return ReadFileText(searchPattern);
@@ -138,7 +138,7 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="fileName"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public byte[] ReadFileBytesByName(string fileName)
         {
             return ReadFileBytes(fileName);
@@ -156,7 +156,7 @@ namespace Arcus.Testing
         /// <exception cref="FileNotFoundException">
         ///     Thrown when there exists no test resource file in the current test resource directory with the given <paramref name="searchPattern"/>.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3.0, please use " + nameof(ReadFileBytes) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public byte[] ReadFileBytesByPattern(string searchPattern)
         {
             return ReadFileBytes(searchPattern);

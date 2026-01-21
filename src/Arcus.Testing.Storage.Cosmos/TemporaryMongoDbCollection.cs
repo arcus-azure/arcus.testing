@@ -120,7 +120,7 @@ namespace Arcus.Testing
         /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was inserted by the test fixture
         /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
         /// </summary>
-        [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
         {
             return CleanUpsertedDocuments();
@@ -445,7 +445,7 @@ namespace Arcus.Testing
         /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
         /// <param name="document">The document to upload to the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task AddDocumentAsync<TDocument>(TDocument document)
         {
             return UpsertDocumentAsync(document);

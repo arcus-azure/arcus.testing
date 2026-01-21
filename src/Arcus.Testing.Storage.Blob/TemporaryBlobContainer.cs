@@ -117,7 +117,7 @@ namespace Arcus.Testing
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
         /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
         /// </summary>
-        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public OnTeardownBlobContainerOptions CleanCreatedBlobs()
         {
             return CleanUpsertedBlobs();
@@ -381,7 +381,7 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
             return UpsertBlobFileAsync(blobName, blobContent);
