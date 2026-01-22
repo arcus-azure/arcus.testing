@@ -1,5 +1,5 @@
 # Event Hubs
-The `Arcus.Testing.Messaging.EventHubs` package provides test fixtures related to Azure Event Hubs. By using the common testing practice 'clean environment', it provides a temporary hub.
+The `Arcus.Testing.Messaging.EventHubs` package provides test fixtures related to Azure Event Hubs.  It adheres to the 'clean environment' testing practice by providing a temporary Event Hub.
 
 ## Installation
 The following functionality is available when installing this package:
