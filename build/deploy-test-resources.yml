@@ -59,6 +59,7 @@ stages:
                   --parameters cosmosDbMongoDbDatabaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
                   --parameters cosmosDbnoSqlName=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
                   --parameters cosmosDbNoSqlDatabaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
+                  --parameters eventHubsNamespaceName=${{ variables['Arcus.Testing.EventHubs.Namespace'] }} `
                   --parameters serviceBusNamespaceName=${{ variables['Arcus.Testing.ServiceBus.Namespace'] }} `
                   --parameters keyVaultName=${{ parameters.keyVaultName }} `
                   --parameters servicePrincipalObjectId=$objectId
