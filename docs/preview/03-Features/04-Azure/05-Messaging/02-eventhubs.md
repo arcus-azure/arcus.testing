@@ -11,7 +11,7 @@ PM> Install-Package -Name Arcus.Testing.Messaging.EventHubs
 ## Temporary hub
 The `TemporaryEventHub` provides a solution when the integration test requires an Azure Event Hub during the test run. The test fixture creates a hub upon the setup of the fixture and deletes it again when the fixture disposes.
 
-> ✨ Only when the test fixture was responsible for creating the hub, will the fixture delete the hub upon disposal. This follows the 'clean environment' testing principle that describes that after the test run, the test should revert the state back to its original state.
+> ✨ When the test fixture was responsible for creating the hub, the fixture will delete the hub when the test disposes the fixture. This follows the 'clean environment' testing principle that describes that a test should revert the environment to its original state after the test has run.
 
 ```csharp
 using Arcus.Testing;
