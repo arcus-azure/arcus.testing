@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Storage.Files.Shares;
@@ -83,7 +84,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default) Configures the <see cref="TemporaryShareDirectory"/> to clean only the items (both files and directories) in the directory share
-        /// that the test fixture was responsible for upserting (via <see cref="TemporaryShareDirectory.UpsertFileAsync"/>), upon the deletion of the fixture.
+        /// that the test fixture was responsible for upserting (via <see cref="TemporaryShareDirectory.UpsertFileAsync(string,Stream,CancellationToken)"/>), upon the deletion of the fixture.
         /// </summary>
         public OnTeardownTemporaryShareDirectoryOptions CleanUpsertedItems()
         {
@@ -207,6 +208,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="shareClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="directoryName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareClient shareClient, string directoryName, ILogger logger)
         {
             return CreateIfNotExistsAsync(shareClient, directoryName, logger, configureOptions: null);
@@ -221,6 +223,7 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="shareClient"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="directoryName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
             ShareClient shareClient,
             string directoryName,
@@ -240,6 +243,7 @@ namespace Arcus.Testing
         /// <param name="directoryClient">The client to interact with the directory share in the Azure Files share resource.</param>
         /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(ShareDirectoryClient directoryClient, ILogger logger)
         {
             return CreateIfNotExistsAsync(directoryClient, logger, configureOptions: null);
@@ -252,21 +256,57 @@ namespace Arcus.Testing
         /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
             ShareDirectoryClient directoryClient,
             ILogger logger,
             Action<TemporaryShareDirectoryOptions> configureOptions)
         {
+            return CreateIfNotExistsAsync(directoryClient, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a temporary directory share on an Azure Files share resource.
+        /// </summary>
+        /// <param name="directoryClient">The client to interact with the directory share in the Azure Files share resource.</param>
+        /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
+            ShareDirectoryClient directoryClient,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(directoryClient, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a temporary directory share on an Azure Files share resource.
+        /// </summary>
+        /// <param name="directoryClient">The client to interact with the directory share in the Azure Files share resource.</param>
+        /// <param name="logger">The logger instance to write diagnostic traces during the lifetime of the fixture.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="directoryClient"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static async Task<TemporaryShareDirectory> CreateIfNotExistsAsync(
+            ShareDirectoryClient directoryClient,
+            ILogger logger,
+            Action<TemporaryShareDirectoryOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
             ArgumentNullException.ThrowIfNull(directoryClient);
+            cancellationToken.ThrowIfCancellationRequested();
             logger ??= NullLogger.Instance;
 
             var options = new TemporaryShareDirectoryOptions();
             configureOptions?.Invoke(options);
 
-            if (await directoryClient.ExistsAsync().ConfigureAwait(false))
+            if (await directoryClient.ExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingDirectory(directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
-                await CleanDirectoryOnSetupAsync(directoryClient, options, logger).ConfigureAwait(false);
+                await CleanDirectoryOnSetupAsync(directoryClient, options, logger, cancellationToken).ConfigureAwait(false);
 
                 return new TemporaryShareDirectory(directoryClient, createdByUs: false, options, logger);
             }
@@ -274,7 +314,7 @@ namespace Arcus.Testing
             try
             {
                 logger.LogSetupCreateNewDirectory(directoryClient.Name, directoryClient.AccountName, directoryClient.Path);
-                await directoryClient.CreateAsync().ConfigureAwait(false);
+                await directoryClient.CreateAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
             catch (RequestFailedException exception) when (exception.ErrorCode == ShareErrorCode.ShareNotFound)
             {
@@ -288,8 +328,13 @@ namespace Arcus.Testing
             return new TemporaryShareDirectory(directoryClient, createdByUs: true, options, logger);
         }
 
-        private static async Task CleanDirectoryOnSetupAsync(ShareDirectoryClient directoryClient, TemporaryShareDirectoryOptions options, ILogger logger)
+        private static async Task CleanDirectoryOnSetupAsync(
+            ShareDirectoryClient directoryClient,
+            TemporaryShareDirectoryOptions options,
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (options.OnSetup.Items is OnSetupDirectoryShare.LeaveExisted)
             {
                 return;
@@ -297,11 +342,11 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Items is OnSetupDirectoryShare.CleanIfExisted)
             {
-                await DeleteAllDirectoryContentsAsync(directoryClient, TestFixture.Setup, logger).ConfigureAwait(false);
+                await DeleteAllDirectoryContentsAsync(directoryClient, TestFixture.Setup, logger, cancellationToken).ConfigureAwait(false);
             }
             else if (options.OnSetup.Items is OnSetupDirectoryShare.CleanIfMatched)
             {
-                await DeleteDirectoryContentsAsync(directoryClient, options.OnSetup.IsMatch, TestFixture.Setup, logger).ConfigureAwait(false);
+                await DeleteDirectoryContentsAsync(directoryClient, options.OnSetup.IsMatch, TestFixture.Setup, logger, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -316,10 +361,32 @@ namespace Arcus.Testing
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="fileContents"/> is <c>null</c>.</exception>
-        public async Task UpsertFileAsync(string fileName, Stream fileContents)
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertFileAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task UpsertFileAsync(string fileName, Stream fileContents)
+        {
+            return UpsertFileAsync(fileName, fileContents, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing file in this directory share (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     Any files uploaded via this call will always be deleted (if new) or reverted (if existing) when this instance is disposed.
+        /// </remarks>
+        /// <param name="fileName">The name of the file to upload to the share directory.</param>
+        /// <param name="fileContents">The contents of the file to upload to the share directory.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="fileName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="fileContents"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public async Task UpsertFileAsync(string fileName, Stream fileContents, CancellationToken cancellationToken)
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
-            _files.Add(await TemporaryShareFile.UpsertFileAsync(Client, fileName, fileContents, _logger).ConfigureAwait(false));
+            cancellationToken.ThrowIfCancellationRequested();
+
+            ShareFileClient fileClient = Client.GetFileClient(fileName);
+            _files.Add(await TemporaryShareFile.UpsertFileAsync(fileClient, fileContents, _logger, cancellationToken).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -339,7 +406,7 @@ namespace Arcus.Testing
 
                 if (_createdByUs)
                 {
-                    await DeleteAllDirectoryContentsAsync(_client, TestFixture.Teardown, _logger).ConfigureAwait(false);
+                    await DeleteAllDirectoryContentsAsync(_client, TestFixture.Teardown, _logger, CancellationToken.None).ConfigureAwait(false);
 
                     _disposables.Add(AsyncDisposable.Create(async () =>
                     {
@@ -365,7 +432,7 @@ namespace Arcus.Testing
 
             if (_options.OnTeardown.Items is OnTeardownDirectoryShare.CleanAll)
             {
-                await DeleteAllDirectoryContentsAsync(_client, TestFixture.Teardown, _logger).ConfigureAwait(false);
+                await DeleteAllDirectoryContentsAsync(_client, TestFixture.Teardown, _logger, CancellationToken.None).ConfigureAwait(false);
             }
             else if (_options.OnTeardown.Items is OnTeardownDirectoryShare.CleanIfMatched)
             {
@@ -379,25 +446,27 @@ namespace Arcus.Testing
             ShareDirectoryClient current,
             Func<ShareFileItem, bool> shouldDeleteItem,
             TestFixture state,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken = default)
         {
-            await current.ForceCloseAllHandlesAsync(recursive: true).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            await current.ForceCloseAllHandlesAsync(recursive: true, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            await foreach (ShareFileItem item in current.GetFilesAndDirectoriesAsync().ConfigureAwait(false))
+            await foreach (ShareFileItem item in current.GetFilesAndDirectoriesAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
             {
                 if (item.IsDirectory)
                 {
                     ShareDirectoryClient sub = current.GetSubdirectoryClient(item.Name);
                     if (shouldDeleteItem(item))
                     {
-                        await DeleteAllDirectoryContentsAsync(sub, state, logger).ConfigureAwait(false);
+                        await DeleteAllDirectoryContentsAsync(sub, state, logger, cancellationToken).ConfigureAwait(false);
 
                         LogDeleteDirectory(logger, state, sub.Name, sub.AccountName, sub.Path);
-                        await sub.DeleteIfExistsAsync().ConfigureAwait(false);
+                        await sub.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                     }
                     else
                     {
-                        await DeleteDirectoryContentsAsync(sub, shouldDeleteItem, state, logger).ConfigureAwait(false);
+                        await DeleteDirectoryContentsAsync(sub, shouldDeleteItem, state, logger, cancellationToken).ConfigureAwait(false);
                     }
                 }
                 else if (shouldDeleteItem(item))
@@ -405,7 +474,7 @@ namespace Arcus.Testing
                     ShareFileClient file = current.GetFileClient(item.Name);
 
                     LogDeleteFile(logger, state, file.Name, file.AccountName, file.Path);
-                    await file.DeleteIfExistsAsync().ConfigureAwait(false);
+                    await file.DeleteIfExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -438,9 +507,10 @@ namespace Arcus.Testing
             }
         }
 
-        private static async Task DeleteAllDirectoryContentsAsync(ShareDirectoryClient current, TestFixture state, ILogger logger)
+        private static async Task DeleteAllDirectoryContentsAsync(ShareDirectoryClient current, TestFixture state, ILogger logger, CancellationToken cancellationToken)
         {
-            await DeleteDirectoryContentsAsync(current, shouldDeleteItem: _ => true, state, logger).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            await DeleteDirectoryContentsAsync(current, shouldDeleteItem: _ => true, state: state, logger: logger, cancellationToken).ConfigureAwait(false);
         }
     }
 

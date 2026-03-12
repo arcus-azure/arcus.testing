@@ -255,7 +255,7 @@ using Azure.Storage.Files.Shares;
 var shareClient = new ShareClient(...);
 
 await using var directory = await TemporaryShareDirectory.CreateIfNotExistsAsync(
-    shareClient, "<directory-name", logger);
+    shareClient, "<directory-name", logger, cancellationToken);
 
 // Interact with the directory during the lifetime of the fixture.
 ShareDirectoryClient client = directory.Client;
@@ -271,7 +271,7 @@ await using TemporaryShareDirectory directory = ...
 string fileName = "TestFile";
 await using Stream fileContents = File.OpenRead(...);
 
-await directory.UpsertFileAsync(fileName, fileContents);
+await directory.UpsertFileAsync(fileName, fileContents, cancellationToken);
 ```
 
 :::praise
@@ -335,13 +335,11 @@ The `TemporaryShareFile` provides a solution when the integration test requires 
 ```csharp
 using Arcus.Testing;
 
-ShareDirectoryClient client = ...
-
-string fileName = "TestFile";
+ShareFileClient client = ...
 await using Stream fileContents = File.OpenRead(...);
 
 await using var file = await TemporaryShareFile.UpsertFileAsync(
-    client, fileName, fileContents, logger);
+    client, fileContents, logger, cancellationToken);
 ```
 
 </TabItem>

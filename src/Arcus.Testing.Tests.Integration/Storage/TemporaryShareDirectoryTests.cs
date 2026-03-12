@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
-using Azure.Storage.Files.Shares.Specialized;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -197,20 +197,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryShareDirectory> WhenTempDirCreatedAsync(DirClient dir, Action<TemporaryShareDirectoryOptions> configureOptions = null)
         {
-            TemporaryShareDirectory temp;
-            if (Bogus.Random.Bool())
-            {
-                ShareClient shareClient = dir.GetParentShareClient();
-                temp = configureOptions is null
-                    ? await TemporaryShareDirectory.CreateIfNotExistsAsync(shareClient, dir.Name, Logger)
-                    : await TemporaryShareDirectory.CreateIfNotExistsAsync(shareClient, dir.Name, Logger, configureOptions);
-            }
-            else
-            {
-                temp = configureOptions is null
-                    ? await TemporaryShareDirectory.CreateIfNotExistsAsync(dir, Logger)
-                    : await TemporaryShareDirectory.CreateIfNotExistsAsync(dir, Logger, configureOptions);
-            }
+            TemporaryShareDirectory temp = configureOptions is null
+                ? await TemporaryShareDirectory.CreateIfNotExistsAsync(dir, Logger, TestContext.Current.CancellationToken)
+                : await TemporaryShareDirectory.CreateIfNotExistsAsync(dir, Logger, configureOptions, TestContext.Current.CancellationToken);
 
             Assert.Equal(dir.Name, temp.Client.Name);
             Assert.Equal(dir.AccountName, temp.Client.AccountName);
@@ -220,7 +209,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<FileShareTestContext> GivenFileShareAsync()
         {
-            return await FileShareTestContext.GivenAvailableAsync(Configuration, Logger);
+            return await FileShareTestContext.GivenAvailableAsync(Configuration, Logger, TestContext.Current.CancellationToken);
         }
     }
 
@@ -231,7 +220,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         internal static async Task WhenFileFileUploadAsync(this TemporaryShareDirectory dir, FileClient file)
         {
             await using var fileContents = new MemoryStream(Encoding.UTF8.GetBytes(Bogus.Lorem.Sentence()));
-            await dir.UpsertFileAsync(file.Name, fileContents);
+            await dir.UpsertFileAsync(file.Name, fileContents, TestContext.Current.CancellationToken);
         }
     }
 
@@ -240,21 +229,25 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private readonly ShareClient _share;
         private readonly ShareServiceClient _service;
         private readonly ILogger _logger;
+        private readonly CancellationToken _cancellationToken;
 
         private static readonly Faker Bogus = new();
 
         private FileShareTestContext(
             ShareServiceClient service,
             ShareClient share,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
             _service = service;
             _share = share;
             _logger = logger ?? NullLogger.Instance;
+            _cancellationToken = cancellationToken;
         }
 
-        public static async Task<FileShareTestContext> GivenAvailableAsync(TestConfig configuration, ILogger logger)
+        public static async Task<FileShareTestContext> GivenAvailableAsync(TestConfig configuration, ILogger logger, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             StorageAccount account = configuration.GetStorageAccount();
 
             var service = new ShareServiceClient(account.ConnectionString);
@@ -263,9 +256,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
             ShareClient share = service.GetShareClient(shareName);
 
             logger.LogTrace("[Test:Setup] Create new Azure File share '{ShareName}' in account '{AccountName}'", share.Name, share.AccountName);
-            await share.CreateIfNotExistsAsync();
+            await share.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
 
-            return new FileShareTestContext(service, share, logger);
+            return new FileShareTestContext(service, share, logger, cancellationToken);
         }
 
         public ShareClient WhenShareUnavailable()
@@ -280,7 +273,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             DirClient sub = WhenDirectoryUnavailable();
 
             _logger.LogTrace("[Test] Create new Azure File share directory '{DirectoryName}' at '{DirectoryPath}'", sub.Name, sub.Path);
-            await sub.CreateIfNotExistsAsync();
+            await sub.CreateIfNotExistsAsync(cancellationToken: _cancellationToken);
 
             return sub;
         }
@@ -290,7 +283,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
             DirClient sub = WhenDirectoryUnavailable(dirClient);
 
             _logger.LogTrace("[Test] Create new Azure File share directory '{DirectoryName}' at '{DirectoryPath}'", sub.Name, sub.Path);
-            await sub.CreateIfNotExistsAsync();
+            await sub.CreateIfNotExistsAsync(cancellationToken: _cancellationToken);
 
             return sub;
         }
@@ -328,8 +321,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             _logger.LogTrace("[Test] Upload new Azure File share item '{FileName}' in directory '{AccountName}/{DirectoryPath}'", fileName, directoryClient.AccountName, directoryClient.Path);
 
             await using var contents = BinaryData.FromString(fileContents).ToStream();
-            FileClient fileClient = await directoryClient.CreateFileAsync(fileName, contents.Length);
-            await fileClient.UploadAsync(contents);
+            FileClient fileClient = await directoryClient.CreateFileAsync(fileName, contents.Length, cancellationToken: _cancellationToken);
+            await fileClient.UploadAsync(contents, cancellationToken: _cancellationToken);
 
             return fileClient;
         }
@@ -338,7 +331,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             foreach (DirClient dir in directories)
             {
-                Assert.True(await dir.ExistsAsync(), $"Azure File share directory '{dir.Name}' should be available on share '{dir.ShareName}', but it wasn't");
+                Assert.True(
+                    await dir.ExistsAsync(cancellationToken: _cancellationToken),
+                    $"Azure File share directory '{dir.Name}' should be available on share '{dir.ShareName}', but it wasn't");
             }
         }
 
@@ -346,16 +341,18 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             foreach (var file in files)
             {
-                Assert.True(await file.ExistsAsync(), $"Azure File share file '{file.Name}' should be available on share '{file.ShareName}', but it wasn't");
+                Assert.True(
+                    await file.ExistsAsync(cancellationToken: _cancellationToken),
+                    $"Azure File share file '{file.Name}' should be available on share '{file.ShareName}', but it wasn't");
             }
         }
 
         public async Task<BinaryData> ShouldHaveFileAsync(FileClient file)
         {
             await ShouldHaveFilesAsync(file);
-            using ShareFileDownloadInfo fileInfo = await file.DownloadAsync();
+            using ShareFileDownloadInfo fileInfo = await file.DownloadAsync(cancellationToken: _cancellationToken);
 
-            var data = await BinaryData.FromStreamAsync(fileInfo.Content);
+            var data = await BinaryData.FromStreamAsync(fileInfo.Content, _cancellationToken);
             return data;
         }
 
@@ -363,7 +360,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             foreach (var file in files)
             {
-                Assert.False(await file.ExistsAsync(), $"Azure File share file '{file.Name}' should not be available on share '{file.ShareName}', but it was");
+                Assert.False(
+                    await file.ExistsAsync(cancellationToken: _cancellationToken),
+                    $"Azure File share file '{file.Name}' should not be available on share '{file.ShareName}', but it was");
             }
         }
 
@@ -371,7 +370,9 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             foreach (var dir in directories)
             {
-                Assert.False(await dir.ExistsAsync(), $"Azure File share directory '{dir.Name}' should not be available on share '{dir.ShareName}', but it was");
+                Assert.False(
+                    await dir.ExistsAsync(cancellationToken: _cancellationToken),
+                    $"Azure File share directory '{dir.Name}' should not be available on share '{dir.ShareName}', but it was");
             }
         }
 
@@ -386,6 +387,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
             disposables.Add(AsyncDisposable.Create(async () =>
             {
                 _logger.LogTrace("[Test:Teardown] Fallback remove Azure File share '{ShareName}' in account '{AccountName}'", _share.Name, _share.AccountName);
+
+                // ReSharper disable once MethodSupportsCancellation -- We want to ensure the share is deleted, even if the cancellation token is triggered.
                 await _share.DeleteIfExistsAsync();
             }));
         }

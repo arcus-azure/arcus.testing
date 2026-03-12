@@ -125,7 +125,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryShareFile> WhenFileCreatedAsync(FileClient client, Stream fileStream)
         {
-            var temp = await TemporaryShareFile.UpsertFileAsync(client, fileStream, Logger);
+            var temp = await TemporaryShareFile.UpsertFileAsync(client, fileStream, Logger, TestContext.Current.CancellationToken);
 
             Assert.Equal(client.Name, temp.Client.Name);
             return temp;
@@ -133,7 +133,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<FileShareTestContext> GivenFileShareAsync()
         {
-            return await FileShareTestContext.GivenAvailableAsync(Configuration, Logger);
+            return await FileShareTestContext.GivenAvailableAsync(Configuration, Logger, TestContext.Current.CancellationToken);
         }
     }
 }
