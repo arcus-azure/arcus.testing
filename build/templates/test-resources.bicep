@@ -19,7 +19,10 @@ param cosmosDbNoSqlName string
 // Define the name of the Cosmos DB for NoSQL database that will be created.
 param cosmosDbNoSqlDatabaseName string
 
-// Define the name of the Service Bus namespace resource that will be created.
+// Define the name of the Azure Event Hubs namespace that will be created.
+param eventHubsNamespaceName string
+
+// Define the name of the Service bus namespace resource that will be created.
 param serviceBusNamespaceName string
 
 // Define the name of the Key Vault where the necessary secrets will be stored to access the deployed test resources.
@@ -125,6 +128,27 @@ module cosmosDb_noSql 'br/public:avm/res/document-db/database-account:0.6.0' = {
     backupPolicyContinuousTier: null
     backupPolicyType: null
     backupStorageRedundancy: null
+  }
+}
+
+module eventHubsNamespace 'br/public:avm/res/event-hub/namespace:0.9.1' = {
+  name: 'eventHubsNamespaceDeployment'
+  params: {
+    name: eventHubsNamespaceName
+    location: location
+    skuName: 'Basic'
+    skuCapacity: 1
+    publicNetworkAccess: 'Enabled'
+    roleAssignments: [
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'Azure Event Hubs Data Sender'
+      }
+      {
+        principalId: servicePrincipal_objectId
+        roleDefinitionIdOrName: 'Azure Event Hubs Data Receiver'
+      }
+    ]
   }
 }
 
