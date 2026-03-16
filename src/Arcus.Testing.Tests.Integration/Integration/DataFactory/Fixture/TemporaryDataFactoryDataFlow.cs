@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Configuration;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
@@ -13,6 +14,7 @@ using Azure.ResourceManager;
 using Azure.ResourceManager.DataFactory;
 using Azure.ResourceManager.DataFactory.Models;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 {
@@ -35,6 +37,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         private readonly TestConfig _config;
         private readonly ArmClient _arm;
         private readonly DataFlowDataType _dataType;
+        private readonly CancellationToken _cancellationToken;
         private readonly ILogger _logger;
 
         private TemporaryBlobContainer _sourceContainer;
@@ -43,7 +46,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         private List<string> _flowletNames = new();
         private DataFactoryDataFlowResource _dataFlow;
 
-        private TemporaryDataFactoryDataFlow(DataFlowDataType dataType, TestConfig config, ILogger logger)
+        private TemporaryDataFactoryDataFlow(DataFlowDataType dataType, TestConfig config, ILogger logger, CancellationToken cancellationToken)
         {
             _dataType = dataType;
             _linkedServiceName = RandomizeWith("storage");
@@ -51,6 +54,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             _arm = new ArmClient(new DefaultAzureCredential());
             _config = config;
             _logger = logger;
+            _cancellationToken = cancellationToken;
 
             var env = config.GetAzureEnvironment();
             SubscriptionId = env.SubscriptionId;
@@ -106,7 +110,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             var dfOptions = new TempDataFlowOptions();
             tempDataFlowOptions?.Invoke(dfOptions);
 
-            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Csv, config, logger);
+            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Csv, config, logger, TestContext.Current.CancellationToken);
             try
             {
                 await temp.AddSourceBlobContainerAsync();
@@ -130,7 +134,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// </summary>
         public static async Task<TemporaryDataFactoryDataFlow> CreateWithJsonSinkSourceAsync(JsonDocForm docForm, TestConfig config, ILogger logger)
         {
-            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Json, config, logger);
+            var temp = new TemporaryDataFactoryDataFlow(DataFlowDataType.Json, config, logger, TestContext.Current.CancellationToken);
             try
             {
                 await temp.AddSourceBlobContainerAsync();
@@ -160,6 +164,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
         private async Task AddLinkedServiceAsync()
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             _logger.LogTrace("Adding Azure Blob storage linked service '{LinkedServiceName}' to Azure DataFactory '{DataFactoryName}'", _linkedServiceName, DataFactory.Name);
 
             ResourceIdentifier resourceId = DataFactoryLinkedServiceResource.CreateResourceIdentifier(SubscriptionId, ResourceGroupName, DataFactory.Name, _linkedServiceName);
@@ -169,7 +174,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
             {
                 AuthenticationType = AzureStorageAuthenticationType.AccountKey,
                 ConnectionString = StorageAccount.ConnectionString,
-            }));
+
+            }), cancellationToken: _cancellationToken);
         }
 
         private async Task AddCsvSourceAsync(AssertCsvOptions options, TempDataFlowOptions dataFlowOptions)
@@ -195,7 +201,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             dataFlowOptions?.Source.ApplyOptions(sourceProperties, SourceDataSetName);
 
-            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
+            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties), cancellationToken: _cancellationToken);
         }
 
         private async Task AddJsonSourceAsync()
@@ -214,7 +220,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     FolderPath = SourceDataSetName
                 }
             };
-            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties));
+            await _sourceDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sourceProperties), cancellationToken: _cancellationToken);
         }
 
         private async Task AddCsvSinkAsync(AssertCsvOptions options, TempDataFlowOptions dataFlowOptions)
@@ -240,7 +246,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
 
             dataFlowOptions?.Sink.ApplyOptions(sinkProperties, SinkDataSetName);
 
-            await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
+            await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties), cancellationToken: _cancellationToken);
         }
 
         private async Task AddJsonSinkAsync()
@@ -259,17 +265,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     FolderPath = SinkDataSetName
                 }
             };
-            await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties));
+            await _sinkDataset.UpdateAsync(WaitUntil.Completed, new DataFactoryDatasetData(sinkProperties), cancellationToken: _cancellationToken);
         }
 
         private async Task AddFlowletsAsync(TempDataFlowOptions dataFlowOptions)
         {
-            if (dataFlowOptions?.FlowletNames.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var flowletName in dataFlowOptions?.FlowletNames)
+            foreach (var flowletName in dataFlowOptions.FlowletNames)
             {
                 _logger.LogTrace("Adding Flowlet '{FlowletName}' to DataFlow '{DataFlowName}' within Azure DataFactory '{DataFactoryName}'", flowletName, Name, DataFactory.Name);
                 _flowletNames.Add(flowletName);
@@ -296,7 +297,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     properties.ScriptLines.Add(item);
                 }
 
-                await flowlet.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
+                await flowlet.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties), cancellationToken: _cancellationToken);
             }
         }
 
@@ -355,7 +356,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 properties.ScriptLines.Add(line);
             }
 
-            await _dataFlow.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties));
+            await _dataFlow.UpdateAsync(WaitUntil.Completed, new DataFactoryDataFlowData(properties), cancellationToken: _cancellationToken);
         }
 
         private static IEnumerable<string> DataFlowParametersScriptLines(IDictionary<string, string> dataFlowParameters)
@@ -509,7 +510,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("Deleting DataFlow '{DataFlowName}' from Azure DataFactory '{DataFactoryName}'", Name, DataFactory.Name);
-                    await _dataFlow.DeleteAsync(WaitUntil.Completed);
+                    await _dataFlow.DeleteAsync(WaitUntil.Completed, cancellationToken: CancellationToken.None);
                 }));
             }
 
@@ -518,7 +519,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("Deleting CSV source '{SourceName}' from Azure DataFactory '{DataFactoryName}'", SourceDataSetName, DataFactory.Name);
-                    await _sourceDataset.DeleteAsync(WaitUntil.Completed);
+                    await _sourceDataset.DeleteAsync(WaitUntil.Completed, cancellationToken: CancellationToken.None);
                 }));
             }
 
@@ -527,7 +528,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("Deleting CSV sink '{SinkName}' from Azure DataFactory '{DataFactoryName}'", SinkDataSetName, DataFactory.Name);
-                    await _sinkDataset.DeleteAsync(WaitUntil.Completed);
+                    await _sinkDataset.DeleteAsync(WaitUntil.Completed, cancellationToken: CancellationToken.None);
                 }));
             }
 
@@ -538,9 +539,9 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                     foreach (string flowletName in _flowletNames)
                     {
                         DataFactoryDataFlowResource flowlet = GetFlowlet(SubscriptionId, ResourceGroupName, DataFactory.Name, _arm, flowletName);
-                        var flowletResource = await flowlet.GetAsync();
+                        var flowletResource = await flowlet.GetAsync(cancellationToken: CancellationToken.None);
                         _logger.LogTrace("Deleting flowlet '{FlowletName}' from Azure DataFactory '{DataFactoryName}'", flowletResource.Value.Data.Name, DataFactory.Name);
-                        await flowlet.DeleteAsync(WaitUntil.Completed);
+                        await flowlet.DeleteAsync(WaitUntil.Completed, cancellationToken: CancellationToken.None);
                     }
                 }));
             }
@@ -550,7 +551,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
                     _logger.LogTrace("Deleting Azure Blob storage linked service '{LinkedServiceName}' from Azure DataFactory '{DataFactoryName}'", _linkedServiceName, DataFactory.Name);
-                    await _linkedService.DeleteAsync(WaitUntil.Completed);
+                    await _linkedService.DeleteAsync(WaitUntil.Completed, cancellationToken: CancellationToken.None);
                 }));
             }
         }
@@ -570,7 +571,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory.Fixture
         /// Gets the unique key and values of the parameters of the temporary Data Flow in Azure DataFactory.
         /// </summary>
         public IDictionary<string, string> DataFlowParameters { get; } = new Dictionary<string, string>();
-        public List<string> FlowletNames { get; } = new();
+        public List<string> FlowletNames { get; } = [];
     }
 
     public class TempDataFlowSourceOptions

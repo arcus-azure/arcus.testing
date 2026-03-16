@@ -22,7 +22,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
         public async Task StartDebugSession_WithActiveSession_SucceedsByReusingSession()
         {
             await using (var otherSession = await TemporaryDataFlowDebugSession.StartDebugSessionAsync(DataFactory.ResourceId, Logger,
-                options => options.ActiveSessionId = _fixture.Value.SessionId))
+                options => options.ActiveSessionId = _fixture.Value.SessionId, TestContext.Current.CancellationToken))
             {
                 // Assert
                 Assert.Equal(_fixture.Value.SessionId, otherSession.SessionId);

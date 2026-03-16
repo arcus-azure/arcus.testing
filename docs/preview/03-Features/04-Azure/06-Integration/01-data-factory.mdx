@@ -31,7 +31,7 @@ ResourceIdentifier dataFactoryResourceId =
     DataFactoryResource.CreateResourceIdentifier("<subscription-id>", "<resource-group>", "<factory-name>");
 
 await using var session = 
-  await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactoryResourceId, logger);
+  await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactoryResourceId, logger, cancellationToken);
 ```
 
 > ⚡ Uses by default the `DefaultAzureCredential` but other types of authentication mechanism are supported with overloads that take in the `DataFactoryResource` directly:
@@ -193,7 +193,7 @@ using Arcus.Testing;
 await using TemporaryDataFlowDebugSession session = ...
 
 DataFlowRunResult result = 
-    await session.RunDataFlowAsync("<dataflow-name>", "<target-sink-name>");
+    await session.RunDataFlowAsync("<dataflow-name>", "<target-sink-name>", cancellationToken);
 
 // The run status of data preview, statistics or expression preview.
 string status = result.Status;

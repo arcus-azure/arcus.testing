@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -65,6 +66,7 @@ namespace Arcus.Testing
         private readonly ILogger _logger;
 
         private bool _isDisposed;
+        private readonly DataFactoryResource _dataFactory;
 
         private TemporaryDataFlowDebugSession(bool startedByUs, Guid sessionId, DataFactoryResource resource, ILogger logger)
         {
@@ -72,15 +74,22 @@ namespace Arcus.Testing
 
             _startedByUs = startedByUs;
             _sessionId = sessionId;
+            _dataFactory = resource;
             _logger = logger ?? NullLogger.Instance;
-
-            DataFactory = resource;
         }
 
         /// <summary>
         /// Gets the Azure Data Factory resource where the active data flow debug session is started.
         /// </summary>
-        private DataFactoryResource DataFactory { get; }
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        private DataFactoryResource DataFactory
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_isDisposed, this);
+                return _dataFactory;
+            }
+        }
 
         /// <summary>
         /// Gets the session ID of the active data flow debug session.
@@ -115,6 +124,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(StartDebugSessionAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(ResourceIdentifier dataFactoryResourceId, ILogger logger)
         {
             return StartDebugSessionAsync(dataFactoryResourceId, logger, configureOptions: null);
@@ -125,7 +135,33 @@ namespace Arcus.Testing
         /// </summary>
         /// <remarks>
         ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
-        ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,Action{TemporaryDataFlowDebugSessionOptions})"/> overload to provide a custom authentication mechanism.
+        ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,CancellationToken)"/> overload to provide a custom authentication mechanism.
+        /// </remarks>
+        /// <param name="dataFactoryResourceId">
+        ///   <para>The resource ID to the Azure Data Factory instance where to start the active data flow debug session.</para>
+        ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier dataFactoryResourceId =
+        ///           DataFactoryResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;factory-name&gt;");
+        ///     </code>
+        ///   </example>  
+        /// </param>
+        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(ResourceIdentifier dataFactoryResourceId, ILogger logger, CancellationToken cancellationToken)
+        {
+            return StartDebugSessionAsync(dataFactoryResourceId, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="dataFactoryResourceId"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
+        ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,Action{TemporaryDataFlowDebugSessionOptions},CancellationToken)"/> overload to provide a custom authentication mechanism.
         /// </remarks>
         /// <param name="dataFactoryResourceId">
         ///   <para>The resource ID to the Azure Data Factory instance where to start the active data flow debug session.</para>
@@ -140,17 +176,49 @@ namespace Arcus.Testing
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(StartDebugSessionAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
             ResourceIdentifier dataFactoryResourceId,
             ILogger logger,
             Action<TemporaryDataFlowDebugSessionOptions> configureOptions)
         {
+            return StartDebugSessionAsync(dataFactoryResourceId, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="dataFactoryResourceId"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Uses <see cref="DefaultAzureCredential"/> for authentication;
+        ///     use the <see cref="StartDebugSessionAsync(DataFactoryResource,ILogger,Action{TemporaryDataFlowDebugSessionOptions},CancellationToken)"/> overload to provide a custom authentication mechanism.
+        /// </remarks>
+        /// <param name="dataFactoryResourceId">
+        ///   <para>The resource ID to the Azure Data Factory instance where to start the active data flow debug session.</para>
+        ///   <para>The resource ID can be constructed via <see cref="DataFactoryResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier dataFactoryResourceId =
+        ///           DataFactoryResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;factory-name&gt;");
+        ///     </code>
+        ///   </example>  
+        /// </param>        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
+        /// <param name="configureOptions">The function to configure the options of the debug session.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="dataFactoryResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
+            ResourceIdentifier dataFactoryResourceId,
+            ILogger logger,
+            Action<TemporaryDataFlowDebugSessionOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(dataFactoryResourceId);
 
             var armClient = new ArmClient(new DefaultAzureCredential());
             DataFactoryResource resource = armClient.GetDataFactoryResource(dataFactoryResourceId);
 
-            return StartDebugSessionAsync(resource, logger, configureOptions);
+            return StartDebugSessionAsync(resource, logger, configureOptions, cancellationToken);
         }
 
         /// <summary>
@@ -170,6 +238,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(StartDebugSessionAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(DataFactoryResource resource, ILogger logger)
         {
             return StartDebugSessionAsync(resource, logger, configureOptions: null);
@@ -190,21 +259,74 @@ namespace Arcus.Testing
         ///   </example>
         /// </param>
         /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(DataFactoryResource resource, ILogger logger, CancellationToken cancellationToken)
+        {
+            return StartDebugSessionAsync(resource, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="resource"/>.
+        /// </summary>
+        /// <param name="resource">
+        ///   <para>The resource to start the active data flow debug session for.</para>
+        ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       var credential = new DefaultAzureCredential();
+        ///       var arm = new ArmClient(credential);
+        ///       DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
         /// <param name="configureOptions">The function to configure the options of the debug session.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(StartDebugSessionAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
+            DataFactoryResource resource,
+            ILogger logger,
+            Action<TemporaryDataFlowDebugSessionOptions> configureOptions)
+        {
+            return StartDebugSessionAsync(resource, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Starts a new active Azure Data Factory data flow debug session for the given <paramref name="resource"/>.
+        /// </summary>
+        /// <param name="resource">
+        ///   <para>The resource to start the active data flow debug session for.</para>
+        ///   <para>The resource should be retrieved via the <see cref="ArmClient"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       var credential = new DefaultAzureCredential();
+        ///       var arm = new ArmClient(credential);
+        ///       DataFactoryResource resource = arm.GetDataFactoryResource(dataFactoryResourceId);
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="logger">The logger to write diagnostic messages during the debug session.</param>
+        /// <param name="configureOptions">The function to configure the options of the debug session.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="resource"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the starting of the data flow debug session did not result in a session ID.</exception>
         public static async Task<TemporaryDataFlowDebugSession> StartDebugSessionAsync(
             DataFactoryResource resource,
             ILogger logger,
-            Action<TemporaryDataFlowDebugSessionOptions> configureOptions)
+            Action<TemporaryDataFlowDebugSessionOptions> configureOptions,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(resource);
             logger ??= NullLogger.Instance;
 
             var options = new TemporaryDataFlowDebugSessionOptions();
             configureOptions?.Invoke(options);
 
-            DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId).ConfigureAwait(false);
+            DataFlowDebugSessionInfo activeSession = await GetActiveDebugSessionOrDefaultAsync(resource, options.ActiveSessionId, cancellationToken).ConfigureAwait(false);
             if (activeSession is not null)
             {
                 logger.LogSetupReusingSession(resource.Id.Name, activeSession.SessionId);
@@ -213,7 +335,7 @@ namespace Arcus.Testing
 
             logger.LogSetupStartingSession(resource.Id.Name);
             ArmOperation<DataFactoryDataFlowCreateDebugSessionResult> result =
-                await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent { TimeToLiveInMinutes = options.TimeToLiveInMinutes })
+                await resource.CreateDataFlowDebugSessionAsync(WaitUntil.Completed, new DataFactoryDataFlowDebugSessionContent { TimeToLiveInMinutes = options.TimeToLiveInMinutes }, cancellationToken)
                               .ConfigureAwait(false);
 
             Guid sessionId = result.Value.SessionId ?? throw new InvalidOperationException($"[Test:Setup] Starting Data Factory '{resource.Id.Name}' data flow debug session did not result in a session ID");
@@ -222,14 +344,15 @@ namespace Arcus.Testing
             return new TemporaryDataFlowDebugSession(startedByUs: true, sessionId, resource, logger);
         }
 
-        private static async Task<DataFlowDebugSessionInfo> GetActiveDebugSessionOrDefaultAsync(DataFactoryResource resource, Guid existingSessionId)
+        private static async Task<DataFlowDebugSessionInfo> GetActiveDebugSessionOrDefaultAsync(DataFactoryResource resource, Guid existingSessionId, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (existingSessionId == Guid.Empty)
             {
                 return null;
             }
 
-            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync().ConfigureAwait(false))
+            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (existingSessionId == session.SessionId)
                 {
@@ -251,9 +374,27 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(RunDataFlowAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task<DataFlowRunResult> RunDataFlowAsync(string dataFlowName, string targetSinkName)
         {
             return RunDataFlowAsync(dataFlowName, targetSinkName, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Starts a given data flow within the debug session,
+        /// which should give a result in the <paramref name="targetSinkName"/>.
+        /// </summary>
+        /// <param name="dataFlowName">The name of the data flow to start.</param>
+        /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <returns>The final result of the data flow run.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
+        /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
+        public Task<DataFlowRunResult> RunDataFlowAsync(string dataFlowName, string targetSinkName, CancellationToken cancellationToken)
+        {
+            return RunDataFlowAsync(dataFlowName, targetSinkName, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -268,11 +409,35 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
         /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
-        public async Task<DataFlowRunResult> RunDataFlowAsync(
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(RunDataFlowAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task<DataFlowRunResult> RunDataFlowAsync(
             string dataFlowName,
             string targetSinkName,
             Action<RunDataFlowOptions> configureOptions)
         {
+            return RunDataFlowAsync(dataFlowName, targetSinkName, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Starts a given data flow within the debug session,
+        /// which should give a result in the <paramref name="targetSinkName"/>.
+        /// </summary>
+        /// <param name="dataFlowName">The name of the data flow to start.</param>
+        /// <param name="targetSinkName">The name of the target sink to get the result from.</param>
+        /// <param name="configureOptions">The function to configure the options of the data flow run.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <returns>The final result of the data flow run.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="dataFlowName"/> or <paramref name="targetSinkName"/> is blank.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the data flow execution did not result in a successful status.</exception>
+        /// <exception cref="RequestFailedException">Thrown when one or more interactions with the Azure DataFactory resource failed.</exception>
+        public async Task<DataFlowRunResult> RunDataFlowAsync(
+            string dataFlowName,
+            string targetSinkName,
+            Action<RunDataFlowOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ObjectDisposedException.ThrowIf(_isDisposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(dataFlowName);
             ArgumentException.ThrowIfNullOrWhiteSpace(targetSinkName);
@@ -280,33 +445,34 @@ namespace Arcus.Testing
             var options = new RunDataFlowOptions();
             configureOptions?.Invoke(options);
 
-            await StartDataFlowAsync(dataFlowName, options).ConfigureAwait(false);
+            await StartDataFlowAsync(dataFlowName, options, cancellationToken).ConfigureAwait(false);
 
-            return await GetDataFlowResultAsync(dataFlowName, targetSinkName, options).ConfigureAwait(false);
+            return await GetDataFlowResultAsync(dataFlowName, targetSinkName, options, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task StartDataFlowAsync(string dataFlowName, RunDataFlowOptions options)
+        private async Task StartDataFlowAsync(string dataFlowName, RunDataFlowOptions options, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogSetupAddDataFlowToSession(dataFlowName, DataFactory.Id.Name);
-            DataFactoryDataFlowResource dataFlow = await DataFactory.GetDataFactoryDataFlowAsync(dataFlowName).ConfigureAwait(false);
+            DataFactoryDataFlowResource dataFlow = await DataFactory.GetDataFactoryDataFlowAsync(dataFlowName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var debug = new DataFactoryDataFlowDebugPackageContent
             {
-                DataFlow = new DataFactoryDataFlowDebugInfo(dataFlow.Data.Properties) { Name = dataFlowName },
+                DataFlow = new(dataFlow.Data.Properties) { Name = dataFlowName },
                 DebugSettings = CreateDebugSettings(options),
                 SessionId = SessionId
             };
 
             foreach (string serviceName in options.LinkedServiceNames)
             {
-                await AddLinkedServiceAsync(debug, DataFactory, serviceName).ConfigureAwait(false);
+                await AddLinkedServiceAsync(debug, DataFactory, serviceName, cancellationToken).ConfigureAwait(false);
             }
 
-            await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow).ConfigureAwait(false);
-            await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow).ConfigureAwait(false);
-            await AddDebugVariantsOfFlowletsAsync(debug, DataFactory, options).ConfigureAwait(false);
+            await AddDebugVariantsOfDataFlowSourcesAsync(debug, DataFactory, dataFlow, cancellationToken).ConfigureAwait(false);
+            await AddDebugVariantsOfDataFlowSinksAsync(debug, DataFactory, dataFlow, cancellationToken).ConfigureAwait(false);
+            await AddDebugVariantsOfFlowletsAsync(debug, DataFactory, options, cancellationToken).ConfigureAwait(false);
 
-            await DataFactory.AddDataFlowToDebugSessionAsync(debug).ConfigureAwait(false);
+            await DataFactory.AddDataFlowToDebugSessionAsync(debug, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         private DataFlowDebugPackageDebugSettings CreateDebugSettings(RunDataFlowOptions options)
@@ -336,17 +502,19 @@ namespace Arcus.Testing
         private async Task AddDebugVariantsOfDataFlowSourcesAsync(
             DataFactoryDataFlowDebugPackageContent debug,
             DataFactoryResource dataFactory,
-            DataFactoryDataFlowResource dataFlow)
+            DataFactoryDataFlowResource dataFlow,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (dataFlow.Data.Properties is DataFactoryMappingDataFlowProperties properties)
             {
                 foreach (DataFlowSource source in properties.Sources)
                 {
-                    debug.DebugSettings.SourceSettings.Add(new DataFlowSourceSetting { SourceName = source.Name, RowLimit = 100 });
+                    debug.DebugSettings.SourceSettings.Add(new() { SourceName = source.Name, RowLimit = 100 });
                     if (source.Dataset != null)
                     {
-                        DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, source.Dataset.ReferenceName).ConfigureAwait(false);
-                        await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName).ConfigureAwait(false);
+                        DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, source.Dataset.ReferenceName, cancellationToken).ConfigureAwait(false);
+                        await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -355,15 +523,17 @@ namespace Arcus.Testing
         private async Task AddDebugVariantsOfDataFlowSinksAsync(
             DataFactoryDataFlowDebugPackageContent debug,
             DataFactoryResource dataFactory,
-            DataFactoryDataFlowResource dataFlow)
+            DataFactoryDataFlowResource dataFlow,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (dataFlow.Data.Properties is DataFactoryMappingDataFlowProperties properties)
             {
                 DataFlowSink[] sinks = properties.Sinks.Where(s => s != null).ToArray();
                 foreach (DataFlowSink sink in sinks)
                 {
-                    DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, sink.Dataset.ReferenceName).ConfigureAwait(false);
-                    await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName).ConfigureAwait(false);
+                    DataFactoryDatasetResource dataset = await AddDataSetAsync(debug, dataFactory, sink.Dataset.ReferenceName, cancellationToken).ConfigureAwait(false);
+                    await AddLinkedServiceAsync(debug, dataFactory, dataset.Data.Properties.LinkedServiceName.ReferenceName, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -371,8 +541,10 @@ namespace Arcus.Testing
         private async Task AddDebugVariantsOfFlowletsAsync(
             DataFactoryDataFlowDebugPackageContent debug,
             DataFactoryResource dataFactory,
-            RunDataFlowOptions options)
+            RunDataFlowOptions options,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (options.FlowletNames.Count == 0)
             {
                 return;
@@ -382,36 +554,46 @@ namespace Arcus.Testing
             {
                 _logger.LogSetupAddFlowletToSession(flowletName, dataFactory.Id.Name);
 
-                DataFactoryDataFlowResource flowlet = (await dataFactory.GetDataFactoryDataFlowAsync(flowletName).ConfigureAwait(false)).Value;
-
-                var dataFactoryFlowletDebugInfo = new DataFactoryDataFlowDebugInfo(flowlet.Data.Properties)
-                {
-                    Name = flowletName
-                };
-                debug.DataFlows.Add(dataFactoryFlowletDebugInfo);
+                DataFactoryDataFlowResource flowlet = await dataFactory.GetDataFactoryDataFlowAsync(flowletName, cancellationToken: cancellationToken).ConfigureAwait(false);
+                debug.DataFlows.Add(new(flowlet.Data.Properties) { Name = flowletName });
             }
         }
 
-        private async Task<DataFactoryDatasetResource> AddDataSetAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string datasetName)
+        private async Task<DataFactoryDatasetResource> AddDataSetAsync(
+            DataFactoryDataFlowDebugPackageContent debug,
+            DataFactoryResource dataFactory,
+            string datasetName,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogSetupAddDatasetToSession(datasetName, dataFactory.Id.Name);
 
-            DataFactoryDatasetResource dataset = await dataFactory.GetDataFactoryDatasetAsync(datasetName).ConfigureAwait(false);
-            debug.Datasets.Add(new DataFactoryDatasetDebugInfo(dataset.Data.Properties) { Name = dataset.Data.Name });
+            DataFactoryDatasetResource dataset = await dataFactory.GetDataFactoryDatasetAsync(datasetName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            debug.Datasets.Add(new(dataset.Data.Properties) { Name = dataset.Data.Name });
 
             return dataset;
         }
 
-        private async Task AddLinkedServiceAsync(DataFactoryDataFlowDebugPackageContent debug, DataFactoryResource dataFactory, string serviceName)
+        private async Task AddLinkedServiceAsync(
+            DataFactoryDataFlowDebugPackageContent debug,
+            DataFactoryResource dataFactory,
+            string serviceName,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogSetupAddLinkedServiceToSession(serviceName, dataFactory.Id.Name);
 
-            DataFactoryLinkedServiceResource linkedService = await dataFactory.GetDataFactoryLinkedServiceAsync(serviceName).ConfigureAwait(false);
-            debug.LinkedServices.Add(new DataFactoryLinkedServiceDebugInfo(linkedService.Data.Properties) { Name = linkedService.Data.Name });
+            DataFactoryLinkedServiceResource linkedService = await dataFactory.GetDataFactoryLinkedServiceAsync(serviceName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            debug.LinkedServices.Add(new(linkedService.Data.Properties) { Name = linkedService.Data.Name });
         }
 
-        private async Task<DataFlowRunResult> GetDataFlowResultAsync(string dataFlowName, string targetSinkName, RunDataFlowOptions options)
+        private async Task<DataFlowRunResult> GetDataFlowResultAsync(
+            string dataFlowName,
+            string targetSinkName,
+            RunDataFlowOptions options,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _logger.LogRunDataFlow(dataFlowName, targetSinkName);
 
             ArmOperation<DataFactoryDataFlowDebugCommandResult> result =
@@ -424,7 +606,7 @@ namespace Arcus.Testing
                     },
                     SessionId = SessionId
 
-                }).ConfigureAwait(false);
+                }, cancellationToken).ConfigureAwait(false);
 
             if (result.Value.Status != "Succeeded")
             {
@@ -450,7 +632,7 @@ namespace Arcus.Testing
             if (_startedByUs)
             {
                 _logger.LogTeardownStopSession(DataFactory.Id.Name, _sessionId);
-                await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = _sessionId }).ConfigureAwait(false);
+                await DataFactory.DeleteDataFlowDebugSessionAsync(new DeleteDataFlowDebugSessionContent { SessionId = _sessionId }, CancellationToken.None).ConfigureAwait(false);
             }
 
             _isDisposed = true;

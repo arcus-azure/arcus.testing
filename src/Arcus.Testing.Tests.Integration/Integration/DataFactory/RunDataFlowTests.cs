@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Core.Assert_.Fixture;
 using Arcus.Testing.Tests.Core.Integration.DataFactory;
@@ -46,7 +47,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             await dataFlow.UploadToSourceAsync(expected!.ToString());
 
             // Act
-            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, TestContext.Current.CancellationToken);
 
             // Assert
             AssertJson.Equal(expected, result.GetDataAsJson());
@@ -62,7 +63,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             await dataFlow.UploadToSourceAsync(expectedCsv);
 
             // Act
-            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName);
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, TestContext.Current.CancellationToken);
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
@@ -96,12 +97,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(
                 dataFlow.Name,
                 dataFlow.SinkName,
-                options =>
+                cancellationToken: TestContext.Current.CancellationToken,
+                configureOptions: options =>
                 {
                     options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
                     options.AddDataSetParameters(dataFlow.SinkName, sinkDataSetParameterKeyValues);
-                }
-            );
+                });
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
@@ -145,11 +146,12 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             await dataFlow.UploadToSourceAsync(expectedCsv, sourceDataSetParameterKeyValues.Select(d => d.Value).ToArray());
 
             // Act
-            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
-            {
-                options.AddDataFlowParameters(dataFlowParametersWithValues);
-                options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
-            });
+            DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, cancellationToken: TestContext.Current.CancellationToken,
+                configureOptions: options =>
+                {
+                    options.AddDataFlowParameters(dataFlowParametersWithValues);
+                    options.AddDataSetParameters(dataFlow.SourceName, sourceDataSetParameterKeyValues);
+                });
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
@@ -197,7 +199,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             DataFlowRunResult result = await _session.Value.RunDataFlowAsync(dataFlow.Name, dataFlow.SinkName, options =>
             {
                 options.AddFlowlet(flowletName);
-            });
+
+            }, TestContext.Current.CancellationToken);
 
             // Assert
             CsvTable expected = AssertCsv.Load(expectedCsv, ConfigureCsv);
@@ -300,12 +303,13 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             Guid unknownSessionId = Guid.NewGuid();
 
             Value = Bogus.Random.Bool()
-                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance)
+                ? await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, TestContext.Current.CancellationToken)
                 : await TemporaryDataFlowDebugSession.StartDebugSessionAsync(dataFactory.ResourceId, NullLogger.Instance, opt =>
                 {
                     opt.TimeToLiveInMinutes = Bogus.Random.Int(10, 15);
                     opt.ActiveSessionId = unknownSessionId;
-                });
+
+                }, TestContext.Current.CancellationToken);
 
             Assert.NotEqual(unknownSessionId, Value.SessionId);
             SessionId = Value.SessionId;
@@ -329,7 +333,7 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             DataFactoryResource resource = armClient.GetDataFactoryResource(resourceId);
 
             var isActive = false;
-            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync())
+            await foreach (DataFlowDebugSessionInfo session in resource.GetDataFlowDebugSessionsAsync(TestContext.Current.CancellationToken))
             {
                 if (session.SessionId == sessionId)
                 {
@@ -359,7 +363,8 @@ namespace Arcus.Testing.Tests.Integration.Integration.DataFactory
             }
 
             Assert.Throws<ObjectDisposedException>(() => Value.SessionId);
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word()));
+            await Assert.ThrowsAsync<ObjectDisposedException>(
+                () => Value.RunDataFlowAsync(Bogus.Lorem.Word(), Bogus.Lorem.Word(), CancellationToken.None));
         }
     }
 }
