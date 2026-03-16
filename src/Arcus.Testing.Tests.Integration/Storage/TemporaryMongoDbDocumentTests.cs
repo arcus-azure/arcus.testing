@@ -66,14 +66,13 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private async Task<TemporaryMongoDbDocument> WhenTempDocumentCreatedAsync<TDoc>(string collectionName, TDoc doc)
             where TDoc : class
         {
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-            return await TemporaryMongoDbDocument.InsertIfNotExistsAsync(
+            return await TemporaryMongoDbDocument.UpsertDocumentAsync(
                 MongoDb.AccountResourceId,
                 MongoDb.DatabaseName,
                 collectionName,
                 doc,
-                Logger);
-#pragma warning restore CS0618 // Type or member is obsolete
+                Logger,
+                TestContext.Current.CancellationToken);
         }
 
         public class Product

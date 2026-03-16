@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -188,7 +189,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning items) Configures the <see cref="TemporaryNoSqlContainer"/> to only delete or revert the NoSQL items
-        /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}"/>).
+        /// in an Azure Cosmos DB for NoSQL container upon disposal if the item was upserted by the test fixture (using <see cref="TemporaryNoSqlContainer.UpsertItemAsync{TItem}(TItem,CancellationToken)"/>).
         /// </summary>
         public OnTeardownNoSqlContainerOptions CleanUpsertedItems()
         {
@@ -396,6 +397,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CreateIfNotExistsAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbAccountResourceId,
             string databaseName,
@@ -410,6 +412,46 @@ namespace Arcus.Testing
                 partitionKeyPath,
                 logger,
                 configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB NoSQL container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbAccountResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
+        /// </exception>
+        public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbAccountResourceId,
+            string databaseName,
+            string containerName,
+            string partitionKeyPath,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(
+                cosmosDbAccountResourceId,
+                databaseName,
+                containerName,
+                partitionKeyPath,
+                logger,
+                configureOptions: null,
+                cancellationToken);
         }
 
         /// <summary>
@@ -434,6 +476,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CreateIfNotExistsAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbAccountResourceId,
             string databaseName,
@@ -450,6 +493,49 @@ namespace Arcus.Testing
                 partitionKeyPath,
                 logger,
                 configureOptions);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSql container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbAccountResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
+        /// </exception>
+        public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbAccountResourceId,
+            string databaseName,
+            string containerName,
+            string partitionKeyPath,
+            ILogger logger,
+            Action<TemporaryNoSqlContainerOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(
+                cosmosDbAccountResourceId,
+                new DefaultAzureCredential(),
+                databaseName,
+                containerName,
+                partitionKeyPath,
+                logger,
+                configureOptions,
+                cancellationToken);
         }
 
         /// <summary>
@@ -476,6 +562,7 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CreateIfNotExistsAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbAccountResourceId,
             TokenCredential credential,
@@ -510,9 +597,93 @@ namespace Arcus.Testing
         /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos DB resource.</param>
         /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
         /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSql item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="cosmosDbAccountResourceId"/> or the <paramref name="credential"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
+        /// </exception>
+        public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbAccountResourceId,
+            TokenCredential credential,
+            string databaseName,
+            string containerName,
+            string partitionKeyPath,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(
+                cosmosDbAccountResourceId,
+                credential,
+                databaseName,
+                containerName,
+                partitionKeyPath,
+                logger,
+                configureOptions: null,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSQL container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos DB resource.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
         /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="cosmosDbAccountResourceId"/> or the <paramref name="credential"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="databaseName"/>, <paramref name="containerName"/>, or the <paramref name="partitionKeyPath"/> is blank.
+        /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(CreateIfNotExistsAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryNoSqlContainer> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbAccountResourceId,
+            TokenCredential credential,
+            string databaseName,
+            string containerName,
+            string partitionKeyPath,
+            ILogger logger,
+            Action<TemporaryNoSqlContainerOptions> configureOptions)
+        {
+            return CreateIfNotExistsAsync(cosmosDbAccountResourceId, credential, databaseName, containerName, partitionKeyPath, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryNoSqlContainer"/> which creates a new Azure Cosmos DB for NoSQL container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbAccountResourceId">
+        ///   <para>The resource ID of the Azure Cosmos DB resource where the temporary NoSQL container should be created.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="credential">The credential implementation to authenticate with the Azure Cosmos DB resource.</param>
+        /// <param name="databaseName">The name of the existing NoSQL database in the Azure Cosmos DB resource.</param>
+        /// <param name="containerName">The name of the NoSQL container to be created within the Azure Cosmos DB resource.</param>
+        /// <param name="partitionKeyPath">The path to the partition key of the NoSQL item which describes how the items should be partitioned.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the NoSQL container.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="cosmosDbAccountResourceId"/> or the <paramref name="credential"/> is <c>null</c>.
         /// </exception>
@@ -526,8 +697,10 @@ namespace Arcus.Testing
             string containerName,
             string partitionKeyPath,
             ILogger logger,
-            Action<TemporaryNoSqlContainerOptions> configureOptions)
+            Action<TemporaryNoSqlContainerOptions> configureOptions,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(cosmosDbAccountResourceId);
             ArgumentNullException.ThrowIfNull(credential);
             ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
@@ -538,18 +711,18 @@ namespace Arcus.Testing
             var options = new TemporaryNoSqlContainerOptions();
             configureOptions?.Invoke(options);
 
-            CosmosDBAccountResource cosmosDb = await GetCosmosDbResourceAsync(cosmosDbAccountResourceId, credential).ConfigureAwait(false);
-            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(databaseName).ConfigureAwait(false);
+            CosmosDBAccountResource cosmosDb = await GetCosmosDbResourceAsync(cosmosDbAccountResourceId, credential, cancellationToken).ConfigureAwait(false);
+            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(databaseName, cancellationToken).ConfigureAwait(false);
 
             var cosmosClient = new CosmosClient(cosmosDb.Data.DocumentEndpoint, credential);
             Container containerClient = cosmosClient.GetContainer(databaseName, containerName);
 
-            if (await database.GetCosmosDBSqlContainers().ExistsAsync(containerName).ConfigureAwait(false))
+            if (await database.GetCosmosDBSqlContainers().ExistsAsync(containerName, cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingContainer(containerName, databaseName);
-                await CleanContainerOnSetupAsync(containerClient, options, logger).ConfigureAwait(false);
+                await CleanContainerOnSetupAsync(containerClient, options, logger, cancellationToken).ConfigureAwait(false);
 
-                CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName).ConfigureAwait(false);
+                CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName, cancellationToken).ConfigureAwait(false);
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: false, options, logger);
             }
             else
@@ -557,7 +730,7 @@ namespace Arcus.Testing
                 logger.LogSetupCreateNewContainer(containerName, databaseName);
 
                 var properties = new ContainerProperties(containerName, partitionKeyPath);
-                CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties).ConfigureAwait(false);
+                CosmosDBSqlContainerResource container = await CreateNewNoSqlContainerAsync(cosmosDb, database, properties, cancellationToken).ConfigureAwait(false);
 
                 return new TemporaryNoSqlContainer(cosmosClient, containerClient, container, createdByUs: true, options, logger);
             }
@@ -566,8 +739,11 @@ namespace Arcus.Testing
         private static async Task<CosmosDBSqlContainerResource> CreateNewNoSqlContainerAsync(
             CosmosDBAccountResource cosmosDb,
             CosmosDBSqlDatabaseResource database,
-            ContainerProperties properties)
+            ContainerProperties properties,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var partitionKey = new CosmosDBContainerPartitionKey();
             foreach (string path in properties.PartitionKeyPaths)
             {
@@ -580,22 +756,28 @@ namespace Arcus.Testing
             };
             var request = new CosmosDBSqlContainerCreateOrUpdateContent(cosmosDb.Data.Location, newContainer);
             await database.GetCosmosDBSqlContainers()
-                          .CreateOrUpdateAsync(WaitUntil.Completed, properties.Id, request)
+                          .CreateOrUpdateAsync(WaitUntil.Completed, properties.Id, request, cancellationToken)
                           .ConfigureAwait(false);
 
-            return await database.GetCosmosDBSqlContainerAsync(properties.Id).ConfigureAwait(false);
+            return await database.GetCosmosDBSqlContainerAsync(properties.Id, cancellationToken).ConfigureAwait(false);
         }
 
-        private static Task<Azure.Response<CosmosDBAccountResource>> GetCosmosDbResourceAsync(ResourceIdentifier cosmosDbAccountResourceId, TokenCredential credential)
+        private static Task<Azure.Response<CosmosDBAccountResource>> GetCosmosDbResourceAsync(
+            ResourceIdentifier cosmosDbAccountResourceId,
+            TokenCredential credential,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var arm = new ArmClient(credential);
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(cosmosDbAccountResourceId);
 
-            return cosmosDb.GetAsync();
+            return cosmosDb.GetAsync(cancellationToken);
         }
 
-        private static Task CleanContainerOnSetupAsync(Container container, TemporaryNoSqlContainerOptions options, ILogger logger)
+        private static Task CleanContainerOnSetupAsync(Container container, TemporaryNoSqlContainerOptions options, ILogger logger, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (options.OnSetup.Items is OnSetupNoSqlContainer.LeaveExisted)
             {
                 return Task.CompletedTask;
@@ -603,10 +785,11 @@ namespace Arcus.Testing
 
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfExisted)
             {
-                return ForEachItemAsync(container, async (id, partitionKey, _) =>
+                return ForEachItemAsync(container, async (id, partitionKey, _, token) =>
                 {
+                    token.ThrowIfCancellationRequested();
                     logger.LogSetupDeleteItem(id, partitionKey, container.Database.Id, container.Id);
-                    using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                    using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey, cancellationToken: token).ConfigureAwait(false);
 
                     if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                     {
@@ -614,17 +797,19 @@ namespace Arcus.Testing
                             $"[Test:Setup] Failed to delete NoSQL item '{id}' {partitionKey} in Azure Cosmos DB for NoSQL container '{container.Database.Id}/{container.Id}' " +
                             $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                     }
-                });
+
+                }, cancellationToken);
             }
 
             if (options.OnSetup.Items is OnSetupNoSqlContainer.CleanIfMatched)
             {
-                return ForEachItemAsync(container, async (id, partitionKey, doc) =>
+                return ForEachItemAsync(container, async (id, partitionKey, doc, token) =>
                 {
+                    token.ThrowIfCancellationRequested();
                     if (options.OnSetup.IsMatched(id, partitionKey, doc, container.Database.Client))
                     {
                         logger.LogSetupDeleteMatchedItem(id, partitionKey, container.Database.Id, container.Id);
-                        using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey).ConfigureAwait(false);
+                        using ResponseMessage response = await container.DeleteItemStreamAsync(id, partitionKey, cancellationToken: token).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.NotFound)
                         {
@@ -633,7 +818,8 @@ namespace Arcus.Testing
                                 $"since the delete operation responded with a failure: {(int) response.StatusCode} {response.StatusCode}: {response.ErrorMessage}");
                         }
                     }
-                });
+
+                }, cancellationToken);
             }
 
             return Task.CompletedTask;
@@ -645,11 +831,8 @@ namespace Arcus.Testing
         /// <typeparam name="T">The custom NoSQL model.</typeparam>
         /// <param name="item">The item to create in the NoSQL container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
-        public Task AddItemAsync<T>(T item)
-        {
-            return UpsertItemAsync(item);
-        }
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task AddItemAsync<T>(T item) => UpsertItemAsync(item);
 
         /// <summary>
         /// Adds a new or replaces an existing NoSQL item in the Azure Cosmos DB for NoSQL container (a.k.a. UPSERT).
@@ -661,11 +844,27 @@ namespace Arcus.Testing
         /// <param name="item">The item to create in the Azure Cosmos DB for NoSQL container.</param>
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
-        public async Task UpsertItemAsync<TItem>(TItem item)
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " overload instead with cancellation token support")]
+        public Task UpsertItemAsync<TItem>(TItem item) => UpsertItemAsync(item, CancellationToken.None);
+
+        /// <summary>
+        /// Adds a new or replaces an existing NoSQL item in the Azure Cosmos DB for NoSQL container (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryNoSqlContainer"/> is disposed.
+        /// </remarks>
+        /// <param name="item">The item to create in the Azure Cosmos DB for NoSQL container.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="item"/> is <c>null</c>.</exception>
+        public async Task UpsertItemAsync<TItem>(TItem item, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(item);
-            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(_containerClient, item, _logger).ConfigureAwait(false));
+
+            _items.Add(await TemporaryNoSqlItem.UpsertItemAsync(_containerClient, item, _logger, cancellationToken).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -709,7 +908,7 @@ namespace Arcus.Testing
                 return;
             }
 
-            await ForEachItemAsync((id, partitionKey, doc) =>
+            await ForEachItemAsync((id, partitionKey, doc, _) =>
             {
                 disposables.Add(AsyncDisposable.Create(async () =>
                 {
@@ -733,7 +932,7 @@ namespace Arcus.Testing
 
                 return Task.CompletedTask;
 
-            }).ConfigureAwait(false);
+            }, CancellationToken.None).ConfigureAwait(false);
         }
 
         private async Task DeleteItemAsync(string id, PartitionKey partitionKey)
@@ -748,26 +947,30 @@ namespace Arcus.Testing
             }
         }
 
-        private Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
+        private Task ForEachItemAsync(Func<string, PartitionKey, JsonObject, CancellationToken, Task> deleteItemAsync, CancellationToken cancellationToken)
         {
-            return ForEachItemAsync(_containerClient, deleteItemAsync);
+            return ForEachItemAsync(_containerClient, deleteItemAsync, cancellationToken);
         }
 
-        private static async Task ForEachItemAsync(Container container, Func<string, PartitionKey, JsonObject, Task> deleteItemAsync)
+        private static async Task ForEachItemAsync(
+            Container container,
+            Func<string, PartitionKey, JsonObject, CancellationToken, Task> deleteItemAsync,
+            CancellationToken cancellationToken)
         {
-            ContainerResponse resp = await container.ReadContainerAsync().ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            ContainerResponse resp = await container.ReadContainerAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             ContainerProperties properties = resp.Resource;
 
             using FeedIterator iterator = container.GetItemQueryStreamIterator();
             while (iterator.HasMoreResults)
             {
-                using ResponseMessage message = await iterator.ReadNextAsync().ConfigureAwait(false);
+                using ResponseMessage message = await iterator.ReadNextAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 if (!message.IsSuccessStatusCode)
                 {
                     continue;
                 }
 
-                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions).ConfigureAwait(false);
+                JsonNode json = await JsonNode.ParseAsync(message.Content, DeserializeOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 if (json is not JsonObject root
                     || !root.TryGetPropertyValue("Documents", out JsonNode docs)
@@ -785,7 +988,7 @@ namespace Arcus.Testing
                     }
 
                     PartitionKey partitionKey = ExtractPartitionKeyFromItem(doc, properties);
-                    await deleteItemAsync(id, partitionKey, doc).ConfigureAwait(false);
+                    await deleteItemAsync(id, partitionKey, doc, cancellationToken).ConfigureAwait(false);
                 }
             }
         }

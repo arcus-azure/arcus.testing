@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Microsoft.Azure.Cosmos;
@@ -81,8 +82,26 @@ namespace Arcus.Testing
         /// <param name="item">The item to temporary create in the NoSQL container.</param>
         /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryNoSqlItem> UpsertItemAsync<TItem>(Container container, TItem item, ILogger logger)
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertItemAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryNoSqlItem> UpsertItemAsync<TItem>(Container container, TItem item, ILogger logger)
         {
+            return UpsertItemAsync(container, item, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing NoSQL item in an Azure Cosmos DB for NoSQL container.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Item will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryNoSqlItem"/> is disposed.
+        /// </remarks>
+        /// <param name="container">The NoSQL container where a temporary item should be created.</param>
+        /// <param name="item">The item to temporary create in the NoSQL container.</param>
+        /// <param name="logger">The logger instance to write diagnostic information during the lifetime of the test fixture.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="container"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryNoSqlItem> UpsertItemAsync<TItem>(Container container, TItem item, ILogger logger, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(container);
             logger ??= NullLogger.Instance;
             Type itemType = typeof(TItem);
@@ -90,17 +109,17 @@ namespace Arcus.Testing
             JsonNode json = JsonSerializer.SerializeToNode(item, SerializeToNodeOptions);
             string itemId = ExtractIdFromItem(json, itemType);
 
-            ContainerResponse resp = await container.ReadContainerAsync().ConfigureAwait(false);
+            ContainerResponse resp = await container.ReadContainerAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             PartitionKey partitionKey = ExtractPartitionKeyFromItem(json, resp.Resource);
 
             try
             {
-                Stream originalItemStream = await ReplaceExistingItemOnSetupAsync(container, itemType, itemId, partitionKey, item, logger).ConfigureAwait(false);
+                Stream originalItemStream = await ReplaceExistingItemOnSetupAsync(container, itemType, itemId, partitionKey, item, logger, cancellationToken).ConfigureAwait(false);
                 return new TemporaryNoSqlItem(container, itemId, partitionKey, itemType, createdByUs: false, originalItemStream, logger);
             }
             catch (CosmosException exception) when (exception.StatusCode is HttpStatusCode.NotFound)
             {
-                await InsertNewItemOnSetupAsync(container, itemType, itemId, item, logger).ConfigureAwait(false);
+                await InsertNewItemOnSetupAsync(container, itemType, itemId, item, logger, cancellationToken).ConfigureAwait(false);
                 return new TemporaryNoSqlItem(container, itemId, partitionKey, itemType, createdByUs: true, originalItemStream: null, logger);
             }
         }
@@ -111,10 +130,13 @@ namespace Arcus.Testing
             string itemId,
             PartitionKey partitionKey,
             TItem item,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             logger.LogBeforeSetupReplaceItem(itemType.Name, itemId, container.Database.Id, container.Id);
-            ItemResponse<TItem> response = await container.ReadItemAsync<TItem>(itemId, partitionKey).ConfigureAwait(false);
+            ItemResponse<TItem> response = await container.ReadItemAsync<TItem>(itemId, partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             CosmosSerializer serializer = container.Database.Client.ClientOptions.Serializer;
             if (serializer is null)
@@ -127,15 +149,17 @@ namespace Arcus.Testing
             var originalItemStream = serializer.ToStream(original);
 
             logger.LogSetupReplaceItem(itemType.Name, itemId, container.Database.Id, container.Id);
-            await container.ReplaceItemAsync(item, itemId, partitionKey).ConfigureAwait(false);
+            await container.ReplaceItemAsync(item, itemId, partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return originalItemStream;
         }
 
-        private static async Task InsertNewItemOnSetupAsync<TItem>(Container container, Type itemType, string itemId, TItem item, ILogger logger)
+        private static async Task InsertNewItemOnSetupAsync<TItem>(Container container, Type itemType, string itemId, TItem item, ILogger logger, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             logger.LogSetupInsertNewItem(itemType.Name, itemId, container.Database.Id, container.Id);
-            ItemResponse<TItem> response = await container.CreateItemAsync(item).ConfigureAwait(false);
+            ItemResponse<TItem> response = await container.CreateItemAsync(item, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             if (response.StatusCode != HttpStatusCode.Created)
             {

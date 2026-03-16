@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Core;
@@ -21,22 +22,31 @@ namespace Arcus.Testing
         /// <summary>
         /// Authenticates a <see cref="MongoClient"/> with <see cref="DefaultAzureCredential"/>.
         /// </summary>
-        internal static async Task<MongoClient> AuthenticateMongoClientAsync(ResourceIdentifier cosmosDbResourceId, string databaseName, string collectionName, ILogger logger)
+        internal static async Task<MongoClient> AuthenticateMongoClientAsync(
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
-            AccessToken accessToken = await RequestAccessTokenAsync(logger).ConfigureAwait(false);
-            string responseBody = await RequestConnectionStringsAsync(cosmosDbResourceId, databaseName, collectionName, accessToken, logger).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            AccessToken accessToken = await RequestAccessTokenAsync(logger, cancellationToken).ConfigureAwait(false);
+            string responseBody = await RequestConnectionStringsAsync(cosmosDbResourceId, databaseName, collectionName, accessToken, logger, cancellationToken).ConfigureAwait(false);
 
             string connectionString = ParseConnectionString(responseBody);
             return new MongoClient(connectionString);
         }
 
-        private static async Task<AccessToken> RequestAccessTokenAsync(ILogger logger)
+        private static async Task<AccessToken> RequestAccessTokenAsync(ILogger logger, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             const string scope = "https://management.azure.com/.default";
             var tokenProvider = new DefaultAzureCredential();
 
             logger.LogRequestAccessToken(scope);
-            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: [scope])).ConfigureAwait(false);
+            return await tokenProvider.GetTokenAsync(new TokenRequestContext(scopes: [scope]), cancellationToken).ConfigureAwait(false);
         }
 
         private static async Task<string> RequestConnectionStringsAsync(
@@ -44,16 +54,19 @@ namespace Arcus.Testing
             string databaseName,
             string collectionName,
             AccessToken accessToken,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var listConnectionStringUrl = $"https://management.azure.com/{cosmosDbResourceId}/listConnectionStrings?api-version=2021-04-15";
             logger.LogRequestConnectionString(listConnectionStringUrl);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, listConnectionStringUrl);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
 
-            using HttpResponseMessage response = await HttpClient.SendAsync(request).ConfigureAwait(false);
-            string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using HttpResponseMessage response = await HttpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            string responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {

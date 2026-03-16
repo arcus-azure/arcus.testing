@@ -49,9 +49,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
             TemporaryMongoDbCollection collection = await WhenTempCollectionCreatedAsync(collectionName, context);
             Shipment createdByUs = CreateShipment();
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-            await collection.AddDocumentAsync(createdByUs);
-#pragma warning restore CS0618 // Type or member is obsolete
+            await collection.UpsertDocumentAsync(createdByUs, TestContext.Current.CancellationToken);
 
             await context.ShouldStoreCollectionAsync(collectionName);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, existingId);
@@ -187,9 +185,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
                 options.OnSetup.CleanMatchingDocuments((Shipment s) => s.BoatName == matchedOnSetup.BoatName);
             });
             collection.OnTeardown.CleanAllDocuments();
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-            await collection.AddDocumentAsync(createdByUs);
-#pragma warning restore CS0618 // Type or member is obsolete
+            await collection.UpsertDocumentAsync(createdByUs, TestContext.Current.CancellationToken);
 
             await context.ShouldNotStoreDocumentAsync<Shipment>(collectionName, matchedOnSetupId);
             await context.ShouldStoreDocumentAsync<Shipment>(collectionName, unmatchedOnSetupId);
@@ -237,20 +233,21 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<TemporaryMongoDbCollection> WhenTempCollectionCreatedAsync(string collectionName, MongoDbTestContext context, Action<TemporaryMongoDbCollectionOptions> configureOptions = null)
         {
-            return await MongoDbTestContext.WhenMongoDbAvailableAsync(async () =>
+            return await MongoDbTestContext.WhenMongoDbAvailableAsync(async cancellationToken =>
             {
                 var collection = (Bogus.Random.Bool(), configureOptions is null) switch
                 {
-                    (false, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions),
-                    (false, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger),
-                    (true, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger, configureOptions),
-                    (true, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger)
+                    (false, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, configureOptions, cancellationToken),
+                    (false, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(MongoDb.AccountResourceId, MongoDb.DatabaseName, collectionName, Logger, cancellationToken),
+                    (true, false) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger, configureOptions, cancellationToken),
+                    (true, true) => await TemporaryMongoDbCollection.CreateIfNotExistsAsync(context.Database, collectionName, Logger, cancellationToken)
                 };
 
                 Assert.Equal(collectionName, collection.Name);
                 return collection;
 
-            }, $"Cannot create temporary MongoDb fixture collection '{collectionName}', due to a high-rate failure");
+            }, $"Cannot create temporary MongoDb fixture collection '{collectionName}', due to a high-rate failure",
+                TestContext.Current.CancellationToken);
         }
 
         private async Task<MongoDbTestContext> GivenCosmosMongoDbAsync()

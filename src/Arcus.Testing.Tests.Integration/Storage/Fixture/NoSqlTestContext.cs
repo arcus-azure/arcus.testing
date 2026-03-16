@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure;
 using Azure.Identity;
@@ -34,18 +35,21 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private readonly CosmosDbConfig _config;
         private readonly CosmosClient _client;
         private readonly Collection<string> _containerNames = new();
+        private readonly CancellationToken _cancellationToken;
         private readonly ILogger _logger;
 
         private NoSqlTestContext(
             CosmosClient client,
             Database database,
             CosmosDbConfig config,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
             _config = config;
             _client = client;
-            Database = database;
             _logger = logger;
+            _cancellationToken = cancellationToken;
+            Database = database;
         }
 
         /// <summary>
@@ -63,7 +67,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             var client = new CosmosClient(noSql.AccountEndpoint.ToString(), new DefaultAzureCredential());
             Database database = client.GetDatabase(noSql.DatabaseName);
 
-            return new NoSqlTestContext(client, database, noSql, logger);
+            return new NoSqlTestContext(client, database, noSql, logger, TestContext.Current.CancellationToken);
         }
 
         /// <summary>
@@ -82,21 +86,23 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task<string> WhenContainerNameAvailableAsync(string partitionKeyPath = "/pk")
         {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             string containerName = WhenContainerNameUnavailable();
             _logger.LogTrace("[Test] create NoSql container '{ContainerName}' outside the fixture's scope", containerName);
 
             var arm = new ArmClient(new DefaultAzureCredential());
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
-            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
+            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName, _cancellationToken);
 
-            CosmosDBAccountResource resource = await cosmosDb.GetAsync();
+            CosmosDBAccountResource resource = await cosmosDb.GetAsync(_cancellationToken);
             var newContainer = new CosmosDBSqlContainerResourceInfo(containerName)
             {
                 PartitionKey = new CosmosDBContainerPartitionKey { Paths = { partitionKeyPath } }
             };
             var request = new CosmosDBSqlContainerCreateOrUpdateContent(resource.Data.Location, newContainer);
             await database.GetCosmosDBSqlContainers()
-                          .CreateOrUpdateAsync(WaitUntil.Completed, containerName, request);
+                          .CreateOrUpdateAsync(WaitUntil.Completed, containerName, request, _cancellationToken);
 
             return containerName;
         }
@@ -110,10 +116,10 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
             var arm = new ArmClient(new DefaultAzureCredential());
             CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
-            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
+            CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName, _cancellationToken);
 
-            CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName);
-            await container.DeleteAsync(WaitUntil.Completed);
+            CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName, _cancellationToken);
+            await container.DeleteAsync(WaitUntil.Completed, _cancellationToken);
         }
 
         /// <summary>
@@ -121,11 +127,12 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task<T> WhenItemAvailableAsync<T>(string containerName, T item) where T : INoSqlItem
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             _logger.LogTrace("[Test] add '{ItemType}' item '{ItemId}' to NoSql container '{ContainerName}'", typeof(T).Name, item.GetId(), containerName);
 
             Container container = Database.GetContainer(containerName);
             await using var stream = _client.ClientOptions.Serializer.ToStream(item);
-            await container.CreateItemStreamAsync(stream, item.GetPartitionKey());
+            await container.CreateItemStreamAsync(stream, item.GetPartitionKey(), cancellationToken: _cancellationToken);
 
             return item;
         }
@@ -135,10 +142,11 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task WhenItemDeletedAsync<T>(string containerName, T item) where T : INoSqlItem
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             _logger.LogTrace("[Test] delete NoSql item '{ItemId}' in container '{ContainerName}' outside test fixture's scope", item.GetId(), containerName);
 
             Container container = Database.GetContainer(containerName);
-            await container.DeleteItemAsync<T>(item.GetId(), item.GetPartitionKey());
+            await container.DeleteItemAsync<T>(item.GetId(), item.GetPartitionKey(), cancellationToken: _cancellationToken);
         }
 
         /// <summary>
@@ -147,7 +155,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldStoreContainerAsync(string containerId)
         {
             Container cont = Database.GetContainer(containerId);
-            ContainerProperties properties = await cont.ReadContainerAsync();
+            ContainerProperties properties = await cont.ReadContainerAsync(cancellationToken: _cancellationToken);
             Assert.NotNull(properties);
         }
 
@@ -157,7 +165,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldNotStoreContainerAsync(string containerId)
         {
             Container cont = Database.GetContainer(containerId);
-            var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync());
+            var exception = await Assert.ThrowsAnyAsync<CosmosException>(() => cont.ReadContainerAsync(cancellationToken: _cancellationToken));
             Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
         }
 
@@ -166,10 +174,11 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldStoreItemAsync<T>(string containerName, T expected, Action<T> assertion = null) where T : INoSqlItem
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>
             {
-                ItemResponse<T> response = await container.ReadItemAsync<T>(expected.GetId(), expected.GetPartitionKey());
+                ItemResponse<T> response = await container.ReadItemAsync<T>(expected.GetId(), expected.GetPartitionKey(), cancellationToken: _cancellationToken);
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 assertion?.Invoke(response.Resource);
             });
@@ -180,10 +189,11 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldNotStoreItemAsync<T>(string containerName, T expected) where T : INoSqlItem
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             Container container = Database.GetContainer(containerName);
             await Poll.UntilAvailableAsync(async () =>
             {
-                using ResponseMessage response = await container.ReadItemStreamAsync(expected.GetId(), expected.GetPartitionKey());
+                using ResponseMessage response = await container.ReadItemStreamAsync(expected.GetId(), expected.GetPartitionKey(), cancellationToken: _cancellationToken);
                 Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
             });
         }
@@ -200,15 +210,15 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             {
                 var arm = new ArmClient(new DefaultAzureCredential());
                 CosmosDBAccountResource cosmosDb = arm.GetCosmosDBAccountResource(_config.AccountResourceId);
-                CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName);
+                CosmosDBSqlDatabaseResource database = await cosmosDb.GetCosmosDBSqlDatabaseAsync(_config.DatabaseName, cancellationToken: CancellationToken.None);
 
                 foreach (var containerName in _containerNames)
                 {
                     try
                     {
                         _logger.LogTrace("[Test] delete NoSql container '{ContainerName}'", containerName);
-                        CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName);
-                        await container.DeleteAsync(WaitUntil.Started);
+                        CosmosDBSqlContainerResource container = await database.GetCosmosDBSqlContainerAsync(containerName, cancellationToken: CancellationToken.None);
+                        await container.DeleteAsync(WaitUntil.Started, cancellationToken: CancellationToken.None);
                     }
                     catch (CosmosException exception) when (exception.StatusCode is HttpStatusCode.NotFound)
                     {

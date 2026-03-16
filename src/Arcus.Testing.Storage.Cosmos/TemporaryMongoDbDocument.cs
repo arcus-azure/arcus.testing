@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.ResourceManager.CosmosDB;
@@ -74,7 +75,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -93,7 +94,7 @@ namespace Arcus.Testing
         /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDb document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertDocumentAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbDocument> InsertIfNotExistsAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
         {
             return UpsertDocumentAsync(collection, document, logger);
@@ -121,7 +122,8 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
-        public static async Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertDocumentAsync) + "overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
             string collectionName,
@@ -129,6 +131,42 @@ namespace Arcus.Testing
             ILogger logger)
             where TDocument : class
         {
+            return UpsertDocumentAsync(cosmosDbResourceId, databaseName, collectionName, document, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing document in an Azure Cosmos DB for MongoDB collection.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Document will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryMongoDbDocument"/> is disposed.
+        /// </remarks>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos DB account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the MongoDB database in which the collection resides where the document should be created.</param>
+        /// <param name="collectionName">The name of the MongoDB collection in which the document should be created.</param>
+        /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB document.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> or <paramref name="document"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or the <paramref name="collectionName"/> is blank.</exception>
+        public static async Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            TDocument document,
+            ILogger logger,
+            CancellationToken cancellationToken)
+            where TDocument : class
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
             ArgumentNullException.ThrowIfNull(document);
             ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
@@ -136,16 +174,16 @@ namespace Arcus.Testing
             logger ??= NullLogger.Instance;
 
 #pragma warning disable CA2000 // Responsibility of disposing the client in case of non-failure is passed to the returned temporary document test fixture.
-            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger).ConfigureAwait(false);
+            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger, cancellationToken).ConfigureAwait(false);
 #pragma warning restore CA2000
             try
             {
                 IMongoDatabase database = client.GetDatabase(databaseName);
                 IMongoCollection<TDocument> collection = database.GetCollection<TDocument>(collectionName);
 
-                return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger).ConfigureAwait(false);
+                return await UpsertDocumentAsync(client, clientCreatedByUs: true, collection, document, logger, cancellationToken).ConfigureAwait(false);
             }
-            catch (MongoException)
+            catch
             {
                 client.Dispose();
                 throw;
@@ -162,17 +200,40 @@ namespace Arcus.Testing
         /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB document.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(UpsertDocumentAsync) + " overload with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(IMongoCollection<TDocument> collection, TDocument document, ILogger logger)
         {
-            return UpsertDocumentAsync(client: null, clientCreatedByUs: false, collection, document, logger);
+            return UpsertDocumentAsync(client: null, clientCreatedByUs: false, collection, document, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing document in an Azure Cosmos DB for MongoDB collection.
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Document will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryMongoDbDocument"/> is disposed.
+        /// </remarks>
+        /// <param name="collection">The collection client to interact with the MongoDB collection.</param>
+        /// <param name="document">The document that should be temporarily inserted into the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB document.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="document"/> is <c>null</c>.</exception>
+        public static Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
+            IMongoCollection<TDocument> collection,
+            TDocument document,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return UpsertDocumentAsync(client: null, clientCreatedByUs: false, collection, document, logger, cancellationToken);
         }
 
         private static async Task<TemporaryMongoDbDocument> UpsertDocumentAsync<TDocument>(
             MongoClient client, bool clientCreatedByUs,
             IMongoCollection<TDocument> collection,
             TDocument document,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(collection);
             ArgumentNullException.ThrowIfNull(document);
             logger ??= NullLogger.Instance;
@@ -188,17 +249,17 @@ namespace Arcus.Testing
             string collectionName = collection.CollectionNamespace.CollectionName;
             IMongoCollection<BsonDocument> collectionBson = collection.Database.GetCollection<BsonDocument>(collectionName);
 
-            BsonDocument originalDoc = await FindOriginalDocumentAsync(collectionBson, findOneDocument, documentType).ConfigureAwait(false);
+            BsonDocument originalDoc = await FindOriginalDocumentAsync(collectionBson, findOneDocument, documentType, cancellationToken).ConfigureAwait(false);
             if (originalDoc is null)
             {
                 logger.LogSetupInsertNewDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
 
-                await collectionBson.InsertOneAsync(bson).ConfigureAwait(false);
+                await collectionBson.InsertOneAsync(bson, cancellationToken: cancellationToken).ConfigureAwait(false);
                 return new(id, documentType, findOneDocument, originalDoc: null, (client, clientCreatedByUs), collectionBson, logger);
             }
 
             logger.LogSetupReplaceDocument(documentType.Name, documentId, collection.Database.DatabaseNamespace.DatabaseName, collectionName);
-            await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson).ConfigureAwait(false);
+            await collectionBson.FindOneAndReplaceAsync(findOneDocument, bson, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return new TemporaryMongoDbDocument(id, documentType, findOneDocument, originalDoc, (client, clientCreatedByUs), collectionBson, logger);
         }
@@ -206,10 +267,13 @@ namespace Arcus.Testing
         private static async Task<BsonDocument> FindOriginalDocumentAsync(
             IMongoCollection<BsonDocument> collectionBson,
             FilterDefinition<BsonDocument> findOneDocument,
-            Type documentType)
+            Type documentType,
+            CancellationToken cancellationToken)
         {
-            using IAsyncCursor<BsonDocument> existingDocs = await collectionBson.FindAsync(findOneDocument).ConfigureAwait(false);
-            List<BsonDocument> matchingDocs = await existingDocs.ToListAsync().ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            using IAsyncCursor<BsonDocument> existingDocs = await collectionBson.FindAsync(findOneDocument, cancellationToken: cancellationToken).ConfigureAwait(false);
+            List<BsonDocument> matchingDocs = await existingDocs.ToListAsync(cancellationToken).ConfigureAwait(false);
 
             if (matchingDocs.Count > 1)
             {

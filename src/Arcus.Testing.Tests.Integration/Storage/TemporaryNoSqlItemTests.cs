@@ -212,13 +212,10 @@ namespace Arcus.Testing.Tests.Integration.Storage
             where T : INoSqlItem
         {
             container ??= context.Database.GetContainer(containerName);
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-            var temp = await TemporaryNoSqlItem.InsertIfNotExistsAsync(container, item, Logger);
-#pragma warning restore CS0618 // Type or member is obsolete
+            var temp = await TemporaryNoSqlItem.UpsertItemAsync(container, item, Logger, TestContext.Current.CancellationToken);
 
             Assert.Equal(item.GetId(), temp.Id);
             Assert.Equal(item.GetPartitionKey(), temp.PartitionKey);
-
             return temp;
         }
     }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
 using Azure.ResourceManager.CosmosDB;
@@ -118,7 +119,7 @@ namespace Arcus.Testing
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete the MongoBb documents
         /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was inserted by the test fixture
-        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
+        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}(TDocument,CancellationToken)"/>).
         /// </summary>
         [Obsolete("Will be removed in v3, please use the " + nameof(CleanUpsertedDocuments) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public OnTeardownMongoDbCollectionOptions CleanCreatedDocuments()
@@ -129,7 +130,7 @@ namespace Arcus.Testing
         /// <summary>
         /// (default for cleaning documents) Configures the <see cref="TemporaryMongoDbCollection"/> to only delete or revert the MongoDB documents
         /// in an Azure Cosmos DB for MongoDB collection upon disposal if the document was upserted by the test fixture
-        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}"/>).
+        /// (using <see cref="TemporaryMongoDbCollection.UpsertDocumentAsync{TDocument}(TDocument,CancellationToken)"/>).
         /// </summary>
         public OnTeardownMongoDbCollectionOptions CleanUpsertedDocuments()
         {
@@ -289,6 +290,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + "instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -314,9 +316,39 @@ namespace Arcus.Testing
         /// <param name="databaseName">The name of the MongoDB database in which the collection should be created.</param>
         /// <param name="collectionName">The unique name of the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(cosmosDbResourceId, databaseName, collectionName, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos DB account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + "instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
             ResourceIdentifier cosmosDbResourceId,
             string databaseName,
@@ -329,10 +361,50 @@ namespace Arcus.Testing
             ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
 
-            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger).ConfigureAwait(false);
+            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger, CancellationToken.None).ConfigureAwait(false);
             IMongoDatabase database = client.GetDatabase(databaseName);
 
-            return await CreateIfNotExistsAsync(client, clientCreatedByUs: true, database, collectionName, logger, configureOptions).ConfigureAwait(false);
+            return await CreateIfNotExistsAsync(client, clientCreatedByUs: true, database, collectionName, logger, configureOptions, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
+        /// </summary>
+        /// <param name="cosmosDbResourceId">
+        ///   <para>The resource ID pointing towards the Azure Cosmos DB account.</para>
+        ///   <para>The resource ID can be constructed with the <see cref="CosmosDBAccountResource.CreateResourceIdentifier"/>:</para>
+        ///   <example>
+        ///     <code>
+        ///       ResourceIdentifier cosmosDbAccountResourceId =
+        ///           CosmosDBAccountResource.CreateResourceIdentifier("&lt;subscription-id&gt;", "&lt;resource-group&gt;", "&lt;account-name&gt;");
+        ///     </code>
+        ///   </example>
+        /// </param>
+        /// <param name="databaseName">The name of the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="cosmosDbResourceId"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="databaseName"/> or <paramref name="collectionName"/> is blank.</exception>
+        public static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+            ResourceIdentifier cosmosDbResourceId,
+            string databaseName,
+            string collectionName,
+            ILogger logger,
+            Action<TemporaryMongoDbCollectionOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ArgumentNullException.ThrowIfNull(cosmosDbResourceId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(databaseName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
+            logger ??= NullLogger.Instance;
+
+            MongoClient client = await MongoDbConnection.AuthenticateMongoClientAsync(cosmosDbResourceId, databaseName, collectionName, logger, cancellationToken).ConfigureAwait(false);
+            IMongoDatabase database = client.GetDatabase(databaseName);
+
+            return await CreateIfNotExistsAsync(client, clientCreatedByUs: true, database, collectionName, logger, configureOptions, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -343,6 +415,7 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + "instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(IMongoDatabase database, string collectionName, ILogger logger)
         {
             return CreateIfNotExistsAsync(database, collectionName, logger, configureOptions: null);
@@ -354,16 +427,51 @@ namespace Arcus.Testing
         /// <param name="database">The client to the MongoDB database in which the collection should be created.</param>
         /// <param name="collectionName">The unique name of the MongoDB collection.</param>
         /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(IMongoDatabase database, string collectionName, ILogger logger, CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(database, collectionName, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
+        /// </summary>
+        /// <param name="database">The client to the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + "instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
             IMongoDatabase database,
             string collectionName,
             ILogger logger,
             Action<TemporaryMongoDbCollectionOptions> configureOptions)
         {
-            return CreateIfNotExistsAsync(client: null, clientCreatedByUs: false, database, collectionName, logger, configureOptions);
+            return CreateIfNotExistsAsync(client: null, clientCreatedByUs: false, database, collectionName, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryMongoDbCollection"/> which creates a new Azure Cosmos DB for MongoDB collection if it doesn't exist yet.
+        /// </summary>
+        /// <param name="database">The client to the MongoDB database in which the collection should be created.</param>
+        /// <param name="collectionName">The unique name of the MongoDB collection.</param>
+        /// <param name="logger">The logger to write diagnostic information during the lifetime of the MongoDB collection.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="database"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="collectionName"/> is blank.</exception>
+        public static Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
+            IMongoDatabase database,
+            string collectionName,
+            ILogger logger,
+            Action<TemporaryMongoDbCollectionOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(client: null, clientCreatedByUs: false, database, collectionName, logger, configureOptions, cancellationToken);
         }
 
         private static async Task<TemporaryMongoDbCollection> CreateIfNotExistsAsync(
@@ -372,8 +480,10 @@ namespace Arcus.Testing
             IMongoDatabase database,
             string collectionName,
             ILogger logger,
-            Action<TemporaryMongoDbCollectionOptions> configureOptions)
+            Action<TemporaryMongoDbCollectionOptions> configureOptions,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(database);
             ArgumentException.ThrowIfNullOrWhiteSpace(collectionName);
             logger ??= NullLogger.Instance;
@@ -385,23 +495,29 @@ namespace Arcus.Testing
             {
                 Filter = Builders<BsonDocument>.Filter.Eq("name", collectionName)
             };
-            using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions).ConfigureAwait(false);
-            if (await collectionNames.AnyAsync().ConfigureAwait(false))
+            using IAsyncCursor<string> collectionNames = await database.ListCollectionNamesAsync(listOptions, cancellationToken).ConfigureAwait(false);
+            if (await collectionNames.AnyAsync(cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingCollection(collectionName, database.DatabaseNamespace.DatabaseName);
 
-                await CleanCollectionOnSetupAsync(database, collectionName, options, logger).ConfigureAwait(false);
+                await CleanCollectionOnSetupAsync(database, collectionName, options, logger, cancellationToken).ConfigureAwait(false);
                 return new TemporaryMongoDbCollection(createdByUs: false, collectionName, client, clientCreatedByUs, database, logger, options);
             }
 
             logger.LogSetupCreateNewCollection(collectionName, database.DatabaseNamespace.DatabaseName);
-            await database.CreateCollectionAsync(collectionName).ConfigureAwait(false);
+            await database.CreateCollectionAsync(collectionName, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             return new TemporaryMongoDbCollection(createdByUs: true, collectionName, client, clientCreatedByUs, database, logger, options);
         }
 
-        private static Task CleanCollectionOnSetupAsync(IMongoDatabase database, string collectionName, TemporaryMongoDbCollectionOptions options, ILogger logger)
+        private static Task CleanCollectionOnSetupAsync(
+            IMongoDatabase database,
+            string collectionName,
+            TemporaryMongoDbCollectionOptions options,
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.LeaveExisted)
             {
                 return Task.CompletedTask;
@@ -412,13 +528,13 @@ namespace Arcus.Testing
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfExisted)
             {
                 logger.LogSetupCleanAllDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
-                return collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
+                return collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty, cancellationToken);
             }
 
             if (options.OnSetup.Documents is OnSetupMongoDbCollection.CleanIfMatched)
             {
                 logger.LogSetupCleanAllMatchingDocuments(database.DatabaseNamespace.DatabaseName, collectionName);
-                return collection.DeleteManyAsync(options.OnSetup.IsMatched);
+                return collection.DeleteManyAsync(options.OnSetup.IsMatched, cancellationToken);
             }
 
             return Task.CompletedTask;
@@ -462,13 +578,32 @@ namespace Arcus.Testing
         /// <param name="document">The document to upload to the MongoDB collection.</param>
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
-        public async Task UpsertDocumentAsync<TDocument>(TDocument document)
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertDocumentAsync) + " overload instead with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task UpsertDocumentAsync<TDocument>(TDocument document)
         {
+            return UpsertDocumentAsync(document, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Adds a new or replaces an existing document in the Azure Cosmos DB for MongoDB collection (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any items upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryMongoDbCollection"/> is disposed.
+        /// </remarks>
+        /// <typeparam name="TDocument">The type of the document in the MongoDB collection.</typeparam>
+        /// <param name="document">The document to upload to the MongoDB collection.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="document"/> is <c>null</c>.</exception>
+        public async Task UpsertDocumentAsync<TDocument>(TDocument document, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(document);
 
             IMongoCollection<TDocument> collection = GetCollectionClient<TDocument>();
-            _documents.Add(await TemporaryMongoDbDocument.UpsertDocumentAsync(collection, document, _logger).ConfigureAwait(false));
+            _documents.Add(await TemporaryMongoDbDocument.UpsertDocumentAsync(collection, document, _logger, cancellationToken).ConfigureAwait(false));
         }
 
         /// <summary>

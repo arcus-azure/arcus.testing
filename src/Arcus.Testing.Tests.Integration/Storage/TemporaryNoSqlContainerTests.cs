@@ -202,8 +202,8 @@ namespace Arcus.Testing.Tests.Integration.Storage
         {
             var container =
                 configureOptions is null
-                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger)
-                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions);
+                    ? await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, TestContext.Current.CancellationToken)
+                    : await TemporaryNoSqlContainer.CreateIfNotExistsAsync(NoSql.AccountResourceId, NoSql.DatabaseName, containerName, PartitionKeyPaths.Single(), Logger, configureOptions, TestContext.Current.CancellationToken);
 
             Assert.Equal(NoSql.DatabaseName, container.Client.Database.Id);
             Assert.Equal(containerName, container.Name);
@@ -214,9 +214,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static async Task<Ship> AddItemAsync(TemporaryNoSqlContainer container)
         {
             Ship item = CreateShip("own");
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-            await container.AddItemAsync(item);
-#pragma warning restore CS0618 // Type or member is obsolete
+            await container.UpsertItemAsync(item, TestContext.Current.CancellationToken);
 
             return item;
         }
