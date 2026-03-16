@@ -1,0 +1,3 @@
+﻿<Project>
+    <!-- Prevent root .props file to import into the test projects -->
+</Project>
