@@ -1,6 +1,6 @@
 # Arcus Testing
 [![Build Status](https://dev.azure.com/codit/Arcus/_apis/build/status/Commit%20builds/CI%20-%20Arcus.Testing?branchName=main)](https://dev.azure.com/codit/Arcus/_build/latest?definitionId=804&branchName=main)
-[![NuGet Version](https://img.shields.io/nuget/v/Arcus.Testing.Logging.Xunit)](https://www.nuget.org/packages/Arcus.Testing.Logging.Xunit/)
+[![NuGet Version](https://img.shields.io/nuget/v/Arcus.Testing.Logging.Xunit.v3)](https://www.nuget.org/packages/Arcus.Testing.Logging.Xunit.v3/)
 ![Azure DevOps coverage (branch)](https://img.shields.io/azure-devops/coverage/codit/arcus/804/main)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=arcus-azure_arcus.testing&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=arcus-azure_arcus.testing)
 
