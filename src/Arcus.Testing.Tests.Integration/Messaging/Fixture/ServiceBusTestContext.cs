@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
@@ -11,6 +12,7 @@ using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Sdk;
+using static Arcus.Testing.Tests.Integration.Messaging.Fixture.ServiceBusTestContext;
 
 namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 {
@@ -200,9 +202,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 
         public ServiceBusMessage WhenMessageUnsent()
         {
-            var message = new ServiceBusMessage(Bogus.Random.Bytes(10))
+            var pizza = Pizza.Generate();
+            var message = new ServiceBusMessage(JsonSerializer.SerializeToUtf8Bytes(pizza))
             {
-                MessageId = $"test-{Bogus.Random.Guid()}"
+                MessageId = pizza.Id,
             };
 
             return message;
@@ -267,28 +270,6 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         }
 
         /// <summary>
-        /// Verifies that the message is left alone on the Azure Service bus entity.
-        /// </summary>
-        public async Task ShouldLeaveMessageAsync(string entityName, ServiceBusMessage message)
-        {
-            await ShouldLeaveMessageAsync(entityName, subscriptionName: null, message);
-        }
-
-        /// <summary>
-        /// Verifies that the message is left alone on the Azure Service bus entity.
-        /// </summary>
-        public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
-        {
-            await Poll.UntilAvailableAsync<XunitException>(async () =>
-            {
-                await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
-
-                IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
-                Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
-            });
-        }
-
-        /// <summary>
         /// Verifies that the message is dead-lettered on the Azure Service bus entity.
         /// </summary>
         public async Task ShouldDeadLetteredMessageAsync(string entityName, ServiceBusMessage message)
@@ -337,6 +318,26 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
                 : _messagingClient.CreateReceiver(entityName, subscriptionName, options);
         }
 
+        internal sealed class Pizza
+        {
+            public string Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public decimal Price { get; set; }
+            public decimal Balance { get; set; }
+
+            public static Pizza Generate()
+            {
+                return new Faker<Pizza>()
+                    .RuleFor(p => p.Id, f => $"test-{f.Random.Guid()}")
+                    .RuleFor(p => p.Name, f => f.Commerce.ProductName())
+                    .RuleFor(p => p.Description, f => f.Lorem.Sentence())
+                    .RuleFor(p => p.Price, f => f.Random.Decimal(10, 100))
+                    .RuleFor(p => p.Balance, f => f.Random.Decimal(0, 100))
+                    .Generate();
+            }
+        }
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
         /// </summary>
@@ -382,6 +383,90 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             })));
 
             disposables.Add(_messagingClient);
+        }
+    }
+
+    internal static class ServiceBusMessageFilterTestExtensions
+    {
+        internal static ServiceBusMessageFilter<Pizza> SelectPizza(this ServiceBusMessageFilter filter)
+        {
+            return filter.Select(msg => msg.Body.ToObjectFromJson<Pizza>());
+        }
+
+        /// <summary>
+        /// Verifies that the message is completed on the Azure Service bus entity.
+        /// </summary>
+        internal static Task ShouldCompletedMessageAsync(this TemporaryTopic topic, string subscriptionName, ServiceBusMessage message)
+        {
+            return ShouldCompletedMessageAsync(topic.MessagesOn(subscriptionName), topic.Name, message);
+        }
+
+        /// <summary>
+        /// Verifies that the message is completed on the Azure Service bus entity.
+        /// </summary>
+        internal static Task ShouldCompletedMessageAsync(this TemporaryQueue queue, ServiceBusMessage message)
+        {
+            return ShouldCompletedMessageAsync(queue.Messages, queue.Name, message);
+        }
+
+        private static async Task ShouldCompletedMessageAsync(ServiceBusMessageFilter filter, string entityName, ServiceBusMessage message)
+        {
+            var messagesUntyped = await filter.ToListAsync(TestContext.Current.CancellationToken);
+            Assert.False(messagesUntyped.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
+
+            var messagesTyped = await filter.SelectPizza().ToListAsync(TestContext.Current.CancellationToken);
+            Assert.False(messagesTyped.Any(actual => actual.Id == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
+
+            var deadLetteredMessages = await filter.FromDeadLetter().ToListAsync(TestContext.Current.CancellationToken);
+            Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
+        }
+
+        /// <summary>
+        /// Verifies that the message is left alone on the Azure Service bus entity.
+        /// </summary>
+        public static Task ShouldLeaveMessageAsync(this TemporaryQueue queue, ServiceBusMessage message)
+        {
+            return ShouldLeaveMessageAsync(queue.Messages, queue.Name, message);
+        }
+
+        /// <summary>
+        /// Verifies that the message is left alone on the Azure Service bus entity.
+        /// </summary>
+        public static Task ShouldLeaveMessageAsync(this TemporaryTopic topic, string subscriptionName, ServiceBusMessage message)
+        {
+            return ShouldLeaveMessageAsync(topic.MessagesOn(subscriptionName), topic.Name, message);
+        }
+
+        private static Task ShouldLeaveMessageAsync(ServiceBusMessageFilter filter, string entityName, ServiceBusMessage message)
+        {
+            return Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                Assert.True(
+                    await filter.Where(actual => actual.MessageId == message.MessageId).AnyAsync(TestContext.Current.CancellationToken),
+                    $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
+            });
+        }
+
+        /// <summary>
+        /// Verifies that the message is dead-lettered on the Azure Service bus entity.
+        /// </summary>
+        public static Task ShouldDeadLetteredMessageAsync(this TemporaryQueue queue, ServiceBusMessage message)
+        {
+            return ShouldDeadLetteredMessageAsync(queue.Messages, queue.Name, message);
+        }
+
+        /// <summary>
+        /// Verifies that the message is dead-lettered on the Azure Service bus entity.
+        /// </summary>
+        public static Task ShouldDeadLetteredMessageAsync(this TemporaryTopic topic, string subscriptionName, ServiceBusMessage message)
+        {
+            return ShouldDeadLetteredMessageAsync(topic.MessagesOn(subscriptionName), topic.Name, message);
+        }
+
+        private static async Task ShouldDeadLetteredMessageAsync(ServiceBusMessageFilter filter, string entityName, ServiceBusMessage message)
+        {
+            IEnumerable<ServiceBusReceivedMessage> messages = await filter.FromDeadLetter().ToListAsync(TestContext.Current.CancellationToken);
+            Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
         }
     }
 }

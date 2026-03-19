@@ -18,7 +18,6 @@ namespace Arcus.Testing
         private readonly string _entityName, _subscriptionName;
         private readonly ServiceBusClient _client;
         private readonly Collection<Func<ServiceBusReceivedMessage, bool>> _predicates = [];
-
         private bool _fromDeadLetter;
         private int _maxMessages = 100;
 
@@ -40,6 +39,22 @@ namespace Arcus.Testing
             _entityName = entityName;
             _subscriptionName = subscriptionName;
             _client = client;
+        }
+
+        /// <summary>
+        /// Projects the filter to a new <see cref="ServiceBusMessageFilter{TMessageBody}"/> instance
+        /// that selects a subset of messages based on the given <paramref name="selection"/> function.
+        /// </summary>
+        /// <typeparam name="TMessageBody">The type of the message body to project to.</typeparam>
+        /// <param name="selection">The function to project the message body from the received message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="selection"/> is <c>null</c>.</exception>
+        public ServiceBusMessageFilter<TMessageBody> Select<TMessageBody>(Func<ServiceBusReceivedMessage, TMessageBody> selection)
+        {
+            ArgumentNullException.ThrowIfNull(selection);
+
+            return string.IsNullOrWhiteSpace(_subscriptionName)
+                ? new ServiceBusMessageFilter<TMessageBody>(_entityName, _client, selection)
+                : new ServiceBusMessageFilter<TMessageBody>(_entityName, _subscriptionName, _client, selection);
         }
 
         /// <summary>
@@ -100,6 +115,8 @@ namespace Arcus.Testing
         /// </param>
         public async Task<bool> AnyAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var messages = await ToListAsync(cancellationToken).ConfigureAwait(false);
             return messages.Count > 0;
         }
@@ -134,6 +151,7 @@ namespace Arcus.Testing
         /// </param>
         public async Task<IReadOnlyList<ServiceBusReceivedMessage>> ToListAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var options = new ServiceBusReceiverOptions
             {
                 SubQueue = _fromDeadLetter ? SubQueue.DeadLetter : SubQueue.None
@@ -152,6 +170,67 @@ namespace Arcus.Testing
 
                 return messages.Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
             }
+        }
+    }
+
+    /// <summary>
+    /// Represents a configurable filter instance that selects a subset of <see cref="ServiceBusReceivedMessage"/>s on an Azure Service Bus queue or topic subscription
+    /// (a.k.a. 'spy test fixture').
+    /// </summary>
+    /// <typeparam name="TMessageBody">The type to which each received Azure Service Bus message is projected for filtering and selection.</typeparam>
+    public class ServiceBusMessageFilter<TMessageBody> : ServiceBusMessageFilter
+    {
+        private readonly Func<ServiceBusReceivedMessage, TMessageBody> _selection;
+        private readonly Collection<Func<TMessageBody, bool>> _predicates = [];
+
+        internal ServiceBusMessageFilter(
+            string entityName,
+            ServiceBusClient client,
+            Func<ServiceBusReceivedMessage, TMessageBody> selection)
+            : base(entityName, client)
+        {
+            _selection = selection;
+        }
+
+        internal ServiceBusMessageFilter(
+            string entityName,
+            string subscriptionName,
+            ServiceBusClient client,
+            Func<ServiceBusReceivedMessage, TMessageBody> selection)
+            : base(entityName, subscriptionName, client)
+        {
+            _selection = selection;
+        }
+
+        /// <summary>
+        /// Configures the filter to only select a subset of messages that matches the given <paramref name="predicate"/>.
+        /// Multiple calls gets aggregated.
+        /// </summary>
+        /// <param name="predicate">The custom predicate to match a message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="predicate"/> is <c>null</c>.</exception>
+        public ServiceBusMessageFilter Where(Func<TMessageBody, bool> predicate)
+        {
+            ArgumentNullException.ThrowIfNull(predicate);
+
+            _predicates.Add(predicate);
+            return this;
+        }
+
+        /// <summary>
+        /// Creates a <see cref="List{T}"/> from a filtered <see cref="ServiceBusReceivedMessage"/> collection
+        /// </summary>
+        /// <remarks>
+        ///     Deferred messages are also included as messages are peeked.
+        /// </remarks>
+        /// <param name="cancellationToken">
+        ///     The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.
+        /// </param>
+        public new async Task<IReadOnlyList<TMessageBody>> ToListAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var messages = await base.ToListAsync(cancellationToken).ConfigureAwait(false);
+            return messages.Select(_selection).Where(msg => _predicates.All(predicate => predicate(msg))).ToList();
         }
     }
 }

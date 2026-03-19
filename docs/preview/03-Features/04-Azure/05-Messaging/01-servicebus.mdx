@@ -116,9 +116,13 @@ await using TemporaryTopic topic = ...
 IEnumerable<ServiceBusReceivedMessage> messages =
   await topic.MessagesOn("<subscription-name>")
 
-              // Get subset messages currently on the topic subscription.
+              // Filter for a subset messages currently on the topic subscription.
              .Where(msg => msg.ApplicationProperties.ContainsKey("<my-key>"))
              .Where(msg => msg.ContentType == "application/json")
+
+             // Project the messages to another type.
+             // `ServiceBusReceivedMessage` becomes `MyOrder` in the resulting collection.
+             .Select(msg => msg.Body.ToObjectFromJson<MyOrder>())
 
               // Get messages only from the dead-letter sub-queue.
              .FromDeadLetter()
@@ -255,9 +259,13 @@ await using TemporaryQueue queue = ...
 IEnumerable<ServiceBusReceivedMessage> messages =
   await queue.Messages
 
-              // Get subset messages currently on the queue.
+              // Filter for a subset messages currently on the queue.
              .Where(msg => msg.ApplicationProperties.ContainsKey("<my-key>"))
              .Where(msg => msg.ContentType == "application/json")
+
+              // Project the messages to another type.
+              // `ServiceBusReceivedMessage` becomes `MyOrder` in the resulting collection.
+             .Select(msg => msg.Body.ToObjectFromJson<MyOrder>())
 
               // Get messages only from the dead-letter sub-queue.
              .FromDeadLetter()
