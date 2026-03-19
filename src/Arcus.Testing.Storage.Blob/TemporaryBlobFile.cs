@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Arcus.Testing
 {
@@ -101,19 +104,20 @@ namespace Arcus.Testing
         ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
         ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
         /// </remarks>
-        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob Storage.</param>
+        /// <param name="blobContainerUri">
+        ///     <para>The <see cref="BlobContainerClient.Uri" /> referencing the blob container that includes the name of the account and the name of the container.</para>
+        ///     <para>This is likely to be similar to <a href="">https://{account_name}.blob.core.windows.net/{container_name}</a>.</para>
+        /// </param>
+        /// <param name="blobName">The name of the blob to upload.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryBlobFile> UpsertFileAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertFileAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryBlobFile> UpsertFileAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
         {
-            ArgumentNullException.ThrowIfNull(blobClient);
-            ArgumentNullException.ThrowIfNull(blobContent);
-            logger ??= NullLogger.Instance;
-
-            (bool createdByUs, BinaryData originalData) = await EnsureBlobContentCreatedAsync(blobClient, blobContent, logger).ConfigureAwait(false);
-
-            return new TemporaryBlobFile(blobClient, createdByUs, originalData, logger);
+            return UpsertFileAsync(blobContainerUri, blobName, blobContent, logger, CancellationToken.None);
         }
 
         /// <summary>
@@ -130,36 +134,94 @@ namespace Arcus.Testing
         /// <param name="blobName">The name of the blob to upload.</param>
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobContainerUri"/> or the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="blobContainerUri"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        public static Task<TemporaryBlobFile> UpsertFileAsync(Uri blobContainerUri, string blobName, BinaryData blobContent, ILogger logger)
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryBlobFile> UpsertFileAsync(
+            Uri blobContainerUri,
+            string blobName,
+            BinaryData blobContent,
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(blobContainerUri);
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
 
-            return UpsertFileAsync(blobClient, blobContent, logger);
+            return UpsertFileAsync(blobClient, blobContent, logger, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
+        /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
+        /// </remarks>
+        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob Storage.</param>
+        /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertFileAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryBlobFile> UpsertFileAsync(BlobClient blobClient, BinaryData blobContent, ILogger logger)
+        {
+            return UpsertFileAsync(blobClient, blobContent, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new or replaces an existing Azure Blob file in an Azure Blob container.
+        /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        ///     <para>⚡ File will be deleted (if new) or reverted (if existing) when the <see cref="TemporaryBlobFile"/> is disposed.</para>
+        /// </remarks>
+        /// <param name="blobClient">The Azure Blob client to interact with Azure Blob Storage.</param>
+        /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the upload process.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobClient"/> or the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static async Task<TemporaryBlobFile> UpsertFileAsync(
+            BlobClient blobClient,
+            BinaryData blobContent,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(blobClient);
+            ArgumentNullException.ThrowIfNull(blobContent);
+            cancellationToken.ThrowIfCancellationRequested();
+            logger ??= NullLogger.Instance;
+
+            (bool createdByUs, BinaryData originalData) =
+                await EnsureBlobContentCreatedAsync(blobClient, blobContent, logger, cancellationToken).ConfigureAwait(false);
+
+            return new TemporaryBlobFile(blobClient, createdByUs, originalData, logger);
         }
 
         private static async Task<(bool createdByUs, BinaryData originalData)> EnsureBlobContentCreatedAsync(
             BlobClient client,
             BinaryData newContent,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
-            if (await client.ExistsAsync().ConfigureAwait(false))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (await client.ExistsAsync(cancellationToken).ConfigureAwait(false))
             {
-                BlobDownloadResult originalContent = await client.DownloadContentAsync().ConfigureAwait(false);
+                BlobDownloadResult originalContent = await client.DownloadContentAsync(cancellationToken).ConfigureAwait(false);
 
                 logger.LogSetupReplaceFile(client.Name, client.AccountName, client.BlobContainerName);
-                await client.UploadAsync(newContent, overwrite: true).ConfigureAwait(false);
+                await client.UploadAsync(newContent, overwrite: true, cancellationToken).ConfigureAwait(false);
 
                 return (createdByUs: false, originalContent.Content);
             }
 
             logger.LogSetupUploadNewFile(client.Name, client.AccountName, client.BlobContainerName);
-            await client.UploadAsync(newContent).ConfigureAwait(false);
+            await client.UploadAsync(newContent, cancellationToken).ConfigureAwait(false);
 
             return (createdByUs: true, originalData: null);
         }

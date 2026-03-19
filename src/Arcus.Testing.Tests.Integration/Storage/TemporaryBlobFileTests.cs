@@ -62,24 +62,35 @@ namespace Arcus.Testing.Tests.Integration.Storage
             blobName ??= $"test-{Guid.NewGuid():N}";
             blobContent ??= BinaryData.FromBytes(Bogus.Random.Bytes(100));
 
-            TemporaryBlobFile temp =
-                Bogus.Random.Bool()
-#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
-                    ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
-                    : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger);
-#pragma warning restore CS0618 // Type or member is obsolete
+            var temp = await UpsertAsync();
 
             Assert.Equal(blobName, temp.Name);
             Assert.Equal(client.Name, temp.ContainerName);
             Assert.Equal(blobName, temp.Client.Name);
             Assert.Equal(client.Name, temp.Client.BlobContainerName);
 
+            async Task<TemporaryBlobFile> UpsertAsync()
+            {
+                if (Bogus.Random.Bool())
+                {
+                    return Bogus.Random.Bool()
+#pragma warning disable CS0618 // Type or member is obsolete: currently still testing deprecated functionality.
+                        ? await TemporaryBlobFile.UploadIfNotExistsAsync(client.Uri, blobName, blobContent, Logger)
+                        : await TemporaryBlobFile.UploadIfNotExistsAsync(client.GetBlobClient(blobName), blobContent, Logger);
+#pragma warning restore CS0618 // Type or member is obsolete
+                }
+
+                return Bogus.Random.Bool()
+                    ? await TemporaryBlobFile.UpsertFileAsync(client.Uri, blobName, blobContent, Logger, TestContext.Current.CancellationToken)
+                    : await TemporaryBlobFile.UpsertFileAsync(client.GetBlobClient(blobName), blobContent, Logger, TestContext.Current.CancellationToken);
+            }
+
             return temp;
         }
 
         private async Task<BlobStorageTestContext> GivenBlobStorageAsync()
         {
-            return await BlobStorageTestContext.GivenAsync(Configuration, Logger);
+            return await BlobStorageTestContext.GivenAsync(Logger);
         }
     }
 }

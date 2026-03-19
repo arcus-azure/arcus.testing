@@ -20,7 +20,7 @@ namespace Arcus.Testing.Tests.Integration.Fixture
         /// </summary>
         public TemporaryManagedIdentityConnection()
         {
-            var configuration = TestConfig.Create();
+            var configuration = IntegrationTest.Configuration;
             var logger = NullLogger.Instance;
 
             ServicePrincipal servicePrincipal = configuration.GetServicePrincipal();

@@ -233,7 +233,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
         private static async Task<string> UpsertBlobFileAsync(BlobStorageTestContext context, TemporaryBlobContainer container)
         {
             string blobName = $"test-{Guid.NewGuid()}";
-            BlobClient client = await container.UpsertBlobFileAsync(blobName, context.CreateBlobContent());
+            BlobClient client = await container.UpsertBlobFileAsync(blobName, context.CreateBlobContent(), TestContext.Current.CancellationToken);
             return client.Name;
         }
 
@@ -247,11 +247,11 @@ namespace Arcus.Testing.Tests.Integration.Storage
             var logger = CreateLogger<TemporaryBlobContainer>();
             TemporaryBlobContainer temp = configureOptions is null
                 ? Bogus.Random.Bool()
-                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger)
-                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger)
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger, TestContext.Current.CancellationToken)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger, TestContext.Current.CancellationToken)
                 : Bogus.Random.Bool()
-                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger, configureOptions)
-                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger, configureOptions);
+                    ? await TemporaryBlobContainer.CreateIfNotExistsAsync(context.StorageAccount.Name, client.Name, logger, configureOptions, TestContext.Current.CancellationToken)
+                    : await TemporaryBlobContainer.CreateIfNotExistsAsync(client, logger, configureOptions, TestContext.Current.CancellationToken);
 
 #pragma warning restore
 
@@ -264,7 +264,7 @@ namespace Arcus.Testing.Tests.Integration.Storage
 
         private async Task<BlobStorageTestContext> GivenBlobStorageAsync()
         {
-            return await BlobStorageTestContext.GivenAsync(Configuration, Logger);
+            return await BlobStorageTestContext.GivenAsync(Logger);
         }
     }
 }

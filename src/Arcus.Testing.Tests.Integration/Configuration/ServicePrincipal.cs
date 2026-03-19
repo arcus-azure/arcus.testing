@@ -1,4 +1,7 @@
-﻿namespace Arcus.Testing.Tests.Integration.Configuration
+﻿using Azure.Core;
+using Azure.Identity;
+
+namespace Arcus.Testing.Tests.Integration.Configuration
 {
     public class ServicePrincipal
     {
@@ -19,6 +22,11 @@
         public string ClientSecret { get; }
 
         public bool IsDefault => TenantId == "default" && ClientId == "default" && ClientSecret == "default";
+
+        public TokenCredential GetCredential()
+        {
+            return IsDefault ? new DefaultAzureCredential() : new ClientSecretCredential(TenantId, ClientId, ClientSecret);
+        }
     }
 
     public static partial class TestConfigExtensions

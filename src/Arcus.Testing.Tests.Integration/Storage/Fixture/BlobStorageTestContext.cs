@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Storage.Configuration;
 using Azure;
-using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Bogus;
@@ -20,13 +20,15 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         private readonly BlobServiceClient _serviceClient;
         private readonly Collection<BlobContainerClient> _blobContainers = new();
         private readonly ILogger _logger;
+        private readonly CancellationToken _cancellationToken;
 
         private static readonly Faker Bogus = new();
 
-        private BlobStorageTestContext(BlobServiceClient serviceClient, StorageAccount storageAccount, ILogger logger)
+        private BlobStorageTestContext(BlobServiceClient serviceClient, StorageAccount storageAccount, ILogger logger, CancellationToken cancellationToken)
         {
             _serviceClient = serviceClient;
             _logger = logger;
+            _cancellationToken = cancellationToken;
 
             StorageAccount = storageAccount;
         }
@@ -39,14 +41,14 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// <summary>
         /// Creates a new <see cref="BlobStorageTestContext"/> that interacts with Azure Blob Storage.
         /// </summary>
-        public static Task<BlobStorageTestContext> GivenAsync(TestConfig configuration, ILogger logger)
+        public static Task<BlobStorageTestContext> GivenAsync(ILogger logger)
         {
-            StorageAccount storageAccount = configuration.GetStorageAccount();
+            StorageAccount storageAccount = IntegrationTest.Configuration.GetStorageAccount();
             var serviceClient = new BlobServiceClient(
                 new Uri($"https://{storageAccount.Name}.blob.core.windows.net"),
-                new DefaultAzureCredential());
+                IntegrationTest.Credential);
 
-            return Task.FromResult(new BlobStorageTestContext(serviceClient, storageAccount, logger));
+            return Task.FromResult(new BlobStorageTestContext(serviceClient, storageAccount, logger, TestContext.Current.CancellationToken));
         }
 
         /// <summary>
@@ -56,7 +58,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         {
             BlobContainerClient containerClient = WhenBlobContainerUnavailable();
 
-            await containerClient.CreateIfNotExistsAsync();
+            await containerClient.CreateIfNotExistsAsync(cancellationToken: _cancellationToken);
             return containerClient;
         }
 
@@ -82,7 +84,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             blobContent ??= CreateBlobContent();
 
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            await blobClient.UploadAsync(blobContent);
+            await blobClient.UploadAsync(blobContent, _cancellationToken);
 
             return blobClient;
         }
@@ -100,7 +102,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldStoreBlobContainerAsync(BlobContainerClient containerClient)
         {
-            Assert.True(await containerClient.ExistsAsync(), $"temporary blob container '{containerClient.Name}' should remain available");
+            Assert.True(
+                await containerClient.ExistsAsync(_cancellationToken),
+                $"temporary blob container '{containerClient.Name}' should remain available");
         }
 
         /// <summary>
@@ -108,7 +112,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldDeleteBlobContainerAsync(BlobContainerClient containerClient)
         {
-            Assert.False(await containerClient.ExistsAsync(), $"temporary blob container '{containerClient.Name}' should be deleted");
+            Assert.False(
+                await containerClient.ExistsAsync(_cancellationToken),
+                $"temporary blob container '{containerClient.Name}' should be deleted");
         }
 
         /// <summary>
@@ -119,7 +125,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
             Assert.True(await blobClient.ExistsAsync(), $"temporary blob file '{blobName}' should be available in container {containerClient.Name}");
 
-            Response<BlobDownloadResult> getContent = await blobClient.DownloadContentAsync();
+            Response<BlobDownloadResult> getContent = await blobClient.DownloadContentAsync(_cancellationToken);
             Assert.Equal(blobContent.ToArray(), getContent.Value.Content.ToArray());
         }
 
@@ -128,7 +134,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         /// </summary>
         public async Task ShouldStoreBlobFileAsync(BlobContainerClient containerClient, string blobName)
         {
-            Assert.True(await containerClient.GetBlobClient(blobName).ExistsAsync(), $"temporary blob file '{blobName}' should be available in container '{containerClient.Name}'");
+            Assert.True(
+                await containerClient.GetBlobClient(blobName).ExistsAsync(_cancellationToken),
+                $"temporary blob file '{blobName}' should be available in container '{containerClient.Name}'");
         }
 
         /// <summary>
@@ -137,7 +145,9 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
         public async Task ShouldDeleteBlobFileAsync(BlobContainerClient containerClient, string blobName)
         {
             BlobClient blobClient = containerClient.GetBlobClient(blobName);
-            Assert.False(await blobClient.ExistsAsync(), $"temporary blob file '{blobName}' should be unavailable in container '{containerClient.Name}'");
+            Assert.False(
+                await blobClient.ExistsAsync(_cancellationToken),
+                $"temporary blob file '{blobName}' should be unavailable in container '{containerClient.Name}'");
         }
 
         /// <summary>
@@ -150,6 +160,7 @@ namespace Arcus.Testing.Tests.Integration.Storage.Fixture
 
             foreach (BlobContainerClient container in _blobContainers)
             {
+                // ReSharper disable once MethodSupportsCancellation - teardown should not be cancelled to ensure all resources are cleaned up
                 disposables.Add(AsyncDisposable.Create(() => container.DeleteIfExistsAsync()));
             }
         }

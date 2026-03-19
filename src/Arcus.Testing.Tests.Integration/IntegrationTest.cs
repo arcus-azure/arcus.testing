@@ -1,4 +1,6 @@
 ﻿using System;
+using Arcus.Testing.Tests.Integration.Configuration;
+using Azure.Core;
 using Bogus;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -22,17 +24,27 @@ namespace Arcus.Testing.Tests.Integration
             });
 
             Logger = new XunitTestLogger(outputWriter);
+        }
+
+        static IntegrationTest()
+        {
             Configuration = TestConfig.Create(options =>
             {
                 options.AddOptionalJsonFile("appsettings.default.json")
                        .AddOptionalJsonFile("appsettings.local.json");
             });
+            Credential = Configuration.GetServicePrincipal().GetCredential();
         }
 
         /// <summary>
-        /// Gets the current configuration loaded for this integration test suite.
+        /// Gets the shared configuration loaded for this integration test suite.
         /// </summary>
-        protected TestConfig Configuration { get; }
+        public static TestConfig Configuration { get; }
+
+        /// <summary>
+        /// Gets the shared credential loaded for this integration test suite to authenticate with Azure resources.
+        /// </summary>
+        public static TokenCredential Credential { get; }
 
         /// <summary>
         /// Gets the logger to write diagnostic messages during the integration test execution.

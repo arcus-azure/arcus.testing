@@ -28,7 +28,7 @@ The `TemporaryBlobContainer` provides a solution when the integration test requi
 using Arcus.Testing;
 
 await using var container = await TemporaryBlobContainer.CreateIfNotExistsAsync(
-    "<account-name", "<container-name>", logger);
+    "<account-name", "<container-name>", logger, cancellationToken);
 
 // Interact with the container during the lifetime of the fixture.
 BlobContainerClient client = container.Client;
@@ -42,7 +42,7 @@ using Arcus.Testing;
 await using TemporaryBlobContainer container = ...
 
 BlobClient client = await container.UpsertBlobFileAsync(
-    "<blob-name>", BinaryData.FromString("<blob-content>"));
+    "<blob-name>", BinaryData.FromString("<blob-content>"), cancellationToken);
 ```
 
 :::praise
@@ -109,10 +109,11 @@ The `TemporaryBlobFile` provides a solution when the integration test requires d
 using Arcus.Testing;
 
 await using var file = await TemporaryBlobFile.UpsertFileAsync(
-    blobContainerUri: new Uri("<blob-container-uri">),
-    blobName: "<blob-name>",
-    blobContent: BinaryData.FromString("<blob-content">),
-    logger: logger);
+    new Uri("<blob-container-uri">),
+    "<blob-name>",
+    BinaryData.FromString("<blob-content">),
+    logger,
+    cancellationToken);
 
 // Interact with the blob during the lifetime of the fixture.
 BlobClient client = file.Client;

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
@@ -115,7 +117,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync(string,BinaryData,CancellationToken)"/>).
         /// </summary>
         [Obsolete("Will be removed in v3, please use " + nameof(CleanUpsertedBlobs) + " instead that provides exactly the same on-teardown functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public OnTeardownBlobContainerOptions CleanCreatedBlobs()
@@ -125,7 +127,7 @@ namespace Arcus.Testing
 
         /// <summary>
         /// (default for cleaning blobs) Configures the <see cref="TemporaryBlobContainer"/> to only delete the Azure Blobs upon disposal
-        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync"/>).
+        /// if the blob was upserted by the test fixture (using <see cref="TemporaryBlobContainer.UpsertBlobFileAsync(string,BinaryData,CancellationToken)"/>).
         /// </summary>
         public OnTeardownBlobContainerOptions CleanUpsertedBlobs()
         {
@@ -291,9 +293,28 @@ namespace Arcus.Testing
         /// <param name="containerName">The name of the Azure Blob container to create.</param>
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger)
         {
-            return CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(accountName, containerName, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
+        /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        /// </remarks>
+        /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
+        /// <param name="containerName">The name of the Azure Blob container to create.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(string accountName, string containerName, ILogger logger, CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -307,19 +328,45 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
             string accountName,
             string containerName,
             ILogger logger,
             Action<TemporaryBlobContainerOptions> configureOptions)
         {
+            return CreateIfNotExistsAsync(accountName, containerName, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
+        /// </summary>
+        /// <remarks>
+        ///     <para>⚡ Uses <see cref="DefaultAzureCredential"/> to authenticate with Azure Blob Storage.</para>
+        /// </remarks>
+        /// <param name="accountName">The name of the Azure Storage account to create the temporary Azure Blob container in.</param>
+        /// <param name="containerName">The name of the Azure Blob container to create.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Blob container.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="accountName"/> or <paramref name="containerName"/> is blank.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
+            string accountName,
+            string containerName,
+            ILogger logger,
+            Action<TemporaryBlobContainerOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
             ArgumentException.ThrowIfNullOrWhiteSpace(accountName);
             ArgumentException.ThrowIfNullOrWhiteSpace(containerName);
+            cancellationToken.ThrowIfCancellationRequested();
 
             var blobContainerUri = new Uri($"https://{accountName}.blob.core.windows.net/{containerName}");
             var containerClient = new BlobContainerClient(blobContainerUri, new DefaultAzureCredential());
 
-            return CreateIfNotExistsAsync(containerClient, logger, configureOptions);
+            return CreateIfNotExistsAsync(containerClient, logger, configureOptions, cancellationToken);
         }
 
         /// <summary>
@@ -328,9 +375,24 @@ namespace Arcus.Testing
         /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger)
         {
-            return CreateIfNotExistsAsync(containerClient, logger, configureOptions: null);
+            return CreateIfNotExistsAsync(containerClient, logger, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(BlobContainerClient containerClient, ILogger logger, CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(containerClient, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -340,30 +402,52 @@ namespace Arcus.Testing
         /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
         /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
-        public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
             BlobContainerClient containerClient,
             ILogger logger,
             Action<TemporaryBlobContainerOptions> configureOptions)
         {
+            return CreateIfNotExistsAsync(containerClient, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryBlobContainer"/> which creates a new Azure Blob Storage container if it doesn't exist yet.
+        /// </summary>
+        /// <param name="containerClient">The client to interact with the Azure Blob Storage container.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the Azure Blob container.</param>
+        /// <param name="configureOptions">The additional options to manipulate the behavior of the test fixture during its lifetime.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="containerClient"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public static async Task<TemporaryBlobContainer> CreateIfNotExistsAsync(
+            BlobContainerClient containerClient,
+            ILogger logger,
+            Action<TemporaryBlobContainerOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
             ArgumentNullException.ThrowIfNull(containerClient);
+            cancellationToken.ThrowIfCancellationRequested();
             logger ??= NullLogger.Instance;
 
             var options = new TemporaryBlobContainerOptions();
             configureOptions?.Invoke(options);
 
-            bool createdByUs = await EnsureContainerCreatedAsync(containerClient, logger).ConfigureAwait(false);
-            await CleanBlobContainerUponCreationAsync(containerClient, options, logger).ConfigureAwait(false);
+            bool createdByUs = await EnsureContainerCreatedAsync(containerClient, logger, cancellationToken).ConfigureAwait(false);
+            await CleanBlobContainerUponCreationAsync(containerClient, options, logger, cancellationToken).ConfigureAwait(false);
 
             return new TemporaryBlobContainer(containerClient, createdByUs, options, logger);
         }
 
-        private static async Task<bool> EnsureContainerCreatedAsync(BlobContainerClient containerClient, ILogger logger)
+        private static async Task<bool> EnsureContainerCreatedAsync(BlobContainerClient containerClient, ILogger logger, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             bool createdByUs = false;
-            if (!await containerClient.ExistsAsync().ConfigureAwait(false))
+            if (!await containerClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupCreateNewContainer(containerClient.Name, containerClient.AccountName);
-                await containerClient.CreateIfNotExistsAsync().ConfigureAwait(false);
+                await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
                 createdByUs = true;
             }
             else
@@ -381,7 +465,7 @@ namespace Arcus.Testing
         /// <param name="blobContent">The content of the blob to upload.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + "instead that provides exactly the same functionality with cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task<BlobClient> UploadBlobAsync(string blobName, BinaryData blobContent)
         {
             return UpsertBlobFileAsync(blobName, blobContent);
@@ -399,14 +483,36 @@ namespace Arcus.Testing
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
-        public async Task<BlobClient> UpsertBlobFileAsync(string blobName, BinaryData blobContent)
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(UpsertBlobFileAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task<BlobClient> UpsertBlobFileAsync(string blobName, BinaryData blobContent)
+        {
+            return UpsertBlobFileAsync(blobName, blobContent, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Uploads a new or replaces an existing blob in the Azure Blob container (a.k.a. UPSERT).
+        /// </summary>
+        /// <remarks>
+        ///     ⚡ Any blob files upserted via this call will always be deleted (if new) or reverted (if existing)
+        ///     when the <see cref="TemporaryBlobContainer"/> is disposed.
+        /// </remarks>
+        /// <param name="blobName">The name of the blob to upload.</param>
+        /// <param name="blobContent">The content of the blob to upload.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="blobName"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="blobContent"/> is <c>null</c>.</exception>
+        /// <exception cref="RequestFailedException">Thrown when the interaction with Azure failed.</exception>
+        public async Task<BlobClient> UpsertBlobFileAsync(string blobName, BinaryData blobContent, CancellationToken cancellationToken)
         {
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentException.ThrowIfNullOrWhiteSpace(blobName);
             ArgumentNullException.ThrowIfNull(blobContent);
+            cancellationToken.ThrowIfCancellationRequested();
 
             BlobClient blobClient = _containerClient.GetBlobClient(blobName);
-            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger).ConfigureAwait(false));
+            _blobs.Add(await TemporaryBlobFile.UpsertFileAsync(blobClient, blobContent, _logger, cancellationToken).ConfigureAwait(false));
 
             return blobClient;
         }
@@ -443,21 +549,28 @@ namespace Arcus.Testing
             GC.SuppressFinalize(this);
         }
 
-        private static async Task CleanBlobContainerUponCreationAsync(BlobContainerClient containerClient, TemporaryBlobContainerOptions options, ILogger logger)
+        private static async Task CleanBlobContainerUponCreationAsync(
+            BlobContainerClient containerClient,
+            TemporaryBlobContainerOptions options,
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (options.OnSetup.Blobs is OnSetupContainer.LeaveExisted)
             {
                 return;
             }
 
 #pragma warning disable S3267 // Sonar recommends LINQ on loops, but Microsoft has no Async LINQ built-in, besides the additional/outdated `System.Linq.Async` package.
-            await foreach (BlobItem blob in containerClient.GetBlobsAsync().ConfigureAwait(false))
+            await foreach (BlobItem blob in containerClient.GetBlobsAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
 #pragma warning restore
             {
                 if (options.OnSetup.IsMatched(blob))
                 {
                     logger.LogSetupDeleteFile(blob.Name, containerClient.AccountName, containerClient.Name);
-                    await containerClient.GetBlobClient(blob.Name).DeleteIfExistsAsync().ConfigureAwait(false);
+                    await containerClient.GetBlobClient(blob.Name)
+                                         .DeleteIfExistsAsync(cancellationToken: cancellationToken)
+                                         .ConfigureAwait(false);
                 }
             }
         }
