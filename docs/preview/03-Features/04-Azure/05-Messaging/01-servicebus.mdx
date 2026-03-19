@@ -23,7 +23,7 @@ The `TemporaryTopic` provides a solution when the integration test requires an A
 using Arcus.Testing;
 
 await using var topic = await TemporaryTopic.CreateIfNotExistsAsync(
-  "<fully-qualified-namespace>", "<topic-name>", logger);
+  "<fully-qualified-namespace>", "<topic-name>", logger, cancellationToken);
 ```
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
@@ -35,7 +35,7 @@ using Arcus.Testing;
 
 await using TemporaryTopic topic = ...
 
-await topic.AddSubscriptionAsync("<subscription-name>");
+await topic.AddSubscriptionAsync("<subscription-name>", cancellationToken);
 ```
 
 ### Customization
@@ -127,7 +127,7 @@ IEnumerable<ServiceBusReceivedMessage> messages =
              .Take(10)
 
              // Start peeking for messages.
-             .ToListAsync();
+             .ToListAsync(cancellationToken);
 ```
 
 ### Temporary topic subscription
@@ -139,7 +139,7 @@ The `TemporaryTopicSubscription` provides a solution when the integration test r
 using Arcus.Testing;
 
 await using var sub = await TemporaryTopicSubscription.CreateIfNotExistsAsync(
-    "<fully-qualified-namespace>", "<topic-name>", "<subscription-name>", logger);
+    "<fully-qualified-namespace>", "<topic-name>", "<subscription-name>", logger, cancellationToken);
 ```
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
@@ -156,7 +156,7 @@ using Arcus.Testing;
 await using TemporaryTopicSubscription sub = ...
 
 RuleFilter filter = new SqlRuleFilter("1=1");
-await sub.AddRuleIfNotExistsAsync("<rule-name>", filter);
+await sub.AddRuleIfNotExistsAsync("<rule-name>", filter, cancellationToken);
 ```
 
 </TabItem>
@@ -171,7 +171,7 @@ The `TemporaryQueue` provides a solution when the integration test requires an A
 using Arcus.Testing;
 
 await using var queue = await TemporaryQueue.CreateIfNotExistsAsync(
-  "<fully-qualified-namespace>", "<queue-name>", logger);
+  "<fully-qualified-namespace>", "<queue-name>", logger, cancellationToken);
 ```
 
 > ⚡ Uses by default the [`DefaultAzureCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential) but other type of authentication mechanisms are supported with overloads.
@@ -266,7 +266,7 @@ IEnumerable<ServiceBusReceivedMessage> messages =
              .Take(10)
 
              // Start peeking for messages.
-             .ToListAsync();
+             .ToListAsync(cancellationToken);
 ```
 
 </TabItem>

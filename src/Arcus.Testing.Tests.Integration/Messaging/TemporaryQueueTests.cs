@@ -141,8 +141,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             ServiceBusMessage messageCompleteAfter = serviceBus.WhenMessageUnsent(),
                               messageDeadLetterAfter = serviceBus.WhenMessageUnsent();
-            await serviceBus.WhenMessageSentAsync(queueName, messageCompleteAfter);
-            await serviceBus.WhenMessageSentAsync(queueName, messageDeadLetterAfter);
+
+            await temp.Sender.SendMessagesAsync([messageCompleteAfter, messageDeadLetterAfter], TestContext.Current.CancellationToken);
             temp.OnTeardown.DeadLetterMessages(msg => msg.MessageId == messageDeadLetterAfter.MessageId);
 
             await temp.DisposeAsync();
@@ -176,7 +176,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             var temp =
                 configureOptions is null
-                    ? await TemporaryQueue.CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, Logger)
+                    ? await TemporaryQueue.CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, Logger, TestContext.Current.CancellationToken)
                     : await TemporaryQueue.CreateIfNotExistsAsync(fullyQualifiedNamespace, Bogus.Random.Guid().ToString(), Logger, configureOptions:
                         options =>
                         {
@@ -184,7 +184,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging
                                            .CreateQueueWith(queue => queue.Name = queueName);
 
                             configureOptions(options);
-                        });
+
+                        }, TestContext.Current.CancellationToken);
 
             Assert.Equal(queueName, temp.Name);
             Assert.Equal(fullyQualifiedNamespace, temp.FullyQualifiedNamespace);

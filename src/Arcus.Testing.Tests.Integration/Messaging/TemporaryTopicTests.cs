@@ -218,12 +218,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging
             string fullyQualifiedNamespace = Configuration.GetServiceBus().HostName;
             var temp =
                 configureOptions is null
-                    ? await TemporaryTopic.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, Logger)
+                    ? await TemporaryTopic.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, Logger, TestContext.Current.CancellationToken)
                     : await TemporaryTopic.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, Logger, configureOptions: options =>
                     {
                         options.OnSetup.CreateTopicWith(topic => topic.Name = topicName);
                         configureOptions(options);
-                    });
+
+                    }, TestContext.Current.CancellationToken);
 
             Assert.Equal(topicName, temp.Name);
             Assert.Equal(fullyQualifiedNamespace, temp.FullyQualifiedNamespace);

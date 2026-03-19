@@ -122,7 +122,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             // Act / Assert
             var exception = await Assert.ThrowsAnyAsync<ArgumentException>(
-                () => temp.AddRuleIfNotExistsAsync(DefaultRuleName, AnyFilter));
+                () => temp.AddRuleIfNotExistsAsync(DefaultRuleName, AnyFilter, TestContext.Current.CancellationToken));
 
             Assert.Contains("topic subscription", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("custom name", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -148,11 +148,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging
 
             var temp =
                 Bogus.Random.Bool()
-                    ? await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, Logger)
+                    ? await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, Logger, TestContext.Current.CancellationToken)
                     : await TemporaryTopicSubscription.CreateIfNotExistsAsync(fullyQualifiedNamespace, "otherTopic", subscriptionName, Logger, configureOptions: options =>
                     {
                         options.OnSetup.CreateSubscriptionWith(sub => sub.TopicName = topicName);
-                    });
+
+                    }, TestContext.Current.CancellationToken);
 
             Assert.Equal(subscriptionName, temp.Name);
             return temp;
@@ -169,7 +170,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging
         internal static async Task<string> WhenRuleAvailableAsync(this TemporaryTopicSubscription temp)
         {
             string ruleName = $"rule-{Guid.NewGuid()}";
-            await temp.AddRuleIfNotExistsAsync(ruleName, new TrueRuleFilter());
+            await temp.AddRuleIfNotExistsAsync(ruleName, new TrueRuleFilter(), TestContext.Current.CancellationToken);
 
             return ruleName;
         }

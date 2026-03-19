@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -117,9 +119,35 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
         /// </exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string topicName, string subscriptionName, ILogger logger)
         {
             return CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, logger, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryTopicSubscription"/> which creates a new Azure Service Bus topic subscription if it doesn't exist yet.
+        /// </summary>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="topicName">The name of the Azure Service Bus topic in which the subscription should be created.</param>
+        /// <param name="subscriptionName">The name of the subscription in the configured Azure Service Bus topic.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic subscription.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">Thrown when one of the passed arguments is blank.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+            string fullyQualifiedNamespace,
+            string topicName,
+            string subscriptionName,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, topicName, subscriptionName, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -138,6 +166,7 @@ namespace Arcus.Testing
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
         /// </exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
             string fullyQualifiedNamespace,
             string topicName,
@@ -154,6 +183,39 @@ namespace Arcus.Testing
         /// <summary>
         /// Creates a new instance of the <see cref="TemporaryTopicSubscription"/> which creates a new Azure Service Bus topic subscription if it doesn't exist yet.
         /// </summary>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="topicName">The name of the Azure Service Bus topic in which the subscription should be created.</param>
+        /// <param name="subscriptionName">The name of the subscription in the configured Azure Service Bus topic.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic subscription.</param>
+        /// <param name="configureOptions">
+        ///     The function to configure the additional options that describes how the Azure Service Bus topic subscription should be created.
+        /// </param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">Thrown when one of the passed arguments is blank.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/> in the given <paramref name="fullyQualifiedNamespace"/>.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+            string fullyQualifiedNamespace,
+            string topicName,
+            string subscriptionName,
+            ILogger logger,
+            Action<TemporaryTopicSubscriptionOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+
+            var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
+            return CreateIfNotExistsAsync(client, topicName, subscriptionName, logger, configureOptions, cancellationToken);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryTopicSubscription"/> which creates a new Azure Service Bus topic subscription if it doesn't exist yet.
+        /// </summary>
         /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic subscription should be created.</param>
         /// <param name="topicName">The name of the Azure Service Bus topic in which the subscription should be created.</param>
         /// <param name="subscriptionName">The name of the subscription in the configured Azure Service Bus topic.</param>
@@ -164,6 +226,7 @@ namespace Arcus.Testing
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/>
         ///     in the given namespace where the given <paramref name="adminClient"/> points to.
         /// </exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             string topicName,
@@ -171,6 +234,31 @@ namespace Arcus.Testing
             ILogger logger)
         {
             return CreateIfNotExistsAsync(adminClient, topicName, subscriptionName, logger, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryTopicSubscription"/> which creates a new Azure Service Bus topic subscription if it doesn't exist yet.
+        /// </summary>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic subscription should be created.</param>
+        /// <param name="topicName">The name of the Azure Service Bus topic in which the subscription should be created.</param>
+        /// <param name="subscriptionName">The name of the subscription in the configured Azure Service Bus topic.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic subscription.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one of the passed arguments is blank.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/>
+        ///     in the given namespace where the given <paramref name="adminClient"/> points to.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+            ServiceBusAdministrationClient adminClient,
+            string topicName,
+            string subscriptionName,
+            ILogger logger,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(adminClient, topicName, subscriptionName, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -189,13 +277,44 @@ namespace Arcus.Testing
         ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/>
         ///     in the given namespace where the given <paramref name="adminClient"/> points to.
         /// </exception>
-        public static async Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             string topicName,
             string subscriptionName,
             ILogger logger,
             Action<TemporaryTopicSubscriptionOptions> configureOptions)
         {
+            return CreateIfNotExistsAsync(adminClient, topicName, subscriptionName, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryTopicSubscription"/> which creates a new Azure Service Bus topic subscription if it doesn't exist yet.
+        /// </summary>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic subscription should be created.</param>
+        /// <param name="topicName">The name of the Azure Service Bus topic in which the subscription should be created.</param>
+        /// <param name="subscriptionName">The name of the subscription in the configured Azure Service Bus topic.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus topic subscription.</param>
+        /// <param name="configureOptions">
+        ///     The function to configure the additional options that describes how the Azure Service Bus topic subscription should be created.
+        /// </param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when one of the passed arguments is blank.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the no Azure Service Bus topic exists with the provided <paramref name="topicName"/>
+        ///     in the given namespace where the given <paramref name="adminClient"/> points to.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static async Task<TemporaryTopicSubscription> CreateIfNotExistsAsync(
+            ServiceBusAdministrationClient adminClient,
+            string topicName,
+            string subscriptionName,
+            ILogger logger,
+            Action<TemporaryTopicSubscriptionOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(adminClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
             ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
@@ -206,10 +325,10 @@ namespace Arcus.Testing
 
             CreateSubscriptionOptions createOptions = options.OnSetup.CreateSubscriptionOptions(topicName, subscriptionName);
 
-            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync().ConfigureAwait(false);
+            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync(cancellationToken).ConfigureAwait(false);
             string serviceBusNamespace = properties.Name;
 
-            if (!await adminClient.TopicExistsAsync(createOptions.TopicName).ConfigureAwait(false))
+            if (!await adminClient.TopicExistsAsync(createOptions.TopicName, cancellationToken).ConfigureAwait(false))
             {
                 throw new InvalidOperationException(
                     $"[Test:Setup] cannot create temporary subscription '{createOptions.SubscriptionName}' on Azure Service Bus topic '{serviceBusNamespace}/{createOptions.TopicName}' " +
@@ -217,14 +336,14 @@ namespace Arcus.Testing
                     $"Please make sure to have an available Azure Service Bus topic before using the temporary topic subscription test fixture");
             }
 
-            if (await adminClient.SubscriptionExistsAsync(createOptions.TopicName, createOptions.SubscriptionName).ConfigureAwait(false))
+            if (await adminClient.SubscriptionExistsAsync(createOptions.TopicName, createOptions.SubscriptionName, cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
                 return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: false, logger);
             }
 
             logger.LogSetupCreateNewSubscription(createOptions.SubscriptionName, serviceBusNamespace, createOptions.TopicName);
-            await adminClient.CreateSubscriptionAsync(createOptions).ConfigureAwait(false);
+            await adminClient.CreateSubscriptionAsync(createOptions, cancellationToken).ConfigureAwait(false);
 
             return new TemporaryTopicSubscription(adminClient, serviceBusNamespace, createOptions, createdByUs: true, logger);
         }
@@ -237,8 +356,25 @@ namespace Arcus.Testing
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="ruleName"/> or <paramref name="ruleFilter"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="ruleName"/> represents the default rule name.</exception>
-        public async Task AddRuleIfNotExistsAsync(string ruleName, RuleFilter ruleFilter)
+        [Obsolete("Will be removed in v3, please use the " + nameof(AddRuleIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public Task AddRuleIfNotExistsAsync(string ruleName, RuleFilter ruleFilter)
         {
+            return AddRuleIfNotExistsAsync(ruleName, ruleFilter, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Adds an Azure Service Bus topic subscription rule to the test fixture, which will get disposed of when the test fixture gets disposed.
+        /// </summary>
+        /// <param name="ruleName">The name to describe the subscription rule.</param>
+        /// <param name="ruleFilter">The filter expression used to match messages.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="ruleName"/> or <paramref name="ruleFilter"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="ruleName"/> represents the default rule name.</exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public async Task AddRuleIfNotExistsAsync(string ruleName, RuleFilter ruleFilter, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
             ArgumentNullException.ThrowIfNull(ruleName);
             ArgumentNullException.ThrowIfNull(ruleFilter);
@@ -249,7 +385,7 @@ namespace Arcus.Testing
                     "Only custom Azure Service Bus topic subscription rules can be added to the test fixture, please provide a custom name for your test-managed rule", nameof(ruleName));
             }
 
-            if (await _client.RuleExistsAsync(TopicName, Name, ruleName).ConfigureAwait(false))
+            if (await _client.RuleExistsAsync(TopicName, Name, ruleName, cancellationToken).ConfigureAwait(false))
             {
                 _logger.LogSkipCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
             }
@@ -258,7 +394,7 @@ namespace Arcus.Testing
                 _logger.LogCreateSubscriptionRule(ruleName, FullyQualifiedNamespace, TopicName, Name);
 
                 var options = new CreateRuleOptions(ruleName, ruleFilter);
-                await _client.CreateRuleAsync(TopicName, Name, options).ConfigureAwait(false);
+                await _client.CreateRuleAsync(TopicName, Name, options, cancellationToken).ConfigureAwait(false);
 
                 _rules.Add(options);
             }

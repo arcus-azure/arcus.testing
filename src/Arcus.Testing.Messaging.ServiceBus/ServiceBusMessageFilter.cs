@@ -84,6 +84,7 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
+        [Obsolete("Will be removed in v3, please use the " + nameof(AnyAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task<bool> AnyAsync()
         {
             return AnyAsync(CancellationToken.None);
@@ -107,6 +108,7 @@ namespace Arcus.Testing
         /// <summary>
         /// Gets the awaiter used to await the <see cref="ToListAsync()"/>.
         /// </summary>
+        [Obsolete("Will be removed in v3, please use the " + nameof(ToListAsync) + " instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public TaskAwaiter<IReadOnlyList<ServiceBusReceivedMessage>> GetAwaiter()
         {
             return ToListAsync().GetAwaiter();
@@ -118,6 +120,7 @@ namespace Arcus.Testing
         /// <remarks>
         ///     Deferred messages are also included as messages are peeked.
         /// </remarks>
+        [Obsolete("Will be removed in v3, please use the " + nameof(ToListAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Task<IReadOnlyList<ServiceBusReceivedMessage>> ToListAsync()
         {
             return ToListAsync(CancellationToken.None);

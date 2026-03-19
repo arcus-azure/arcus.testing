@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Testing.Tests.Integration.Messaging.Configuration;
 using Azure.Identity;
@@ -24,6 +25,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         private readonly Collection<string> _topicNames = new(), _queueNames = new();
         private readonly Collection<(string topicName, string subscriptionName)> _subscriptionNames = new();
         private readonly Collection<(string topicName, string subscriptionName, string ruleName)> _ruleNames = new();
+        private readonly CancellationToken _cancellationToken;
         private readonly ILogger _logger;
 
         private static readonly Faker Bogus = new();
@@ -31,11 +33,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         private ServiceBusTestContext(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
             _adminClient = adminClient;
             _messagingClient = messagingClient;
             _logger = logger;
+            _cancellationToken = cancellationToken;
         }
 
         /// <summary>
@@ -49,7 +53,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             var adminClient = new ServiceBusAdministrationClient(serviceBus.HostName, credential);
             var messagingClient = new ServiceBusClient(serviceBus.HostName, credential);
 
-            return new ServiceBusTestContext(adminClient, messagingClient, logger);
+            return new ServiceBusTestContext(adminClient, messagingClient, logger, TestContext.Current.CancellationToken);
         }
 
         /// <summary>
@@ -58,10 +62,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// <returns>The name of the available queue.</returns>
         public async Task<string> WhenQueueAvailableAsync()
         {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             string queueName = WhenQueueUnavailable();
             _logger.LogTrace("[Test:Setup] Create available Azure Service Bus queue '{QueueName}'", queueName);
 
-            await _adminClient.CreateQueueAsync(queueName);
+            await _adminClient.CreateQueueAsync(queueName, _cancellationToken);
             return queueName;
         }
 
@@ -83,10 +89,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// <returns>The name of the available topic.</returns>
         public async Task<string> WhenTopicAvailableAsync()
         {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             string topicName = WhenTopicUnavailable();
             _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic '{TopicName}'", topicName);
 
-            await _adminClient.CreateTopicAsync(topicName);
+            await _adminClient.CreateTopicAsync(topicName, _cancellationToken);
             return topicName;
         }
 
@@ -109,15 +117,19 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// <returns>The name of the available subscription.</returns>
         public async Task<string> WhenTopicSubscriptionAvailableAsync(string topicName)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             string subscriptionName = WhenTopicSubscriptionUnavailable(topicName);
             _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic subscription '{SubscriptionName}' on topic '{TopicName}'", subscriptionName, topicName);
 
-            await _adminClient.CreateSubscriptionAsync(topicName, subscriptionName);
+            await _adminClient.CreateSubscriptionAsync(topicName, subscriptionName, _cancellationToken);
             return subscriptionName;
         }
 
         public async Task<string> WhenTopicSubscriptionRuleAvailableAsync(string topicName, string subscriptionName)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
+
             string ruleName = WhenTopicSubscriptionRuleNameUnavailable(topicName, subscriptionName);
             _logger.LogTrace("[Test:Setup] Create available Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", ruleName, subscriptionName, topicName);
 
@@ -125,7 +137,8 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
             {
                 Name = ruleName,
                 Filter = new TrueRuleFilter()
-            });
+
+            }, _cancellationToken);
 
             return ruleName;
         }
@@ -157,7 +170,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task WhenQueueDeletedAsync(string queueName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus queue '{QueueName}'", queueName);
-            await _adminClient.DeleteQueueAsync(queueName);
+            await _adminClient.DeleteQueueAsync(queueName, _cancellationToken);
         }
 
         /// <summary>
@@ -166,7 +179,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task WhenTopicDeletedAsync(string topicName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic '{TopicName}'", topicName);
-            await _adminClient.DeleteTopicAsync(topicName);
+            await _adminClient.DeleteTopicAsync(topicName, _cancellationToken);
         }
 
         /// <summary>
@@ -175,13 +188,13 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task WhenTopicSubscriptionDeletedAsync(string topicName, string subscriptionName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription '{SubscriptionName}' in topic '{TopicName}'", subscriptionName, topicName);
-            await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName);
+            await _adminClient.DeleteSubscriptionAsync(topicName, subscriptionName, _cancellationToken);
         }
 
         public async Task WhenTopicSubscriptionRuleDeletedAsync(string topicName, string subscriptionName, string ruleName)
         {
             _logger.LogTrace("[Test:Setup] Delete available Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", ruleName, subscriptionName, topicName);
-            await _adminClient.DeleteRuleAsync(topicName, subscriptionName, ruleName);
+            await _adminClient.DeleteRuleAsync(topicName, subscriptionName, ruleName, _cancellationToken);
         }
 
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName)
@@ -192,9 +205,10 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 
         public async Task<ServiceBusMessage> WhenMessageSentAsync(string entityName, ServiceBusMessage message)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             await using ServiceBusSender sender = _messagingClient.CreateSender(entityName);
 
-            await sender.SendMessageAsync(message);
+            await sender.SendMessageAsync(message, _cancellationToken);
             return message;
         }
 
@@ -213,7 +227,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldHaveQueueAsync(string queueName)
         {
-            Assert.True(await _adminClient.QueueExistsAsync(queueName), $"Azure Service Bus queue '{queueName}' should be available on the namespace, but it isn't");
+            Assert.True(await _adminClient.QueueExistsAsync(queueName, _cancellationToken), $"Azure Service Bus queue '{queueName}' should be available on the namespace, but it isn't");
         }
 
         /// <summary>
@@ -221,7 +235,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldNotHaveQueueAsync(string queueName)
         {
-            Assert.False(await _adminClient.QueueExistsAsync(queueName), $"Azure Service Bus queue '{queueName}' should not be available on the namespace, but it is");
+            Assert.False(await _adminClient.QueueExistsAsync(queueName, _cancellationToken), $"Azure Service Bus queue '{queueName}' should not be available on the namespace, but it is");
         }
 
         /// <summary>
@@ -229,7 +243,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldHaveTopicAsync(string topicName)
         {
-            Assert.True(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should be available on the namespace, but it isn't");
+            Assert.True(await _adminClient.TopicExistsAsync(topicName, _cancellationToken), $"Azure Service Bus topic '{topicName}' should be available on the namespace, but it isn't");
         }
 
         /// <summary>
@@ -237,7 +251,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldNotHaveTopicAsync(string topicName)
         {
-            Assert.False(await _adminClient.TopicExistsAsync(topicName), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
+            Assert.False(await _adminClient.TopicExistsAsync(topicName, _cancellationToken), $"Azure Service Bus topic '{topicName}' should not be available on the namespace, but it is");
         }
 
         /// <summary>
@@ -245,7 +259,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
-            Assert.True(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should have a subscription '{subscriptionName}', but it hasn't");
+            Assert.True(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName, _cancellationToken), $"Azure Service Bus topic '{topicName}' should have a subscription '{subscriptionName}', but it hasn't");
         }
 
         /// <summary>
@@ -253,17 +267,17 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldNotHaveTopicSubscriptionAsync(string topicName, string subscriptionName)
         {
-            Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
+            Assert.False(await _adminClient.SubscriptionExistsAsync(topicName, subscriptionName, _cancellationToken), $"Azure Service Bus topic '{topicName}' should not have a subscription '{subscriptionName}', but it has");
         }
 
         public async Task ShouldHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
         {
-            Assert.True(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service Bus topic subscription '{subscriptionName}' should have a rule '{ruleName}', but it hasn't");
+            Assert.True(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName, _cancellationToken), $"Azure Service Bus topic subscription '{subscriptionName}' should have a rule '{ruleName}', but it hasn't");
         }
 
         public async Task ShouldNotHaveTopicSubscriptionRuleAsync(string topicName, string subscriptionName, string ruleName)
         {
-            Assert.False(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName), $"Azure Service Bus topic subscription '{subscriptionName}' should not have a rule '{ruleName}', but it has");
+            Assert.False(await _adminClient.RuleExistsAsync(topicName, subscriptionName, ruleName, _cancellationToken), $"Azure Service Bus topic subscription '{subscriptionName}' should not have a rule '{ruleName}', but it has");
         }
 
         /// <summary>
@@ -279,11 +293,12 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         /// </summary>
         public async Task ShouldLeaveMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
+            _cancellationToken.ThrowIfCancellationRequested();
             await Poll.UntilAvailableAsync<XunitException>(async () =>
             {
                 await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
 
-                IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+                IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100, cancellationToken: _cancellationToken);
                 Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have message '{message.MessageId}' still available on the bus, but it is not");
             });
         }
@@ -302,7 +317,7 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task ShouldDeadLetteredMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
             await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName, SubQueue.DeadLetter);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100, cancellationToken: _cancellationToken);
             Assert.True(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have dead-lettered message '{message.MessageId}', but can't find it in the dead-letter sub-queue");
         }
 
@@ -320,11 +335,11 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
         public async Task ShouldCompletedMessageAsync(string entityName, string subscriptionName, ServiceBusMessage message)
         {
             await using ServiceBusReceiver receiver = CreateReceiver(entityName, subscriptionName);
-            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+            IEnumerable<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100, cancellationToken: _cancellationToken);
             Assert.False(messages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the queue");
 
             await using ServiceBusReceiver deadLetter = CreateReceiver(entityName, subscriptionName, SubQueue.DeadLetter);
-            IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100);
+            IEnumerable<ServiceBusReceivedMessage> deadLetteredMessages = await deadLetter.PeekMessagesAsync(100, cancellationToken: _cancellationToken);
             Assert.False(deadLetteredMessages.Any(actual => actual.MessageId == message.MessageId), $"Azure Service bus '{entityName}' should have completed message '{message.MessageId}', but it can still be found on the dead-lettered queue");
         }
 
@@ -347,37 +362,37 @@ namespace Arcus.Testing.Tests.Integration.Messaging.Fixture
 
             disposables.AddRange(_queueNames.Select(queueName => AsyncDisposable.Create(async () =>
             {
-                if (await _adminClient.QueueExistsAsync(queueName))
+                if (await _adminClient.QueueExistsAsync(queueName, CancellationToken.None))
                 {
                     _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus queue '{QueueName}'", queueName);
-                    await _adminClient.DeleteQueueAsync(queueName);
+                    await _adminClient.DeleteQueueAsync(queueName, CancellationToken.None);
                 }
             })));
 
             disposables.AddRange(_ruleNames.Select(item => AsyncDisposable.Create(async () =>
             {
-                if (await _adminClient.RuleExistsAsync(item.topicName, item.subscriptionName, item.ruleName))
+                if (await _adminClient.RuleExistsAsync(item.topicName, item.subscriptionName, item.ruleName, CancellationToken.None))
                 {
                     _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus topic subscription rule '{RuleName}' on subscription '{SubscriptionName}' on topic '{TopicName}'", item.ruleName, item.subscriptionName, item.topicName);
-                    await _adminClient.DeleteRuleAsync(item.topicName, item.subscriptionName, item.ruleName);
+                    await _adminClient.DeleteRuleAsync(item.topicName, item.subscriptionName, item.ruleName, CancellationToken.None);
                 }
             })));
 
             disposables.AddRange(_subscriptionNames.Select(item => AsyncDisposable.Create(async () =>
             {
-                if (await _adminClient.SubscriptionExistsAsync(item.topicName, item.subscriptionName))
+                if (await _adminClient.SubscriptionExistsAsync(item.topicName, item.subscriptionName, CancellationToken.None))
                 {
                     _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus topic subscription '{SubscriptionName}' on topic '{TopicName}'", item.subscriptionName, item.topicName);
-                    await _adminClient.DeleteSubscriptionAsync(item.topicName, item.subscriptionName);
+                    await _adminClient.DeleteSubscriptionAsync(item.topicName, item.subscriptionName, CancellationToken.None);
                 }
             })));
 
             disposables.AddRange(_topicNames.Select(topicName => AsyncDisposable.Create(async () =>
             {
-                if (await _adminClient.TopicExistsAsync(topicName))
+                if (await _adminClient.TopicExistsAsync(topicName, CancellationToken.None))
                 {
                     _logger.LogTrace("[Test:Teardown] Fallback delete Azure Service Bus topic '{TopicName}'", topicName);
-                    await _adminClient.DeleteTopicAsync(topicName);
+                    await _adminClient.DeleteTopicAsync(topicName, CancellationToken.None);
                 }
             })));
 

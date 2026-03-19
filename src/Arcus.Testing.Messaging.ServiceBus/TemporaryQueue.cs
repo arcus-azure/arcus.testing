@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
@@ -371,6 +372,9 @@ namespace Arcus.Testing
     {
         private readonly ServiceBusAdministrationClient _adminClient;
         private readonly ServiceBusClient _messagingClient;
+#pragma warning disable CA2213 // The sender is disposed via the `DisposableCollection`.
+        private readonly ServiceBusSender _sender;
+#pragma warning restore CA2213
 
         private readonly bool _queueCreatedByUs, _messagingClientCreatedByUs;
         private readonly TemporaryQueueOptions _options;
@@ -392,6 +396,7 @@ namespace Arcus.Testing
 
             _adminClient = adminClient;
             _messagingClient = messagingClient;
+            _sender = messagingClient.CreateSender(queueName);
             _messagingClientCreatedByUs = messagingClientCreatedByUs;
 
             _queueCreatedByUs = queueCreatedByUs;
@@ -428,6 +433,19 @@ namespace Arcus.Testing
         }
 
         /// <summary>
+        /// Gets the client to send messages to this Azure Service Bus test-managed queue.
+        /// </summary>
+        /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
+        public ServiceBusSender Sender
+        {
+            get
+            {
+                ObjectDisposedException.ThrowIf(_disposables.IsDisposed, this);
+                return _sender;
+            }
+        }
+
+        /// <summary>
         /// Gets the filter client to search for messages on the Azure Service Bus test-managed queue (a.k.a. 'spy test fixture').
         /// </summary>
         /// <exception cref="ObjectDisposedException">Thrown when the test fixture was already teared down.</exception>
@@ -451,9 +469,29 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
         /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger)
         {
             return CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
+        /// </summary>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger, CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -470,12 +508,37 @@ namespace Arcus.Testing
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
         /// </exception>
-        public static Task<TemporaryQueue> CreateIfNotExistsAsync(
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger, Action<TemporaryQueueOptions> configureOptions)
+        {
+            return CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
+        /// </summary>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
+        /// <param name="configureOptions">
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
+        /// </param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
+        /// </exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
             string fullyQualifiedNamespace,
             string queueName,
             ILogger logger,
-            Action<TemporaryQueueOptions> configureOptions)
+            Action<TemporaryQueueOptions> configureOptions,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
 
             var credential = new DefaultAzureCredential();
@@ -485,7 +548,15 @@ namespace Arcus.Testing
             var messagingClient = new ServiceBusClient(fullyQualifiedNamespace, credential);
 #pragma warning restore CA2000
 
-            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions);
+            try
+            {
+                return await CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: true, queueName, logger, configureOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                await messagingClient.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
         }
 
         /// <summary>
@@ -501,13 +572,37 @@ namespace Arcus.Testing
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(ServiceBusAdministrationClient adminClient, ServiceBusClient messagingClient, string queueName, ILogger logger)
+        {
+            return CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions: null);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
+        /// </summary>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the queue should be created.</param>
+        /// <param name="messagingClient">
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
+        /// </param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
         public static Task<TemporaryQueue> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
             string queueName,
-            ILogger logger)
+            ILogger logger,
+            CancellationToken cancellationToken)
         {
-            return CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions: null);
+            cancellationToken.ThrowIfCancellationRequested();
+            return CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -526,6 +621,8 @@ namespace Arcus.Testing
         /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        [Obsolete("Will be removed in v3, please use the " + nameof(CreateIfNotExistsAsync) + " overload instead that provides cancellation token support", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static Task<TemporaryQueue> CreateIfNotExistsAsync(
             ServiceBusAdministrationClient adminClient,
             ServiceBusClient messagingClient,
@@ -533,7 +630,36 @@ namespace Arcus.Testing
             ILogger logger,
             Action<TemporaryQueueOptions> configureOptions)
         {
-            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, queueName, logger, configureOptions);
+            return CreateIfNotExistsAsync(adminClient, messagingClient, queueName, logger, configureOptions, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
+        /// </summary>
+        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the queue should be created.</param>
+        /// <param name="messagingClient">
+        ///     The messaging client to both send and receive messages on the Azure Service Bus, as well as handling setup and teardown actions.
+        /// </param>
+        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
+        /// <param name="configureOptions">
+        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
+        /// </param>
+        /// <param name="cancellationToken">The optional token to propagate notifications that the operation should be cancelled.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when the <paramref name="adminClient"/> or the <paramref name="messagingClient"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        /// <exception cref="ServiceBusException">Thrown when the interaction with Azure failed.</exception>
+        public static Task<TemporaryQueue> CreateIfNotExistsAsync(
+            ServiceBusAdministrationClient adminClient,
+            ServiceBusClient messagingClient,
+            string queueName,
+            ILogger logger,
+            Action<TemporaryQueueOptions> configureOptions,
+            CancellationToken cancellationToken)
+        {
+            return CreateIfNotExistsAsync(adminClient, messagingClient, messagingClientCreatedByUs: false, queueName, logger, configureOptions, cancellationToken);
         }
 
         private static async Task<TemporaryQueue> CreateIfNotExistsAsync(
@@ -542,8 +668,10 @@ namespace Arcus.Testing
             bool messagingClientCreatedByUs,
             string queueName,
             ILogger logger,
-            Action<TemporaryQueueOptions> configureOptions)
+            Action<TemporaryQueueOptions> configureOptions,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ArgumentNullException.ThrowIfNull(adminClient);
             ArgumentNullException.ThrowIfNull(messagingClient);
             ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
@@ -554,28 +682,29 @@ namespace Arcus.Testing
 
             CreateQueueOptions createOptions = options.OnSetup.CreateQueueOptions(queueName);
 
-            if (await adminClient.QueueExistsAsync(createOptions.Name).ConfigureAwait(false))
+            if (await adminClient.QueueExistsAsync(createOptions.Name, cancellationToken).ConfigureAwait(false))
             {
                 logger.LogSetupUseExistingQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: false, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync().ConfigureAwait(false);
+                await queue.CleanOnSetupAsync(cancellationToken).ConfigureAwait(false);
                 return queue;
             }
             else
             {
                 logger.LogSetupCreateNewQueue(createOptions.Name, messagingClient.FullyQualifiedNamespace);
-                await adminClient.CreateQueueAsync(createOptions).ConfigureAwait(false);
+                await adminClient.CreateQueueAsync(createOptions, cancellationToken).ConfigureAwait(false);
 
                 var queue = new TemporaryQueue(adminClient, messagingClient, createOptions.Name, queueCreatedByUs: true, messagingClientCreatedByUs, options, logger);
 
-                await queue.CleanOnSetupAsync().ConfigureAwait(false);
+                await queue.CleanOnSetupAsync(cancellationToken).ConfigureAwait(false);
                 return queue;
             }
         }
 
-        private async Task CleanOnSetupAsync()
+        private async Task CleanOnSetupAsync(CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_options.OnSetup.Messages is OnSetupQueue.LeaveExistingMessages)
             {
                 return;
@@ -588,15 +717,15 @@ namespace Arcus.Testing
                 if (settle is MessageSettle.DeadLetter)
                 {
                     _logger.LogSetupDeadLetterMessageOnQueue(message.MessageId, receiver.EntityPath, FullyQualifiedNamespace);
-                    await receiver.DeadLetterMessageAsync(message).ConfigureAwait(false);
+                    await receiver.DeadLetterMessageAsync(message, cancellationToken: cancellationToken).ConfigureAwait(false);
                 }
                 else if (settle is MessageSettle.Complete)
                 {
                     _logger.LogSetupCompleteMessageOnQueue(message.MessageId, Name, FullyQualifiedNamespace);
-                    await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
+                    await receiver.CompleteMessageAsync(message, cancellationToken).ConfigureAwait(false);
                 }
 
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -612,22 +741,23 @@ namespace Arcus.Testing
 
             await using (_disposables.ConfigureAwait(false))
             {
-                if (await _adminClient.QueueExistsAsync(Name).ConfigureAwait(false))
+                _disposables.Add(AsyncDisposable.Create(async () =>
                 {
-                    if (_queueCreatedByUs)
+                    if (await _adminClient.QueueExistsAsync(Name).ConfigureAwait(false))
                     {
-                        _disposables.Add(AsyncDisposable.Create(async () =>
+                        if (_queueCreatedByUs)
                         {
                             _logger.LogTeardownDeleteQueue(Name, FullyQualifiedNamespace);
                             await _adminClient.DeleteQueueAsync(Name).ConfigureAwait(false);
-                        }));
+                        }
+                        else
+                        {
+                            await CleanOnTeardownAsync().ConfigureAwait(false);
+                        }
                     }
-                    else
-                    {
-                        _disposables.Add(AsyncDisposable.Create(CleanOnTeardownAsync));
-                    }
-                }
+                }));
 
+                _disposables.Add(_sender);
                 if (_messagingClientCreatedByUs)
                 {
                     _disposables.Add(_messagingClient);
@@ -655,17 +785,22 @@ namespace Arcus.Testing
                     await receiver.CompleteMessageAsync(message).ConfigureAwait(false);
                 }
 
-            }).ConfigureAwait(false);
+            }, CancellationToken.None).ConfigureAwait(false);
         }
 
-        private async Task ForEachMessageOnQueueAsync(TimeSpan waitTime, Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation)
+        private async Task ForEachMessageOnQueueAsync(
+            TimeSpan waitTime,
+            Func<ServiceBusReceiver, ServiceBusReceivedMessage, Task> operation,
+            CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             ServiceBusReceiver receiver = _messagingClient.CreateReceiver(Name);
             await using (receiver.ConfigureAwait(false))
             {
                 while (true)
                 {
-                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime).ConfigureAwait(false);
+                    ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync(waitTime, cancellationToken).ConfigureAwait(false);
                     if (message is null)
                     {
                         return;
