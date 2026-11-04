@@ -62,7 +62,7 @@ jobs:
           tokenSuffix: '}#'
 
       - script: |
-          dotnet test src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
+          dotnet test --project src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --report-trx --coverage --coverage-output-format cobertura --results-directory "$(Pipeline.Workspace)"
         displayName: 'Run integration tests'
 
       - task: PublishTestResults@2
