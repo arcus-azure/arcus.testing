@@ -51,7 +51,7 @@ jobs:
           version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
-      - task: qetza.replacetokens.replacetokens-task.replacetokens@6
+      - task: qetza.replacetokens.replacetokens-task.replacetokens@6.3.1
         displayName: 'Replace integration test tokens'
         inputs:
           root: 'src/$(Project).Tests.Integration/'

@@ -53,26 +53,30 @@ stages:
               scriptType: 'pscore'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                az deployment sub create `
-                  --location westeurope `
-                  --template-file ./build/templates/resource-group.bicep `
-                  --parameters "resourceGroupName=$env:ARCUS_TESTING_RESOURCEGROUP_NAME" `
-                  --parameters location=westeurope 
+                $subscriptionDeploymentArguments = @(
+                  '--location', 'westeurope'
+                  '--template-file', './build/templates/resource-group.bicep'
+                  '--parameters', "resourceGroupName=$env:ARCUS_TESTING_RESOURCEGROUP_NAME"
+                  '--parameters', 'location=westeurope'
+                )
+                az deployment sub create @subscriptionDeploymentArguments
 
                 $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
-                az deployment group create `
-                  --resource-group $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
-                  --template-file ./build/templates/test-resources.bicep `
-                  --parameters location=westeurope `
-                  --parameters "dataFactoryName=$env:ARCUS_TESTING_DATAFACTORY_NAME" `
-                  --parameters "storageAccountName=$env:ARCUS_TESTING_STORAGEACCOUNT_NAME" `
-                  --parameters "cosmosDbMongoDbName=$env:ARCUS_TESTING_COSMOS_MONGODB_NAME" `
-                  --parameters "cosmosDbMongoDbDatabaseName=$env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME" `
-                  --parameters "cosmosDbNoSqlName=$env:ARCUS_TESTING_COSMOS_NOSQL_NAME" `
-                  --parameters "cosmosDbNoSqlDatabaseName=$env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME" `
-                  --parameters "serviceBusNamespaceName=$env:ARCUS_TESTING_SERVICEBUS_NAMESPACE" `
-                  --parameters "keyVaultName=$env:ARCUS_TESTING_KEYVAULT_NAME" `
-                  --parameters "servicePrincipalObjectId=$objectId"
+                $groupDeploymentArguments = @(
+                  '--resource-group', $env:ARCUS_TESTING_RESOURCEGROUP_NAME
+                  '--template-file', './build/templates/test-resources.bicep'
+                  '--parameters', 'location=westeurope'
+                  '--parameters', "dataFactoryName=$env:ARCUS_TESTING_DATAFACTORY_NAME"
+                  '--parameters', "storageAccountName=$env:ARCUS_TESTING_STORAGEACCOUNT_NAME"
+                  '--parameters', "cosmosDbMongoDbName=$env:ARCUS_TESTING_COSMOS_MONGODB_NAME"
+                  '--parameters', "cosmosDbMongoDbDatabaseName=$env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME"
+                  '--parameters', "cosmosDbNoSqlName=$env:ARCUS_TESTING_COSMOS_NOSQL_NAME"
+                  '--parameters', "cosmosDbNoSqlDatabaseName=$env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME"
+                  '--parameters', "serviceBusNamespaceName=$env:ARCUS_TESTING_SERVICEBUS_NAMESPACE"
+                  '--parameters', "keyVaultName=$env:ARCUS_TESTING_KEYVAULT_NAME"
+                  '--parameters', "servicePrincipalObjectId=$objectId"
+                )
+                az deployment group create @groupDeploymentArguments
 
                 $accountKey = (az storage account keys list --account-name $env:ARCUS_TESTING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
                 az keyvault secret set --name $env:ARCUS_TESTING_STORAGEACCOUNT_KEY_SECRETNAME --value $accountKey --vault-name $env:ARCUS_TESTING_KEYVAULT_NAME
