@@ -35,6 +35,17 @@ stages:
           vmImage: $(Vm.Image)
         steps:
           - task: AzureCLI@2
+            env:
+              ARCUS_TESTING_RESOURCEGROUP_NAME: ${{ parameters.resourceGroupName }}
+              ARCUS_TESTING_KEYVAULT_NAME: ${{ parameters.keyVaultName }}
+              ARCUS_TESTING_DATAFACTORY_NAME: $(Arcus.Testing.DataFactory.Name)
+              ARCUS_TESTING_STORAGEACCOUNT_NAME: $(Arcus.Testing.StorageAccount.Name)
+              ARCUS_TESTING_COSMOS_MONGODB_NAME: $(Arcus.Testing.Cosmos.MongoDb.Name)
+              ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME: $(Arcus.Testing.Cosmos.MongoDb.DatabaseName)
+              ARCUS_TESTING_COSMOS_NOSQL_NAME: $(Arcus.Testing.Cosmos.NoSql.Name)
+              ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME: $(Arcus.Testing.Cosmos.NoSql.DatabaseName)
+              ARCUS_TESTING_SERVICEBUS_NAMESPACE: $(Arcus.Testing.ServiceBus.Namespace)
+              ARCUS_TESTING_STORAGEACCOUNT_KEY_SECRETNAME: $(Arcus.Testing.StorageAccount.Key.SecretName)
             inputs:
               azureSubscription: '${{ parameters.azureServiceConnection }}'
               addSpnToEnvironment: true
@@ -45,26 +56,26 @@ stages:
                 az deployment sub create `
                   --location westeurope `
                   --template-file ./build/templates/resource-group.bicep `
-                  --parameters resourceGroupName=${{ parameters.resourceGroupName }} `
+                  --parameters "resourceGroupName=$env:ARCUS_TESTING_RESOURCEGROUP_NAME" `
                   --parameters location=westeurope 
 
                 $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
                 az deployment group create `
-                  --resource-group ${{ parameters.resourceGroupName }} `
+                  --resource-group $env:ARCUS_TESTING_RESOURCEGROUP_NAME `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters location=westeurope `
-                  --parameters dataFactoryName=${{ variables['Arcus.Testing.DataFactory.Name'] }} `
-                  --parameters storageAccountName=${{ variables['Arcus.Testing.StorageAccount.Name'] }} `
-                  --parameters cosmosDbMongoDbName=${{ variables['Arcus.Testing.Cosmos.MongoDb.Name'] }} `
-                  --parameters cosmosDbMongoDbDatabaseName=${{ variables['Arcus.Testing.Cosmos.MongoDb.DatabaseName'] }} `
-                  --parameters cosmosDbNoSqlName=${{ variables['Arcus.Testing.Cosmos.NoSql.Name'] }} `
-                  --parameters cosmosDbNoSqlDatabaseName=${{ variables['Arcus.Testing.Cosmos.NoSql.DatabaseName'] }} `
-                  --parameters serviceBusNamespaceName=${{ variables['Arcus.Testing.ServiceBus.Namespace'] }} `
-                  --parameters keyVaultName=${{ parameters.keyVaultName }} `
-                  --parameters servicePrincipalObjectId=$objectId
+                  --parameters "dataFactoryName=$env:ARCUS_TESTING_DATAFACTORY_NAME" `
+                  --parameters "storageAccountName=$env:ARCUS_TESTING_STORAGEACCOUNT_NAME" `
+                  --parameters "cosmosDbMongoDbName=$env:ARCUS_TESTING_COSMOS_MONGODB_NAME" `
+                  --parameters "cosmosDbMongoDbDatabaseName=$env:ARCUS_TESTING_COSMOS_MONGODB_DATABASENAME" `
+                  --parameters "cosmosDbNoSqlName=$env:ARCUS_TESTING_COSMOS_NOSQL_NAME" `
+                  --parameters "cosmosDbNoSqlDatabaseName=$env:ARCUS_TESTING_COSMOS_NOSQL_DATABASENAME" `
+                  --parameters "serviceBusNamespaceName=$env:ARCUS_TESTING_SERVICEBUS_NAMESPACE" `
+                  --parameters "keyVaultName=$env:ARCUS_TESTING_KEYVAULT_NAME" `
+                  --parameters "servicePrincipalObjectId=$objectId"
 
-                $accountKey = (az storage account keys list --account-name ${{ variables['Arcus.Testing.StorageAccount.Name'] }} | ConvertFrom-Json)[0].value
-                az keyvault secret set --name ${{ variables['Arcus.Testing.StorageAccount.Key.SecretName'] }} --value $accountKey --vault-name ${{ parameters.keyVaultName }}
+                $accountKey = (az storage account keys list --account-name $env:ARCUS_TESTING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
+                az keyvault secret set --name $env:ARCUS_TESTING_STORAGEACCOUNT_KEY_SECRETNAME --value $accountKey --vault-name $env:ARCUS_TESTING_KEYVAULT_NAME
 
   - stage: SmokeTests
     dependsOn: Deploy
