@@ -84,11 +84,12 @@ stages:
               inlineScript: |
                 Install-Module -Name Az -Force -AllowClobber -SkipPublisherCheck
                 Install-Module -Name Pester -Force -SkipPublisherCheck
-                $PesterConfig = New-PesterConfiguration 
+                $PesterConfig = New-PesterConfiguration
+                $PesterConfig.Run.Path = './build/templates/smoke-tests.ps1'
                 $PesterConfig.TestResult.Enabled = $true
                 $PesterConfig.TestResult.OutputFormat = 'NUnitXml'
                 $PesterConfig.TestResult.OutputPath = './pester.test.results.xml'
-                Invoke-Pester "./build/templates/smoke-tests.ps1" -Configuration $PesterConfig
+                Invoke-Pester -Configuration $PesterConfig
           - task: PublishTestResults@2
             displayName: 'Publish test results'
             condition: always()
