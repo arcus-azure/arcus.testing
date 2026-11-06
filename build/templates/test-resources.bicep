@@ -62,11 +62,12 @@ module storageAccount 'br/public:avm/res/storage/storage-account:0.9.1' = {
   }
 }
 
-module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.6.0' = {
+module cosmosDb_mongoDb 'br/public:avm/res/document-db/database-account:0.10.0' = {
   name: 'cosmosMongoDbDeployment'
   params: {
     name: cosmosDbMongoDbName
     location: location
+    serverVersion: '6.0'
     enableFreeTier: true
     capabilitiesToAdd: [
       'EnableMongo'

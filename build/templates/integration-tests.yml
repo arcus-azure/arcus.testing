@@ -22,7 +22,8 @@ jobs:
       - task: AzureCLI@2
         displayName: 'Import secrets from Azure Key Vault'
         env:
-          ARCUS_KEYVAULT_NAME: $(Arcus.Testing.KeyVault.Name)
+          ARCUS_TESTING_KEYVAULT_NAME: $(Arcus.Testing.KeyVault.Name)
+          ARCUS_TESTING_STORAGEACCOUNT_KEY_SECRETNAME: $(Arcus.Testing.StorageAccount.Key.SecretName)
         inputs:
           azureSubscription: '${{ parameters.azureServiceConnection }}'
           scriptType: 'pscore'
@@ -50,7 +51,7 @@ jobs:
           version: '$(DotNet.Sdk.Version)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
 
-      - task: qetza.replacetokens.replacetokens-task.replacetokens@6
+      - task: qetza.replacetokens.replacetokens-task.replacetokens@6.3.1
         displayName: 'Replace integration test tokens'
         inputs:
           root: 'src/$(Project).Tests.Integration/'
@@ -62,7 +63,7 @@ jobs:
           tokenSuffix: '}#'
 
       - script: |
-          dotnet test src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --collect:"XPlat Code Coverage" --logger trx --results-directory $(Pipeline.Workspace)
+          dotnet test --project src/**/$(Project).Tests.Integration.csproj --configuration $(Build.Configuration) --report-trx --coverage --coverage-output-format cobertura --results-directory "$(Pipeline.Workspace)"
         displayName: 'Run integration tests'
 
       - task: PublishTestResults@2
